@@ -1,0 +1,35 @@
+{
+  "name": "@quantum/scripts",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prepare": "effect-language-service patch",
+    "claude-fast-mode-probe": "bun run claude-fast-mode-probe.ts",
+    "claude-haiku-thinking-probe": "bun run claude-haiku-thinking-probe.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.3.207",
+    "@effect/platform-node": "catalog:",
+    "@quantum/contracts": "workspace:*",
+    "@quantum/shared": "workspace:*",
+    "effect": "catalog:"
+  },
+  "devDependencies": {
+    "@effect/language-service": "catalog:",
+    "@effect/vitest": "catalog:",
+    "@types/bun": "catalog:",
+    "electron-builder": "26.15.3",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "description": "Quantum Agent Manager Build & Release Scripts",
+  "author": "Suryanshu Nabheet",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Suryanshu-Nabheet/Quantum.git"
+  }
+}

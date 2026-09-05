@@ -1,0 +1,40 @@
+# ── Dependencies ─────────────────────────────────────────────────────────────
+node_modules/
+package-lock.json
+
+# ── Build output ──────────────────────────────────────────────────────────────
+dist/
+*.tsbuildinfo
+
+# ── Environment / Secrets ─────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+auth.json
+
+# ── quantum runtime files ──────────────────────────────────────────────────
+.quantum-profile.json
+.quantum/
+/.claude
+
+# ── Logs & Reports ────────────────────────────────────────────────────────────
+reports/
+coverage/
+agent.log
+*.log
+
+# ── Temporary files ───────────────────────────────────────────────────────────
+.tmp/
+*.tmp
+
+# ── Editor / OS ───────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+# Track shared .vscode config; ignore personal overrides
+.vscode/tasks.json
+.vscode/*.code-snippets
+
+# ── Internal docs (Anthropic-specific) ───────────────────────────────────────
+GEMINI.md
+CLAUDE.md

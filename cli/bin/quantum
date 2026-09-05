@@ -1,0 +1,14 @@
+#!/usr/bin/env node
+// Quantum CLI launcher
+// Resolves the dist bundle relative to this file so the binary works
+// whether installed globally (npm/bun link) or run directly.
+
+import { createRequire } from 'module'
+import { fileURLToPath } from 'url'
+import { dirname, resolve } from 'path'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const distCli = resolve(__dirname, '..', 'dist', 'cli.mjs')
+
+// Dynamic import lets Node parse the ES module bundle
+await import(distCli)

@@ -1,0 +1,503 @@
+{
+  "name": "agent",
+  "author": "Suryanshu Nabheet",
+  "version": "0.0.1",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Suryanshu-Nabheet/Quantum.git"
+  },
+  "extensionKind": [
+    "ui",
+    "workspace"
+  ],
+  "bugs": {
+    "url": "https://github.com/Suryanshu-Nabheet/Quantum/issues"
+  },
+  "homepage": "https://github.com/Suryanshu-Nabheet/Quantum",
+  "license": "MIT",
+  "displayName": "Quantum Agent",
+  "description": "Built-in Quantum Agent runtime for chat, inline edit, autocomplete, and tool-assisted workflows.",
+  "publisher": "quantum",
+  "engines": {
+    "vscode": "^1.70.0",
+    "node": ">=20.19.0"
+  },
+  "engine-strict": true,
+  "keywords": [
+    "ai",
+    "agent",
+    "coding-assistant",
+    "llm",
+    "mcp",
+    "quantum-ide",
+    "local-first"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onView:agent.agentGUIView"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "filenames": [
+          ".agentrc.json"
+        ],
+        "id": "jsonc"
+      }
+    ],
+    "configuration": {
+      "title": "Agent",
+      "properties": {
+        "agent.useViteGuiDevServer": {
+          "type": "boolean",
+          "description": "Agent GUI development only. When true, load the GUI from Vite at http://localhost:5173 for live HMR. When false (default), use bundled out/agent/webview assets rebuilt automatically by `npm run watch` at the repo root \u2014 no separate Agent dev terminal required."
+        },
+        "agent.openOnStartup": {
+          "type": "boolean",
+          "default": false,
+          "description": "When Agent is built into Quantum IDE, open the Agent sidebar automatically on startup."
+        },
+        "agent.showInlineTip": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show inline suggestion to use the extension keyboard shortcuts (e.g. \"Cmd/Ctrl L to select code, Cmd/Ctrl I to edit\")."
+        },
+        "agent.disableQuickFix": {
+          "type": "boolean",
+          "default": false,
+          "description": "Disable tab-autocomplete quick fixes from the editor's built-in code actions."
+        },
+        "agent.enableTabAutocomplete": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Enable lightweight tab autocomplete. Configure models in Quantum Settings \u2192 Models."
+        },
+        "agent.pauseTabAutocompleteOnBattery": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Pause Agent tab autocomplete when your battery is low."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "agent.openPanel",
+        "category": "Quantum",
+        "title": "Open Agent Panel",
+        "group": "Agent"
+      },
+      {
+        "command": "agent.hidePanel",
+        "category": "Quantum",
+        "title": "Hide Agent Panel",
+        "group": "Agent"
+      },
+      {
+        "command": "agent.togglePanel",
+        "category": "Quantum",
+        "title": "Toggle Agent Panel",
+        "group": "Agent"
+      },
+      {
+        "command": "agent.applyCodeFromChat",
+        "category": "Quantum",
+        "title": "Apply code from chat",
+        "group": "Agent"
+      },
+      {
+        "command": "agent.acceptDiff",
+        "category": "Quantum",
+        "title": "Accept Diff",
+        "group": "Agent"
+      },
+      {
+        "command": "agent.rejectDiff",
+        "category": "Quantum",
+        "title": "Reject Diff",
+        "group": "Agent",
+        "icon": "$(stop)"
+      },
+      {
+        "command": "agent.acceptVerticalDiffBlock",
+        "category": "Quantum",
+        "title": "Accept Vertical Diff Block",
+        "group": "Agent"
+      },
+      {
+        "command": "agent.rejectVerticalDiffBlock",
+        "category": "Quantum",
+        "title": "Reject Vertical Diff Block",
+        "group": "Agent"
+      },
+      {
+        "command": "agent.focusEdit",
+        "category": "Quantum",
+        "title": "Add to Edit",
+        "group": "Agent"
+      },
+      {
+        "command": "agent.focusAgentInput",
+        "category": "Quantum",
+        "title": "Focus Chat",
+        "group": "Agent"
+      },
+      {
+        "command": "agent.focusAgentInputWithoutClear",
+        "category": "Quantum",
+        "title": "Add to Chat",
+        "group": "Agent"
+      },
+      {
+        "command": "agent.debugTerminal",
+        "category": "Quantum",
+        "title": "Debug Terminal",
+        "group": "Agent"
+      },
+      {
+        "command": "agent.exitEditMode",
+        "category": "Quantum",
+        "title": "Exit Edit Mode",
+        "group": "Agent"
+      },
+      {
+        "command": "agent.openConfigPage",
+        "category": "Quantum",
+        "title": "Open Settings",
+        "icon": "$(gear)",
+        "group": "Agent"
+      },
+      {
+        "command": "agent.toggleTabAutocompleteEnabled",
+        "category": "Quantum",
+        "title": "Toggle Autocomplete Enabled",
+        "group": "Agent"
+      },
+      {
+        "command": "agent.forceAutocomplete",
+        "title": "Quantum: Force Autocomplete",
+        "category": "Quantum"
+      },
+      {
+        "command": "agent.selectFilesAsContext",
+        "category": "Quantum",
+        "title": "Select Files as Context",
+        "group": "Agent"
+      },
+      {
+        "command": "agent.newSession",
+        "category": "Quantum",
+        "title": "New Session",
+        "icon": "$(add)",
+        "group": "Agent"
+      },
+      {
+        "command": "agent.shareSession",
+        "category": "Quantum",
+        "title": "Share Current Chat Session as Markdown",
+        "group": "Agent"
+      },
+      {
+        "command": "agent.viewHistory",
+        "category": "Quantum",
+        "title": "View History",
+        "icon": "$(history)",
+        "group": "Agent"
+      },
+      {
+        "command": "agent.viewLogs",
+        "category": "Quantum",
+        "title": "View Logs",
+        "group": "Agent"
+      },
+      {
+        "command": "agent.navigateTo",
+        "category": "Quantum",
+        "title": "Navigate to a path",
+        "group": "Agent"
+      },
+      {
+        "command": "agent.writeCommentsForCode",
+        "category": "Quantum",
+        "title": "Write Comments for this Code",
+        "group": "Agent"
+      },
+      {
+        "command": "agent.writeDocstringForCode",
+        "category": "Quantum",
+        "title": "Write a Docstring for this Code",
+        "group": "Agent"
+      },
+      {
+        "command": "agent.fixCode",
+        "category": "Quantum",
+        "title": "Fix this Code",
+        "group": "Agent"
+      },
+      {
+        "command": "agent.optimizeCode",
+        "category": "Quantum",
+        "title": "Optimize this Code",
+        "group": "Agent"
+      },
+      {
+        "command": "agent.fixGrammar",
+        "category": "Quantum",
+        "title": "Fix Grammar / Spelling",
+        "group": "Agent"
+      },
+      {
+        "command": "agent.generateRule",
+        "category": "Quantum",
+        "title": "Generate Rule",
+        "group": "Agent"
+      },
+      {
+        "command": "agent.openInNewWindow",
+        "category": "Quantum",
+        "title": "Open in new window",
+        "group": "Agent"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "agent.focusAgentInput",
+        "mac": "cmd+l",
+        "key": "ctrl+l"
+      },
+      {
+        "command": "agent.focusAgentInputWithoutClear",
+        "mac": "cmd+shift+l",
+        "key": "ctrl+shift+l"
+      },
+      {
+        "command": "agent.acceptDiff",
+        "mac": "shift+cmd+enter",
+        "key": "shift+ctrl+enter",
+        "when": "agent.diffVisible"
+      },
+      {
+        "command": "agent.rejectDiff",
+        "mac": "shift+cmd+backspace",
+        "key": "shift+ctrl+backspace",
+        "when": "agent.diffVisible"
+      },
+      {
+        "command": "agent.rejectDiff",
+        "mac": "cmd+z",
+        "key": "ctrl+z",
+        "when": "agent.diffVisible"
+      },
+      {
+        "command": "agent.acceptVerticalDiffBlock",
+        "mac": "alt+cmd+y",
+        "key": "alt+ctrl+y"
+      },
+      {
+        "command": "agent.rejectVerticalDiffBlock",
+        "mac": "alt+cmd+n",
+        "key": "alt+ctrl+n"
+      },
+      {
+        "command": "agent.focusEdit",
+        "title": "Edit code with natural language",
+        "mac": "cmd+i",
+        "key": "ctrl+i"
+      },
+      {
+        "command": "agent.exitEditMode",
+        "mac": "escape",
+        "key": "escape",
+        "when": "agent.inEditMode && editorFocus"
+      },
+      {
+        "command": "agent.debugTerminal",
+        "mac": "cmd+shift+r",
+        "key": "ctrl+shift+r"
+      },
+      {
+        "command": "agent.openInNewWindow",
+        "mac": "cmd+k cmd+m",
+        "key": "ctrl+k ctrl+m",
+        "when": "!terminalFocus"
+      },
+      {
+        "command": "agent.toggleTabAutocompleteEnabled",
+        "mac": "cmd+k cmd+a",
+        "key": "ctrl+k ctrl+a",
+        "when": "!terminalFocus"
+      },
+      {
+        "command": "agent.forceAutocomplete",
+        "key": "ctrl+alt+space",
+        "mac": "cmd+alt+space",
+        "when": "editorTextFocus && !editorHasSelection && !editorReadOnly && !inSnippetMode"
+      },
+      {
+        "command": "agent.applyCodeFromChat",
+        "mac": "alt+a",
+        "key": "alt+a"
+      }
+    ],
+    "submenus": [
+      {
+        "id": "agent.agentSubMenu",
+        "label": "Agent"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "agent.openPanel"
+        },
+        {
+          "command": "agent.focusAgentInput"
+        },
+        {
+          "command": "agent.focusAgentInputWithoutClear"
+        },
+        {
+          "command": "agent.debugTerminal"
+        },
+        {
+          "command": "agent.newSession"
+        },
+        {
+          "command": "agent.generateRule"
+        },
+        {
+          "command": "agent.openInNewWindow"
+        }
+      ],
+      "editor/context": [
+        {
+          "submenu": "agent.agentSubMenu",
+          "group": "0_agent"
+        }
+      ],
+      "editor/title/run": [
+        {
+          "command": "agent.rejectDiff",
+          "group": "Agent",
+          "when": "agent.streamingDiff"
+        }
+      ],
+      "agent.agentSubMenu": [
+        {
+          "command": "agent.focusAgentInputWithoutClear",
+          "group": "Agent"
+        },
+        {
+          "command": "agent.focusEdit",
+          "group": "Agent",
+          "when": "!editorReadonly"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "agent.selectFilesAsContext",
+          "group": "1_debug@1"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "agent.newSession",
+          "group": "navigation@1",
+          "when": "view == agent.agentGUIView"
+        },
+        {
+          "command": "agent.viewHistory",
+          "group": "navigation@2",
+          "when": "view == agent.agentGUIView"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "agent.newSession",
+          "group": "navigation@1",
+          "when": "activeWebviewPanelId == agent.agentGUIView"
+        },
+        {
+          "command": "agent.viewHistory",
+          "group": "navigation@2",
+          "when": "activeWebviewPanelId == agent.agentGUIView"
+        }
+      ],
+      "terminal/context": [
+        {
+          "command": "agent.debugTerminal",
+          "group": "navigation@top"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "secondarySidebar": [
+        {
+          "id": "agent",
+          "title": "Agent",
+          "icon": "$(comment-discussion)"
+        }
+      ]
+    },
+    "views": {
+      "agent": [
+        {
+          "type": "webview",
+          "id": "agent.agentGUIView",
+          "name": "Agent",
+          "visibility": "visible"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "esbuild-base": "node scripts/esbuild.js",
+    "esbuild": "npm run esbuild-base -- --sourcemap",
+    "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
+    "esbuild:visualize": "esbuild-visualizer --metadata ../../../../../out/agent/meta/esbuild.json --filename ../../../../../out/agent/meta/stats.html --open",
+    "tsc": "tsc -p ./",
+    "tsc:check": "tsc -p ./ --noEmit",
+    "test": "vitest run",
+    "verify": "npm run tsc:check && npm --prefix core run vitest && npm test && npm --prefix packages/fetch test && npm --prefix packages/terminal-security test && npm --prefix packages/openai-adapters test && npm --prefix gui run tsc:check && npm --prefix gui test && npm --prefix packages/agent-config test",
+    "build:webview": "npm run build --prefix gui && node scripts/ensure-webview.js",
+    "build:agent": "node scripts/build-packages.js && npm run build:webview && npm run esbuild-base -- --minify",
+    "predev": "node scripts/ensure-webview.js",
+    "dev": "concurrently -n gui,host,core,esbuild -c cyan,magenta,yellow,blue \"npm run dev --prefix gui\" \"npm run tsc:watch:host\" \"npm run tsc:watch:core\" \"npm run esbuild-watch\"",
+    "tsc:watch": "concurrently -n gui,host,core -c cyan,magenta,yellow \"npm run tsc:watch:gui\" \"npm run tsc:watch:host\" \"npm run tsc:watch:core\"",
+    "tsc:watch:gui": "tsc --project gui/tsconfig.json --watch --noEmit --pretty",
+    "tsc:watch:host": "tsc -p ./ --watch --noEmit --pretty",
+    "tsc:watch:core": "tsc --project core/tsconfig.json --watch --noEmit --pretty",
+    "clean": "node scripts/clean-artifacts.js"
+  },
+  "devDependencies": {
+    "@types/node": "16.x",
+    "@types/uuid": "^10.0.0",
+    "@types/vscode": "1.70",
+    "@typescript-eslint/eslint-plugin": "^8.40.0",
+    "@typescript-eslint/parser": "^8.40.0",
+    "concurrently": "^9.1.2",
+    "esbuild": "0.17.19",
+    "esbuild-visualizer": "^0.6.0",
+    "eslint": "^8",
+    "prettier": "^3.3.3",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.6.3",
+    "vitest": "^3.1.4"
+  },
+  "dependencies": {
+    "@vscode/ripgrep": "^1.15.9",
+    "core": "file:./core",
+    "fetch": "file:./packages/fetch",
+    "minisearch": "^7.0.0",
+    "monaco-vscode-textmate-theme-converter": "^0.1.7",
+    "ncp": "^2.0.0",
+    "svg-builder": "^2.0.0",
+    "uuid": "^9.0.1"
+  },
+  "overrides": {
+    "vitest": {
+      "@types/node": "^16.18.119"
+    }
+  }
+}

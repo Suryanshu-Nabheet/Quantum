@@ -1,0 +1,9 @@
+{
+  "type": "module",
+  "author": "Suryanshu Nabheet",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Suryanshu-Nabheet/Quantum.git"
+  }
+}

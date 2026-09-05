@@ -1,0 +1,12 @@
+{
+  "split-horizontal": 10000,
+  "split-vertical": 10001,
+
+  "sidebar-left": 10003,
+  "sidebar-right": 10004,
+  "panel-bottom": 10005,
+  "sidebar-left-collapse": 10006,
+  "sidebar-right-collapse": 10007,
+  "panel-bottom-collapse": 10008,
+  "symbol-boolean": 10009
+}

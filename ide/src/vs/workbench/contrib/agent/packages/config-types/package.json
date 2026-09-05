@@ -1,0 +1,25 @@
+{
+  "name": "config-types",
+  "version": "1.0.14",
+  "description": "Shared config.json Zod schemas",
+  "main": "../../../../../../../out/agent-packages/config-types/index.js",
+  "types": "../../../../../../../out/agent-packages/config-types/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "test": "echo 'No tests to run'",
+    "build": "rm -rf ../../../../../../../out/agent-packages/config-types && tsc"
+  },
+  "author": "Suryanshu Nabheet",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.11.19",
+    "typescript": "^5.5.2"
+  },
+  "dependencies": {
+    "zod": "^3.25.76"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Suryanshu-Nabheet/Quantum.git"
+  }
+}

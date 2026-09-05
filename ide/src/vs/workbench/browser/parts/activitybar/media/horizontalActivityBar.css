@@ -1,0 +1,273 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+/* Horizontal mode: hide composite title row and header divider; layout reclaim is handled in PartLayout */
+.monaco-workbench .pane-composite-part.horizontal-activitybar-mode {
+	--horizontal-activitybar-hover-bg: color-mix(in srgb, var(--vscode-foreground) 6%, transparent);
+	--horizontal-activitybar-active-bg: color-mix(in srgb, var(--vscode-foreground) 10%, transparent);
+}
+
+.monaco-workbench .pane-composite-part.horizontal-activitybar-mode > .composite.title {
+	display: none;
+}
+
+.monaco-workbench .pane-composite-part.horizontal-activitybar-mode:not(.empty) > .header-or-footer.header.horizontal-activitybar-header {
+	border-bottom: none;
+}
+
+/* Horizontal activity bar only — scoped to its dedicated header, never classic top layout */
+.monaco-workbench .pane-composite-part > .header-or-footer.header.horizontal-activitybar-header {
+	position: relative;
+	overflow: visible;
+	z-index: 2;
+	box-sizing: border-box;
+	height: 35px;
+	min-height: 35px;
+	max-height: 35px;
+	padding-left: 4px;
+	padding-right: 6px;
+}
+
+.monaco-workbench .pane-composite-part.horizontal-activitybar-views-open {
+	position: relative;
+}
+
+.monaco-workbench .pane-composite-part.horizontal-activitybar-views-open > .content {
+	position: relative;
+	z-index: 0;
+}
+
+.monaco-workbench .horizontal-activitybar-header > .composite-bar-container {
+	justify-content: center;
+	width: 100%;
+	height: 100%;
+}
+
+.monaco-workbench .horizontal-activitybar-header > .composite-bar-container > .composite-bar > .monaco-action-bar .actions-container {
+	justify-content: center;
+	align-items: center;
+	gap: 2px;
+	width: 100%;
+	height: 35px;
+}
+
+/* Reset default header composite-bar spacing (35px tall items, horizontal padding) */
+.monaco-workbench .horizontal-activitybar-header > .composite-bar-container > .composite-bar > .monaco-action-bar .action-item {
+	margin: 2px;
+	padding: 0 !important;
+	height: auto;
+	min-height: 0;
+}
+
+.monaco-workbench .horizontal-activitybar-header > .composite-bar-container > .composite-bar > .monaco-action-bar .action-item.icon {
+	height: 28px;
+	min-height: 28px;
+	padding: 0 !important;
+}
+
+.monaco-workbench .horizontal-activitybar-header > .composite-bar-container > .composite-bar > .monaco-action-bar .action-item .active-item-indicator {
+	display: none !important;
+}
+
+/* Kill VS Code full-height blue block on the item container — pill lives on the label only */
+.monaco-workbench .pane-composite-part.horizontal-activitybar-mode .horizontal-activitybar-header > .composite-bar-container > .composite-bar > .monaco-action-bar .action-item.checked,
+.monaco-workbench .pane-composite-part.horizontal-activitybar-mode .horizontal-activitybar-header > .composite-bar-container > .composite-bar > .monaco-action-bar .action-item.icon.checked,
+.monaco-workbench .pane-composite-part.horizontal-activitybar-mode .horizontal-activitybar-header > .composite-bar-container > .composite-bar > .monaco-action-bar .action-item.checked:hover,
+.monaco-workbench .pane-composite-part.horizontal-activitybar-mode .horizontal-activitybar-header > .composite-bar-container > .composite-bar > .monaco-action-bar .action-item.icon.checked:hover {
+	background: transparent !important;
+	background-color: transparent !important;
+}
+
+.monaco-workbench .horizontal-activitybar-header > .composite-bar-container > .composite-bar > .monaco-action-bar .action-item .action-label {
+	box-sizing: border-box;
+	margin: 0 !important;
+	padding: 0 !important;
+	border: none;
+	border-radius: 6px;
+	background-color: transparent;
+	outline: none !important;
+}
+
+.monaco-workbench .horizontal-activitybar-header > .composite-bar-container > .composite-bar > .monaco-action-bar .action-item.icon .action-label.codicon:not(.codicon-more) {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	min-width: 28px;
+	min-height: 28px;
+	font-size: 16px;
+	line-height: 16px;
+	border-radius: 6px;
+}
+
+.monaco-workbench .part.sidebar > .header-or-footer.header.horizontal-activitybar-header > .composite-bar-container > .composite-bar > .monaco-action-bar .action-item .action-label::before {
+	position: static;
+	left: auto;
+}
+
+/* Neutral squircle: open/active or menu open */
+.monaco-workbench .pane-composite-part.horizontal-activitybar-mode .horizontal-activitybar-header > .composite-bar-container > .composite-bar > .monaco-action-bar .action-item.checked .action-label.codicon:not(.codicon-more),
+.monaco-workbench .pane-composite-part.horizontal-activitybar-mode .horizontal-activitybar-header .horizontal-activitybar-toggle-item.menu-open .action-label {
+	background: var(--horizontal-activitybar-active-bg, var(--vscode-list-hoverBackground)) !important;
+	color: var(--vscode-activityBarTop-foreground) !important;
+	border-radius: 6px !important;
+}
+
+/* Hover only when idle */
+.monaco-workbench .pane-composite-part.horizontal-activitybar-mode .horizontal-activitybar-header > .composite-bar-container > .composite-bar > .monaco-action-bar .action-item:not(.checked):hover .action-label.codicon:not(.codicon-more),
+.monaco-workbench .pane-composite-part.horizontal-activitybar-mode .horizontal-activitybar-header > .composite-bar-container > .composite-bar > .monaco-action-bar .action-item:not(.checked):focus-visible .action-label.codicon:not(.codicon-more),
+.monaco-workbench .pane-composite-part.horizontal-activitybar-mode .horizontal-activitybar-header .horizontal-activitybar-toggle-item:not(.menu-open):hover .action-label,
+.monaco-workbench .pane-composite-part.horizontal-activitybar-mode .horizontal-activitybar-header .horizontal-activitybar-toggle-item:not(.menu-open):focus-visible .action-label {
+	background: var(--horizontal-activitybar-hover-bg, var(--vscode-list-hoverBackground)) !important;
+	color: var(--vscode-activityBarTop-foreground) !important;
+	border-radius: 6px !important;
+}
+
+.monaco-workbench .pane-composite-part.horizontal-activitybar-mode .horizontal-activitybar-header > .composite-bar-container > .composite-bar > .monaco-action-bar .action-item.checked:hover .action-label.codicon:not(.codicon-more),
+.monaco-workbench .pane-composite-part.horizontal-activitybar-mode .horizontal-activitybar-header .horizontal-activitybar-toggle-item.menu-open:hover .action-label {
+	background: var(--horizontal-activitybar-active-bg, var(--vscode-list-hoverBackground)) !important;
+	color: var(--vscode-activityBarTop-foreground) !important;
+}
+
+.monaco-workbench .horizontal-activitybar-header > .composite-bar-container > .composite-bar > .monaco-action-bar .action-item:not(.checked):hover .action-label.uri-icon,
+.monaco-workbench .horizontal-activitybar-header > .composite-bar-container > .composite-bar > .monaco-action-bar .action-item.checked .action-label.uri-icon {
+	background-color: var(--vscode-activityBarTop-foreground) !important;
+}
+
+.monaco-workbench .part.sidebar > .header-or-footer.header.horizontal-activitybar-header > .composite-bar-container > .composite-bar > .monaco-action-bar .action-item.checked:not(:focus) .active-item-indicator:before,
+.monaco-workbench .part.sidebar > .header-or-footer.header.horizontal-activitybar-header > .composite-bar-container > .composite-bar > .monaco-action-bar .action-item.checked.clicked:focus .active-item-indicator:before,
+.monaco-workbench .part.sidebar > .header-or-footer.header.horizontal-activitybar-header > .composite-bar-container > .composite-bar > .monaco-action-bar .action-item:focus .active-item-indicator:before {
+	border: none !important;
+	content: none !important;
+}
+
+/* Chevron toggler — same compact sizing and highlight behavior */
+.monaco-workbench .horizontal-activitybar-header .horizontal-activitybar-toggle-item {
+	margin: 2px;
+	padding: 0 !important;
+	height: 28px;
+}
+
+.monaco-workbench .horizontal-activitybar-header .horizontal-activitybar-toggle-item .active-item-indicator {
+	display: none;
+}
+
+.monaco-workbench .horizontal-activitybar-header .horizontal-activitybar-toggle-item .action-label {
+	box-sizing: border-box;
+	width: 28px;
+	height: 28px;
+	min-width: 28px;
+	min-height: 28px;
+	padding: 0 !important;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 16px;
+	line-height: 16px;
+	border-radius: 6px;
+	border: none;
+	background-color: transparent;
+}
+
+/* Chevron highlight rules live with pinned icons above (checked / menu-open / hover) */
+
+/* Full-viewport backdrop for outside-click dismiss */
+.monaco-workbench .pane-composite-part > .horizontal-activitybar-views-backdrop {
+	position: fixed;
+	inset: 0;
+	cursor: default;
+	z-index: 9;
+}
+
+/* Inline views panel — anchored to sidebar, layered above explorer content */
+.monaco-workbench .pane-composite-part > .horizontal-activitybar-views-panel {
+	position: absolute;
+	left: 0;
+	width: 100%;
+	box-sizing: border-box;
+	z-index: 10;
+	background-color: var(--vscode-sideBar-background);
+	border-bottom: 1px solid var(--vscode-sideBarActivityBarTop-border, var(--vscode-widget-border));
+	box-shadow: 0 5px 5px -3px var(--vscode-scrollbar-shadow);
+}
+
+.monaco-workbench .horizontal-activitybar-views-panel .horizontal-activitybar-views-item {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+	padding: 3px 16px;
+	cursor: pointer;
+}
+
+.monaco-workbench .horizontal-activitybar-views-panel .horizontal-activitybar-views-item:hover:not(.selected) {
+	background-color: var(--horizontal-activitybar-hover-bg, var(--vscode-list-hoverBackground));
+}
+
+.monaco-workbench .horizontal-activitybar-views-panel .horizontal-activitybar-views-item.selected {
+	background-color: var(--horizontal-activitybar-active-bg, var(--vscode-list-hoverBackground));
+}
+
+.monaco-workbench .horizontal-activitybar-views-panel .horizontal-activitybar-views-item-main {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	min-width: 0;
+	flex: 1;
+}
+
+.monaco-workbench .horizontal-activitybar-views-panel .horizontal-activitybar-views-item-icon {
+	width: 16px;
+	height: 16px;
+	min-width: 16px;
+	min-height: 16px;
+	margin-right: 4px;
+	padding: 0 !important;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 16px;
+}
+
+.monaco-workbench .horizontal-activitybar-views-panel .horizontal-activitybar-views-item-icon.uri-icon {
+	background-color: var(--vscode-activityBarTop-foreground);
+}
+
+.monaco-workbench .horizontal-activitybar-views-panel .horizontal-activitybar-views-item-label {
+	font-size: 13px;
+	line-height: 22px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.monaco-workbench .horizontal-activitybar-views-panel .horizontal-activitybar-views-item-keybinding {
+	margin-left: 6px;
+	opacity: 0.5;
+	font-size: 12px;
+	white-space: nowrap;
+}
+
+.monaco-workbench .horizontal-activitybar-views-panel .horizontal-activitybar-views-item-pin {
+	cursor: pointer;
+	padding: 2px;
+	border-radius: 5px;
+	font-size: 14px;
+	flex-shrink: 0;
+}
+
+.monaco-workbench .horizontal-activitybar-views-panel .horizontal-activitybar-views-item-pin:hover:not(.disabled) {
+	background-color: var(--vscode-toolbar-activeBackground);
+}
+
+.monaco-workbench .horizontal-activitybar-views-panel .horizontal-activitybar-views-item-pin.disabled {
+	opacity: 0.35;
+	cursor: default;
+}
+
+.monaco-workbench .horizontal-activitybar-views-panel .horizontal-activitybar-views-item-pin.not-pinned {
+	opacity: 0.5;
+}

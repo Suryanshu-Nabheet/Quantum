@@ -1,0 +1,70 @@
+{
+  "name": "quantum-theme",
+  "displayName": "%displayName%",
+  "description": "%description%",
+  "categories": [
+    "Themes"
+  ],
+  "version": "0.0.1",
+  "publisher": "quantum",
+  "author": "Suryanshu Nabheet",
+  "license": "MIT",
+  "engines": {
+    "vscode": "*"
+  },
+  "scripts": {
+    "build-product-icons": "npm run clean-product-icons && npm run flatten-svgs && npm run svgo-product-icons && npm run generate-font && cp product-icons/dist/quantum-product-icons.ttf product-icons/quantum-product-icons.ttf && rm -rf product-icons/dist",
+    "clean-product-icons": "rm -rf product-icons/dist && mkdir -p product-icons/dist",
+    "flatten-svgs": "cd product-icons/icons && find . -mindepth 2 -type f -print -exec mv {} . \\; && find . -type d -empty -delete",
+    "svgo-product-icons": "svgo -f product-icons/icons/ --config product-icons/config.yml",
+    "generate-font": "icon-font-generator product-icons/icons/*.svg -o product-icons/dist -n quantum-product-icons -p quantum-product-icons --csstp product-icons/template/styles.hbs --height=1000 --center --codepoints product-icons/template/mapping.json --json false --types ttf"
+  },
+  "devDependencies": {
+    "handlebars": ">=4.7.7",
+    "icon-font-generator": "^2.1.10",
+    "svgo": "^1.3.2"
+  },
+  "contributes": {
+    "themes": [
+      {
+        "id": "Quantum Dark",
+        "label": "%quantumDarkColorThemeLabel%",
+        "uiTheme": "vs-dark",
+        "path": "./color-themes/quantum_dark.json"
+      },
+      {
+        "id": "Quantum Light",
+        "label": "%quantumLightColorThemeLabel%",
+        "uiTheme": "vs",
+        "path": "./color-themes/quantum_light.json"
+      },
+      {
+        "id": "Quantum High Contrast",
+        "label": "%quantumHighContrastColorThemeLabel%",
+        "uiTheme": "hc-black",
+        "path": "./color-themes/quantum_high_contrast.json"
+      }
+    ],
+    "iconThemes": [
+      {
+        "id": "Quantum Icon Theme",
+        "label": "%quantumIconThemeLabel%",
+        "path": "./file-icons/quantum-icon-theme.json"
+      }
+    ],
+    "productIconThemes": [
+      {
+        "id": "quantum-product-icons",
+        "label": "Quantum Product Icons",
+        "path": "./product-icons/quantum-product-icons.json"
+      }
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Suryanshu-Nabheet/Quantum.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Suryanshu-Nabheet/Quantum/issues"
+  }
+}

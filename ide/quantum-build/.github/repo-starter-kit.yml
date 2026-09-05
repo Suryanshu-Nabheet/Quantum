@@ -1,0 +1,5 @@
+package: "@daiyam/default"
+repository: https://github.com/Suryanshu-Nabheet/Quantum
+resources:
+  - label
+keep: true

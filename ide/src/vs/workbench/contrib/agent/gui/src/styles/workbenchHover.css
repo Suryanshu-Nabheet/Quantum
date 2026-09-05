@@ -1,0 +1,97 @@
+/* Quantum workbench hover — copied from src/vs/platform/hover/browser/hover.css */
+
+.monaco-hover.workbench-hover {
+	position: relative;
+	font-size: 13px;
+	line-height: 19px;
+	z-index: 100000;
+	overflow: hidden;
+	max-width: min(280px, calc(100vw - 16px));
+	background: var(--vscode-editorHoverWidget-background);
+	border: 1px solid var(--vscode-editorHoverWidget-border);
+	border-radius: 5px;
+	color: var(--vscode-editorHoverWidget-foreground);
+	box-shadow: var(--vscode-shadow-hover, 0 2px 8px rgba(0, 0, 0, 0.36));
+}
+
+.monaco-hover.workbench-hover.with-pointer {
+	border-radius: 3px;
+}
+
+.monaco-hover.workbench-hover.compact {
+	font-size: 12px;
+}
+
+.monaco-hover.workbench-hover.compact .hover-contents {
+	padding: 2px 8px;
+	white-space: normal;
+	overflow-wrap: anywhere;
+	word-break: break-word;
+}
+
+.workbench-hover-pointer {
+	position: absolute;
+	z-index: 100001;
+	pointer-events: none;
+}
+
+.workbench-hover-pointer:after {
+	content: "";
+	position: absolute;
+	width: 5px;
+	height: 5px;
+	background-color: var(--vscode-editorHoverWidget-background);
+	border-right: 1px solid var(--vscode-editorHoverWidget-border);
+	border-bottom: 1px solid var(--vscode-editorHoverWidget-border);
+}
+
+.workbench-hover-pointer.left {
+	left: -3px;
+}
+.workbench-hover-pointer.right {
+	right: 3px;
+}
+.workbench-hover-pointer.top {
+	top: -3px;
+}
+.workbench-hover-pointer.bottom {
+	bottom: 3px;
+}
+
+.workbench-hover-pointer.left:after {
+	transform: rotate(135deg);
+}
+.workbench-hover-pointer.right:after {
+	transform: rotate(315deg);
+}
+.workbench-hover-pointer.top:after {
+	transform: rotate(225deg);
+}
+.workbench-hover-pointer.bottom:after {
+	transform: rotate(45deg);
+}
+
+.agent-workbench-hover-layer {
+	position: fixed;
+	inset: 0;
+	pointer-events: none;
+	z-index: 100000;
+}
+
+.agent-workbench-hover-anchor {
+	position: fixed;
+	pointer-events: none;
+}
+
+.monaco-hover.fade-in {
+	animation: agent-hover-fadein 100ms linear;
+}
+
+@keyframes agent-hover-fadein {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
