@@ -3,7 +3,6 @@
 import { spawnSync } from "node:child_process";
 import {
   copyFileSync,
-  cpSync,
   existsSync,
   mkdirSync,
   readFileSync,
@@ -28,7 +27,7 @@ const desktopFlavor = resolveQuantumDesktopFlavor({
 const desktopIdentity = quantumDesktopIdentity(desktopFlavor);
 const APP_DISPLAY_NAME = desktopIdentity.displayName;
 const APP_BUNDLE_ID = desktopIdentity.bundleId;
-const LAUNCHER_VERSION = 2;
+const LAUNCHER_VERSION = 3;
 const MICROPHONE_USAGE_DESCRIPTION =
   "Quantum needs microphone access so you can record voice notes and transcribe them into the chat composer.";
 
@@ -109,6 +108,20 @@ function readJson(path) {
   }
 }
 
+function copyMacAppBundle(sourceAppBundlePath, targetAppBundlePath) {
+  // Node's cpSync rewrites framework symlinks to absolute paths into node_modules,
+  // which breaks ICU/GPU helper lookup inside the renamed dev bundle.
+  const result = spawnSync("ditto", [sourceAppBundlePath, targetAppBundlePath], {
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    const details = [result.stdout, result.stderr].filter(Boolean).join("\n").trim();
+    throw new Error(
+      `Failed to copy Electron app bundle with ditto (${result.status ?? "unknown"}): ${details}`,
+    );
+  }
+}
+
 function buildMacLauncher(electronBinaryPath) {
   const sourceAppBundlePath = resolve(electronBinaryPath, "../../..");
   const runtimeDir = join(desktopDir, ".electron-runtime");
@@ -136,7 +149,7 @@ function buildMacLauncher(electronBinaryPath) {
   }
 
   rmSync(targetAppBundlePath, { recursive: true, force: true });
-  cpSync(sourceAppBundlePath, targetAppBundlePath, { recursive: true });
+  copyMacAppBundle(sourceAppBundlePath, targetAppBundlePath);
   patchMainBundleInfoPlist(targetAppBundlePath, iconPath);
   patchHelperBundleInfoPlists(targetAppBundlePath);
   writeFileSync(metadataPath, `${JSON.stringify(expectedMetadata, null, 2)}\n`);
