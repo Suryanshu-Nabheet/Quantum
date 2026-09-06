@@ -18,9 +18,11 @@ const CLAUDE_CODE_DOCS_MAP_URL =
   'https://github.com/Suryanshu-Nabheet/Quantum/blob/main/cli/README.md'
 const CDP_DOCS_MAP_URL = 'https://platform.claude.com/llms.txt'
 
-export const CLAUDE_CODE_GUIDE_AGENT_TYPE = 'claude-code-guide'
+export const QUANTUM_GUIDE_AGENT_TYPE = 'quantum-guide'
+/** @deprecated Legacy agent type for saved sessions */
+export const CLAUDE_CODE_GUIDE_AGENT_TYPE = QUANTUM_GUIDE_AGENT_TYPE
 
-function getClaudeCodeGuideBasePrompt(): string {
+function getQuantumGuideBasePrompt(): string {
   // Ant-native builds alias find/grep to embedded bfs/ugrep and remove the
   // dedicated Glob/Grep tools, so point at find/grep instead.
   const localSearchHint = hasEmbeddedSearchTools()
@@ -90,9 +92,9 @@ function getFeedbackGuideline(): string {
   return `- When you cannot find an answer or the feature doesn't exist, direct the user to ${MACRO.ISSUES_EXPLAINER}`
 }
 
-export const CLAUDE_CODE_GUIDE_AGENT: BuiltInAgentDefinition = {
-  agentType: CLAUDE_CODE_GUIDE_AGENT_TYPE,
-  whenToUse: `Use this agent when the user asks questions ("Can Quantum...", "Does Quantum...", "How do I...") about: (1) Quantum (the CLI tool) - features, hooks, slash commands, MCP servers, settings, IDE integrations, keyboard shortcuts; (2) Claude Agent SDK - building custom agents; (3) Claude API (formerly Anthropic API) - API usage, tool use, Anthropic SDK usage. **IMPORTANT:** Before spawning a new agent, check if there is already a running or recently completed claude-code-guide agent that you can continue via ${SEND_MESSAGE_TOOL_NAME}.`,
+export const QUANTUM_GUIDE_AGENT: BuiltInAgentDefinition = {
+  agentType: QUANTUM_GUIDE_AGENT_TYPE,
+  whenToUse: `Use this agent when the user asks questions ("Can Quantum...", "Does Quantum...", "How do I...") about: (1) Quantum (the CLI tool) - features, hooks, slash commands, MCP servers, settings, IDE integrations, keyboard shortcuts; (2) Claude Agent SDK - building custom agents; (3) Claude API (formerly Anthropic API) - API usage, tool use, Anthropic SDK usage. **IMPORTANT:** Before spawning a new agent, check if there is already a running or recently completed quantum-guide agent that you can continue via ${SEND_MESSAGE_TOOL_NAME}.`,
   // Ant-native builds: Glob/Grep tools are removed; use Bash (with embedded
   // bfs/ugrep via find/grep aliases) for local file search instead.
   tools: hasEmbeddedSearchTools()
@@ -176,7 +178,7 @@ export const CLAUDE_CODE_GUIDE_AGENT: BuiltInAgentDefinition = {
 
     // Add the feedback guideline (conditional based on whether user is using 3P services)
     const feedbackGuideline = getFeedbackGuideline()
-    const basePromptWithFeedback = `${getClaudeCodeGuideBasePrompt()}
+    const basePromptWithFeedback = `${getQuantumGuideBasePrompt()}
 ${feedbackGuideline}`
 
     // If we have any context to add, append it to the base system prompt
@@ -198,3 +200,6 @@ When answering questions, consider these configured features and proactively sug
     return basePromptWithFeedback
   },
 }
+
+/** @deprecated Use QUANTUM_GUIDE_AGENT */
+export const CLAUDE_CODE_GUIDE_AGENT = QUANTUM_GUIDE_AGENT

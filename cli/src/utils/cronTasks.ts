@@ -1,4 +1,5 @@
-// Scheduled prompts, stored in <project>/.claude/scheduled_tasks.json.
+// Scheduled prompts, stored in <project>/.quantum/scheduled_tasks.json
+// (legacy: <project>/.claude/scheduled_tasks.json).
 //
 // Tasks come in two flavors:
 //   - One-shot (recurring: false/undefined) — fire once, then auto-delete.
@@ -71,7 +72,11 @@ export type CronTask = {
 
 type CronFile = { tasks: CronTask[] }
 
-const CRON_FILE_REL = join('.claude', 'scheduled_tasks.json')
+const CRON_DIR = '.quantum'
+const LEGACY_CRON_DIR = '.claude'
+const CRON_FILE_NAME = 'scheduled_tasks.json'
+const CRON_FILE_REL = join(CRON_DIR, CRON_FILE_NAME)
+const LEGACY_CRON_FILE_REL = join(LEGACY_CRON_DIR, CRON_FILE_NAME)
 
 /**
  * Path to the cron file. `dir` defaults to getProjectRoot() — pass it
@@ -82,22 +87,46 @@ export function getCronFilePath(dir?: string): string {
   return join(dir ?? getProjectRoot(), CRON_FILE_REL)
 }
 
+function getLegacyCronFilePath(dir?: string): string {
+  return join(dir ?? getProjectRoot(), LEGACY_CRON_FILE_REL)
+}
+
+async function readCronFileRaw(dir?: string): Promise<string | null> {
+  const fs = getFsImplementation()
+  for (const path of [getCronFilePath(dir), getLegacyCronFilePath(dir)]) {
+    try {
+      return await fs.readFile(path, { encoding: 'utf-8' })
+    } catch (e: unknown) {
+      if (!isFsInaccessible(e)) {
+        logError(e)
+        return null
+      }
+    }
+  }
+  return null
+}
+
+function readCronFileRawSync(dir?: string): string | null {
+  for (const path of [getCronFilePath(dir), getLegacyCronFilePath(dir)]) {
+    try {
+      // eslint-disable-next-line custom-rules/no-sync-fs -- called once from cronScheduler.start()
+      return readFileSync(path, 'utf-8')
+    } catch {
+      // try legacy path
+    }
+  }
+  return null
+}
+
 /**
- * Read and parse .claude/scheduled_tasks.json. Returns an empty task list if the file
+ * Read and parse scheduled_tasks.json. Returns an empty task list if the file
  * is missing, empty, or malformed. Tasks with invalid cron strings are
  * silently dropped (logged at debug level) so a single bad entry never
  * blocks the whole file.
  */
 export async function readCronTasks(dir?: string): Promise<CronTask[]> {
-  const fs = getFsImplementation()
-  let raw: string
-  try {
-    raw = await fs.readFile(getCronFilePath(dir), { encoding: 'utf-8' })
-  } catch (e: unknown) {
-    if (isFsInaccessible(e)) return []
-    logError(e)
-    return []
-  }
+  const raw = await readCronFileRaw(dir)
+  if (raw === null) return []
 
   const parsed = safeParseJSON(raw, false)
   if (!parsed || typeof parsed !== 'object') return []
@@ -144,13 +173,8 @@ export async function readCronTasks(dir?: string): Promise<CronTask[]> {
  * cronScheduler.start() to decide whether to auto-enable. One file read.
  */
 export function hasCronTasksSync(dir?: string): boolean {
-  let raw: string
-  try {
-    // eslint-disable-next-line custom-rules/no-sync-fs -- called once from cronScheduler.start()
-    raw = readFileSync(getCronFilePath(dir), 'utf-8')
-  } catch {
-    return false
-  }
+  const raw = readCronFileRawSync(dir)
+  if (raw === null) return false
   const parsed = safeParseJSON(raw, false)
   if (!parsed || typeof parsed !== 'object') return false
   const tasks = (parsed as Partial<CronFile>).tasks
@@ -158,7 +182,7 @@ export function hasCronTasksSync(dir?: string): boolean {
 }
 
 /**
- * Overwrite .claude/scheduled_tasks.json with the given tasks. Creates .claude/ if
+ * Overwrite scheduled_tasks.json with the given tasks. Creates .quantum/ if
  * missing. Empty task list writes an empty file (rather than deleting) so
  * the file watcher sees a change event on last-task-removed.
  */
@@ -167,7 +191,7 @@ export async function writeCronTasks(
   dir?: string,
 ): Promise<void> {
   const root = dir ?? getProjectRoot()
-  await mkdir(join(root, '.claude'), { recursive: true })
+  await mkdir(join(root, CRON_DIR), { recursive: true })
   // Strip the runtime-only `durable` flag — everything on disk is durable
   // by definition, and keeping the flag out means readCronTasks() naturally
   // yields durable: undefined without having to set it explicitly.

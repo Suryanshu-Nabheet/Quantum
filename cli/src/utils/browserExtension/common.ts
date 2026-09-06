@@ -9,7 +9,9 @@ import { execFileNoThrow } from '../execFileNoThrow.js'
 import { getPlatform } from '../platform.js'
 import { which } from '../which.js'
 
-export const CLAUDE_IN_CHROME_MCP_SERVER_NAME = 'claude-in-chrome'
+export const BROWSER_EXTENSION_MCP_SERVER_NAME = 'claude-in-chrome'
+/** Wire-protocol alias kept for extension compatibility */
+export const CLAUDE_IN_CHROME_MCP_SERVER_NAME = BROWSER_EXTENSION_MCP_SERVER_NAME
 
 // Re-export ChromiumBrowser type for setup.ts
 export type { ChromiumBrowser } from './setupPortable.js'

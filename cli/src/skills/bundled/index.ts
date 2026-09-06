@@ -1,6 +1,6 @@
-import { shouldAutoEnableClaudeInChrome } from 'src/utils/claudeInChrome/setup.js'
+import { shouldAutoEnableClaudeInChrome } from 'src/utils/browserExtension/setup.js'
 import { registerBatchSkill } from './batch.js'
-import { registerClaudeInChromeSkill } from './claudeInChrome.js'
+import { registerBrowserExtensionSkill } from './browserExtension.js'
 import { registerDebugSkill } from './debug.js'
 import { registerKeybindingsSkill } from './keybindings.js'
 import { registerLoopSkill } from './loop.js'
@@ -53,7 +53,7 @@ export function initBundledSkills(): void {
     registerClaudeApiSkill()
   }
   if (shouldAutoEnableClaudeInChrome()) {
-    registerClaudeInChromeSkill()
+    registerBrowserExtensionSkill()
   }
   if (false) {
     /* eslint-disable @typescript-eslint/no-require-imports */

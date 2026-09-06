@@ -11,7 +11,7 @@ type Props = {
   isStandaloneDialog?: boolean;
   externalIncludes?: ExternalClaudeMdInclude[];
 };
-export function ClaudeMdExternalIncludesDialog(t0: Props) {
+export function QuantumMdExternalIncludesDialog(t0: Props) {
   const $ = _c(18);
   const {
     onDone,

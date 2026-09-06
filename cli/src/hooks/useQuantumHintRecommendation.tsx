@@ -12,7 +12,7 @@ import { c as _c } from "react-compiler-runtime";
 import * as React from 'react';
 import { useNotifications } from '../context/notifications.js';
 import { type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS, type AnalyticsMetadata_I_VERIFIED_THIS_IS_PII_TAGGED, logEvent } from '../services/analytics/index.js';
-import { clearPendingHint, getPendingHintSnapshot, markShownThisSession, subscribeToPendingHint } from '../utils/claudeCodeHints.js';
+import { clearPendingHint, getPendingHintSnapshot, markShownThisSession, subscribeToPendingHint } from '../utils/quantumHints.js';
 import { logForDebugging } from '../utils/debug.js';
 import { disableHintRecommendations, markHintPluginShown, type PluginHintRecommendation, resolvePluginHint } from '../utils/plugins/hintRecommendation.js';
 import { installPluginFromMarketplace } from '../utils/plugins/pluginInstallationHelpers.js';
@@ -21,7 +21,7 @@ type UseClaudeCodeHintRecommendationResult = {
   recommendation: PluginHintRecommendation | null;
   handleResponse: (response: 'yes' | 'no' | 'disable') => void;
 };
-export function useClaudeCodeHintRecommendation() {
+export function useQuantumHintRecommendation() {
   const $ = _c(11);
   const pendingHint = React.useSyncExternalStore(subscribeToPendingHint, getPendingHintSnapshot);
   const {
@@ -42,7 +42,7 @@ export function useClaudeCodeHintRecommendation() {
       tryResolve(async () => {
         const resolved = await resolvePluginHint(pendingHint);
         if (resolved) {
-          logForDebugging(`[useClaudeCodeHintRecommendation] surfacing ${resolved.pluginId} from ${resolved.sourceCommand}`);
+          logForDebugging(`[useQuantumHintRecommendation] surfacing ${resolved.pluginId} from ${resolved.sourceCommand}`);
           markShownThisSession();
         }
         if (getPendingHintSnapshot() === pendingHint) {

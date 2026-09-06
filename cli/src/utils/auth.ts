@@ -66,6 +66,7 @@ import {
 } from './secureStorage/keychainPrefetch.js'
 import {
   clearKeychainCache,
+  getLegacySecureStorageServiceName,
   getMacOsKeychainStorageServiceName,
   getUsername,
 } from './secureStorage/macOsKeychainHelpers.js'
@@ -1085,12 +1086,15 @@ export const getApiKeyFromConfigOrMacOSKeychain = memoize(
         // Prefetch completed with no key — fall through to config, not keychain.
       } else {
         const storageServiceName = getMacOsKeychainStorageServiceName()
+        const legacyServiceName = getLegacySecureStorageServiceName()
         try {
-          const result = execSyncWithDefaults_DEPRECATED(
-            `security find-generic-password -a $USER -w -s "${storageServiceName}"`,
-          )
-          if (result) {
-            return { key: result, source: '/login managed key' }
+          for (const serviceName of [storageServiceName, legacyServiceName]) {
+            const result = execSyncWithDefaults_DEPRECATED(
+              `security find-generic-password -a $USER -w -s "${serviceName}"`,
+            )
+            if (result) {
+              return { key: result, source: '/login managed key' }
+            }
           }
         } catch (e) {
           logError(e)

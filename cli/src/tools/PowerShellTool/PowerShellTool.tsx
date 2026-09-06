@@ -12,7 +12,7 @@ import { buildTool, type ToolDef } from '../../Tool.js';
 import { backgroundExistingForegroundTask, markTaskNotified, registerForeground, spawnShellTask, unregisterForeground } from '../../tasks/LocalShellTask/LocalShellTask.js';
 import type { AgentId } from '../../types/ids.js';
 import type { AssistantMessage } from '../../types/message.js';
-import { extractClaudeCodeHints } from '../../utils/claudeCodeHints.js';
+import { extractClaudeCodeHints } from '../../utils/quantumHints.js';
 import { isEnvTruthy } from '../../utils/envUtils.js';
 import { errorMessage as getErrorMessage, ShellError } from '../../utils/errors.js';
 import { truncate } from '../../utils/format.js';
@@ -573,7 +573,7 @@ export const PowerShellTool = buildTool({
 
       // Claude Code hints protocol: CLIs/SDKs gated on CLAUDECODE=1 emit a
       // `<claude-code-hint />` tag to stderr (merged into stdout here). Scan,
-      // record for useClaudeCodeHintRecommendation to surface, then strip
+      // record for useQuantumHintRecommendation to surface, then strip
       // so the model never sees the tag — a zero-token side channel.
       // Stripping runs unconditionally (subagent output must stay clean too);
       // only the dialog recording is main-thread-only.

@@ -173,9 +173,9 @@ export async function showSetupScreens(root: Root, permissionMode: PermissionMod
     if (await shouldShowClaudeMdExternalIncludesWarning()) {
       const externalIncludes = getExternalClaudeMdIncludes(await getMemoryFiles(true));
       const {
-        ClaudeMdExternalIncludesDialog
-      } = await import('./components/ClaudeMdExternalIncludesDialog.js');
-      await showSetupDialog(root, done => <ClaudeMdExternalIncludesDialog onDone={done} isStandaloneDialog externalIncludes={externalIncludes} />);
+        QuantumMdExternalIncludesDialog
+      } = await import('./components/QuantumMdExternalIncludesDialog.js');
+      await showSetupDialog(root, done => <QuantumMdExternalIncludesDialog onDone={done} isStandaloneDialog externalIncludes={externalIncludes} />);
     }
   }
 
@@ -297,11 +297,11 @@ export async function showSetupScreens(root: Root, permissionMode: PermissionMod
   }
 
   // Show Chrome onboarding for first-time Claude in Chrome users
-  if (claudeInChrome && !getGlobalConfig().hasCompletedClaudeInChromeOnboarding) {
+  if (claudeInChrome && !getGlobalConfig().hasCompletedBrowserExtensionOnboarding) {
     const {
-      ClaudeInChromeOnboarding
-    } = await import('./components/ClaudeInChromeOnboarding.js');
-    await showSetupDialog(root, done => <ClaudeInChromeOnboarding onDone={done} />);
+      BrowserExtensionOnboarding
+    } = await import('./components/BrowserExtensionOnboarding.js');
+    await showSetupDialog(root, done => <BrowserExtensionOnboarding onDone={done} />);
   }
   return onboardingShown;
 }

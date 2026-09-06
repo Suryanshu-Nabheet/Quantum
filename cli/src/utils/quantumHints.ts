@@ -89,18 +89,18 @@ export function extractClaudeCodeHints(
 
     if (!SUPPORTED_VERSIONS.has(v)) {
       logForDebugging(
-        `[claudeCodeHints] dropped hint with unsupported v=${attrs.v}`,
+        `[quantumHints] dropped hint with unsupported v=${attrs.v}`,
       )
       return ''
     }
     if (!type || !SUPPORTED_TYPES.has(type)) {
       logForDebugging(
-        `[claudeCodeHints] dropped hint with unsupported type=${type}`,
+        `[quantumHints] dropped hint with unsupported type=${type}`,
       )
       return ''
     }
     if (!value) {
-      logForDebugging('[claudeCodeHints] dropped hint with empty value')
+      logForDebugging('[quantumHints] dropped hint with empty value')
       return ''
     }
 

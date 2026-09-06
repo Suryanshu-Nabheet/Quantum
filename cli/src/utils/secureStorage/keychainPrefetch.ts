@@ -4,8 +4,9 @@
  *
  * isRemoteManagedSettingsEligible() reads two separate keychain entries
  * SEQUENTIALLY via sync execSync during applySafeConfigEnvironmentVariables():
- *   1. "Claude Code-credentials" (OAuth tokens)  — ~32ms
- *   2. "Claude Code" (legacy API key)            — ~33ms
+ *   1. "Quantum-credentials" (OAuth tokens) — ~32ms
+ *   2. "Quantum" (API key) — ~33ms
+ * Legacy "Claude Code*" entries are prefetched in parallel for migration.
  * Sequential cost: ~65ms on every macOS startup.
  *
  * Firing both here lets the subprocesses run in parallel with the ~65ms of
@@ -25,6 +26,7 @@ import { execFile } from 'child_process'
 import { isBareMode } from '../envUtils.js'
 import {
   CREDENTIALS_SERVICE_SUFFIX,
+  getLegacySecureStorageServiceName,
   getMacOsKeychainStorageServiceName,
   getUsername,
   primeKeychainCacheFromPrefetch,
@@ -72,20 +74,29 @@ export function startKeychainPrefetch(): void {
   // Fire both subprocesses immediately (non-blocking). They run in parallel
   // with each other AND with main.tsx imports. The await in Promise.all
   // happens later via ensureKeychainPrefetchCompleted().
-  const oauthSpawn = spawnSecurity(
+  const oauthQuantumSpawn = spawnSecurity(
     getMacOsKeychainStorageServiceName(CREDENTIALS_SERVICE_SUFFIX),
   )
-  const legacySpawn = spawnSecurity(getMacOsKeychainStorageServiceName())
-
-  prefetchPromise = Promise.all([oauthSpawn, legacySpawn]).then(
-    ([oauth, legacy]) => {
-      // Timed-out prefetch: don't prime. Sync read/spawn will retry with its
-      // own (longer) timeout. Priming null here would shadow a key that the
-      // sync path might successfully fetch.
-      if (!oauth.timedOut) primeKeychainCacheFromPrefetch(oauth.stdout)
-      if (!legacy.timedOut) legacyApiKeyPrefetch = { stdout: legacy.stdout }
-    },
+  const oauthLegacySpawn = spawnSecurity(
+    getLegacySecureStorageServiceName(CREDENTIALS_SERVICE_SUFFIX),
   )
+  const apiKeyQuantumSpawn = spawnSecurity(getMacOsKeychainStorageServiceName())
+  const apiKeyLegacySpawn = spawnSecurity(getLegacySecureStorageServiceName())
+
+  prefetchPromise = Promise.all([
+    oauthQuantumSpawn,
+    oauthLegacySpawn,
+    apiKeyQuantumSpawn,
+    apiKeyLegacySpawn,
+  ]).then(([oauthQuantum, oauthLegacy, apiKeyQuantum, apiKeyLegacy]) => {
+    const oauthTimedOut = oauthQuantum.timedOut || oauthLegacy.timedOut
+    const oauthStdout = oauthQuantum.stdout ?? oauthLegacy.stdout
+    if (!oauthTimedOut) primeKeychainCacheFromPrefetch(oauthStdout)
+
+    const apiKeyTimedOut = apiKeyQuantum.timedOut || apiKeyLegacy.timedOut
+    const apiKeyStdout = apiKeyQuantum.stdout ?? apiKeyLegacy.stdout
+    if (!apiKeyTimedOut) legacyApiKeyPrefetch = { stdout: apiKeyStdout }
+  })
 }
 
 /**

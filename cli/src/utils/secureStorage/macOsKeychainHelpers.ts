@@ -16,7 +16,8 @@
 
 import { createHash } from 'crypto'
 import { userInfo } from 'os'
-import { getOauthConfig } from 'src/constants/oauth.js'
+import { PRODUCT_DISPLAY_NAME } from '../../constants/product.js'
+import { getOauthConfig } from '../../constants/oauth.js'
 import { getClaudeConfigHomeDir } from '../envUtils.js'
 import type { SecureStorageData } from './index.js'
 
@@ -26,6 +27,19 @@ import type { SecureStorageData } from './index.js'
 // orphan existing stored credentials.
 export const CREDENTIALS_SERVICE_SUFFIX = '-credentials'
 
+function buildStorageServiceName(
+  baseName: string,
+  serviceSuffix: string = '',
+): string {
+  const configDir = getClaudeConfigHomeDir()
+  const isDefaultDir = !process.env.CLAUDE_CONFIG_DIR
+
+  const dirHash = isDefaultDir
+    ? ''
+    : `-${createHash('sha256').update(configDir).digest('hex').substring(0, 8)}`
+  return `${baseName}${getOauthConfig().OAUTH_FILE_SUFFIX}${serviceSuffix}${dirHash}`
+}
+
 /**
  * Get the service/resource name for secure storage, scoped by CLAUDE_CONFIG_DIR
  * if it's set to a non-default location.
@@ -33,15 +47,14 @@ export const CREDENTIALS_SERVICE_SUFFIX = '-credentials'
 export function getSecureStorageServiceName(
   serviceSuffix: string = '',
 ): string {
-  const configDir = getClaudeConfigHomeDir()
-  const isDefaultDir = !process.env.CLAUDE_CONFIG_DIR
+  return buildStorageServiceName(PRODUCT_DISPLAY_NAME, serviceSuffix)
+}
 
-  // Use a hash of the config dir path to create a unique but stable suffix
-  // Only add suffix for non-default directories to maintain backwards compatibility
-  const dirHash = isDefaultDir
-    ? ''
-    : `-${createHash('sha256').update(configDir).digest('hex').substring(0, 8)}`
-  return `Claude Code${getOauthConfig().OAUTH_FILE_SUFFIX}${serviceSuffix}${dirHash}`
+/** Legacy keychain service name for credentials migrated from Claude Code. */
+export function getLegacySecureStorageServiceName(
+  serviceSuffix: string = '',
+): string {
+  return buildStorageServiceName('Claude Code', serviceSuffix)
 }
 
 export function getMacOsKeychainStorageServiceName(
@@ -54,7 +67,7 @@ export function getUsername(): string {
   try {
     return process.env.USER || userInfo().username
   } catch {
-    return 'claude-code-user'
+    return 'quantum-user'
   }
 }
 

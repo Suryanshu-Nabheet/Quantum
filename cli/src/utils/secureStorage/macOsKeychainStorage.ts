@@ -6,6 +6,7 @@ import { jsonParse, jsonStringify } from '../slowOperations.js'
 import {
   CREDENTIALS_SERVICE_SUFFIX,
   clearKeychainCache,
+  getLegacySecureStorageServiceName,
   getMacOsKeychainStorageServiceName,
   getUsername,
   KEYCHAIN_CACHE_TTL_MS,
@@ -23,6 +24,57 @@ import type { SecureStorage, SecureStorageData } from './index.js'
 // accounting differences.
 const SECURITY_STDIN_LINE_LIMIT = 4096 - 64
 
+function readFromKeychainService(
+  storageServiceName: string,
+): SecureStorageData | null {
+  const username = getUsername()
+  const result = execSyncWithDefaults_DEPRECATED(
+    `security find-generic-password -a "${username}" -w -s "${storageServiceName}"`,
+  )
+  return result ? jsonParse(result) : null
+}
+
+async function readFromKeychainServiceAsync(
+  storageServiceName: string,
+): Promise<SecureStorageData | null> {
+  const username = getUsername()
+  const { stdout, code } = await execFileNoThrow(
+    'security',
+    ['find-generic-password', '-a', username, '-w', '-s', storageServiceName],
+    { useCwd: false, preserveOutputOnError: false },
+  )
+  if (code === 0 && stdout) {
+    return jsonParse(stdout.trim())
+  }
+  return null
+}
+
+function readKeychainCredentials(): SecureStorageData | null {
+  const quantumServiceName = getMacOsKeychainStorageServiceName(
+    CREDENTIALS_SERVICE_SUFFIX,
+  )
+  const quantumData = readFromKeychainService(quantumServiceName)
+  if (quantumData) return quantumData
+
+  const legacyServiceName = getLegacySecureStorageServiceName(
+    CREDENTIALS_SERVICE_SUFFIX,
+  )
+  return readFromKeychainService(legacyServiceName)
+}
+
+async function readKeychainCredentialsAsync(): Promise<SecureStorageData | null> {
+  const quantumServiceName = getMacOsKeychainStorageServiceName(
+    CREDENTIALS_SERVICE_SUFFIX,
+  )
+  const quantumData = await readFromKeychainServiceAsync(quantumServiceName)
+  if (quantumData) return quantumData
+
+  const legacyServiceName = getLegacySecureStorageServiceName(
+    CREDENTIALS_SERVICE_SUFFIX,
+  )
+  return readFromKeychainServiceAsync(legacyServiceName)
+}
+
 export const macOsKeychainStorage = {
   name: 'keychain',
   read(): SecureStorageData | null {
@@ -32,15 +84,8 @@ export const macOsKeychainStorage = {
     }
 
     try {
-      const storageServiceName = getMacOsKeychainStorageServiceName(
-        CREDENTIALS_SERVICE_SUFFIX,
-      )
-      const username = getUsername()
-      const result = execSyncWithDefaults_DEPRECATED(
-        `security find-generic-password -a "${username}" -w -s "${storageServiceName}"`,
-      )
-      if (result) {
-        const data = jsonParse(result)
+      const data = readKeychainCredentials()
+      if (data) {
         keychainCacheState.cache = { data, cachedAt: Date.now() }
         return data
       }
@@ -177,18 +222,7 @@ export const macOsKeychainStorage = {
 
 async function doReadAsync(): Promise<SecureStorageData | null> {
   try {
-    const storageServiceName = getMacOsKeychainStorageServiceName(
-      CREDENTIALS_SERVICE_SUFFIX,
-    )
-    const username = getUsername()
-    const { stdout, code } = await execFileNoThrow(
-      'security',
-      ['find-generic-password', '-a', username, '-w', '-s', storageServiceName],
-      { useCwd: false, preserveOutputOnError: false },
-    )
-    if (code === 0 && stdout) {
-      return jsonParse(stdout.trim())
-    }
+    return await readKeychainCredentialsAsync()
   } catch (_e) {
     // fall through
   }

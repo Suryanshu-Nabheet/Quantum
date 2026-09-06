@@ -531,7 +531,7 @@ export type GlobalConfig = {
   officialMarketplaceAutoInstallNextRetryTime?: number // Earliest time to retry again
 
   // Claude in Chrome settings
-  hasCompletedClaudeInChromeOnboarding?: boolean // Whether Claude in Chrome onboarding has been shown
+  hasCompletedBrowserExtensionOnboarding?: boolean // Whether Claude in Chrome onboarding has been shown
   claudeInChromeDefaultEnabled?: boolean // Whether Claude in Chrome is enabled by default (undefined means platform default)
   cachedChromeExtensionInstalled?: boolean // Cached result of whether Chrome extension is installed
 
@@ -549,7 +549,7 @@ export type GlobalConfig = {
   // Claude Code hint protocol state (<claude-code-hint /> tags from CLIs/SDKs).
   // Nested by hint type so future types (docs, mcp, ...) slot in without new
   // top-level keys.
-  claudeCodeHints?: {
+  quantumHints?: {
     // Plugin IDs the user has already been prompted for. Show-once semantics:
     // recorded regardless of yes/no response, never re-prompted. Capped at
     // 100 entries to bound config growth — past that, hints stop entirely.
@@ -723,7 +723,7 @@ export const GLOBAL_CONFIG_KEYS = [
   'agentPushNotifEnabled',
   'respectGitignore',
   'claudeInChromeDefaultEnabled',
-  'hasCompletedClaudeInChromeOnboarding',
+  'hasCompletedBrowserExtensionOnboarding',
   'lspRecommendationDisabled',
   'lspRecommendationNeverPlugins',
   'lspRecommendationIgnoredCount',

@@ -14,7 +14,7 @@ import { afterEach, expect, test } from 'bun:test'
 import { clearSystemPromptSections } from './systemPromptSections.js'
 import { getSystemPrompt, DEFAULT_AGENT_PROMPT } from './prompts.js'
 import { CLI_SYSPROMPT_PREFIXES, getCLISyspromptPrefix } from './system.js'
-import { CLAUDE_CODE_GUIDE_AGENT } from '../tools/AgentTool/built-in/claudeCodeGuideAgent.js'
+import { QUANTUM_GUIDE_AGENT } from '../tools/AgentTool/built-in/quantumGuideAgent.js'
 import { GENERAL_PURPOSE_AGENT } from '../tools/AgentTool/built-in/generalPurposeAgent.js'
 import { EXPLORE_AGENT } from '../tools/AgentTool/built-in/exploreAgent.js'
 import { PLAN_AGENT } from '../tools/AgentTool/built-in/planAgent.js'
@@ -95,7 +95,7 @@ test('built-in agent prompts describe Quantum instead of Claude Code', () => {
   expect(statuslinePrompt).toContain('Quantum')
   expect(statuslinePrompt).not.toContain('Claude Code')
 
-  const guidePrompt = CLAUDE_CODE_GUIDE_AGENT.getSystemPrompt({
+  const guidePrompt = QUANTUM_GUIDE_AGENT.getSystemPrompt({
     toolUseContext: {
       options: {
         commands: [],
