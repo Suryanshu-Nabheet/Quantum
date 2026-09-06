@@ -1,5 +1,7 @@
 export const PRODUCT_DISPLAY_NAME = 'Quantum'
+export const CLI_COMMAND_NAME = 'quantum'
 export const PRODUCT_URL = 'https://github.com/Suryanshu-Nabheet/Quantum'
+export const DOCS_URL = 'https://github.com/Suryanshu-Nabheet/Quantum/blob/main/cli/README.md'
 
 // Remote session URLs (when connecting to Claude.ai or compatible backend)
 export const CLAUDE_AI_BASE_URL = 'https://claude.ai'

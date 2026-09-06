@@ -6,5 +6,5 @@
  */
 
 export function getClaudeCodeUserAgent(): string {
-  return `claude-code/${MACRO.VERSION}`
+  return `quantum/${MACRO.DISPLAY_VERSION ?? MACRO.VERSION}`
 }

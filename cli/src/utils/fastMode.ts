@@ -18,6 +18,7 @@ import {
 } from './auth.js'
 import { isInBundledMode } from './bundledMode.js'
 import { getGlobalConfig, saveGlobalConfig } from './config.js'
+import { PRODUCT_URL } from '../constants/product.js'
 import { logForDebugging } from './debug.js'
 import { isEnvTruthy } from './envUtils.js'
 import {
@@ -97,7 +98,7 @@ export function getFastModeUnavailableReason(): string | null {
     !isInBundledMode() &&
     getFeatureValue_CACHED_MAY_BE_STALE('tengu_marble_sandcastle', false)
   ) {
-    return 'Fast mode requires the native binary · Install from: https://claude.com/product/claude-code'
+    return `Fast mode requires the native binary · Install from: ${PRODUCT_URL}`
   }
 
   // Not available in the SDK unless explicitly opted in via --settings.

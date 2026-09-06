@@ -234,7 +234,7 @@ function ClaudeInChromeMenu(t0) {
   }
   let t10;
   if ($[33] === Symbol.for("react.memo_cache_sentinel")) {
-    t10 = <Text dimColor={true}>Learn more: https://code.claude.com/docs/en/chrome</Text>;
+    t10 = <Text dimColor={true}>Learn more: https://github.com/Suryanshu-Nabheet/Quantum/blob/main/cli/README.md</Text>;
     $[33] = t10;
   } else {
     t10 = $[33];
@@ -251,7 +251,7 @@ function ClaudeInChromeMenu(t0) {
   }
   let t12;
   if ($[38] !== t11 || $[39] !== t5) {
-    t12 = <Dialog title="Claude in Chrome (Beta)" onCancel={t5} color="chromeYellow">{t11}</Dialog>;
+    t12 = <Dialog title="Quantum Browser Extension (Beta)" onCancel={t5} color="chromeYellow">{t11}</Dialog>;
     $[38] = t11;
     $[39] = t5;
     $[40] = t12;

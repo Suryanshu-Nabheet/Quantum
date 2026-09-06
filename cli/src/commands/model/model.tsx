@@ -571,7 +571,7 @@ function SetModelAndClose({
 
       if (model && isOpus1mUnavailable(model)) {
         onDone(
-          'Opus 4.6 with 1M context is not available for your account. Learn more: https://code.claude.com/docs/en/model-config#extended-context-with-1m',
+          'Opus 4.6 with 1M context is not available for your account. Learn more: https://github.com/Suryanshu-Nabheet/Quantum/blob/main/cli/README.md',
           {
             display: 'system',
           },
@@ -580,7 +580,7 @@ function SetModelAndClose({
       }
       if (model && isSonnet1mUnavailable(model)) {
         onDone(
-          'Sonnet 4.6 with 1M context is not available for your account. Learn more: https://code.claude.com/docs/en/model-config#extended-context-with-1m',
+          'Sonnet 4.6 with 1M context is not available for your account. Learn more: https://github.com/Suryanshu-Nabheet/Quantum/blob/main/cli/README.md',
           {
             display: 'system',
           },
