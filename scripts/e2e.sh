@@ -125,6 +125,8 @@ if [[ "$RUN_AGENT" == "true" ]]; then
 	run_step "Agent desktop smoke" bash -c 'cd agent && bun run test:desktop-smoke'
 	run_step "Agent dev dry-run" bash -c \
 		'cd agent && env -u QUANTUM_AUTH_TOKEN QUANTUM_NO_BROWSER=1 bun run dev -- --dry-run --home-dir ./.quantum-e2e-test'
+	run_step "Agent desktop dev dry-run" bash -c \
+		'cd agent && env -u QUANTUM_AUTH_TOKEN QUANTUM_NO_BROWSER=1 bun run dev:desktop -- --dry-run --home-dir ./.quantum-e2e-desktop-test'
 	if [[ "$MODE" == "full" ]]; then
 		run_step "Agent server unit tests (full)" bash -c 'cd agent/apps/server && bun run test'
 	fi
