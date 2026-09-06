@@ -45,6 +45,7 @@ scripts\code.bat                               # Windows
 | Script | Purpose |
 |--------|---------|
 | `setup.sh` / `setup.bat` | Full dev setup (install, compile, launch) |
+| `node-ts.sh` | Run TypeScript build scripts (`--experimental-strip-types` + `.nvmrc` check) |
 | `verify-dev.sh` | Check Node, deps, build, bins, typecheck |
 | `code.sh` / `code.bat` | Run dev build of Quantum |
 | `code-cli.sh` / `code-cli.bat` | CLI entry |

@@ -11,6 +11,9 @@ const layer = it.layer(
 );
 
 layer("ThreadDiagnosticsQuery", (it) => {
+  const recentTimestamp = (offsetMs: number) =>
+    new Date(Date.now() - offsetMs).toISOString();
+
   it.effect("pages filtered activity at a captured high-water sequence", () =>
     Effect.gen(function* () {
       const sql = yield* SqlClient.SqlClient;
@@ -54,7 +57,7 @@ layer("ThreadDiagnosticsQuery", (it) => {
         severity: "warning",
         code: "THREAD_STREAM_CAPACITY_EXCEEDED",
         detail: { reason: "thread-capacity", activeThreads: 16 },
-        occurredAt: "2026-07-20T10:00:00.000Z",
+        occurredAt: recentTimestamp(60_000),
       });
       yield* diagnostics.recordOperationalDiagnostic({
         threadId: "thread-2",
@@ -62,7 +65,7 @@ layer("ThreadDiagnosticsQuery", (it) => {
         kind: "ws.stream-admission-rejected",
         severity: "warning",
         detail: { reason: "duplicate" },
-        occurredAt: "2026-07-20T10:00:01.000Z",
+        occurredAt: recentTimestamp(30_000),
       });
 
       const incidents = yield* diagnostics.listOperationalDiagnostics({

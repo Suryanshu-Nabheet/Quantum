@@ -360,11 +360,11 @@ jobs:
       - name: Build CLI package
         run: |
           bun run build:contracts
-          node apps/server/scripts/cli.ts build
+          bun run scripts/cli.ts build
 
       - name: Publish CLI to npm
         run: |
-          node apps/server/scripts/cli.ts publish \
+          bun run scripts/cli.ts publish \
             --app-version "${{ needs.preflight.outputs.version }}" \
             --access public \
             --tag latest \

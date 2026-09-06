@@ -81,6 +81,8 @@ quantum/
 │   ├── bin/               # Executable entrypoint
 │   └── src/               # Agent execution engine and provider drivers
 │
+├── scripts/               # Monorepo setup and verification (./scripts/setup.sh)
+│
 ├── docs/                  # Central System Documentation
 │   └── readme.md          # Architectural specifications
 │
@@ -97,6 +99,36 @@ quantum/
 - **Model Context Protocol (MCP) Compliance**: Standardized tool calling, resource resolution, and custom prompt execution across all interfaces.
 - **Multi-Model Support**: Native integrations for Anthropic Claude, OpenAI GPT, Google Gemini, DeepSeek, xAI Grok, AWS Bedrock, Azure OpenAI, and local inference via Ollama.
 - **Modular Packaging**: Subsystems maintain explicit boundaries, distinct build toolchains, and independent release cycles.
+
+---
+
+## Getting Started
+
+One command sets up all three subsystems (CLI, Agent Manager, IDE):
+
+```bash
+./scripts/setup.sh
+```
+
+| Platform | Command |
+|----------|---------|
+| macOS / Linux | `./scripts/setup.sh` |
+| Windows | `scripts\setup.bat` |
+
+**Prerequisites:** [Bun](https://bun.sh) (>= 1.3.9), Node.js (>= 22; IDE pins 22.22.1 via `ide/.nvmrc`), Python 3.10–3.13 for IDE native modules.
+
+```bash
+# Verify after setup
+./scripts/verify.sh
+./scripts/e2e.sh
+
+# Launch individual products
+./cli/bin/quantum              # Terminal agent
+cd agent && bun run dev        # Agent Manager
+cd ide && ./scripts/code.sh    # IDE
+```
+
+See [scripts/README.md](scripts/README.md) for flags (`--skip-ide`, `--launch-ide`, per-subsystem setup) and troubleshooting.
 
 ---
 

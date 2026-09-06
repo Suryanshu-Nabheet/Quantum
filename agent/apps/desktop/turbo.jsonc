@@ -7,16 +7,16 @@
       "outputs": ["dist-electron/**"],
     },
     "dev": {
-      "dependsOn": ["@quantum/cli#build"],
+      "dependsOn": ["@quantum/server#build"],
       "persistent": true,
     },
     "start": {
-      "dependsOn": ["build", "@quantum/web#build", "@quantum/cli#build"],
+      "dependsOn": ["build", "@quantum/web#build", "@quantum/server#build"],
       "cache": false,
       "persistent": true,
     },
     "smoke-test": {
-      "dependsOn": ["build", "@quantum/web#build", "@quantum/cli#build"],
+      "dependsOn": ["build", "@quantum/web#build", "@quantum/server#build"],
       "cache": false,
       "outputs": [],
     },

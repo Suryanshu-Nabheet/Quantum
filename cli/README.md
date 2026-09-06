@@ -29,6 +29,12 @@ Quantum CLI is a professional-grade, high-performance terminal agent designed fo
 ### Setup Process
 
 ```bash
+# From monorepo root (recommended)
+../scripts/setup.sh --skip-agent --skip-ide
+
+# Or from this directory
+./scripts/setup.sh
+
 # Install dependencies
 bun install
 

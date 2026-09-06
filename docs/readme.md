@@ -75,6 +75,7 @@ quantum/
 ├── agent/       # Quantum Agent Manager desktop app and orchestration server
 ├── ide/         # Quantum IDE editor core and workbench extensions
 ├── cli/         # Quantum CLI binary and execution engine
+├── scripts/     # Monorepo setup (./scripts/setup.sh) and verification
 ├── docs/        # Architectural documentation and specifications
 ├── LICENCE      # MIT License
 ├── CONTRIBUTING.md # Contribution policies

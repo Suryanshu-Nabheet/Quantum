@@ -11,6 +11,17 @@ Quantum is organized into three distinct subsystems:
 - `cli/` — Quantum CLI (Terminal-first AI coding agent)
 - `docs/` — System architecture and ecosystem specifications
 
+## Development setup
+
+From the monorepo root:
+
+```bash
+./scripts/setup.sh          # Install + build CLI, Agent Manager, and IDE
+./scripts/verify.sh         # Confirm all subsystems are ready
+```
+
+Per-subsystem setup scripts live in `cli/scripts/`, `agent/scripts/`, and `ide/scripts/`. See [scripts/README.md](scripts/README.md).
+
 ## Guidelines
 
 1. **Isolation Principle**: Keep subsystem-specific dependencies, configs, and documentation cleanly contained inside each subsystem directory.

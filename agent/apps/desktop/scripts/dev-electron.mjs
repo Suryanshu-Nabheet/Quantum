@@ -12,7 +12,7 @@ const devServerUrl = `http://localhost:${port}`;
 const serverDistIndex = join(desktopDir, "../server/dist/index.mjs");
 if (!existsSync(serverDistIndex)) {
   console.log("[desktop-dev] Server CLI not built yet, building @quantum/server...");
-  spawnSync("node", ["scripts/cli.ts", "build"], {
+  spawnSync("bun", ["run", "scripts/cli.ts", "build"], {
     cwd: join(desktopDir, "../server"),
     stdio: "inherit",
     env: process.env,

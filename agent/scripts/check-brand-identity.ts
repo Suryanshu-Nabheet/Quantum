@@ -52,7 +52,28 @@ interface ApprovedAttribution {
   readonly markdownSection?: string;
 }
 
-const approvedAttributions: readonly ApprovedAttribution[] = [];
+const approvedLegalNotice = `Copyright (c) 2026 ${retiredCompanyDisplayName} Inc.`;
+const approvedOriginsAttribution = `Quantum began as a clone of [${retiredFirstDisplayName}](https://github.com/pingdotgg/${retiredFirstName}), but it has since become a substantially different product with its own branding, packaging, release system, provider orchestration, desktop app behavior, and product direction.`;
+const approvedReleaseAttribution = `**A review of the Quantum codebase found an analytics configuration that came from the original ${retiredFirstSpacedDisplayName} codebase when Quantum was created as a clone in March. We did not add it, and we have no access to the PostHog project receiving the events.**`;
+const approvedInAppReleaseAttribution = `"A review of the Quantum codebase found an analytics configuration that came from the original ${retiredFirstSpacedDisplayName} codebase when Quantum was created as a clone in March.",`;
+
+const approvedAttributions: readonly ApprovedAttribution[] = [
+  { path: "LICENSE", line: approvedLegalNotice },
+  {
+    path: "README.md",
+    line: approvedOriginsAttribution,
+    markdownSection: "## Origins",
+  },
+  {
+    path: "CHANGELOG.md",
+    line: approvedReleaseAttribution,
+    markdownSection: "## 0.7.0 - 2026-08-05",
+  },
+  {
+    path: "apps/web/src/whatsNew/entries.ts",
+    line: approvedInAppReleaseAttribution,
+  },
+];
 
 // Raster images cannot be searched for embedded text. Keep the user-facing
 // screenshots behind reviewed digests so changing either one requires another

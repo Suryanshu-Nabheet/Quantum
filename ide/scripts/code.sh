@@ -27,7 +27,7 @@ function code() {
 
 	# Get electron, compile, built-in extensions
 	if [[ -z "${VSCODE_SKIP_PRELAUNCH}" ]]; then
-		node build/lib/preLaunch.ts
+		"$ROOT/scripts/node-ts.sh" build/lib/preLaunch.ts
 	fi
 
 	# Electron re-download rewrites the .app; always re-apply the branded dock icon after.

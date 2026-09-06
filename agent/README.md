@@ -31,6 +31,12 @@ Quantum Agent Manager brings multi-model chats, terminals, browser previews, uni
 ### Installation & Development
 
 ```sh
+# From monorepo root (recommended — sets up CLI + Agent + IDE together)
+../scripts/setup.sh --skip-cli --skip-ide
+
+# Or from this directory only
+./scripts/setup.sh
+
 # Install dependencies
 bun install
 
