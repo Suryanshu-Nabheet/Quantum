@@ -42,7 +42,7 @@ function log(message: string, ...args: unknown[]): void {
       // Ignore file write errors
     })
   }
-  console.error(`[Claude Chrome Native Host] ${message}`, ...args)
+  console.error(`[Quantum Browser Native Host] ${message}`, ...args)
 }
 /**
  * Send a message to stdout (Chrome native messaging protocol)

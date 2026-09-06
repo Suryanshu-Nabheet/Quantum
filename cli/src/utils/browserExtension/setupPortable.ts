@@ -152,7 +152,7 @@ export async function detectExtensionInstallationPortable(
   browser: ChromiumBrowser | null
 }> {
   if (browserPaths.length === 0) {
-    log?.(`[Claude in Chrome] No browser paths to check`)
+    log?.(`[Browser Extension] No browser paths to check`)
     return { isInstalled: false, browser: null }
   }
 
@@ -181,7 +181,7 @@ export async function detectExtensionInstallationPortable(
 
     if (profileDirs.length > 0) {
       log?.(
-        `[Claude in Chrome] Found ${browser} profiles: ${profileDirs.join(', ')}`,
+        `[Browser Extension] Found ${browser} profiles: ${profileDirs.join(', ')}`,
       )
     }
 
@@ -198,7 +198,7 @@ export async function detectExtensionInstallationPortable(
         try {
           await readdir(extensionPath)
           log?.(
-            `[Claude in Chrome] Extension ${extensionId} found in ${browser} ${profile}`,
+            `[Browser Extension] Extension ${extensionId} found in ${browser} ${profile}`,
           )
           return { isInstalled: true, browser }
         } catch {
@@ -208,7 +208,7 @@ export async function detectExtensionInstallationPortable(
     }
   }
 
-  log?.(`[Claude in Chrome] Extension not found in any browser`)
+  log?.(`[Browser Extension] Extension not found in any browser`)
   return { isInstalled: false, browser: null }
 }
 

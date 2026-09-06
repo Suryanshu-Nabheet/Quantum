@@ -22,7 +22,7 @@ type Props = {
   isClaudeAISubscriber: boolean;
   isWSL: boolean;
 };
-function ClaudeInChromeMenu(t0) {
+function BrowserExtensionMenu(t0) {
   const $ = _c(41);
   const {
     onDone,
@@ -197,14 +197,14 @@ function ClaudeInChromeMenu(t0) {
   }
   let t6;
   if ($[20] === Symbol.for("react.memo_cache_sentinel")) {
-    t6 = <Text>Claude in Chrome works with the Chrome extension to let you control your browser directly from Quantum. Navigate websites, fill forms, capture screenshots, record GIFs, and debug with console logs and network requests.</Text>;
+    t6 = <Text>The browser extension works with Chrome to let you control your browser directly from Quantum. Navigate websites, fill forms, capture screenshots, record GIFs, and debug with console logs and network requests.</Text>;
     $[20] = t6;
   } else {
     t6 = $[20];
   }
   let t7;
   if ($[21] !== isWSL) {
-    t7 = isWSL && <Text color="error">Claude in Chrome is not supported in WSL at this time.</Text>;
+    t7 = isWSL && <Text color="error">The browser extension is not supported in WSL at this time.</Text>;
     $[21] = isWSL;
     $[22] = t7;
   } else {
@@ -212,7 +212,7 @@ function ClaudeInChromeMenu(t0) {
   }
   let t8;
   if ($[23] !== isClaudeAISubscriber) {
-    t8 = true && !isClaudeAISubscriber && <Text color="error">Claude in Chrome requires a claude.ai subscription.</Text>;
+    t8 = true && !isClaudeAISubscriber && <Text color="error">The browser extension requires a claude.ai subscription.</Text>;
     $[23] = isClaudeAISubscriber;
     $[24] = t8;
   } else {
@@ -220,7 +220,7 @@ function ClaudeInChromeMenu(t0) {
   }
   let t9;
   if ($[25] !== handleAction || $[26] !== isConnected || $[27] !== isDisabled || $[28] !== isExtensionInstalled || $[29] !== options || $[30] !== selectKey || $[31] !== showInstallHint) {
-    t9 = !isDisabled && <>{!isHomespace && <Box flexDirection="column"><Text>Status:{" "}{isConnected ? <Text color="success">Enabled</Text> : <Text color="inactive">Disabled</Text>}</Text><Text>Extension:{" "}{isExtensionInstalled ? <Text color="success">Installed</Text> : <Text color="warning">Not detected</Text>}</Text></Box>}<Select key={selectKey} options={options} onChange={handleAction} hideIndexes={true} />{showInstallHint && <Text color="warning">Once installed, select {"\"Reconnect extension\""} to connect.</Text>}<Text><Text dimColor={true}>Usage: </Text><Text>claude --chrome</Text><Text dimColor={true}> or </Text><Text>claude --no-chrome</Text></Text><Text dimColor={true}>Site-level permissions are inherited from the Chrome extension. Manage permissions in the Chrome extension settings to control which sites Claude can browse, click, and type on.</Text></>;
+    t9 = !isDisabled && <>{!isHomespace && <Box flexDirection="column"><Text>Status:{" "}{isConnected ? <Text color="success">Enabled</Text> : <Text color="inactive">Disabled</Text>}</Text><Text>Extension:{" "}{isExtensionInstalled ? <Text color="success">Installed</Text> : <Text color="warning">Not detected</Text>}</Text></Box>}<Select key={selectKey} options={options} onChange={handleAction} hideIndexes={true} />{showInstallHint && <Text color="warning">Once installed, select {"\"Reconnect extension\""} to connect.</Text>}<Text><Text dimColor={true}>Usage: </Text><Text>quantum --chrome</Text><Text dimColor={true}> or </Text><Text>quantum --no-chrome</Text></Text><Text dimColor={true}>Site-level permissions are inherited from the Chrome extension. Manage permissions in the Chrome extension settings to control which sites Quantum can browse, click, and type on.</Text></>;
     $[25] = handleAction;
     $[26] = isConnected;
     $[27] = isDisabled;
@@ -280,5 +280,5 @@ export const call = async function (onDone: (result?: string) => void): Promise<
   const config = getGlobalConfig();
   const isSubscriber = isClaudeAISubscriber();
   const isWSL = env.isWslEnvironment();
-  return <ClaudeInChromeMenu onDone={onDone} isExtensionInstalled={isExtensionInstalled} configEnabled={config.claudeInChromeDefaultEnabled} isClaudeAISubscriber={isSubscriber} isWSL={isWSL} />;
+  return <BrowserExtensionMenu onDone={onDone} isExtensionInstalled={isExtensionInstalled} configEnabled={config.claudeInChromeDefaultEnabled} isClaudeAISubscriber={isSubscriber} isWSL={isWSL} />;
 };
