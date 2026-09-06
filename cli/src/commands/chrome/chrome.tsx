@@ -102,7 +102,7 @@ function BrowserExtensionMenu(t0) {
             const newValue = !enabledByDefault;
             saveGlobalConfig(current => ({
               ...current,
-              claudeInChromeDefaultEnabled: newValue
+              browserExtensionDefaultEnabled: newValue
             }));
             setEnabledByDefault(newValue);
           }
@@ -280,5 +280,5 @@ export const call = async function (onDone: (result?: string) => void): Promise<
   const config = getGlobalConfig();
   const isSubscriber = isClaudeAISubscriber();
   const isWSL = env.isWslEnvironment();
-  return <BrowserExtensionMenu onDone={onDone} isExtensionInstalled={isExtensionInstalled} configEnabled={config.claudeInChromeDefaultEnabled} isClaudeAISubscriber={isSubscriber} isWSL={isWSL} />;
+  return <BrowserExtensionMenu onDone={onDone} isExtensionInstalled={isExtensionInstalled} configEnabled={config.browserExtensionDefaultEnabled ?? config.claudeInChromeDefaultEnabled} isClaudeAISubscriber={isSubscriber} isWSL={isWSL} />;
 };

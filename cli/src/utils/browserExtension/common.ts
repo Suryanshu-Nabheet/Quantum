@@ -410,8 +410,13 @@ export async function detectAvailableBrowser(): Promise<ChromiumBrowser | null> 
   return null
 }
 
+export function isBrowserExtensionMCPServer(name: string): boolean {
+  return normalizeNameForMCP(name) === BROWSER_EXTENSION_MCP_SERVER_NAME
+}
+
+/** @deprecated Use isBrowserExtensionMCPServer */
 export function isClaudeInChromeMCPServer(name: string): boolean {
-  return normalizeNameForMCP(name) === CLAUDE_IN_CHROME_MCP_SERVER_NAME
+  return isBrowserExtensionMCPServer(name)
 }
 
 const MAX_TRACKED_TABS = 200
@@ -529,7 +534,7 @@ export function getAllSocketPaths(): string[] {
 }
 
 function getSocketName(): string {
-  // NOTE: This must match the one used in the Claude in Chrome MCP
+  // NOTE: This must match the one used in the browser extension MCP
   return `claude-mcp-browser-bridge-${getUsername()}`
 }
 

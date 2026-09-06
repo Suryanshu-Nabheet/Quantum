@@ -530,9 +530,11 @@ export type GlobalConfig = {
   officialMarketplaceAutoInstallLastAttemptTime?: number // Timestamp of last attempt
   officialMarketplaceAutoInstallNextRetryTime?: number // Earliest time to retry again
 
-  // Claude in Chrome settings
-  hasCompletedBrowserExtensionOnboarding?: boolean // Whether Claude in Chrome onboarding has been shown
-  claudeInChromeDefaultEnabled?: boolean // Whether Claude in Chrome is enabled by default (undefined means platform default)
+  // Browser extension settings
+  hasCompletedBrowserExtensionOnboarding?: boolean // Whether browser extension onboarding has been shown
+  browserExtensionDefaultEnabled?: boolean // Whether browser extension is enabled by default
+  /** @deprecated Use browserExtensionDefaultEnabled */
+  claudeInChromeDefaultEnabled?: boolean
   cachedChromeExtensionInstalled?: boolean // Cached result of whether Chrome extension is installed
 
   // Chrome extension pairing state (persisted across sessions)
@@ -546,7 +548,7 @@ export type GlobalConfig = {
   lspRecommendationNeverPlugins?: string[] // Plugin IDs to never suggest
   lspRecommendationIgnoredCount?: number // Track ignored recommendations (stops after 5)
 
-  // Claude Code hint protocol state (<claude-code-hint /> tags from CLIs/SDKs).
+  // Quantum hint protocol state (<claude-code-hint /> wire tag from CLIs/SDKs).
   // Nested by hint type so future types (docs, mcp, ...) slot in without new
   // top-level keys.
   quantumHints?: {
@@ -722,6 +724,7 @@ export const GLOBAL_CONFIG_KEYS = [
   'inputNeededNotifEnabled',
   'agentPushNotifEnabled',
   'respectGitignore',
+  'browserExtensionDefaultEnabled',
   'claudeInChromeDefaultEnabled',
   'hasCompletedBrowserExtensionOnboarding',
   'lspRecommendationDisabled',

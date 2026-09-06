@@ -102,8 +102,8 @@ import { getActiveAgentsFromList, getAgentDefinitionsWithOverrides, isBuiltInAge
 import type { LogOption } from './types/logs.js';
 import type { Message as MessageType } from './types/message.js';
 import { assertMinVersion } from './utils/autoUpdater.js';
-import { CLAUDE_IN_CHROME_SKILL_HINT, CLAUDE_IN_CHROME_SKILL_HINT_WITH_WEBBROWSER } from './utils/browserExtension/prompt.js';
-import { setupClaudeInChrome, shouldAutoEnableClaudeInChrome, shouldEnableClaudeInChrome } from './utils/browserExtension/setup.js';
+import { BROWSER_EXTENSION_SKILL_HINT, BROWSER_EXTENSION_SKILL_HINT_WITH_WEBBROWSER } from './utils/browserExtension/prompt.js';
+import { setupBrowserExtension, shouldAutoEnableClaudeInChrome, shouldEnableClaudeInChrome } from './utils/browserExtension/setup.js';
 import { getContextWindowForModel } from './utils/context.js';
 import { loadConversationForResume } from './utils/conversationRecovery.js';
 import { buildDeepLinkBanner } from './utils/deepLink/banner.js';
@@ -1541,7 +1541,7 @@ async function run(): Promise<CommanderCommand> {
           mcpConfig: chromeMcpConfig,
           allowedTools: chromeMcpTools,
           systemPrompt: chromeSystemPrompt
-        } = setupClaudeInChrome();
+        } = setupBrowserExtension();
         dynamicMcpConfig = {
           ...dynamicMcpConfig,
           ...chromeMcpConfig
@@ -1564,12 +1564,12 @@ async function run(): Promise<CommanderCommand> {
       try {
         const {
           mcpConfig: chromeMcpConfig
-        } = setupClaudeInChrome();
+        } = setupBrowserExtension();
         dynamicMcpConfig = {
           ...dynamicMcpConfig,
           ...chromeMcpConfig
         };
-        const hint = false && typeof Bun !== 'undefined' && 'WebView' in Bun ? CLAUDE_IN_CHROME_SKILL_HINT_WITH_WEBBROWSER : CLAUDE_IN_CHROME_SKILL_HINT;
+        const hint = false && typeof Bun !== 'undefined' && 'WebView' in Bun ? BROWSER_EXTENSION_SKILL_HINT_WITH_WEBBROWSER : BROWSER_EXTENSION_SKILL_HINT;
         appendSystemPrompt = appendSystemPrompt ? `${appendSystemPrompt}\n\n${hint}` : hint;
       } catch (error) {
         // Silently skip any errors for the auto-enable

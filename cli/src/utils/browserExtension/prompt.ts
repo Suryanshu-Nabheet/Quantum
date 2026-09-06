@@ -73,7 +73,7 @@ export function getChromeSystemPrompt(): string {
  * Minimal hint about browser extension skill availability. This is injected at startup when the extension is installed
  * to guide the model to invoke the skill before using the MCP tools.
  */
-export const BROWSER_EXTENSION_SKILL_HINT = `**Browser Automation**: Chrome browser tools are available via the "claude-in-chrome" skill. CRITICAL: Before using any mcp__claude-in-chrome__* tools, invoke the skill by calling the Skill tool with skill: "claude-in-chrome". The skill provides browser automation instructions and enables the tools.`
+export const BROWSER_EXTENSION_SKILL_HINT = `**Browser Automation**: Chrome browser tools are available via the "browser-extension" skill. CRITICAL: Before using any mcp__claude-in-chrome__* tools, invoke the skill by calling the Skill tool with skill: "browser-extension". The skill provides browser automation instructions and enables the tools.`
 
 /** @deprecated Use BROWSER_EXTENSION_SKILL_HINT */
 export const CLAUDE_IN_CHROME_SKILL_HINT = BROWSER_EXTENSION_SKILL_HINT
@@ -83,4 +83,7 @@ export const CLAUDE_IN_CHROME_SKILL_HINT = BROWSER_EXTENSION_SKILL_HINT
  * dev-loop tasks to WebBrowser and reserve the extension for the user's
  * authenticated Chrome (logged-in sites, OAuth, computer-use).
  */
-export const CLAUDE_IN_CHROME_SKILL_HINT_WITH_WEBBROWSER = `**Browser Automation**: Use WebBrowser for development (dev servers, JS eval, console, screenshots). Use claude-in-chrome for the user's real Chrome when you need logged-in sessions, OAuth, or computer-use — invoke Skill(skill: "claude-in-chrome") before any mcp__claude-in-chrome__* tool.`
+export const BROWSER_EXTENSION_SKILL_HINT_WITH_WEBBROWSER = `**Browser Automation**: Use WebBrowser for development (dev servers, JS eval, console, screenshots). Use browser-extension for the user's real Chrome when you need logged-in sessions, OAuth, or computer-use — invoke Skill(skill: "browser-extension") before any mcp__claude-in-chrome__* tool.`
+
+/** @deprecated Use BROWSER_EXTENSION_SKILL_HINT_WITH_WEBBROWSER */
+export const CLAUDE_IN_CHROME_SKILL_HINT_WITH_WEBBROWSER = BROWSER_EXTENSION_SKILL_HINT_WITH_WEBBROWSER
