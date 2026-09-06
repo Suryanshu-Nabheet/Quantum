@@ -100,6 +100,12 @@ import {
   useAppSettings,
 } from "../appSettings";
 import { isElectron } from "../env";
+import {
+  QUANTUM_ACTIVITY_ONBOARDING,
+  QUANTUM_DOCS_URL,
+  QUANTUM_SURFACE_STUDIO,
+  QUANTUM_SURFACE_THREADS,
+} from "../productVoice";
 import { formatRelativeTime } from "../lib/relativeTime";
 import {
   isMacNavigatorPlatform,
@@ -847,7 +853,6 @@ function ProjectSortMenu({
   );
 }
 
-const QUANTUM_DOCS_URL = "https://tryquantum.com/docs";
 
 // Latest curated releases surfaced directly in the help menu. Static data, so
 // computed once at module scope rather than per render.
@@ -1212,9 +1217,9 @@ function SidebarActivityBellButton({
       >
         {onboardingVisible ? (
           <div className="text-left">
-            <div className="text-xs font-semibold">Activity</div>
+            <div className="text-xs font-semibold">{QUANTUM_ACTIVITY_ONBOARDING.title}</div>
             <div className="mt-0.5 text-[11px] leading-4 text-white/85">
-              See running tasks, completed work, and anything that needs your attention.
+              {QUANTUM_ACTIVITY_ONBOARDING.description}
             </div>
           </div>
         ) : (
@@ -1226,8 +1231,8 @@ function SidebarActivityBellButton({
 }
 
 const SIDEBAR_SURFACE_PICKER_COPY: Record<SidebarView, { title: string; description: string }> = {
-  threads: { title: "Quantum", description: "Build, debug, and ship" },
-  studio: { title: "Studio", description: "Open-ended agent work" },
+  threads: QUANTUM_SURFACE_THREADS,
+  studio: QUANTUM_SURFACE_STUDIO,
 };
 
 /**
@@ -5421,7 +5426,7 @@ export default function Sidebar() {
       {
         id: "import-thread",
         label: "Import thread from...",
-        description: "Attach a local thread to an existing provider session.",
+        description: "Attach a thread to an existing provider session.",
         keywords: [
           "import",
           "resume",

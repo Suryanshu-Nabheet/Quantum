@@ -24,7 +24,7 @@ const DEFAULT_SIDEBAR_UI_STATE: SidebarUiState = {
   projectThreadListExtraPagesByCwd: {},
   dismissedThreadStatusKeyByThreadId: {},
   lastThreadRoute: null,
-  activityViewEnabled: false,
+  activityViewEnabled: true,
 };
 
 // Persisted paging is a request, not a promise: render-time clamping trims it to the real

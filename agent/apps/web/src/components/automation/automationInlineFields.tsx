@@ -25,7 +25,7 @@ export const MODE_LABELS: Record<AutomationMode, string> = {
 
 export const WORKTREE_OPTIONS: readonly SelectOption[] = [
   { value: "auto", label: "Auto" },
-  { value: "local", label: "Local" },
+  { value: "local", label: "Checkout" },
   { value: "worktree", label: "Worktree" },
 ];
 

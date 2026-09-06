@@ -381,7 +381,7 @@ describe("when: branch is clean, up to date, and has no open PR", () => {
 
     assert.deepEqual(availability, {
       canRun: false,
-      hint: "Commit local changes before creating a PR.",
+      hint: "Commit uncommitted changes before creating a PR.",
     });
   });
 
@@ -638,7 +638,7 @@ describe("when: working tree has local changes", () => {
     assert.deepInclude(quick, {
       kind: "show_hint",
       label: "Push",
-      hint: "No local commits to push.",
+      hint: "No commits to push.",
       disabled: true,
     });
   });
@@ -963,7 +963,7 @@ describe("when: branch has no upstream configured", () => {
     assert.deepInclude(quick, {
       kind: "show_hint",
       label: "Push",
-      hint: "No local commits to push.",
+      hint: "No commits to push.",
       disabled: true,
     });
   });
@@ -1145,7 +1145,7 @@ describe("when: branch has no upstream configured", () => {
     assert.deepInclude(quick, {
       kind: "show_hint",
       label: "Push",
-      hint: "No local commits to push.",
+      hint: "No commits to push.",
       disabled: true,
     });
   });
@@ -1764,7 +1764,7 @@ describe("resolveDefaultBranchActionDialogCopy", () => {
     assert.deepEqual(copy, {
       title: "Push to default branch?",
       description:
-        'This action will push local commits on "main". You can continue on this branch or create a feature branch and run the same action there.',
+        'This action will push commits on "main". You can continue on this branch or create a feature branch and run the same action there.',
       continueLabel: "Push to main",
     });
   });

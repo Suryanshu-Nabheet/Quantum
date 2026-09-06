@@ -1,6 +1,8 @@
 # Quantum Agent Manager
 
-Quantum Agent Manager is an MCP-native, local-first desktop workspace and agent harness for orchestrating AI coding agents and parallel developer automations.
+**Quantum Agent Manager — parallel agents, one workspace.**
+
+MCP-native desktop workspace for orchestrating parallel AI coding agents, multi-model workflows, Spaces, Activity, worktrees, terminals, browser previews, and unified diffs.
 
 <p align="center">
   <img src="./assets/screenshots/demo.png" alt="Quantum Agent Manager Demo" width="100%" />
@@ -10,16 +12,16 @@ Quantum Agent Manager is an MCP-native, local-first desktop workspace and agent 
 
 ## Overview
 
-Quantum Agent Manager brings multi-model chats, terminals, browser previews, unified diffs, branches, provider sessions, and cross-model handoffs into a unified, high-performance desktop workspace.
+Quantum Agent Manager brings multi-model chats, Spaces, Activity tracking, terminals, native browser previews, git/PR workflows, and cross-provider handoffs into one high-performance desktop workspace.
 
-## Key Features
+## Capabilities
 
-- **Multi-Provider Harness**: Orchestrate Claude Code, Codex, Antigravity, OpenCode, Cursor, Grok, Kilo Code, and Pi.
-- **Parallel Worktrees**: Run concurrent agent tasks across projects and threads with isolated Git worktrees.
-- **Unified Workspace**: Split chats, live terminals, native browser previews, and streaming tool outputs in a single window.
-- **Agent Handoffs**: Hand off active context and task state between different models seamlessly.
-- **Local-First & Private**: Chats, projects, state, and credentials stay on your local machine with zero third-party telemetry.
-- **MCP Native**: Deep integration with Model Context Protocol servers and resources.
+- **Spaces & Activity** — organize repos spatially and watch agent work from a live task feed
+- **Multi-provider orchestration** — run and hand off between Codex, Claude, Cursor, Grok, Pi, and more
+- **Parallel worktrees** — isolated git worktrees per agent thread
+- **Unified workspace** — chat, terminal, diff, browser, and PR panes in one window
+- **Private by design** — state, credentials, and chats stay in your Quantum data directory
+- **MCP native** — deep Model Context Protocol integration for tools and resources
 
 ## Getting Started
 

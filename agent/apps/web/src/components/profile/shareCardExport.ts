@@ -10,9 +10,10 @@ import { readNativeApi } from "~/nativeApi";
 
 export { downloadBlob } from "~/lib/browserDownload";
 
-const SHARE_BRAND_HANDLE = "@tryQuantum";
-export const SHARE_TWEET_TEXT = `Just checking my ${SHARE_BRAND_HANDLE} dev stats. Absolute masterpiece of an IDE.`;
-const SHARE_URL = "https://tryquantum.com";
+import { QUANTUM_GITHUB_REPO } from "~/productVoice";
+
+export const SHARE_TWEET_TEXT = "My Quantum dev stats.";
+const SHARE_URL = QUANTUM_GITHUB_REPO;
 
 export type ShareTarget = "x" | "linkedin" | "reddit";
 

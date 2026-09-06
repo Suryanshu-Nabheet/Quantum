@@ -81,8 +81,8 @@ export function AdvancedSettingsPanel(props: {
     const api = readNativeApi() ?? ensureNativeApi();
     const confirmed = await api.dialogs.confirm(
       [
-        "Repair local state?",
-        "This rebuilds local project indexes and refreshes project snapshots.",
+        "Repair workspace state?",
+        "This rebuilds project indexes and refreshes project snapshots.",
         "It keeps existing chats in place, but it may take a moment.",
       ].join("\n"),
     );
@@ -95,7 +95,7 @@ export function AdvancedSettingsPanel(props: {
         syncServerReadModel(snapshot);
         toastManager.add({
           type: "success",
-          title: "Local state repaired",
+          title: "Workspace state repaired",
           description: "Project indexes were rebuilt without clearing existing chats.",
         });
       })
@@ -103,7 +103,7 @@ export function AdvancedSettingsPanel(props: {
         toastManager.add({
           type: "error",
           title: "Repair failed",
-          description: error instanceof Error ? error.message : "Unable to repair local state.",
+          description: error instanceof Error ? error.message : "Unable to repair workspace state.",
         });
       })
       .finally(() => {
@@ -186,7 +186,7 @@ export function AdvancedSettingsPanel(props: {
 
         <SettingsRow
           title="Recovery tools"
-          description="Rebuild local project indexes without clearing existing chats when the local state gets out of sync."
+          description="Rebuild project indexes without clearing existing chats when workspace state gets out of sync."
           status={
             shouldOfferRecoveryTools
               ? "Visible because projects exist but no chat history is currently available."

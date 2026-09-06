@@ -78,7 +78,7 @@ describe("Codex Quantum harness policy", () => {
     ]) {
       expect(instructions).toContain(QUANTUM_HARNESS_POLICY_MARKER);
       expect(instructions.split(QUANTUM_HARNESS_POLICY_MARKER)).toHaveLength(2);
-      expect(instructions).toContain("Quantum is the host and harness");
+      expect(instructions).toContain("Quantum is the host workspace");
       expect(instructions).toContain("one exact quantum_create_threads plan");
       expect(instructions).toContain("tools.mcp__quantum__browser_open");
       for (const name of BROWSER_TOOL_NAMES) {

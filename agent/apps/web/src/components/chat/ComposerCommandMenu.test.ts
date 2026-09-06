@@ -50,7 +50,7 @@ describe("groupCommandItems", () => {
       {
         id: "local-root",
         type: "local-root",
-        label: "@local",
+        label: "@workspace",
         description: "Browse folders on this computer",
       },
       {
@@ -77,7 +77,7 @@ describe("groupCommandItems", () => {
       },
       {
         id: "local",
-        label: "Local",
+        label: "Checkout",
         items: [items[1], items[3]],
       },
       {

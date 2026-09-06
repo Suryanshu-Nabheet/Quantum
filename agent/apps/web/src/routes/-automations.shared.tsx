@@ -20,7 +20,7 @@ import { automationRequiresTargetThread } from "@quantum/shared/automationMode";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 
-import { useAppSettings } from "~/appSettings";
+import { QUANTUM_CHECKOUT_SHORT_LABEL } from "~/productVoice";
 import type { Thread } from "~/types";
 import {
   ComposerPickerMenuPopup,
@@ -158,6 +158,12 @@ export {
   type IntervalUnit,
   type ScheduleKind,
 };
+
+function formatAutomationWorktreeModeLabel(mode: AutomationWorktreeMode): string {
+  if (mode === "local") return QUANTUM_CHECKOUT_SHORT_LABEL;
+  if (mode === "worktree") return "Worktree";
+  return "Auto";
+}
 
 /** Starter prompts surfaced behind the composer's "Use template" button. */
 export const AUTOMATION_TEMPLATES: readonly {
@@ -1169,7 +1175,7 @@ export function AutomationDialog({
               <Menu>
                 <MenuTrigger render={<Button variant="ghost" size="sm" className={CHIP_CLASS} />}>
                   <WorktreeIcon className="size-4" />
-                  <span className="capitalize">{form.worktreeMode}</span>
+                  <span>{formatAutomationWorktreeModeLabel(form.worktreeMode)}</span>
                   <CentralIcon name="chevron-down-small" className="size-3.5 opacity-60" />
                 </MenuTrigger>
                 <ComposerPickerMenuPopup align="start" className="w-40">
@@ -1181,7 +1187,7 @@ export function AutomationDialog({
                   >
                     {(["auto", "worktree", "local"] as const).map((value) => (
                       <MenuRadioItem key={value} value={value}>
-                        <span className="capitalize">{value}</span>
+                        <span>{formatAutomationWorktreeModeLabel(value)}</span>
                       </MenuRadioItem>
                     ))}
                   </MenuRadioGroup>

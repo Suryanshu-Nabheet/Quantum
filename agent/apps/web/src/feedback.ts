@@ -1,9 +1,10 @@
 // FILE: feedback.ts
 // Purpose: Owns feedback categories, privacy-safe diagnostics, and delivery.
 // Layer: Web feature logic
-// Depends on: The public tryquantum feedback endpoint.
+// Depends on: Optional VITE_FEEDBACK_ENDPOINT or GitHub Issues fallback.
 
 import { APP_VERSION } from "./branding";
+import { QUANTUM_ISSUES_URL } from "./productVoice";
 
 /**
  * `lead` opens the reported summary in the reporter's voice, so the category is
@@ -55,7 +56,6 @@ export interface FeedbackSubmission {
   diagnostics: FeedbackDiagnostics;
 }
 
-const DEFAULT_FEEDBACK_ENDPOINT = "https://www.tryquantum.com/api/feedback";
 const FEEDBACK_REQUEST_TIMEOUT_MS = 20_000;
 
 function formatStateFlags(diagnostics: FeedbackThreadContext): string {
@@ -146,18 +146,42 @@ export function buildFeedbackSubmission(input: {
   };
 }
 
-function feedbackEndpoint(): string {
-  return import.meta.env.VITE_FEEDBACK_ENDPOINT?.trim() || DEFAULT_FEEDBACK_ENDPOINT;
+/** Remote POST target when `VITE_FEEDBACK_ENDPOINT` is set in the web build. */
+export function configuredFeedbackEndpoint(): string | null {
+  const endpoint = import.meta.env.VITE_FEEDBACK_ENDPOINT?.trim();
+  return endpoint && endpoint.length > 0 ? endpoint : null;
+}
+
+function buildGitHubIssueUrl(submission: FeedbackSubmission): string {
+  const category = FEEDBACK_CATEGORIES.find((option) => option.value === submission.category);
+  const titlePrefix = category?.label ?? "Feedback";
+  const title = `${titlePrefix}: ${submission.details.split("\n")[0]?.slice(0, 80) ?? "Quantum"}`;
+  const body = [
+    submission.details,
+    "",
+    "---",
+    submission.summary,
+  ].join("\n");
+  const url = new URL(QUANTUM_ISSUES_URL);
+  url.searchParams.set("title", title);
+  url.searchParams.set("body", body);
+  return url.toString();
 }
 
 export async function submitFeedback(
   submission: FeedbackSubmission,
   fetchImplementation: typeof fetch = fetch,
 ): Promise<void> {
+  const endpoint = configuredFeedbackEndpoint();
+  if (!endpoint) {
+    window.open(buildGitHubIssueUrl(submission), "_blank", "noopener,noreferrer");
+    return;
+  }
+
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), FEEDBACK_REQUEST_TIMEOUT_MS);
   try {
-    const response = await fetchImplementation(feedbackEndpoint(), {
+    const response = await fetchImplementation(endpoint, {
       method: "POST",
       headers: {
         "content-type": "application/json",

@@ -24,7 +24,10 @@ import {
 } from "~/lib/icons";
 import { slashCommandIcon } from "~/lib/slashCommandIcons";
 import { formatSkillScope } from "~/lib/providerDiscovery";
-import { cn } from "~/lib/utils";
+import {
+  QUANTUM_CHECKOUT_OPTION_LABEL,
+  QUANTUM_CHECKOUT_SHORT_LABEL,
+} from "~/productVoice";
 import {
   Command,
   CommandGroup,
@@ -98,7 +101,7 @@ function commandMenuTrailingMeta(item: ComposerCommandItem): string | null {
   }
 
   if (item.type === "local-root") {
-    return "Local";
+    return QUANTUM_CHECKOUT_OPTION_LABEL;
   }
 
   if (item.type === "skill") {
@@ -266,7 +269,7 @@ export function groupCommandItems(
       groups.push({ id: "chats", label: "Chats", items: threadItems });
     }
     if (localItems.length > 0) {
-      groups.push({ id: "local", label: "Local", items: localItems });
+      groups.push({ id: "local", label: QUANTUM_CHECKOUT_SHORT_LABEL, items: localItems });
     }
     if (agentItems.length > 0) {
       groups.push({ id: "subagents", label: "Subagents", items: agentItems });

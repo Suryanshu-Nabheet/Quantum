@@ -658,7 +658,7 @@ function AutomationDetailView() {
                         <CentralIcon
                           name="info-simple"
                           className="size-3 text-muted-foreground/60"
-                          aria-label="Where the automation runs: a worktree, a local checkout, or auto"
+                          aria-label="Where the automation runs: a worktree, a project checkout, or auto"
                         />
                       </>
                     }
@@ -1040,7 +1040,7 @@ function AutomationDetailView() {
           if (!open) setPendingWorktreeChange(null);
         }}
         anchor={worktreeAnchorRef}
-        title={pendingWorktreeWarning?.title ?? "Local checkout"}
+        title={pendingWorktreeWarning?.title ?? "Project checkout"}
         detail={
           pendingWorktreeWarning?.detail ?? "Runs may edit files in the active project checkout."
         }

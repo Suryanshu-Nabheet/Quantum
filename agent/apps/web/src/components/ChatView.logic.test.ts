@@ -1792,7 +1792,7 @@ describe("worktree setup snapshots", () => {
     expect(createWorktreeSetupSnapshot("copy-changes").steps).toEqual([
       { id: "create-branch", label: "Creating branch", status: "done" },
       { id: "create-worktree", label: "Creating worktree", status: "done" },
-      { id: "copy-changes", label: "Copying local changes", status: "active" },
+      { id: "copy-changes", label: "Copying uncommitted changes", status: "active" },
       { id: "prepare-thread", label: "Linking thread workspace", status: "pending" },
       { id: "start-session", label: "Starting session", status: "pending" },
     ]);

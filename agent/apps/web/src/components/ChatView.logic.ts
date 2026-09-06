@@ -956,7 +956,7 @@ export interface PullRequestDialogState {
 const WORKTREE_SETUP_STEP_LABELS: Record<WorktreeSetupStepId, string> = {
   "create-branch": "Creating branch",
   "create-worktree": "Creating worktree",
-  "copy-changes": "Copying local changes",
+  "copy-changes": "Copying uncommitted changes",
   "prepare-thread": "Linking thread workspace",
   "run-setup-action": "Running setup action",
   "start-session": "Starting session",

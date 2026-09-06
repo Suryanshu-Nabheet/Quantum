@@ -491,7 +491,7 @@ export function KanbanNewTaskDialog({
                 {isLocalFolderBrowserOpen ? (
                   <ComposerLocalDirectoryMenu
                     mentionQuery={mentionTriggerQuery}
-                    rootLabel={localFolderBrowseRootPath ?? "Local folders unavailable"}
+                    rootLabel={localFolderBrowseRootPath ?? "Folders unavailable"}
                     homeDir={serverConfigQuery.data?.homeDir ?? null}
                     onSelectEntry={(absolutePath) =>
                       handleSelectLocalDirectoryMention(absolutePath)

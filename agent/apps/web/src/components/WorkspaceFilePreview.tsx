@@ -789,7 +789,7 @@ export function WorkspaceFilePreview(props: WorkspaceFilePreviewProps) {
           <p className="text-left text-[11px] text-destructive/85">
             {localPreviewGrantQuery.error instanceof Error
               ? localPreviewGrantQuery.error.message
-              : "Could not create local file preview grant."}
+              : "Could not create file preview grant."}
           </p>
         </PanelStateMessage>
       );

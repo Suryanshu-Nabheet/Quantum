@@ -73,7 +73,7 @@ export function normalizeProviderStatusForLocalConfig(input: {
     ...statusWithoutStaleAutoCapability,
     available: true,
     status: "warning",
-    message: `${PROVIDER_DISPLAY_NAMES[input.provider]} uses a custom local binary path in this app. Availability will be confirmed when you start a session.`,
+    message: `${PROVIDER_DISPLAY_NAMES[input.provider]} uses a custom binary path in this app. Availability will be confirmed when you start a session.`,
   };
 }
 

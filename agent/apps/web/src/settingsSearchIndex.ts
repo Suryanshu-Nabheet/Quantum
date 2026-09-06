@@ -44,7 +44,7 @@ export const SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
     section: "general",
     title: "New threads",
     keywords:
-      "Pick the default workspace mode for newly created draft threads. local worktree environment",
+      "Pick the default workspace mode for newly created draft threads. checkout worktree environment",
   },
   {
     id: "general:project-order",
@@ -405,14 +405,14 @@ export const SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
     section: "advanced",
     title: "Recovery tools",
     keywords:
-      "Rebuild local project indexes without clearing existing chats when the local state gets out of sync.",
+      "Rebuild project indexes without clearing existing chats when workspace state gets out of sync.",
   },
   {
     id: "integrations:external-mcp",
     section: "integrations",
     title: "External MCP integrations",
     keywords:
-      "Pair Codex Claude and other local MCP clients with scoped project access. revoke credential task create wait read worktree approval",
+      "Pair Codex Claude and other MCP clients with scoped project access. revoke credential task create wait read worktree approval",
   },
   {
     id: "advanced:version",

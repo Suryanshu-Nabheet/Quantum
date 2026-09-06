@@ -14,8 +14,8 @@ import {
 describe("localFolderMentions", () => {
   it("offers the local shortcut from an empty or partial mention query", () => {
     expect(matchesLocalFolderMentionShortcut("")).toBe(true);
-    expect(matchesLocalFolderMentionShortcut("loc")).toBe(true);
-    expect(matchesLocalFolderMentionShortcut("workspace")).toBe(false);
+    expect(matchesLocalFolderMentionShortcut("wor")).toBe(true);
+    expect(matchesLocalFolderMentionShortcut("local")).toBe(false);
   });
 
   it("detects mac and windows absolute-path mention browsing", () => {

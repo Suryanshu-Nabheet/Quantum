@@ -3,7 +3,7 @@
 // Layer: Web composer helper
 // Exports: local mention constants plus query/root helpers used by ChatView and command menus.
 
-export const LOCAL_FOLDER_MENTION_NAME = "local";
+export const LOCAL_FOLDER_MENTION_NAME = "workspace";
 
 export function matchesLocalFolderMentionShortcut(query: string): boolean {
   const normalizedQuery = query.trim().toLowerCase();

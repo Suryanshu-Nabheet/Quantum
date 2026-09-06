@@ -65,7 +65,7 @@ export function DebugFeatureFlagsMenu() {
       </MenuTrigger>
       <ComposerPickerMenuPopup align="start" side="top" className="min-w-72">
         <MenuGroup>
-          <MenuGroupLabel>Local feature flags</MenuGroupLabel>
+          <MenuGroupLabel>Debug feature flags</MenuGroupLabel>
           {FEATURE_FLAGS.map((flag) => {
             if (flag.kind === "action") {
               return (

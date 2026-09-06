@@ -24,7 +24,7 @@ function reportThreadHandoffSuccess(
   toastManager.add({
     type: result.conflictsDetected ? "warning" : "success",
     title:
-      targetMode === "worktree" ? "Thread handed off to worktree" : "Thread handed off to local",
+      targetMode === "worktree" ? "Thread handed off to worktree" : "Thread handed off to checkout",
     ...(result.message ? { description: result.message } : {}),
   });
 }
@@ -118,7 +118,7 @@ export function useThreadWorkspaceHandoff(input: {
           title:
             targetMode === "worktree"
               ? "Could not hand off to worktree"
-              : "Could not hand off to local",
+              : "Could not hand off to checkout",
           description:
             error instanceof Error ? error.message : "An error occurred during the handoff.",
         });

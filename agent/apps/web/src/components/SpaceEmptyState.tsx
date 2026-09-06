@@ -7,6 +7,13 @@
 //      there is something to do.
 
 import type { Space } from "~/types";
+import {
+  QUANTUM_NO_PROJECTS_YET,
+  QUANTUM_SPACE_EMPTY_HINT,
+  QUANTUM_VOID_EMPTY_HINT,
+  QUANTUM_VOID_EMPTY_TITLE,
+  quantumSpaceEmptyTitle,
+} from "~/productVoice";
 import { Button } from "./ui/button";
 
 export function SpaceEmptyState(props: {
@@ -23,20 +30,18 @@ export function SpaceEmptyState(props: {
   if (!props.hasProjectsElsewhere) {
     return (
       <p className="px-2 pt-4 text-center text-[length:var(--app-font-size-ui,12px)] text-muted-foreground/58">
-        No projects yet
+        {QUANTUM_NO_PROJECTS_YET}
       </p>
     );
   }
 
-  const title = props.space ? `${props.space.name} is empty` : "Void is empty";
+  const title = props.space ? quantumSpaceEmptyTitle(props.space.name) : QUANTUM_VOID_EMPTY_TITLE;
 
   return (
     <div className="px-2 pt-4 pb-1 text-center">
       <p className="text-[length:var(--app-font-size-ui,12px)] text-foreground/75">{title}</p>
       <p className="mx-auto mt-1 max-w-52 text-[length:var(--app-font-size-ui-xs,10px)] leading-4 text-muted-foreground/55">
-        {props.space
-          ? "Move projects here, or right-click a project to file it."
-          : "New and unassigned projects appear here."}
+        {props.space ? QUANTUM_SPACE_EMPTY_HINT : QUANTUM_VOID_EMPTY_HINT}
       </p>
       {props.space ? (
         <Button size="xs" variant="outline" className="mt-3" onClick={props.onMoveProjects}>

@@ -46,7 +46,7 @@ export function ProfileSettingsPanel() {
   if (coreQuery.isError || !coreQuery.data) {
     return (
       <div className="flex flex-col items-center gap-3 py-24 text-center">
-        <p className="text-sm text-muted-foreground">Couldn’t load your local stats.</p>
+        <p className="text-sm text-muted-foreground">Couldn’t load your profile stats.</p>
         <Button variant="outline" size="sm" onClick={() => void coreQuery.refetch()}>
           Try again
         </Button>

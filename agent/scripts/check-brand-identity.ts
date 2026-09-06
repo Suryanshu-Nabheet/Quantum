@@ -1,5 +1,5 @@
 // FILE: check-brand-identity.ts
-// Purpose: Prevents retired first-party identities from returning to tracked files.
+// Purpose: Prevents retired third-party product identities from appearing in tracked files.
 
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -13,9 +13,6 @@ const retiredCompanyName = `${retiredShortName}${characters(116, 111, 111, 108, 
 const retiredSecondName = characters(100, 112, 99, 111, 100, 101);
 const retiredPredecessorName = characters(99, 111, 100, 101, 116, 104, 105, 110, 103);
 const incorrectBundleDomain = characters(99, 111, 109, 46, 115, 121, 110, 97, 114, 97);
-const retiredFirstDisplayName = characters(84, 51, 67, 111, 100, 101);
-const retiredFirstSpacedDisplayName = `${characters(84, 51)} Code`;
-const retiredCompanyDisplayName = `${characters(84, 51)} ${characters(84, 111, 111, 108, 115)}`;
 
 const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const joinedWithOptionalSeparator = (left: string, right: string): string =>
@@ -45,35 +42,6 @@ const forbiddenPatterns = [
   ),
   new RegExp(escapeRegExp(incorrectBundleDomain), "i"),
 ] as const;
-
-interface ApprovedAttribution {
-  readonly path: string;
-  readonly line: string;
-  readonly markdownSection?: string;
-}
-
-const approvedLegalNotice = `Copyright (c) 2026 ${retiredCompanyDisplayName} Inc.`;
-const approvedOriginsAttribution = `Quantum began as a clone of [${retiredFirstDisplayName}](https://github.com/pingdotgg/${retiredFirstName}), but it has since become a substantially different product with its own branding, packaging, release system, provider orchestration, desktop app behavior, and product direction.`;
-const approvedReleaseAttribution = `**A review of the Quantum codebase found an analytics configuration that came from the original ${retiredFirstSpacedDisplayName} codebase when Quantum was created as a clone in March. We did not add it, and we have no access to the PostHog project receiving the events.**`;
-const approvedInAppReleaseAttribution = `"A review of the Quantum codebase found an analytics configuration that came from the original ${retiredFirstSpacedDisplayName} codebase when Quantum was created as a clone in March.",`;
-
-const approvedAttributions: readonly ApprovedAttribution[] = [
-  { path: "LICENSE", line: approvedLegalNotice },
-  {
-    path: "README.md",
-    line: approvedOriginsAttribution,
-    markdownSection: "## Origins",
-  },
-  {
-    path: "CHANGELOG.md",
-    line: approvedReleaseAttribution,
-    markdownSection: "## 0.7.0 - 2026-08-05",
-  },
-  {
-    path: "apps/web/src/whatsNew/entries.ts",
-    line: approvedInAppReleaseAttribution,
-  },
-];
 
 // Raster images cannot be searched for embedded text. Keep the user-facing
 // screenshots behind reviewed digests so changing either one requires another
@@ -109,23 +77,6 @@ function containsForbiddenIdentity(value: string): boolean {
   return forbiddenPatterns.some((pattern) => pattern.test(value));
 }
 
-function findApprovedAttribution(
-  path: string,
-  line: string,
-  markdownSection: string | null,
-  consumedAttributions: ReadonlySet<number>,
-): number | null {
-  const index = approvedAttributions.findIndex(
-    (attribution, candidateIndex) =>
-      !consumedAttributions.has(candidateIndex) &&
-      attribution.path === path &&
-      attribution.line === line.trim() &&
-      (attribution.markdownSection === undefined ||
-        attribution.markdownSection === markdownSection),
-  );
-  return index === -1 ? null : index;
-}
-
 export function findBrandIdentityViolations(
   files: readonly BrandIdentityFile[],
 ): BrandIdentityViolation[] {
@@ -134,21 +85,8 @@ export function findBrandIdentityViolations(
     if (containsForbiddenIdentity(file.path)) {
       violations.push({ path: file.path, line: null, text: file.path });
     }
-    const consumedAttributions = new Set<number>();
-    let markdownSection: string | null = null;
     for (const [index, line] of file.contents.split(/\r?\n/).entries()) {
-      if (/^#{1,2}\s+/.test(line)) markdownSection = line.trim();
       if (!containsForbiddenIdentity(line)) continue;
-      const approvedAttribution = findApprovedAttribution(
-        file.path,
-        line,
-        markdownSection,
-        consumedAttributions,
-      );
-      if (approvedAttribution !== null) {
-        consumedAttributions.add(approvedAttribution);
-        continue;
-      }
       violations.push({ path: file.path, line: index + 1, text: line.trim() });
     }
   }
@@ -244,7 +182,7 @@ function main(): void {
     return;
   }
 
-  console.error("Retired first-party identity found:");
+  console.error("Retired third-party identity found:");
   for (const violation of violations) {
     const location =
       violation.line === null ? violation.path : `${violation.path}:${violation.line}`;

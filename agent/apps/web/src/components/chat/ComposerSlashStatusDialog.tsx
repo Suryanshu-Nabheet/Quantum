@@ -1,6 +1,7 @@
 import type { ResolvedThreadWorkspaceState } from "@quantum/shared/threadEnvironment";
 import type { ProviderInteractionMode } from "@quantum/contracts";
 import type { DraftThreadEnvMode } from "../../composerDraftStore";
+import { QUANTUM_CHECKOUT_SHORT_LABEL } from "~/productVoice";
 import {
   type ContextWindowSnapshot,
   formatContextWindowTokens,
@@ -38,7 +39,7 @@ function formatEnvironmentLabel(
   envState: ResolvedThreadWorkspaceState,
 ): string {
   if (envMode === "local") {
-    return "Local";
+    return QUANTUM_CHECKOUT_SHORT_LABEL;
   }
   return envState === "worktree-pending" ? "New worktree (pending)" : "Worktree";
 }
@@ -82,7 +83,7 @@ export function ComposerSlashStatusDialog(props: {
         <DialogHeader>
           <DialogTitle>Session Status</DialogTitle>
           <DialogDescription>
-            Runtime controls and local thread state for the active composer.
+            Runtime controls and thread state for the active composer.
           </DialogDescription>
         </DialogHeader>
         <DialogPanel className="space-y-4">

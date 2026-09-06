@@ -92,7 +92,9 @@ function verifyCanonicalIdentity(): void {
     readFileSync(resolve(repoRoot, "apps/server/package.json"), "utf8"),
   ) as { name?: string; bin?: Record<string, string> };
   if (serverPackage.name !== "@quantum/server") {
-    throw new Error(`Expected CLI package @quantum/server, got ${serverPackage.name ?? "<missing>"}.`);
+    throw new Error(
+      `Expected CLI package @quantum/server, got ${serverPackage.name ?? "<missing>"}.`,
+    );
   }
   const expectedBinaries = {
     quantum: "dist/index.mjs",

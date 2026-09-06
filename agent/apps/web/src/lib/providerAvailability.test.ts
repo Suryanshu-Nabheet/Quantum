@@ -38,7 +38,7 @@ describe("normalizeProviderStatusForLocalConfig", () => {
       available: true,
       status: "warning",
       message:
-        "Antigravity uses a custom local binary path in this app. Availability will be confirmed when you start a session.",
+        "Antigravity uses a custom binary path in this app. Availability will be confirmed when you start a session.",
     });
   });
 
@@ -59,7 +59,7 @@ describe("normalizeProviderStatusForLocalConfig", () => {
       available: true,
       status: "warning",
       message:
-        "Claude uses a custom local binary path in this app. Availability will be confirmed when you start a session.",
+        "Claude uses a custom binary path in this app. Availability will be confirmed when you start a session.",
     });
   });
 
@@ -102,7 +102,7 @@ describe("normalizeProviderStatusForLocalConfig", () => {
       available: true,
       status: "warning",
       message:
-        "OpenCode uses a custom local binary path in this app. Availability will be confirmed when you start a session.",
+        "OpenCode uses a custom binary path in this app. Availability will be confirmed when you start a session.",
     });
   });
 

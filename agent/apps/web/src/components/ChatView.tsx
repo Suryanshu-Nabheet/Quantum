@@ -307,6 +307,10 @@ import {
   providerModelSupportsAutoRuntimeMode,
 } from "../lib/runtimeMode";
 import { QuantumLogo } from "./QuantumLogo";
+import {
+  QUANTUM_EMPTY_HOME_HEADING,
+  QUANTUM_EMPTY_PROJECT_HEADING_PREFIX,
+} from "../productVoice";
 import { ThreadWorktreeHandoffDialog } from "./ThreadWorktreeHandoffDialog";
 import {
   formatShortcutLabel,
@@ -3560,7 +3564,7 @@ export default function ChatView({
     return undefined;
   }, [handleRetryThreadDetailSync, isEditorRail, threadDetailHydration]);
   // Empty top-level threads render the centered landing composer instead of the transcript pane.
-  // Home-scoped chats get the global "What should we work on?" copy plus the project picker,
+  // Home-scoped chats get the global empty-home heading plus the project picker,
   // while project-scoped drafts reuse the same centered layout with folder-specific copy.
   const isCenteredEmptyLanding =
     timelineEntries.length === 0 &&
@@ -3895,11 +3899,11 @@ export default function ChatView({
           id: "fork-target:local",
           type: "fork-target" as const,
           target: "local" as const,
-          label: "Fork Into Local",
+          label: "Fork in checkout",
           description:
             activeThread?.worktreePath || activeThread?.envMode === "worktree"
-              ? "Continue in this local worktree"
-              : "Continue in the current local thread",
+              ? "Continue in this worktree checkout"
+              : "Continue in the current project checkout",
         },
       ];
     }
@@ -3910,7 +3914,7 @@ export default function ChatView({
           type: "review-target" as const,
           target: "changes" as const,
           label: "Review Uncommitted Changes",
-          description: "Review local uncommitted changes",
+          description: "Review uncommitted changes",
         },
         {
           id: "review-target:base-branch",
@@ -11510,7 +11514,7 @@ export default function ChatView({
                       {isLocalFolderBrowserOpen ? (
                         <ComposerLocalDirectoryMenu
                           mentionQuery={mentionTriggerQuery}
-                          rootLabel={localFolderBrowseRootPath ?? "Local folders unavailable"}
+                          rootLabel={localFolderBrowseRootPath ?? "Folders unavailable"}
                           homeDir={serverConfigQuery.data?.homeDir ?? null}
                           onSelectEntry={(absolutePath) =>
                             handleSelectLocalDirectoryMention(absolutePath)
@@ -12104,10 +12108,10 @@ export default function ChatView({
                       className="text-[26px] font-normal leading-[1.15] tracking-[-0.015em] text-foreground/95 sm:text-[30px]"
                     >
                       {isEmptyChatLanding ? (
-                        "What should we work on?"
+                        QUANTUM_EMPTY_HOME_HEADING
                       ) : (
                         <>
-                          What should we do in{" "}
+                          {QUANTUM_EMPTY_PROJECT_HEADING_PREFIX}{" "}
                           {showEmptyLandingProjectPicker ? (
                             <ProjectPicker
                               align="center"

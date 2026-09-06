@@ -41,7 +41,7 @@ describe("Sidebar.uiState", () => {
       projectThreadListExtraPagesByCwd: {},
       dismissedThreadStatusKeyByThreadId: {},
       lastThreadRoute: null,
-      activityViewEnabled: false,
+      activityViewEnabled: true,
     });
   });
 

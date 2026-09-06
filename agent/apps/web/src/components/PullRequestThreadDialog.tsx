@@ -280,7 +280,7 @@ function PullRequestThreadDialogContent({
             preparePullRequestThreadMutation.isPending
           }
         >
-          {preparingMode === "local" ? "Preparing local..." : "Local"}
+          {preparingMode === "local" ? "Preparing checkout..." : "Checkout"}
         </Button>
         <Button
           type="button"

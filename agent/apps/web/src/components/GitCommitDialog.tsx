@@ -199,7 +199,7 @@ export function GitCommitDialog({
 }
 
 function summarizeSelection(total: number, selected: number, allSelected: boolean): string {
-  if (total === 0) return "No local changes";
+  if (total === 0) return "No uncommitted changes";
   if (allSelected) return `${total} ${total === 1 ? "file" : "files"}`;
   return `${selected} of ${total} files`;
 }

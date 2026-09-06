@@ -2,6 +2,13 @@
   "name": "@quantum/web",
   "version": "0.0.1",
   "private": true,
+  "description": "Quantum Agent Manager — parallel agents, one workspace.",
+  "license": "MIT",
+  "author": "Suryanshu Nabheet",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Suryanshu-Nabheet/Quantum.git"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -81,12 +88,5 @@
     "vite": "^8.1.4",
     "vitest": "catalog:",
     "vitest-browser-react": "^2.0.5"
-  },
-  "description": "Quantum Agent Manager Desktop Web UI",
-  "author": "Suryanshu Nabheet",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Suryanshu-Nabheet/Quantum.git"
   }
 }

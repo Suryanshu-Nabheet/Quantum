@@ -388,7 +388,7 @@ function WorktreeSetupCard({
             disabled={pendingAction != null}
             onClick={() => onResolve("work-locally")}
           >
-            {pendingAction === "work-locally" ? "Switching to local..." : "Work locally"}
+            {pendingAction === "work-locally" ? "Switching to checkout..." : "Use project checkout"}
           </Button>
           <Button
             size="xs"

@@ -5,6 +5,7 @@
 import { PROVIDER_DISPLAY_NAMES } from "@quantum/contracts";
 import { formatModelDisplayName } from "@quantum/shared/model";
 import { memo } from "react";
+import { QUANTUM_CHECKOUT_SHORT_LABEL } from "~/productVoice";
 
 import type { WorkLogQuantumThreadCreation } from "../../session-logic";
 import { ProviderIcon } from "../ProviderIcon";
@@ -13,7 +14,8 @@ import { Button } from "../ui/button";
 
 function threadMeta(thread: WorkLogQuantumThreadCreation["threads"][number]): string {
   const model = formatModelDisplayName(thread.model) ?? thread.model;
-  const environment = thread.environment === "worktree" ? "Worktree" : "Local";
+  const environment =
+    thread.environment === "worktree" ? "Worktree" : QUANTUM_CHECKOUT_SHORT_LABEL;
   return `${PROVIDER_DISPLAY_NAMES[thread.provider]} · ${model} · ${environment}`;
 }
 

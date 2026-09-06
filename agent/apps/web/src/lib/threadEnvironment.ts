@@ -13,6 +13,12 @@ import {
 } from "@quantum/shared/threadEnvironment";
 import { deriveAssociatedWorktreeMetadata } from "@quantum/shared/threadWorkspace";
 import type { Thread } from "../types";
+import {
+  QUANTUM_CHECKOUT_OPTION_LABEL,
+  QUANTUM_CHECKOUT_SHORT_LABEL,
+  QUANTUM_WORKTREE_PENDING_LABEL,
+  QUANTUM_WORKTREE_SHORT_LABEL,
+} from "../productVoice";
 
 export type ForkThreadTarget = "local" | "worktree";
 
@@ -35,10 +41,10 @@ export {
 export interface ThreadEnvironmentPresentation {
   mode: ThreadEnvironmentMode;
   workspaceState: ResolvedThreadWorkspaceState;
-  shortLabel: "Local" | "Worktree";
-  localOptionLabel: "Local project";
-  worktreeOptionLabel: "Worktree";
-  worktreeBadgeLabel: "Worktree" | "Worktree pending" | null;
+  shortLabel: typeof QUANTUM_CHECKOUT_SHORT_LABEL | typeof QUANTUM_WORKTREE_SHORT_LABEL;
+  localOptionLabel: typeof QUANTUM_CHECKOUT_OPTION_LABEL;
+  worktreeOptionLabel: typeof QUANTUM_WORKTREE_SHORT_LABEL;
+  worktreeBadgeLabel: typeof QUANTUM_WORKTREE_SHORT_LABEL | typeof QUANTUM_WORKTREE_PENDING_LABEL | null;
 }
 
 export function resolveThreadEnvironmentPresentation(input: {
@@ -51,14 +57,14 @@ export function resolveThreadEnvironmentPresentation(input: {
   return {
     mode,
     workspaceState,
-    shortLabel: mode === "worktree" ? "Worktree" : "Local",
-    localOptionLabel: "Local project",
-    worktreeOptionLabel: "Worktree",
+    shortLabel: mode === "worktree" ? QUANTUM_WORKTREE_SHORT_LABEL : QUANTUM_CHECKOUT_SHORT_LABEL,
+    localOptionLabel: QUANTUM_CHECKOUT_OPTION_LABEL,
+    worktreeOptionLabel: QUANTUM_WORKTREE_SHORT_LABEL,
     worktreeBadgeLabel:
       workspaceState === "worktree-ready"
-        ? "Worktree"
+        ? QUANTUM_WORKTREE_SHORT_LABEL
         : workspaceState === "worktree-pending"
-          ? "Worktree pending"
+          ? QUANTUM_WORKTREE_PENDING_LABEL
           : null,
   };
 }

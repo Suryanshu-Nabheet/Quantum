@@ -37,13 +37,34 @@ const restartDebounceMs = 120;
 const childTreeGracePeriodMs = 1_200;
 const staleComputerUseGracePeriodMs = 300;
 
-if (process.platform === "darwin") {
-  buildAppSnapHelper({ arch: process.arch });
+if (process.platform === "darwin" && process.env.QUANTUM_SKIP_APPSNAP_BUILD !== "1") {
+  console.error(
+    "[desktop-dev] Building AppSnap helper in background (first run can take 1-2 min; window capture works once ready).",
+  );
+  void Promise.resolve()
+    .then(() => buildAppSnapHelper({ arch: process.arch }))
+    .catch((error) => {
+      console.error(
+        "[desktop-dev] AppSnap helper build failed:",
+        error instanceof Error ? error.message : error,
+      );
+    });
 }
 
+console.error(
+  `[desktop-dev] Waiting for Vite at ${devServerUrl} and desktop bundles...`,
+);
 await waitOn({
-  resources: [`tcp:${port}`, ...requiredFiles.map((filePath) => `file:${filePath}`)],
+  resources: [
+    `http-get://localhost:${port}/`,
+    ...requiredFiles.map((filePath) => `file:${filePath}`),
+  ],
+  // Vite can take a few seconds after the port opens before it serves HTML.
+  delay: 250,
+  interval: 100,
+  timeout: 120_000,
 });
+console.error("[desktop-dev] Dev server and bundles ready.");
 
 const childEnv = { ...process.env };
 delete childEnv.ELECTRON_RUN_AS_NODE;
@@ -340,6 +361,7 @@ warnIfAlphaAppRunning();
 
 void waitForDevServer(devServerUrl).then(() => {
   if (!shuttingDown) {
+    console.error("[desktop-dev] Launching Electron...");
     startApp();
   }
 });

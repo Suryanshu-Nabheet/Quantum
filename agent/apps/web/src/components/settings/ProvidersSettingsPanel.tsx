@@ -295,7 +295,7 @@ const PROVIDER_INSTALL_SETTINGS: readonly ProviderInstallSettings[] = [
         settingsKey: "kiloServerUrl",
         label: "Kilo server URL",
         placeholder: "http://127.0.0.1:4096",
-        description: "Optional existing Kilo server URL. Leave blank to spawn a local server.",
+        description: "Optional existing Kilo server URL. Leave blank to spawn a managed server.",
       },
       {
         kind: "password",
@@ -331,7 +331,7 @@ const PROVIDER_INSTALL_SETTINGS: readonly ProviderInstallSettings[] = [
         settingsKey: "openCodeServerUrl",
         label: "OpenCode server URL",
         placeholder: "http://127.0.0.1:4096",
-        description: "Optional existing OpenCode server URL. Leave blank to spawn a local server.",
+        description: "Optional existing OpenCode server URL. Leave blank to spawn a managed server.",
       },
       {
         kind: "password",
@@ -346,7 +346,7 @@ const PROVIDER_INSTALL_SETTINGS: readonly ProviderInstallSettings[] = [
         settingsKey: "openCodeExperimentalWebSockets",
         label: "OpenAI response WebSockets",
         description:
-          "Use Opencode's experimental OpenAI response WebSocket transport for managed local servers.",
+          "Use Opencode's experimental OpenAI response WebSocket transport for managed dev servers.",
       },
     ],
   },

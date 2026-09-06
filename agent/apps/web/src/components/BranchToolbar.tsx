@@ -19,6 +19,7 @@ import { readNativeApi } from "../nativeApi";
 import { useComposerDraftStore } from "../composerDraftStore";
 import { useProviderUsageSummary } from "../hooks/useProviderUsageSummary";
 import { resolveThreadEnvironmentPresentation } from "../lib/threadEnvironment";
+import { QUANTUM_HANDOFF_TO_CHECKOUT_LABEL } from "~/productVoice";
 import {
   RUNTIME_MODE_PRESENTATION,
   providerModelSupportsAutoRuntimeMode,
@@ -589,7 +590,7 @@ export default function BranchToolbar({
                 {canHandoffToLocal && onHandoffToLocal ? (
                   <ContinueInMenuItem
                     icon={<HandoffIcon className={ENV_MENU_ICON_CLASS_NAME} />}
-                    label="Hand off to local"
+                    label={QUANTUM_HANDOFF_TO_CHECKOUT_LABEL}
                     disabled={handoffBusy}
                     onSelect={() => onHandoffToLocal()}
                   />

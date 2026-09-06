@@ -73,7 +73,7 @@ export function FileLineCommentBox(props: FileLineCommentBoxProps) {
           <span className="editor-file-viewer__comment-badge">
             <QuantumLogo className="size-3 text-[var(--color-text-foreground-secondary)]" />
           </span>
-          Local comment
+          Line comment
         </span>
         <span className="text-[12px] text-muted-foreground">Comment on {props.lineLabel}</span>
       </div>

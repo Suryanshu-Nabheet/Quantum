@@ -11,9 +11,9 @@
 
 ## Project Snapshot
 
-Quantum is a minimal web GUI for using coding agents like Codex and Claude.
+Quantum Agent Manager is a desktop workspace for orchestrating parallel AI coding agents.
 
-This repository is a VERY EARLY WIP. Proposing sweeping changes that improve long-term maintainability is encouraged.
+This repository is production-focused. Proposing sweeping changes that improve long-term maintainability is encouraged.
 
 ## Core Priorities
 

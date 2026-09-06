@@ -466,7 +466,7 @@ export function resolveGitMenuActionDisabledReason(input: {
       return "Detached HEAD: checkout a branch before pushing.";
     }
     if (hasChanges) {
-      return "Commit or stash local changes before pushing.";
+      return "Commit or stash uncommitted changes before pushing.";
     }
     if (isBehind) {
       return "Branch is behind upstream. Pull/rebase before pushing.";
@@ -475,7 +475,7 @@ export function resolveGitMenuActionDisabledReason(input: {
       return 'Add an "origin" remote before pushing.';
     }
     if (!isAhead) {
-      return "No local commits to push.";
+      return "No commits to push.";
     }
     return "Push is currently unavailable.";
   }
@@ -491,7 +491,7 @@ export function resolveGitMenuActionDisabledReason(input: {
       return 'Add an "origin" remote before committing and pushing.';
     }
     if (!hasChanges && !isAhead) {
-      return "No local changes or commits to push.";
+      return "No changes or commits to push.";
     }
     return "Commit & push is currently unavailable.";
   }
@@ -737,7 +737,7 @@ export function resolveQuickAction(
         label: "Push",
         disabled: true,
         kind: "show_hint",
-        hint: "No local commits to push.",
+        hint: "No commits to push.",
       };
     }
     if (hasOpenPr || isDefaultBranch) {
@@ -812,7 +812,7 @@ export function resolveCreatePrActionAvailability(input: {
       return "A pull request is already open for this branch.";
     }
     if (execution.kind === "run_action" && execution.action === "commit_push_pr") {
-      return "Commit local changes before creating a PR.";
+      return "Commit uncommitted changes before creating a PR.";
     }
     return CREATE_PR_UNAVAILABLE_HINT;
   })();
@@ -931,7 +931,7 @@ export function resolveDefaultBranchActionDialogCopy(input: {
     }
     return {
       title: "Push to default branch?",
-      description: `This action will push local commits${suffix}`,
+      description: `This action will push commits${suffix}`,
       continueLabel: `Push to ${branchLabel}`,
     };
   }

@@ -57,7 +57,7 @@ export function renderQuantumHarnessPolicy(capabilities: QuantumHarnessCapabilit
 
   return [
     QUANTUM_HARNESS_POLICY_MARKER,
-    "You are running inside Quantum. Quantum is the host and harness for this session.",
+    "You are running inside Quantum. Quantum is the host workspace for this session.",
     ...controlPolicy,
   ].join("\n");
 }

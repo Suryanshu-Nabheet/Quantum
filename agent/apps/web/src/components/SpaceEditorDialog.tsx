@@ -159,7 +159,7 @@ export function SpaceEditorDialog(props: {
             {props.mode === "create"
               ? "Group projects into a focused work context. Projects you add while a space is open land in it."
               : isVoid
-                ? "Name the group that holds projects you haven't filed into a space. This is a local preference — the projects in it stay where they are."
+                ? "Name the group that holds projects you haven't filed into a space. This is a workspace preference — the projects in it stay where they are."
                 : "Rename this space or give it a different icon. Its projects stay where they are."}
           </DialogDescription>
         </DialogHeader>

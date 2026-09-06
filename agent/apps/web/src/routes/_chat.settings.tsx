@@ -430,10 +430,12 @@ function SettingsRouteView() {
                 });
               }}
               ariaLabel="Default thread mode"
-              valueContent={settings.defaultThreadEnvMode === "worktree" ? "New worktree" : "Local"}
+              valueContent={
+                settings.defaultThreadEnvMode === "worktree" ? "New worktree" : "Checkout"
+              }
             >
               <SelectItem hideIndicator value="local">
-                Local
+                Checkout
               </SelectItem>
               <SelectItem hideIndicator value="worktree">
                 New worktree

@@ -22,6 +22,7 @@ import {
 import { CentralIcon } from "~/lib/central-icons";
 import { BugIcon, ListTodoIcon, MessageCircleIcon, PlusIcon, WorktreeIcon } from "~/lib/icons";
 import type { DraftThreadEnvMode } from "../../composerDraftStore";
+import { QUANTUM_CHECKOUT_SHORT_LABEL } from "~/productVoice";
 
 interface KanbanTaskExtrasMenuProps {
   readonly interactionMode: ProviderInteractionMode;
@@ -100,7 +101,7 @@ export function KanbanTaskExtrasMenu({
           <MenuRadioItem value="local">
             <span className="inline-flex items-center gap-2">
               <CentralIcon name="macbook-air" className="size-4 shrink-0" />
-              Local
+              {QUANTUM_CHECKOUT_SHORT_LABEL}
             </span>
           </MenuRadioItem>
           <MenuRadioItem value="worktree">

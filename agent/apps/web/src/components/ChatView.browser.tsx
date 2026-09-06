@@ -4129,7 +4129,7 @@ describe("ChatView timeline estimator parity (full app)", () => {
 
     try {
       await expect.element(page.getByText("What should we do in")).toBeInTheDocument();
-      await expect.element(page.getByRole("button", { name: "Local" })).toBeInTheDocument();
+      await expect.element(page.getByRole("button", { name: "Checkout" })).toBeInTheDocument();
       expect(document.body.textContent).toContain("main");
     } finally {
       await mounted.cleanup();
@@ -6087,7 +6087,7 @@ describe("ChatView timeline estimator parity (full app)", () => {
         { timeout: 8_000, interval: 16 },
       );
       await expect.element(page.getByTestId("project-picker-trigger")).toBeInTheDocument();
-      await expect.element(page.getByRole("button", { name: "Local" })).toBeInTheDocument();
+      await expect.element(page.getByRole("button", { name: "Checkout" })).toBeInTheDocument();
       await new Promise<void>((resolve) => {
         requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
       });
@@ -6517,7 +6517,7 @@ describe("ChatView timeline estimator parity (full app)", () => {
         },
         { timeout: 8_000, interval: 16 },
       );
-      const envPickerTrigger = await waitForEnvironmentModeButton("Local");
+      const envPickerTrigger = await waitForEnvironmentModeButton("Checkout");
       envPickerTrigger.click();
 
       const newWorktreeOption = page.getByText("New worktree");
@@ -6569,7 +6569,7 @@ describe("ChatView timeline estimator parity (full app)", () => {
         },
         { timeout: 8_000, interval: 16 },
       );
-      const envPickerTrigger = await waitForEnvironmentModeButton("Local");
+      const envPickerTrigger = await waitForEnvironmentModeButton("Checkout");
       envPickerTrigger.click();
 
       const newWorktreeOption = page.getByText("New worktree");
@@ -6667,7 +6667,7 @@ describe("ChatView timeline estimator parity (full app)", () => {
       );
       const newThreadId = newThreadPath.slice(1) as ThreadId;
 
-      const envPickerTrigger = await waitForEnvironmentModeButton("Local");
+      const envPickerTrigger = await waitForEnvironmentModeButton("Checkout");
       envPickerTrigger.click();
       await page.getByText("New worktree").click();
 
@@ -6783,7 +6783,7 @@ describe("ChatView timeline estimator parity (full app)", () => {
         },
         { timeout: 8_000, interval: 16 },
       );
-      const envPickerTrigger = await waitForEnvironmentModeButton("Local");
+      const envPickerTrigger = await waitForEnvironmentModeButton("Checkout");
       envPickerTrigger.click();
 
       const newWorktreeOption = page.getByText("New worktree");

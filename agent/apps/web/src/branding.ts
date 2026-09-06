@@ -1,4 +1,6 @@
 export const APP_BASE_NAME = "Quantum";
+export const APP_FULL_NAME = "Quantum Agent Manager";
+export { QUANTUM_POSITIONING, QUANTUM_TAGLINE } from "./productVoice";
 const isCanaryDesktop =
   typeof window !== "undefined" &&
   (window.location?.protocol === "quantum-canary:" ||

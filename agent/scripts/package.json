@@ -2,6 +2,13 @@
   "name": "@quantum/scripts",
   "version": "0.0.1",
   "private": true,
+  "description": "Quantum Agent Manager Build & Release Scripts",
+  "license": "MIT",
+  "author": "Suryanshu Nabheet",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Suryanshu-Nabheet/Quantum.git"
+  },
   "type": "module",
   "scripts": {
     "prepare": "effect-language-service patch",
@@ -24,12 +31,5 @@
     "electron-builder": "26.15.3",
     "typescript": "catalog:",
     "vitest": "catalog:"
-  },
-  "description": "Quantum Agent Manager Build & Release Scripts",
-  "author": "Suryanshu Nabheet",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Suryanshu-Nabheet/Quantum.git"
   }
 }

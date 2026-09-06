@@ -1,5 +1,5 @@
 // FILE: theme.logic.ts
-// Purpose: Owns the Codex-style theme model, share-string parsing, and derived CSS token math.
+// Purpose: Owns the Quantum chrome theme model, share-string parsing, and derived CSS token math.
 // Layer: Web appearance domain logic
 // Exports: Theme types, normalization helpers, import/export utilities, and CSS variable builders.
 
@@ -206,11 +206,11 @@ const CODE_THEME_SEED_PATCH_METADATA: Partial<
 // Mirror the packaged Codex catalog closely enough that share-string validation
 // can preserve the "known theme + variant availability" behavior.
 export const CODE_THEME_OPTIONS: readonly CodeThemeOption[] = [
+  { id: "quantum", label: "Quantum", variants: ["light", "dark"] },
   { id: "absolutely", label: "Absolutely", variants: ["light", "dark"] },
   { id: "ayu", label: "Ayu", variants: ["dark"] },
   { id: "catppuccin", label: "Catppuccin", variants: ["light", "dark"] },
   { id: "codex", label: "Codex", variants: ["light", "dark"] },
-  { id: "quantum", label: "Quantum", variants: ["light", "dark"] },
   { id: "dracula", label: "Dracula", variants: ["dark"] },
   { id: "everforest", label: "Everforest", variants: ["light", "dark"] },
   { id: "github", label: "GitHub", variants: ["light", "dark"] },
@@ -267,12 +267,12 @@ export const DEFAULT_CHROME_THEME_BY_VARIANT: Record<ThemeVariant, ChromeTheme> 
 
 export const DEFAULT_THEME_STATE: ThemeState = {
   chromeThemes: {
-    dark: getCodeThemeSeed("codex", "dark"),
-    light: getCodeThemeSeed("codex", "light"),
+    dark: getCodeThemeSeed("quantum", "dark"),
+    light: getCodeThemeSeed("quantum", "light"),
   },
   codeThemeIds: {
-    dark: "codex",
-    light: "codex",
+    dark: "quantum",
+    light: "quantum",
   },
   systemUiFont: true,
   mode: "system",

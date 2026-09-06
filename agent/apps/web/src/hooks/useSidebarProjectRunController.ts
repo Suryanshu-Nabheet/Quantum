@@ -228,7 +228,7 @@ export function useSidebarProjectRunController(input: {
       toastManager.add({
         type: "error",
         title: `Unable to open ${localServerAddressLabel(server)}`,
-        description: error instanceof Error ? error.message : "Unable to open the local server.",
+        description: error instanceof Error ? error.message : "Unable to open the dev server.",
       });
     }
   }, []);

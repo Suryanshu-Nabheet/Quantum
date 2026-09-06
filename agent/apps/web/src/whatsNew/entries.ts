@@ -85,7 +85,7 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
         id: "worktree-controls-and-forks",
         title: "Worktree setup is visible, cancellable, and easier to recover",
         description:
-          "See setup progress, cancel before dispatch, or open a local checkout when that is the better path.",
+          "See setup progress, cancel before dispatch, or open a project checkout when that is the better path.",
         details:
           "Automatic branch creation and attachment were restored, setup races were closed, worktree activity is easier to identify, and imported Codex history can now create a real fork while preserving the source relationship. The configured Git model is also used when naming new worktree branches.",
       },
@@ -129,12 +129,11 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
     features: [
       {
         id: "analytics-configuration-removed",
-        title:
-          "A comprehensive security and telemetry audit of the Quantum codebase confirmed complete zero-telemetry client-side isolation.",
+        title: "Zero remote telemetry — verified",
         description:
-          "We did not add it, and we have no access to the PostHog project receiving the events.",
+          "Quantum ships with no third-party product analytics in the client or server.",
         details:
-          "The configuration has been removed. Quantum no longer sends remote product analytics. The events did not include prompts, source code, filenames, or file contents. We're sorry this wasn't caught earlier",
+          "A full audit confirmed remote analytics configuration was removed. Quantum does not send prompts, source code, filenames, or file contents to external analytics services.",
       },
     ],
   },
@@ -146,7 +145,7 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
         id: "github-project-import",
         title: "Start directly from a GitHub repository",
         description:
-          "Create a project from a GitHub URL or repository name and let Quantum prepare the local checkout for you.",
+          "Create a project from a GitHub URL or repository name and let Quantum prepare the project checkout for you.",
         details:
           "The new GitHub source in the project dialog validates repository and folder names, uses your GitHub CLI access, reports clone progress, reuses compatible checkouts, and recovers safely from cancellation or a failed registration without leaving an ambiguous project behind.",
       },
@@ -310,7 +309,7 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
         description:
           "Select elements in the visible browser and send compact, redacted annotations with your message so an agent knows exactly what you mean.",
         details:
-          "Annotations preserve bounded element role, name, text, selector, and page context, support multiple marks with a compact overflow row, survive drafts and transcript rendering, and keep exact-page affinity local. Untrusted page data is clearly separated from user instructions and document-only metadata is removed before provider injection.",
+          "Annotations preserve bounded element role, name, text, selector, and page context, support multiple marks with a compact overflow row, survive drafts and transcript rendering, and keep exact-page affinity on-page. Untrusted page data is clearly separated from user instructions and document-only metadata is removed before provider injection.",
       },
       {
         id: "runtime-modes-and-autonomy",
@@ -470,7 +469,7 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
       },
       {
         id: "storage-and-artifact-safety",
-        title: "Local state stays safer",
+        title: "Workspace state stays safer",
         description:
           "Exclusive SQLite locking and stricter migration-artifact cleanup reduce the chance of competing writers or abandoned update files.",
         details:
@@ -482,7 +481,7 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
         description:
           "Rename Void and choose its icon so unassigned projects fit the way you organize your workspace.",
         details:
-          "The custom presentation is stored locally and appears consistently in the sidebar, Space switcher, project pickers, and creation flows, with validation and a one-step reset to the default.",
+          "The custom presentation is stored on this device and appears consistently in the sidebar, Space switcher, project pickers, and creation flows, with validation and a one-step reset to the default.",
       },
       {
         id: "readability-and-interface-polish",
@@ -548,9 +547,9 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
         id: "external-quantum-mcp",
         title: "Bring Quantum to any MCP-capable agent",
         description:
-          "Connect Codex, Claude Code, Claude Desktop, or another local MCP app, then let it discover your Quantum workspace, launch isolated tasks, wait for results, and bring the answer back.",
+          "Connect Codex, Claude Code, Claude Desktop, or another MCP app, then let it discover your Quantum workspace, launch isolated tasks, wait for results, and bring the answer back.",
         details:
-          "Settings → Integrations now provides a copy-ready guided prompt for agentic clients, manual JSON configuration for Claude Desktop and other non-agentic clients, resumable pairing, all-or-selected project access, provider and model discovery, connection status, and immediate revocation. Connections expire, are rate-limited and capability-scoped, and default new work to managed worktrees with approval-required execution; local-checkout, full-access, and project-wide task reading stay behind explicit advanced permissions.",
+          "Settings → Integrations now provides a copy-ready guided prompt for agentic clients, manual JSON configuration for Claude Desktop and other non-agentic clients, resumable pairing, all-or-selected project access, provider and model discovery, connection status, and immediate revocation. Connections expire, are rate-limited and capability-scoped, and default new work to managed worktrees with approval-required execution; checkout, full-access, and project-wide task reading stay behind explicit advanced permissions.",
       },
       {
         id: "built-in-quantum-mcp",
@@ -780,7 +779,7 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
         id: "large-history-startup",
         title: "Large conversation histories start reliably",
         description:
-          "Quantum now upgrades large local histories without leaving the project list stuck on its loading screen.",
+          "Quantum now upgrades large large histories without leaving the project list stuck on its loading screen.",
         details:
           "The activity-sequence backfill now builds one indexed lookup instead of repeatedly scanning the entire event history. A database with more than 180,000 activities completes the recovery in seconds while preserving every project, thread, message, and activity.",
       },
@@ -866,7 +865,7 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
         description:
           "Chat dock panels load on demand, deleted projects remain safe client tombstones, and browser profile migrations repair database sidecars transactionally instead of leaving partial state behind.",
         details:
-          "The chat route measures LCP while deferring secondary panels, while project deletion and desktop profile repair now preserve predictable local state through reloads, retries, and interrupted migrations.",
+          "The chat route measures LCP while deferring secondary panels, while project deletion and desktop profile repair now preserve predictable workspace state through reloads, retries, and interrupted migrations.",
       },
       {
         id: "safer-release-updates",
@@ -886,7 +885,7 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
         id: "quantum-identity-bridge",
         title: "Quantum is preparing a seamless identity upgrade",
         description:
-          "Launch this version at least once before installing the next Quantum release so your drafts, pins, theme, browser state, and other local interface preferences move with you.",
+          "Launch this version at least once before installing the next Quantum release so your drafts, pins, theme, browser state, and other interface preferences move with you.",
         details:
           "This bridge writes a validated Quantum-only snapshot of renderer state, keeps existing project and thread data intact, and prepares database and checkpoint metadata for the final identity cutover. Earlier command and environment aliases are accepted by this bridge release only and will be removed next.",
       },
@@ -1086,9 +1085,9 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
         id: "worktree-setup-status",
         title: "Worktree setup failures recover cleanly",
         description:
-          "When a worktree setup step fails, Quantum now shows the failed setup state, keeps the timeline from looking stuck, and resets the local dispatch when you send again.",
+          "When a worktree setup step fails, Quantum now shows the failed setup state, keeps the timeline from looking stuck, and resets the dispatch when you send again.",
         details:
-          "ChatView and timeline setup snapshots now carry explicit setup step status, targeted cleanup for failed local dispatches, and focused browser/unit coverage for new-turn reset and setup rows.",
+          "ChatView and timeline setup snapshots now carry explicit setup step status, targeted cleanup for failed dispatches, and focused browser/unit coverage for new-turn reset and setup rows.",
       },
       {
         id: "automation-sent-label",
@@ -1372,7 +1371,7 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
         id: "lighter-idle-polling",
         title: "Idle server polling is lighter",
         description:
-          "Quantum polls local server state less aggressively while idle, reducing background work without changing the active-session refresh path.",
+          "Quantum polls dev server state less aggressively while idle, reducing background work without changing the active-session refresh path.",
         details:
           "The server React Query helper now separates active and idle refresh intervals, the sidebar uses the calmer idle cadence, and focused tests cover the interval behavior.",
       },
@@ -1400,11 +1399,11 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
       },
       {
         id: "absolute-file-previews",
-        title: "Local previews can open more real files",
+        title: "File previews can open more real files",
         description:
           "Absolute local file paths now get preview grants, making image, PDF, and workspace previews more reliable when agent output points at files on disk.",
         details:
-          "The server now grants and validates local preview access more carefully, including trusted-origin checks, local image route coverage, workspace file-system normalization, and web-side preview/download handling for absolute paths.",
+          "The server now grants and validates preview access more carefully, including trusted-origin checks, image route coverage, workspace file-system normalization, and web-side preview/download handling for absolute paths.",
       },
       {
         id: "review-file-tree",
@@ -1558,9 +1557,9 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
         id: "file-attachments-and-previews",
         title: "Files attach, preview, and download more reliably",
         description:
-          "Chat now supports generic file attachments alongside images, with better chips/cards, safer upload normalization, worktree-aware previews, and in-app local image downloads.",
+          "Chat now supports generic file attachments alongside images, with better chips/cards, safer upload normalization, worktree-aware previews, and in-app image downloads.",
         details:
-          "File attachments now flow through contracts, upload storage, composer paste/drop, provider prompts, Kanban dispatch, recap/bootstrap surfaces, optimistic timeline rendering, caps/rollback, attachment-bearing plan follow-ups, explicit unsupported-file rejection, worktree-backed file preview roots, and blob-based download handling that keeps failed local image downloads inside Quantum.",
+          "File attachments now flow through contracts, upload storage, composer paste/drop, provider prompts, Kanban dispatch, recap/bootstrap surfaces, optimistic timeline rendering, caps/rollback, attachment-bearing plan follow-ups, explicit unsupported-file rejection, worktree-backed file preview roots, and blob-based download handling that keeps failed image downloads inside Quantum.",
       },
       {
         id: "provider-model-scoping",
@@ -1582,7 +1581,7 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
         id: "profile-skill-counts",
         title: "Profile skill counts reflect more real work",
         description:
-          "Profile stats now count repeated `/skill` and `$skill` usage more accurately, including retained history that should still contribute to your local activity picture.",
+          "Profile stats now count repeated `/skill` and `$skill` usage more accurately, including retained history that should still contribute to your activity picture.",
         details:
           "Skill aggregation now includes retention-hidden threads while still excluding manually deleted data, counts repeated slash/dollar skill tokens inside one prompt, avoids double-counting structured references, and has regression coverage for retained threads and repeated skill invocation.",
       },
@@ -1648,9 +1647,9 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
         id: "smarter-profile-stats",
         title: "Your profile understands more of your work",
         description:
-          "Quantum now tracks richer local profile stats, including your most worked project, skill and agent usage, active hours, provider/model mix, and prompt activity.",
+          "Quantum now tracks richer profile stats, including your most worked project, skill and agent usage, active hours, provider/model mix, and prompt activity.",
         details:
-          "Profile stats now derive more signal from Quantum's local projection database: most-worked project, prompt/thread activity, skill and agent usage, provider/model usage, reasoning patterns, active-hour windows, and token heatmap data are all represented in the profile contract and settings panel.",
+          "Profile stats now derive more signal from Quantum's projection database: most-worked project, prompt/thread activity, skill and agent usage, provider/model usage, reasoning patterns, active-hour windows, and token heatmap data are all represented in the profile contract and settings panel.",
       },
       {
         id: "pasted-text-cards",
@@ -1754,9 +1753,9 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
         id: "secure-pdf-preview",
         title: "PDFs open safely inside Quantum",
         description:
-          "Local PDFs can now be previewed directly in the workspace pane with page navigation, zoom controls, selection-safe rendering, and hardened link handling.",
+          "PDFs can now be previewed directly in the workspace pane with page navigation, zoom controls, selection-safe rendering, and hardened link handling.",
         details:
-          "This release replaces browser iframe PDF handling with a pdf.js-powered viewer, authenticated local preview routes, workspace/scratch allowlists, sanitized annotation links, page reset behavior when switching files, fresh page proxies per document, and focused server/web tests for local image/PDF access and PDF navigation helpers.",
+          "This release replaces browser iframe PDF handling with a pdf.js-powered viewer, authenticated preview routes, workspace/scratch allowlists, sanitized annotation links, page reset behavior when switching files, fresh page proxies per document, and focused server/web tests for image/PDF access and PDF navigation helpers.",
       },
       {
         id: "workspace-file-preview",
@@ -1764,7 +1763,7 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
         description:
           "The right dock and editor workspace now use the same richer file preview surface, so browsing files, images, markdown, and PDFs feels more consistent.",
         details:
-          "Quantum now routes file preview through `WorkspaceFilePreview`, `PdfFilePreview`, shared preview headers, markdown/source selection references, workspace file openers, dock pane activation metadata, local preview URL helpers, and tighter file reference context-menu behavior.",
+          "Quantum now routes file preview through `WorkspaceFilePreview`, `PdfFilePreview`, shared preview headers, markdown/source selection references, workspace file openers, dock pane activation metadata, preview URL helpers, and tighter file reference context-menu behavior.",
       },
       {
         id: "pi-plugin-routing",
@@ -1800,11 +1799,11 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
       },
       {
         id: "preview-security-and-local-files",
-        title: "Local previews have tighter safety rails",
+        title: "File previews have tighter safety rails",
         description:
-          "Local image/PDF preview routes are more explicit about what can be opened, how auth applies, and when unsafe paths or URLs should be rejected.",
+          "File preview routes are more explicit about what can be opened, how auth applies, and when unsafe paths or URLs should be rejected.",
         details:
-          "Server-side local preview handling now shares local preview file helpers, narrows CORS behavior for preview responses, covers local image routes, hardens scratch workspace path generation, and keeps external PDF links on an allowlisted path instead of trusting unsafe annotation URLs.",
+          "Server-side preview handling now shares preview file helpers, narrows CORS behavior for preview responses, covers image routes, hardens scratch workspace path generation, and keeps external PDF links on an allowlisted path instead of trusting unsafe annotation URLs.",
       },
     ],
   },
@@ -1834,7 +1833,7 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
         description:
           "In-app browser sessions recover better, and copy-link flows now have cleaner behavior when moving between browser and chat contexts.",
         details:
-          "Browser session handling, copy-link actions, local image preview state, and shared error-card behavior were tightened so browsing, previewing, and moving references into prompts produce fewer stale or duplicated states.",
+          "Browser session handling, copy-link actions, image preview state, and shared error-card behavior were tightened so browsing, previewing, and moving references into prompts produce fewer stale or duplicated states.",
       },
       {
         id: "settings-and-density",
@@ -1850,7 +1849,7 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
         description:
           "Editor mode feedback, project picker reuse, kanban composer menus, and image preview handling all received focused follow-ups.",
         details:
-          "This release fixes editor-mode production feedback, shares project menu picker behavior, splits kanban composer menu discovery from editor logic, and consolidates local image preview state across chat and editor views.",
+          "This release fixes editor-mode production feedback, shares project menu picker behavior, splits kanban composer menu discovery from editor logic, and consolidates image preview state across chat and editor views.",
       },
     ],
   },
@@ -1991,12 +1990,12 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
           "Quantum now caches site favicons server-side, serves authenticated favicon image URLs, recognizes bare domains in composer text, and keeps markdown link text aligned with the same medium-weight chip styling used while composing.",
       },
       {
-        id: "local-server-environment",
-        title: "Local dev servers are easier to spot",
+        id: "dev-server-environment",
+        title: "Dev servers are easier to spot",
         description:
-          "The Environment panel can now show local servers tied to the current project, with clearer browser/terminal identity and controls for tracked project runs.",
+          "The Environment panel can now show dev servers tied to the current project, with clearer browser/terminal identity and controls for tracked project runs.",
         details:
-          "The server now monitors listening processes with address-family metadata, tracks project-run ownership, syncs local server state over WebSocket/RPC contracts, and adds sidebar/project-run affordances for starting, viewing, and stopping dev servers.",
+          "The server now monitors listening processes with address-family metadata, tracks project-run ownership, syncs dev server state over WebSocket/RPC contracts, and adds sidebar/project-run affordances for starting, viewing, and stopping dev servers.",
       },
       {
         id: "transcript-scroll-reliability",
@@ -2010,9 +2009,9 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
         id: "orchestration-and-keybindings",
         title: "Small orchestration and shortcut fixes landed too",
         description:
-          "Thread orchestration, terminal identity, recent view switching, retired-model shortcuts, and local-server cleanup picked up focused reliability fixes.",
+          "Thread orchestration, terminal identity, recent view switching, retired-model shortcuts, and dev-server cleanup picked up focused reliability fixes.",
         details:
-          "This release tightens provider/runtime event projection, terminal visual identity, local-server process cleanup, recent-view key handling, and retired model picker shortcuts, with new tests for the affected contracts and stores.",
+          "This release tightens provider/runtime event projection, terminal visual identity, dev-server process cleanup, recent-view key handling, and retired model picker shortcuts, with new tests for the affected contracts and stores.",
       },
     ],
   },
@@ -2200,7 +2199,7 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
         id: "opencode-startup-reliability",
         title: "OpenCode starts faster and fails louder",
         description:
-          "Local OpenCode servers are pooled for recent sessions, startup waits longer before timing out, session creation runs alongside inventory discovery, and failure details now include redacted command output instead of vague startup errors.",
+          "Managed OpenCode servers are pooled for recent sessions, startup waits longer before timing out, session creation runs alongside inventory discovery, and failure details now include redacted command output instead of vague startup errors.",
       },
       {
         id: "provider-health-stability",
@@ -2385,7 +2384,7 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
         id: "provider-picker-readiness",
         title: "Provider choices wait for real readiness",
         description:
-          "The provider picker no longer treats unknown provider status as usable. Providers stay in a checking state until Quantum has confirmed that the local runtime is available and authenticated.",
+          "The provider picker no longer treats unknown provider status as usable. Providers stay in a checking state until Quantum has confirmed that the installed runtime is available and authenticated.",
       },
       {
         id: "desktop-shutdown-recovery",
@@ -2487,7 +2486,7 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
         id: "attachment-previews-stay-visible",
         title: "Image attachments stay visible after sending",
         description:
-          "Persisted image previews now load through the same reliable byte-serving path as local generated images, fixing the brief preview flash followed by broken attachment thumbnails.",
+          "Persisted image previews now load through the same reliable byte-serving path as generated images, fixing the brief preview flash followed by broken attachment thumbnails.",
       },
       {
         id: "kilo-code-provider",
@@ -2559,13 +2558,13 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
         id: "codex-generated-images",
         title: "Codex image generation now renders in chat",
         description:
-          "Generated images from Codex are captured as local artifacts, rendered inline in assistant messages, and include expand and download controls without dragging bulky base64 payloads through the transcript.",
+          "Generated images from Codex are captured as generated artifacts, rendered inline in assistant messages, and include expand and download controls without dragging bulky base64 payloads through the transcript.",
       },
       {
-        id: "secure-local-image-route",
-        title: "Generated images use a safer local route",
+        id: "secure-preview-image-route",
+        title: "Generated images use a safer preview route",
         description:
-          "Quantum now serves generated files through a dedicated local-image endpoint with MIME checks, workspace-aware path resolution, and Codex generated_images allowlists for both the normal home and desktop overlay home.",
+          "Quantum now serves generated files through a dedicated preview-image endpoint with MIME checks, workspace-aware path resolution, and Codex generated_images allowlists for both the normal home and desktop overlay home.",
       },
       {
         id: "provider-favorites",
@@ -2751,7 +2750,7 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
         id: "production-debug-flags",
         title: "Debug controls stay out of production",
         description:
-          "Debug feature flags are now hidden behind local opt-in behavior, keeping production sidebars cleaner while preserving developer-only controls.",
+          "Debug feature flags are now hidden behind opt-in behavior, keeping production sidebars cleaner while preserving developer-only controls.",
       },
     ],
   },
@@ -2811,7 +2810,7 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
         id: "branch-switch-recovery",
         title: "Branch switching is much safer",
         description:
-          "Quantum now handles messy branch switches with clearer recovery actions, recreated stashes, unpublished branch publishing, and stronger checks around conflicts and local work.",
+          "Quantum now handles messy branch switches with clearer recovery actions, recreated stashes, unpublished branch publishing, and stronger checks around conflicts and uncommitted work.",
       },
       {
         id: "plan-mode-proposals",
@@ -2959,9 +2958,9 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
     features: [
       {
         id: "local-folder-browsing-in-composer",
-        title: "📂 Browse local folders right from the composer",
+        title: "📂 Browse folders right from the composer",
         description:
-          "Folder mentions now open a real local directory picker, so you can drill into nearby files and attach the right path without leaving the chat flow.",
+          "Folder mentions now open a real workspace directory picker, so you can drill into nearby files and attach the right path without leaving the chat flow.",
       },
       {
         id: "cleaner-file-and-folder-mentions",

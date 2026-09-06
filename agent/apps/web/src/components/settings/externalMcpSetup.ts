@@ -71,8 +71,8 @@ export function buildExternalMcpClientConfiguration(
       ),
       copyLabel: "Copy Codex command",
       instruction: /win/i.test(platform)
-        ? "Run this command in PowerShell. Codex will save Quantum as a local MCP server; then open a new Codex task."
-        : "Run this command in Terminal. Codex will save Quantum as a local MCP server; then open a new Codex task.",
+        ? "Run this command in PowerShell. Codex will register Quantum as an MCP server; then open a new Codex task."
+        : "Run this command in Terminal. Codex will register Quantum as an MCP server; then open a new Codex task.",
     };
   }
 
@@ -112,7 +112,7 @@ export function buildExternalMcpClientConfiguration(
     instruction:
       client === "claudeDesktop"
         ? "In Claude Desktop, open Settings → Developer → Edit Config. Add the Quantum entry without removing existing servers, save, and restart Claude Desktop."
-        : "Paste this into your app's local stdio MCP configuration.",
+        : "Paste this into your app's stdio MCP configuration.",
   };
 }
 
@@ -185,7 +185,7 @@ export function describeExternalMcpPermissions(
     descriptions.push("Read other tasks in selected projects");
   }
   if (capabilities.includes("runtime:local")) {
-    descriptions.push("Use the shared local checkout");
+    descriptions.push("Use the shared project checkout");
   }
   if (capabilities.includes("runtime:full-access")) {
     descriptions.push("Run without approval prompts");

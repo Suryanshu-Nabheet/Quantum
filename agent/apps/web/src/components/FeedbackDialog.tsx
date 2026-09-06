@@ -6,6 +6,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   buildFeedbackSubmission,
+  configuredFeedbackEndpoint,
   FEEDBACK_CATEGORIES,
   submitFeedback,
   type FeedbackCategory,
@@ -32,10 +33,13 @@ export function FeedbackDialog({ open, context, onOpenChange }: FeedbackDialogPr
       await submitFeedback(buildFeedbackSubmission({ category, details, context }));
       setIsSending(false);
       onOpenChange(false);
+      const usesRemoteEndpoint = configuredFeedbackEndpoint() !== null;
       toastManager.add({
         type: "success",
-        title: "Feedback sent",
-        description: "Thanks for helping make Quantum better.",
+        title: usesRemoteEndpoint ? "Feedback sent" : "GitHub issue opened",
+        description: usesRemoteEndpoint
+          ? "Thanks for helping make Quantum better."
+          : "Finish filing the issue in your browser if it did not open automatically.",
       });
     } catch (error) {
       setIsSending(false);

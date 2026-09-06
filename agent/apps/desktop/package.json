@@ -2,6 +2,13 @@
   "name": "@quantum/desktop",
   "version": "0.0.1",
   "private": true,
+  "description": "Quantum Agent Manager Desktop Shell",
+  "license": "MIT",
+  "author": "Suryanshu Nabheet",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Suryanshu-Nabheet/Quantum.git"
+  },
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "bun run scripts/dev.mjs",
@@ -27,12 +34,5 @@
     "vitest": "catalog:",
     "wait-on": "^8.0.2"
   },
-  "productName": "Quantum",
-  "description": "Quantum Agent Manager Desktop Shell",
-  "author": "Suryanshu Nabheet",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Suryanshu-Nabheet/Quantum.git"
-  }
+  "productName": "Quantum"
 }

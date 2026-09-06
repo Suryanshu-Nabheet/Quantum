@@ -7,7 +7,7 @@ Thank you for your interest in contributing to the Quantum ecosystem.
 Quantum is organized into three distinct subsystems:
 
 - `ide/` — Quantum IDE (AI-native editor based on VS Code)
-- `agent/` — Quantum Agent Manager (Autonomous desktop workspace & multi-agent harness)
+- `agent/` — Quantum Agent Manager — parallel agents, one workspace.
 - `cli/` — Quantum CLI (Terminal-first AI coding agent)
 - `docs/` — System architecture and ecosystem specifications
 

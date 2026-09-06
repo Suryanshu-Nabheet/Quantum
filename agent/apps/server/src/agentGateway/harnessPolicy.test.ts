@@ -12,7 +12,7 @@ describe("Quantum harness policy", () => {
   it("identifies Quantum and explains exact batch coordination when MCP is available", () => {
     const policy = renderQuantumHarnessPolicy({ gatewayControlAvailable: true });
     assert.include(policy, QUANTUM_HARNESS_POLICY_MARKER);
-    assert.include(policy, "Quantum is the host and harness");
+    assert.include(policy, "Quantum is the host workspace");
     assert.include(policy, "one exact quantum_create_threads plan");
     assert.include(policy, "before returning an operationId");
     assert.include(policy, "quantum_wait_for_threads");

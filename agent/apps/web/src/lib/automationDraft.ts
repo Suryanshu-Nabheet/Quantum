@@ -119,7 +119,7 @@ export function buildAutomationDraftWarnings(input: {
     warnings.push({
       id: "local-checkout",
       title:
-        input.worktreeMode === "auto" ? "Auto fallback may use local checkout" : "Local checkout",
+        input.worktreeMode === "auto" ? "Auto fallback may use project checkout" : "Project checkout",
       detail:
         input.worktreeMode === "auto"
           ? "If Quantum cannot create a worktree, runs may fall back to editing the active project checkout."

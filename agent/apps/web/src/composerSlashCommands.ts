@@ -197,7 +197,7 @@ const COMPOSER_SLASH_COMMAND_DEFINITIONS: Record<
   fork: {
     command: "fork",
     label: "/fork",
-    description: "Fork this thread into local or a new worktree",
+    description: "Fork this thread into checkout or a new worktree",
     source: "app",
   },
   side: {
@@ -359,7 +359,7 @@ export function buildSubagentsPrompt(existingPrompt: string): string {
 
 export function buildReviewPrompt(input: { target: "changes" | "base-branch" }): string {
   const baseInstruction =
-    "Review the local code changes for bugs, risks, behavioural regressions, and missing tests. Findings first, ordered by severity.";
+    "Review the code changes for bugs, risks, behavioural regressions, and missing tests. Findings first, ordered by severity.";
   if (input.target === "base-branch") {
     return `${baseInstruction}\nFocus on the current branch diff against its base branch.`;
   }

@@ -601,7 +601,7 @@ describe("ClaudeAdapterLive", () => {
       assert.include(systemPrompt.append ?? "", "When spawning subagents");
       assert.include(systemPrompt.append ?? "", "worker-<tier>");
       assert.include(systemPrompt.append ?? "", QUANTUM_HARNESS_POLICY_MARKER);
-      assert.include(systemPrompt.append ?? "", "Quantum is the host and harness");
+      assert.include(systemPrompt.append ?? "", "Quantum is the host workspace");
       // This characterization harness intentionally omits gateway credentials.
       assert.include(systemPrompt.append ?? "", "Quantum MCP control is unavailable");
     }).pipe(

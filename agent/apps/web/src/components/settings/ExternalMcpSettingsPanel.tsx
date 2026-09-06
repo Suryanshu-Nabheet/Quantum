@@ -331,7 +331,7 @@ export function ExternalMcpSettingsPanel(props: { active: boolean }) {
               </div>
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <div className="text-xs font-medium">Use the shared local checkout</div>
+                  <div className="text-xs font-medium">Use the shared project checkout</div>
                   <div className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">
                     High impact. Tasks may modify the checkout you are actively using instead of an
                     isolated worktree.
@@ -390,7 +390,7 @@ export function ExternalMcpSettingsPanel(props: { active: boolean }) {
                   : connected
                     ? "Quantum received a request from this agent. Setup is complete."
                     : paired
-                      ? "The private credential is stored locally. If the agent has not registered Quantum yet, give it the setup prompt below."
+                      ? "The private credential is stored on this device. If the agent has not registered Quantum yet, give it the setup prompt below."
                       : pairingExpired
                         ? "The one-time pairing code was not used in time. Resume pairing to issue a fresh code without replacing this connection."
                         : "Paste the setup prompt into your agent. This page updates automatically when pairing succeeds."
@@ -603,7 +603,7 @@ export function ExternalMcpSettingsPanel(props: { active: boolean }) {
         ) : (
           <SettingsListRow
             title="No connected agents"
-            description="Connect Codex, Claude, or another local MCP agent to create and follow Quantum tasks."
+            description="Connect Codex, Claude, or another MCP agent to create and follow Quantum tasks."
           />
         )}
       </SettingsSection>

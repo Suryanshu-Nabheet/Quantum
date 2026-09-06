@@ -2,6 +2,13 @@
   "name": "@quantum/contracts",
   "version": "0.0.1",
   "private": true,
+  "description": "Quantum Agent Manager Effect Contracts",
+  "license": "MIT",
+  "author": "Suryanshu Nabheet",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Suryanshu-Nabheet/Quantum.git"
+  },
   "files": [
     "dist"
   ],
@@ -32,12 +39,5 @@
     "tsdown": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
-  },
-  "description": "Quantum Agent Manager Effect Contracts",
-  "author": "Suryanshu Nabheet",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Suryanshu-Nabheet/Quantum.git"
   }
 }

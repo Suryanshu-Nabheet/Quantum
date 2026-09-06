@@ -253,7 +253,7 @@ describe("MessagesTimeline worktree setup card", () => {
     }
   });
 
-  it("offers Cancel and Work locally while preparation can still be resolved", async () => {
+  it("offers Cancel and project checkout while preparation can still be resolved", async () => {
     const resolved: WorktreeSetupResolutionAction[] = [];
     const screen = await render(
       <ResolvableSetupTimeline
@@ -265,7 +265,7 @@ describe("MessagesTimeline worktree setup card", () => {
     try {
       await expect.poll(() => setupRow() !== null).toBe(true);
       const buttons = Array.from(setupRow()?.querySelectorAll("button") ?? []);
-      const workLocally = buttons.find((button) => button.textContent === "Work locally");
+      const workLocally = buttons.find((button) => button.textContent === "Use project checkout");
       const cancel = buttons.find((button) => button.textContent === "Cancel");
       expect(workLocally).toBeDefined();
       expect(cancel).toBeDefined();
@@ -306,7 +306,7 @@ describe("MessagesTimeline worktree setup card", () => {
 
     try {
       await expect.poll(() => setupRow() !== null).toBe(true);
-      expect(setupRow()?.textContent).not.toContain("Work locally");
+      expect(setupRow()?.textContent).not.toContain("Use project checkout");
       expect(setupRow()?.textContent).not.toContain("Cancel");
     } finally {
       await screen.unmount();
@@ -323,7 +323,7 @@ describe("MessagesTimeline worktree setup card", () => {
 
     try {
       await expect.poll(() => setupRow()?.textContent).toContain("failed");
-      expect(setupRow()?.textContent).not.toContain("Work locally");
+      expect(setupRow()?.textContent).not.toContain("Use project checkout");
       expect(setupRow()?.textContent).not.toContain("Cancel");
     } finally {
       await screen.unmount();

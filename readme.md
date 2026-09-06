@@ -16,7 +16,7 @@ The Quantum monorepo comprises three dedicated subsystems:
 | Subsystem | Directory | Description | Technology Stack |
 | :--- | :--- | :--- | :--- |
 | **Quantum IDE** | [`ide/`](ide/) | AI-native editor with embedded workbench agent, inline code generation, and DOM inspection. | TypeScript, Electron, Monaco |
-| **Quantum Agent Manager** | [`agent/`](agent/) | Desktop harness for parallel multi-agent execution, worktree isolation, and provider routing. | Electron, React, Effect, MCP |
+| **Quantum Agent Manager** | [`agent/`](agent/) | Parallel agents, one workspace — Spaces, Activity, and multi-provider orchestration. | Electron, React, Effect, MCP |
 | **Quantum CLI** | [`cli/`](cli/) | Terminal agent for automated multi-turn engineering tasks and script execution. | TypeScript, Bun |
 
 ---
@@ -37,7 +37,7 @@ AI-native code editor featuring a first-party autonomous agent embedded directly
 
 ### Quantum Agent Manager
 
-MCP-native desktop workspace and agent harness for orchestrating parallel AI coding sessions, multi-model workflows, and isolated git worktrees.
+MCP-native agent manager for orchestrating parallel AI coding sessions — multi-model workflows, Spaces, Activity, and isolated git worktrees.
 
 <p align="center">
   <img src="agent/assets/screenshots/demo.png" alt="Quantum Agent Manager Screenshot" width="100%" />
