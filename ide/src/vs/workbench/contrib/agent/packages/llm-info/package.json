@@ -1,0 +1,22 @@
+{
+  "name": "llm-info",
+  "version": "1.0.10",
+  "description": "LLM and provider metadata for autodetection",
+  "main": "../../../../../../../out/agent-packages/llm-info/index.js",
+  "types": "../../../../../../../out/agent-packages/llm-info/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "test": "echo 'No tests to run'",
+    "build": "rm -rf ../../../../../../../out/agent-packages/llm-info && tsc"
+  },
+  "author": "Suryanshu Nabheet",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.15.29",
+    "typescript": "^5.5.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Suryanshu-Nabheet/Quantum.git"
+  }
+}

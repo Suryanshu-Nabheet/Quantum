@@ -1,0 +1,47 @@
+name: Marketing site
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/marketing/**"
+      - "assets/prod/**"
+      - ".github/workflows/marketing.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.12
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - run: bun run build:marketing
+        env:
+          PUBLIC_GITHUB_REPO: ${{ github.repository }}
+          PUBLIC_SITE_BASE: /${{ github.event.repository.name }}
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/marketing/dist
+
+  deploy:
+    needs: build
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

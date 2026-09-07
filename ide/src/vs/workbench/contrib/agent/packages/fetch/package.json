@@ -1,0 +1,30 @@
+{
+  "name": "fetch",
+  "version": "1.1.0",
+  "description": "HTTP fetch with proxy and request options",
+  "main": "../../../../../../../out/agent-packages/fetch/index.js",
+  "types": "../../../../../../../out/agent-packages/fetch/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "build": "rm -rf ../../../../../../../out/agent-packages/fetch && tsc"
+  },
+  "author": "Suryanshu Nabheet",
+  "license": "MIT",
+  "dependencies": {
+    "config-types": "file:../config-types",
+    "follow-redirects": "^1.15.6",
+    "http-proxy-agent": "^7.0.2",
+    "https-proxy-agent": "^7.0.5",
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "@types/follow-redirects": "^1.14.4",
+    "typescript": "^5.0.0",
+    "vitest": "^3.2.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Suryanshu-Nabheet/Quantum.git"
+  }
+}

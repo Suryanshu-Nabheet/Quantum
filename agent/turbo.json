@@ -1,0 +1,53 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalEnv": [
+    "PORT",
+    "VITE_WS_URL",
+    "VITE_DEV_SERVER_URL",
+    "ELECTRON_RENDERER_PORT",
+    "QUANTUM_HOME",
+    "QUANTUM_DESKTOP_WS_URL",
+    "QUANTUM_BROWSER_HOST_PIPE_PATH",
+    "QUANTUM_BROWSER_USE_PIPE_PATH",
+    "QUANTUM_BROWSER_PERF",
+    "QUANTUM_PROVIDER_RUNTIME_IDLE_STOP_MS",
+    "QUANTUM_GROK_ACP_DEBUG",
+    "QUANTUM_WEB_SOURCEMAP",
+    "QUANTUM_SERVER_SOURCEMAP",
+    "QUANTUM_DESKTOP_SOURCEMAP",
+    "QUANTUM_MODE",
+    "QUANTUM_PORT",
+    "QUANTUM_NO_BROWSER",
+    "QUANTUM_AUTH_TOKEN",
+    "QUANTUM_PUBLIC_URL",
+    "QUANTUM_ALLOW_INSECURE_REMOTE",
+    "QUANTUM_LOG_WS_EVENTS",
+    "QUANTUM_HOST",
+    "QUANTUM_AUTO_BOOTSTRAP_PROJECT_FROM_CWD",
+    "QUANTUM_HOME",
+    "QUANTUM_DESKTOP_WS_URL",
+    "QUANTUM_MODE",
+    "QUANTUM_PORT",
+    "QUANTUM_AUTH_TOKEN"
+  ],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", "dist-electron/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "typecheck": {
+      "dependsOn": ["^typecheck"],
+      "outputs": [],
+      "cache": false
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "outputs": []
+    }
+  }
+}

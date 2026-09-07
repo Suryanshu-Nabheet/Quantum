@@ -1,0 +1,32 @@
+{
+	"compilerOptions": {
+		"module": "commonjs",
+		"target": "es6",
+		"outDir": "out",
+		"lib": [
+			"es6",
+			"dom"
+		],
+		"sourceMap": true,
+		"rootDir": "src",
+		"strict": false,
+		"skipLibCheck": true,
+		"forceConsistentCasingInFileNames": true,
+		"types": [
+			"node"
+		],
+		"typeRoots": [
+			"../../node_modules/@types",
+			"../../src/vscode-dts"
+		]
+	},
+	"include": [
+		"src/**/*.ts",
+		"../../src/vscode-dts/vscode.d.ts"
+	],
+	"exclude": [
+		"node_modules",
+		".vscode-test",
+		"src/test"
+	]
+}

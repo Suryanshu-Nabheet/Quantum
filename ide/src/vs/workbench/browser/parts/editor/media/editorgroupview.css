@@ -1,0 +1,436 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+
+/* Container */
+
+/* Editor depth shadows - the ::after pseudo-element draws inset shadows on each edge,
+ * creating the illusion that sidebar, panel, and auxiliarybar float above it. */
+.monaco-workbench.vs .part.editor {
+	position: relative;
+}
+
+.monaco-workbench.vs .part.editor::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	z-index: 10;
+	box-shadow:
+		inset var(--vscode-shadow-depth-x),
+		inset calc(-1 * 5px) 0 10px -4px rgba(0, 0, 0, 0.04),
+		inset 0 calc(-1 * 5px) 10px -4px rgba(0, 0, 0, 0.05);
+}
+
+/* When sidebar is on the right, flip the stronger shadow to the right edge */
+.monaco-workbench.sidebar-right.vs .part.editor::after {
+	box-shadow:
+		inset 5px 0 10px -4px rgba(0, 0, 0, 0.04),
+		inset calc(-1 * 5px) 0 10px -4px rgba(0, 0, 0, 0.05),
+		inset 0 calc(-1 * 5px) 10px -4px rgba(0, 0, 0, 0.05);
+}
+
+/* Panel positions: strengthen the shadow on whichever edge faces the panel */
+.monaco-workbench.panel-position-left.vs .part.editor::after {
+	box-shadow:
+		inset var(--vscode-shadow-depth-x),
+		inset calc(-1 * 5px) 0 10px -4px rgba(0, 0, 0, 0.04);
+}
+
+.monaco-workbench.panel-position-right.vs .part.editor::after {
+	box-shadow:
+		inset 5px 0 10px -4px rgba(0, 0, 0, 0.04),
+		inset calc(-1 * 5px) 0 10px -4px rgba(0, 0, 0, 0.05);
+}
+
+.monaco-workbench.panel-position-top.vs .part.editor::after {
+	box-shadow:
+		inset var(--vscode-shadow-depth-x),
+		inset calc(-1 * 5px) 0 10px -4px rgba(0, 0, 0, 0.04),
+		inset 0 var(--vscode-shadow-depth-y);
+}
+
+/* Must appear after positional variants so source-order wins at equal specificity */
+.monaco-workbench.no-shadows.vs .part.editor::after {
+	box-shadow: none;
+}
+
+.monaco-workbench .part.editor > .content .editor-group-container {
+	height: 100%;
+}
+
+.monaco-workbench .part.editor > .content .editor-group-container.empty {
+	opacity: 0.5;
+	/* dimmed to indicate inactive state */
+}
+
+.monaco-workbench .part.editor > .content .editor-group-container.empty.active,
+.monaco-workbench .part.editor > .content .editor-group-container.empty.dragged-over {
+	opacity: 1;
+	/* indicate active/dragged-over group through undimmed state */
+}
+
+.monaco-workbench .part.editor > .content:not(.empty) .editor-group-container.empty.active:focus {
+	outline-offset: -2px;
+	outline: 1px solid var(--vscode-editorGroup-focusedEmptyBorder);
+}
+
+.monaco-workbench .part.editor > .content.empty .editor-group-container.empty.active:focus {
+	outline: none;
+	/* never show outline for empty group if it is the last */
+}
+
+/* Watermark & shortcuts */
+
+.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark {
+	display: flex;
+	height: 100%;
+	max-width: 272px;
+	margin: auto;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+}
+
+/* 1st watermark: widen for welcome layout */
+.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark.welcome-mode {
+	max-width: 420px;
+}
+
+.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark > .watermark-container {
+	display: flex;
+	width: 100%;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 16px;
+}
+
+
+
+.monaco-workbench .part.editor > .content .editor-group-container:not(.empty) > .editor-group-watermark {
+	display: none;
+}
+
+/* 2nd watermark: workspace, no file open */
+.monaco-workbench .part.editor > .content .editor-group-container.empty > .editor-group-watermark:not(.welcome-mode) {
+	max-width: 300px;
+	height: calc(100% - 70px);
+}
+
+/* --- 1st watermark letterpress (empty window welcome) --- */
+.monaco-workbench .part.editor .editor-group-watermark.welcome-mode .letterpress {
+	width: 100%;
+	height: 56px;
+	background-image: url('./lockup-horizontal-light.png');
+	background-size: contain;
+	background-position-x: center;
+	background-repeat: no-repeat;
+	max-width: 340px;
+	opacity: 0.72;
+	filter: none;
+}
+
+.monaco-workbench.vs-dark .part.editor .editor-group-watermark.welcome-mode .letterpress {
+	background-image: url('./lockup-horizontal-dark.png');
+}
+
+.monaco-workbench.hc-light .part.editor .editor-group-watermark.welcome-mode .letterpress {
+	background-image: url('./lockup-horizontal-light.png');
+}
+
+.monaco-workbench.hc-black .part.editor .editor-group-watermark.welcome-mode .letterpress {
+	background-image: url('./lockup-horizontal-dark.png');
+}
+
+/* --- 2nd watermark letterpress (workspace, no file open) --- */
+.monaco-workbench .part.editor .editor-group-watermark:not(.welcome-mode) .letterpress {
+	width: 100%;
+	max-height: 100%;
+	aspect-ratio: 1/1;
+	background-image: url('./letterpress-light.svg');
+	background-size: contain;
+	background-position-x: center;
+	background-repeat: no-repeat;
+	/* Restored to pre-shrink size — 100px felt tiny after opening a folder */
+	max-width: 170px;
+}
+
+.monaco-workbench.vs-dark .part.editor .editor-group-watermark:not(.welcome-mode) .letterpress {
+	background-image: url('./letterpress-dark.svg');
+}
+
+.monaco-workbench.hc-light .part.editor .editor-group-watermark:not(.welcome-mode) .letterpress {
+	background-image: url('./letterpress-hcLight.svg');
+}
+
+.monaco-workbench.hc-black .part.editor .editor-group-watermark:not(.welcome-mode) .letterpress {
+	background-image: url('./letterpress-hcDark.svg');
+}
+
+/* --- Shortcuts --- */
+
+/* 1st watermark shortcuts (empty window welcome) */
+.monaco-workbench .part.editor .editor-group-watermark.welcome-mode .shortcuts {
+	width: 100%;
+}
+
+/* 2nd watermark shortcuts: compact width */
+.monaco-workbench .part.editor .editor-group-watermark:not(.welcome-mode) .shortcuts {
+	width: 100%;
+	max-width: 280px;
+	margin: 0 auto;
+}
+
+/* Hide shortcuts in non-empty containers and short groups */
+.monaco-workbench .part.editor > .content .editor-group-container:not(.empty) > .editor-group-watermark .shortcuts,
+.monaco-workbench .part.editor > .content .editor-group-container.max-height-478px > .editor-group-watermark .shortcuts {
+	display: none;
+}
+
+.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark .shortcuts > .watermark-box {
+	display: flex;
+	flex-direction: column;
+}
+
+.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark .shortcuts dl {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin: 0;
+	padding: 4px 8px;
+	border-radius: 6px;
+	cursor: pointer;
+	color: var(--vscode-descriptionForeground);
+	transition: background-color 0.1s ease;
+}
+
+.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark .shortcuts dl:hover {
+	background-color: var(--vscode-list-hoverBackground);
+}
+
+.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark .shortcuts dl:focus-visible {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: -1px;
+}
+
+.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark .shortcuts dl:first-of-type {
+	margin-top: 0;
+}
+
+.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark .shortcuts dl:last-of-type {
+	margin-bottom: 0;
+}
+
+.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark .shortcuts dt {
+	letter-spacing: 0.04em;
+}
+
+.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-watermark .shortcuts dd {
+	text-align: left;
+	margin-inline-start: 24px;
+}
+
+/* --- Empty-window welcome page --------------------------------------- */
+
+/* Action cards */
+.monaco-workbench .part.editor .editor-group-watermark .welcome-cards {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0px, 1fr));
+	gap: 12px;
+	width: 100%;
+}
+
+.monaco-workbench .part.editor .editor-group-watermark .welcome-card {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: flex-start;
+	gap: 6px;
+	padding: 10px 12px;
+	border: 1px solid var(--vscode-widget-border, rgba(128, 128, 128, 0.2));
+	border-radius: 6px;
+	background-color: color-mix(in srgb, color-mix(in srgb, var(--vscode-quickInput-background) 80%, var(--vscode-editor-foreground) 5%) 95%, rgb(128, 128, 128) 5%);
+	color: var(--vscode-foreground);
+	cursor: pointer;
+	box-shadow: 0 0 1px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.1));
+	overflow: hidden;
+	text-overflow: ellipsis;
+	user-select: none;
+	flex-shrink: 0;
+	transition: background-color 0.1s ease, border-color 0.1s ease;
+}
+
+.monaco-workbench .part.editor .editor-group-watermark .welcome-card:hover {
+	background-color: color-mix(in srgb, color-mix(in srgb, var(--vscode-quickInput-background) 80%, var(--vscode-editor-foreground) 15%) 95%, rgb(128, 128, 128) 5%);
+}
+
+.monaco-workbench .part.editor .editor-group-watermark .welcome-card:focus-visible {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: -1px;
+}
+
+.monaco-workbench .part.editor .editor-group-watermark .welcome-card-icon {
+	font-size: 16px;
+	color: var(--vscode-foreground);
+}
+
+.monaco-workbench .part.editor .editor-group-watermark .welcome-card-label {
+	font-size: 12px;
+	color: var(--vscode-foreground);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* Recent projects */
+.monaco-workbench .part.editor .editor-group-watermark .welcome-recent {
+	width: 100%;
+	margin-top: 12px;
+}
+
+.monaco-workbench .part.editor .editor-group-watermark .welcome-recent-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	padding: 0 4px;
+	margin-bottom: 4px;
+}
+
+.monaco-workbench .part.editor .editor-group-watermark .welcome-recent-title {
+	font-size: 11px;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .part.editor .editor-group-watermark .welcome-recent-viewall {
+	font-size: 11px;
+	color: var(--vscode-textLink-foreground);
+	cursor: pointer;
+	text-decoration: none;
+}
+
+.monaco-workbench .part.editor .editor-group-watermark .welcome-recent-viewall:hover {
+	text-decoration: underline;
+}
+
+.monaco-workbench .part.editor .editor-group-watermark .welcome-recent-list {
+	display: flex;
+	flex-direction: column;
+}
+
+.monaco-workbench .part.editor .editor-group-watermark .welcome-recent-item {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	gap: 16px;
+	padding: 4px 6px;
+	border-radius: 4px;
+	cursor: pointer;
+	border: none;
+	background: transparent;
+	font-family: inherit;
+	font-size: 12px;
+	text-align: left;
+	color: var(--vscode-foreground);
+	transition: background-color 0.1s ease;
+	width: 100%;
+}
+
+.monaco-workbench .part.editor .editor-group-watermark .welcome-recent-item:hover {
+	background-color: var(--vscode-list-hoverBackground);
+}
+
+.monaco-workbench .part.editor .editor-group-watermark .welcome-recent-item:focus-visible {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: -1px;
+}
+
+.monaco-workbench .part.editor .editor-group-watermark .welcome-recent-name {
+	flex-shrink: 0;
+	font-weight: 500;
+}
+
+.monaco-workbench .part.editor .editor-group-watermark .welcome-recent-path {
+	color: var(--vscode-descriptionForeground);
+	font-size: 11px;
+	text-overflow: ellipsis;
+	overflow: hidden;
+	white-space: nowrap;
+	min-width: 0;
+}
+
+.monaco-workbench .part.editor .editor-group-watermark .welcome-recent-empty {
+	padding: 5px 8px;
+	color: var(--vscode-descriptionForeground);
+	font-size: 12px;
+	font-style: italic;
+}
+
+/* Title */
+
+.monaco-workbench .part.editor > .content .editor-group-container > .title {
+	position: relative;
+	box-sizing: border-box;
+	overflow: hidden;
+}
+
+.monaco-workbench .part.editor > .content .editor-group-container > .title:not(.tabs) {
+	display: flex;
+	/* when tabs are not shown, use flex layout */
+	flex-wrap: nowrap;
+}
+
+.monaco-workbench .part.editor > .content .editor-group-container > .title.title-border-bottom::after {
+	content: '';
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	z-index: 9;
+	pointer-events: none;
+	background-color: var(--title-border-bottom-color);
+	width: 100%;
+	height: 1px;
+}
+
+.monaco-workbench .part.editor > .content .editor-group-container.empty > .title {
+	display: none;
+}
+
+/* Toolbar */
+
+.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-container-toolbar {
+	display: none;
+	height: 35px;
+}
+
+.monaco-workbench .part.editor > .content .editor-group-container.empty.locked > .editor-group-container-toolbar,
+.monaco-workbench .part.editor > .content:not(.empty) .editor-group-container.empty > .editor-group-container-toolbar,
+.monaco-workbench .part.editor > .content.auxiliary .editor-group-container.empty > .editor-group-container-toolbar {
+	display: block;
+	/* show toolbar when more than one editor group or always when auxiliary or locked */
+}
+
+.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-container-toolbar .actions-container {
+	justify-content: flex-end;
+}
+
+.monaco-workbench .part.editor > .content .editor-group-container > .editor-group-container-toolbar .action-item {
+	margin-right: 4px;
+}
+
+/* Editor */
+
+.monaco-workbench .part.editor > .content .editor-group-container.empty > .editor-container {
+	display: none;
+}
+
+.monaco-workbench .part.editor > .content .editor-group-container > .editor-container > .editor-instance {
+	height: 100%;
+}
+
+.monaco-workbench .part.editor > .content .grid-view-container {
+	width: 100%;
+	height: 100%;
+}

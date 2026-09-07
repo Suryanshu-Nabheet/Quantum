@@ -1,0 +1,123 @@
+/**
+ * Chat markdown table + GFM extras (task lists, strikethrough) themed with
+ * VS Code tokens. Scoped under `.agent-markdown` so we don't depend on the
+ * unused `.wmde-markdown` stylesheet class.
+ */
+
+.agent-markdown .markdown-table-scroll {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 0.75em 0;
+  border: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.35));
+  border-radius: 6px;
+  background-color: var(--vscode-editor-background, transparent);
+}
+
+.agent-markdown table.markdown-table {
+  border-collapse: collapse;
+  border-spacing: 0;
+  width: 100%;
+  min-width: max-content;
+  margin: 0;
+  font-size: 0.925em;
+  line-height: 1.4;
+}
+
+.agent-markdown table.markdown-table thead {
+  background-color: var(--vscode-editorWidget-background, rgba(128, 128, 128, 0.12));
+}
+
+.agent-markdown table.markdown-table th {
+  font-weight: 600;
+  text-align: left;
+  color: var(--vscode-foreground, inherit);
+  border-bottom: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.35));
+  padding: 8px 12px;
+  white-space: nowrap;
+}
+
+.agent-markdown table.markdown-table td {
+  text-align: left;
+  color: var(--vscode-editor-foreground, inherit);
+  border-bottom: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.2));
+  padding: 7px 12px;
+  vertical-align: top;
+}
+
+.agent-markdown table.markdown-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.agent-markdown table.markdown-table tbody tr:nth-child(even) {
+  background-color: var(
+    --vscode-tree-tableOddRowsBackground,
+    rgba(128, 128, 128, 0.06)
+  );
+}
+
+.agent-markdown table.markdown-table tbody tr:hover {
+  background-color: var(--vscode-list-hoverBackground, rgba(128, 128, 128, 0.1));
+}
+
+.agent-markdown table.markdown-table th[align="center"],
+.agent-markdown table.markdown-table td[align="center"] {
+  text-align: center;
+}
+
+.agent-markdown table.markdown-table th[align="right"],
+.agent-markdown table.markdown-table td[align="right"] {
+  text-align: right;
+}
+
+/* GFM task lists */
+.agent-markdown ul.contains-task-list {
+  list-style: none;
+  padding-left: 0.25em;
+}
+
+.agent-markdown li.task-list-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5em;
+}
+
+.agent-markdown li.task-list-item input[type="checkbox"] {
+  margin-top: 0.3em;
+  accent-color: var(--vscode-focusBorder, #4d8bf0);
+}
+
+/* GFM strikethrough */
+.agent-markdown del {
+  text-decoration: line-through;
+  opacity: 0.75;
+}
+
+.agent-markdown blockquote {
+  margin: 0.75em 0;
+  padding: 0.25em 0 0.25em 0.9em;
+  border-left: 3px solid var(--vscode-textBlockQuote-border, rgba(128, 128, 128, 0.45));
+  color: var(--vscode-textBlockQuote-foreground, var(--vscode-descriptionForeground));
+  background-color: var(--vscode-textBlockQuote-background, transparent);
+}
+
+.agent-markdown a {
+  color: var(--vscode-textLink-foreground, #5c9ce6);
+  text-decoration: none;
+}
+
+.agent-markdown a:hover {
+  color: var(--vscode-textLink-activeForeground, #7eb6f6);
+  text-decoration: underline;
+}
+
+.agent-markdown hr {
+  border: 0;
+  border-top: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.35));
+  margin: 1.25em 0;
+}
+
+.agent-markdown .mermaid foreignObject {
+  overflow: visible;
+}

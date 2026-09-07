@@ -1,0 +1,26 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) 2026 Suryanshu Nabheet. Licensed under the MIT License.
+ *--------------------------------------------------------------------------------------------*/
+
+@font-face {
+	font-family: "{{ fontName }}";
+	src: {{{ src }}};
+}
+
+.quantum-product-icons {
+	font: normal normal normal 16px/1 {{ fontName }};
+	display: inline-block;
+	text-decoration: none;
+	text-rendering: auto;
+	text-align: center;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	user-select: none;
+	-webkit-user-select: none;
+	-ms-user-select: none;
+}
+
+
+{{# each codepoints }}
+.{{ ../classPrefix }}{{ @key }}:before { content: "\\{{ this }}" }
+{{/ each }}

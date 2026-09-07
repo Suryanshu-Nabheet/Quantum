@@ -1,0 +1,497 @@
+{
+  "name": "quantum-timeline",
+  "displayName": "Quantum Timeline",
+  "description": "Adds list of last commits in source control tab",
+  "version": "0.0.1",
+  "publisher": "quantum",
+  "author": "Suryanshu Nabheet",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Suryanshu-Nabheet/Quantum.git"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Suryanshu-Nabheet/Quantum/issues"
+  },
+  "homepage": "https://github.com/Suryanshu-Nabheet/Quantum#readme",
+  "engines": {
+    "vscode": "^1.103.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "git",
+    "commit",
+    "history",
+    "revert",
+    "diff",
+    "commits",
+    "list",
+    "stash",
+    "stashes",
+    "remotes",
+    "atom",
+    "vscode"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "views": {
+      "scm": [
+        {
+          "id": "quantumTimeline.commits",
+          "name": "Commits",
+          "when": "gitOpenRepositoryCount != 0",
+          "visibility": "visible",
+          "icon": "$(git-commit)"
+        },
+        {
+          "id": "quantumTimeline.stashes",
+          "name": "Stashes",
+          "when": "gitOpenRepositoryCount != 0",
+          "visibility": "collapsed",
+          "icon": "$(archive)"
+        },
+        {
+          "id": "quantumTimeline.worktrees",
+          "name": "Worktrees",
+          "when": "gitOpenRepositoryCount != 0",
+          "visibility": "collapsed",
+          "icon": "$(file-directory)"
+        },
+        {
+          "id": "quantumTimeline.remotes",
+          "name": "Remotes",
+          "when": "gitOpenRepositoryCount != 0",
+          "visibility": "collapsed",
+          "icon": "$(cloud)"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "quantumTimeline.undoCommit",
+        "title": "Undo last commit",
+        "icon": "$(discard)",
+        "category": "Quantum Timeline"
+      },
+      {
+        "command": "quantumTimeline.copyCommitHash",
+        "title": "Copy commit hash",
+        "icon": "$(files)",
+        "category": "Quantum Timeline"
+      },
+      {
+        "command": "quantumTimeline.commits.viewAsTree",
+        "title": "View as tree",
+        "icon": "$(list-tree)",
+        "category": "Quantum Timeline"
+      },
+      {
+        "command": "quantumTimeline.commits.viewAsList",
+        "title": "View as list",
+        "icon": "$(list-flat)",
+        "category": "Quantum Timeline"
+      },
+      {
+        "command": "quantumTimeline.diffChangeWithHead",
+        "title": "Diff with current file",
+        "icon": "$(diff)",
+        "category": "Quantum Timeline"
+      },
+      {
+        "command": "quantumTimeline.reversedDiffChangeWithHead",
+        "title": "Diff with current file",
+        "icon": "$(diff)",
+        "category": "Quantum Timeline"
+      },
+      {
+        "command": "quantumTimeline.copyFilePath",
+        "title": "Copy file path",
+        "icon": "$(files)",
+        "category": "Quantum Timeline"
+      },
+      {
+        "command": "quantumTimeline.openCurrentFile",
+        "title": "Open current file",
+        "icon": "$(go-to-file)",
+        "category": "Quantum Timeline"
+      },
+      {
+        "command": "quantumTimeline.previewFile",
+        "title": "Preview changed file",
+        "icon": "$(file-symlink-file)",
+        "category": "Quantum Timeline"
+      },
+      {
+        "command": "quantumTimeline.revertCommit",
+        "title": "Revert commit",
+        "icon": "$(discard)",
+        "category": "Quantum Timeline"
+      },
+      {
+        "command": "quantumTimeline.revertChange",
+        "title": "Revert file",
+        "icon": "$(discard)",
+        "category": "Quantum Timeline"
+      },
+      {
+        "command": "quantumTimeline.stashStaged",
+        "title": "Stash staged changes",
+        "icon": "$(archive)",
+        "category": "Quantum Timeline"
+      },
+      {
+        "command": "quantumTimeline.stashIncludeUntracked",
+        "title": "Stash all changes",
+        "icon": "$(package)",
+        "category": "Quantum Timeline"
+      },
+      {
+        "command": "quantumTimeline.stashPopLatest",
+        "title": "Apply and remove latest",
+        "icon": "$(discard)",
+        "category": "Quantum Timeline"
+      },
+      {
+        "command": "quantumTimeline.stashApplyLatest",
+        "title": "Apply latest",
+        "icon": "$(tasklist)",
+        "category": "Quantum Timeline"
+      },
+      {
+        "command": "quantumTimeline.stashPop",
+        "title": "Apply and remove",
+        "icon": "$(discard)",
+        "category": "Quantum Timeline"
+      },
+      {
+        "command": "quantumTimeline.stashApply",
+        "title": "Apply",
+        "icon": "$(tasklist)",
+        "category": "Quantum Timeline"
+      },
+      {
+        "command": "quantumTimeline.stashDrop",
+        "title": "Remove",
+        "icon": "$(trash)",
+        "category": "Quantum Timeline"
+      },
+      {
+        "command": "quantumTimeline.addRemote",
+        "title": "Add",
+        "icon": "$(add)",
+        "category": "Quantum Timeline"
+      },
+      {
+        "command": "quantumTimeline.removeRemote",
+        "title": "Remove",
+        "icon": "$(trash)",
+        "category": "Quantum Timeline"
+      },
+      {
+        "command": "quantumTimeline.pullFromRemote",
+        "title": "Pull",
+        "icon": "$(repo-pull)",
+        "category": "Quantum Timeline"
+      },
+      {
+        "command": "quantumTimeline.lockWorktree",
+        "title": "Lock",
+        "icon": "$(lock)",
+        "category": "Quantum Timeline"
+      },
+      {
+        "command": "quantumTimeline.unlockWorktree",
+        "title": "Unlock",
+        "icon": "$(unlock)",
+        "category": "Quantum Timeline"
+      },
+      {
+        "command": "quantumTimeline.moveWorktree",
+        "title": "Move",
+        "icon": "$(move)",
+        "category": "Quantum Timeline"
+      },
+      {
+        "command": "quantumTimeline.removeWorktree",
+        "title": "Remove",
+        "icon": "$(trash)",
+        "category": "Quantum Timeline"
+      },
+      {
+        "command": "quantumTimeline.addWorktree",
+        "title": "Add",
+        "icon": "$(add)",
+        "category": "Quantum Timeline"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "quantumTimeline.undoCommit",
+          "when": "false"
+        },
+        {
+          "command": "quantumTimeline.copyCommitHash",
+          "when": "false"
+        },
+        {
+          "command": "quantumTimeline.commits.viewAsTree",
+          "when": "false"
+        },
+        {
+          "command": "quantumTimeline.commits.viewAsList",
+          "when": "false"
+        },
+        {
+          "command": "quantumTimeline.diffChangeWithHead",
+          "when": "false"
+        },
+        {
+          "command": "quantumTimeline.reversedDiffChangeWithHead",
+          "when": "false"
+        },
+        {
+          "command": "quantumTimeline.copyFilePath",
+          "when": "false"
+        },
+        {
+          "command": "quantumTimeline.openCurrentFile",
+          "when": "false"
+        },
+        {
+          "command": "quantumTimeline.previewFile",
+          "when": "false"
+        },
+        {
+          "command": "quantumTimeline.revertCommit",
+          "when": "false"
+        },
+        {
+          "command": "quantumTimeline.revertChange",
+          "when": "false"
+        },
+        {
+          "command": "quantumTimeline.stashStaged",
+          "when": "false"
+        },
+        {
+          "command": "quantumTimeline.stashIncludeUntracked",
+          "when": "false"
+        },
+        {
+          "command": "quantumTimeline.stashPopLatest",
+          "when": "false"
+        },
+        {
+          "command": "quantumTimeline.stashApplyLatest",
+          "when": "false"
+        },
+        {
+          "command": "quantumTimeline.stashPop",
+          "when": "false"
+        },
+        {
+          "command": "quantumTimeline.stashApply",
+          "when": "false"
+        },
+        {
+          "command": "quantumTimeline.stashDrop",
+          "when": "false"
+        },
+        {
+          "command": "quantumTimeline.addRemote",
+          "when": "false"
+        },
+        {
+          "command": "quantumTimeline.removeRemote",
+          "when": "false"
+        },
+        {
+          "command": "quantumTimeline.pullFromRemote",
+          "when": "false"
+        },
+        {
+          "command": "quantumTimeline.lockWorktree",
+          "when": "false"
+        },
+        {
+          "command": "quantumTimeline.unlockWorktree",
+          "when": "false"
+        },
+        {
+          "command": "quantumTimeline.moveWorktree",
+          "when": "false"
+        },
+        {
+          "command": "quantumTimeline.removeWorktree",
+          "when": "false"
+        },
+        {
+          "command": "quantumTimeline.addWorktree",
+          "when": "false"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "quantumTimeline.undoCommit",
+          "when": "view == quantumTimeline.commits",
+          "group": "navigation@1"
+        },
+        {
+          "command": "quantumTimeline.commits.viewAsTree",
+          "when": "view == quantumTimeline.commits && !quantumTimeline.commits.settings.viewAsTree",
+          "group": "navigation@2"
+        },
+        {
+          "command": "quantumTimeline.commits.viewAsList",
+          "when": "view == quantumTimeline.commits && quantumTimeline.commits.settings.viewAsTree",
+          "group": "navigation@2"
+        },
+        {
+          "command": "quantumTimeline.stashPopLatest",
+          "when": "view == quantumTimeline.stashes",
+          "group": "navigation@4"
+        },
+        {
+          "command": "quantumTimeline.stashApplyLatest",
+          "when": "view == quantumTimeline.stashes",
+          "group": "navigation@3"
+        },
+        {
+          "command": "quantumTimeline.stashStaged",
+          "when": "view == quantumTimeline.stashes",
+          "group": "navigation@1"
+        },
+        {
+          "command": "quantumTimeline.stashIncludeUntracked",
+          "when": "view == quantumTimeline.stashes",
+          "group": "navigation@2"
+        },
+        {
+          "command": "quantumTimeline.addRemote",
+          "when": "view == quantumTimeline.remotes",
+          "group": "navigation"
+        },
+        {
+          "command": "quantumTimeline.addWorktree",
+          "when": "view == quantumTimeline.worktrees",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "quantumTimeline.revertCommit",
+          "when": "view == quantumTimeline.commits && viewItem == commitNode",
+          "group": "inline@1"
+        },
+        {
+          "command": "quantumTimeline.copyCommitHash",
+          "when": "view == quantumTimeline.commits && viewItem == commitNode",
+          "group": "inline@2"
+        },
+        {
+          "command": "quantumTimeline.diffChangeWithHead",
+          "when": "view == quantumTimeline.commits && viewItem == changeNode",
+          "group": "inline@1"
+        },
+        {
+          "command": "quantumTimeline.reversedDiffChangeWithHead",
+          "when": "view == quantumTimeline.stashes && viewItem == changeNode",
+          "group": "inline@1"
+        },
+        {
+          "command": "quantumTimeline.openCurrentFile",
+          "when": "view == quantumTimeline.commits && viewItem == changeNode",
+          "group": "inline@2"
+        },
+        {
+          "command": "quantumTimeline.openCurrentFile",
+          "when": "view == quantumTimeline.stashes && viewItem == changeNode",
+          "group": "inline@2"
+        },
+        {
+          "command": "quantumTimeline.previewFile",
+          "when": "view == quantumTimeline.commits && viewItem == changeNode",
+          "group": "inline@3"
+        },
+        {
+          "command": "quantumTimeline.previewFile",
+          "when": "view == quantumTimeline.stashes && viewItem == changeNode",
+          "group": "inline@3"
+        },
+        {
+          "command": "quantumTimeline.revertChange",
+          "when": "view == quantumTimeline.commits && viewItem == changeNode",
+          "group": "inline@4"
+        },
+        {
+          "command": "quantumTimeline.copyFilePath",
+          "when": "view == quantumTimeline.commits && viewItem == changeNode",
+          "group": "inline@5"
+        },
+        {
+          "command": "quantumTimeline.copyFilePath",
+          "when": "view == quantumTimeline.stashes && viewItem == changeNode",
+          "group": "inline@5"
+        },
+        {
+          "command": "quantumTimeline.stashApply",
+          "when": "view == quantumTimeline.stashes && viewItem == commitNode",
+          "group": "inline@1"
+        },
+        {
+          "command": "quantumTimeline.stashPop",
+          "when": "view == quantumTimeline.stashes && viewItem == commitNode",
+          "group": "inline@2"
+        },
+        {
+          "command": "quantumTimeline.stashDrop",
+          "when": "view == quantumTimeline.stashes && viewItem == commitNode",
+          "group": "inline@3"
+        },
+        {
+          "command": "quantumTimeline.removeRemote",
+          "when": "view == quantumTimeline.remotes",
+          "group": "inline@2"
+        },
+        {
+          "command": "quantumTimeline.pullFromRemote",
+          "when": "view == quantumTimeline.remotes",
+          "group": "inline@1"
+        },
+        {
+          "command": "quantumTimeline.moveWorktree",
+          "when": "view == quantumTimeline.worktrees && viewItem == worktreeNodeUnlocked",
+          "group": "inline@1"
+        },
+        {
+          "command": "quantumTimeline.lockWorktree",
+          "when": "view == quantumTimeline.worktrees && viewItem == worktreeNodeUnlocked",
+          "group": "inline@2"
+        },
+        {
+          "command": "quantumTimeline.unlockWorktree",
+          "when": "view == quantumTimeline.worktrees && viewItem == worktreeNodeLocked",
+          "group": "inline@2"
+        },
+        {
+          "command": "quantumTimeline.removeWorktree",
+          "when": "view == quantumTimeline.worktrees && viewItem == worktreeNodeUnlocked",
+          "group": "inline@3"
+        }
+      ]
+    }
+  },
+  "extensionDependencies": [
+    "vscode.git"
+  ],
+  "devDependencies": {
+    "@types/node": "^22.18.10"
+  },
+  "dependencies": {
+    "date-fns": "^2.29.3"
+  }
+}

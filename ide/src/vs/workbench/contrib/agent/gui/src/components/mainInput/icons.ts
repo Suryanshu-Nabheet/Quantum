@@ -1,0 +1,32 @@
+import {
+  ArrowPathIcon,
+  CodeBracketIcon,
+  CommandLineIcon,
+  DocumentTextIcon,
+  ExclamationTriangleIcon,
+  FolderIcon,
+  MagnifyingGlassIcon,
+  PencilIcon,
+  PlusIcon,
+  TrashIcon,
+  WrenchScrewdriverIcon,
+  GlobeAltIcon,
+} from "@heroicons/react/24/outline";
+
+export const NAMED_ICONS: { [key: string]: any } = {
+  file: FolderIcon,
+  code: CodeBracketIcon,
+  terminal: CommandLineIcon,
+  diff: PlusIcon,
+  search: MagnifyingGlassIcon,
+  problems: ExclamationTriangleIcon,
+  folder: FolderIcon,
+  branch: ArrowPathIcon,
+  commit: ArrowPathIcon,
+  rules: PencilIcon,
+  "quantum-settings-prompt": DocumentTextIcon,
+  mcp: WrenchScrewdriverIcon,
+  browser: GlobeAltIcon,
+  trash: TrashIcon,
+  toolCall: WrenchScrewdriverIcon,
+};

@@ -1,0 +1,21 @@
+{
+	"extends": "../tsconfig.base.json",
+	"compilerOptions": {
+		"outDir": "./out",
+		"rootDir": "./src",
+		"lib": ["esnext", "DOM"],
+		"noUnusedLocals": false,
+		"noUnusedParameters": false,
+		"noImplicitReturns": false,
+		"noImplicitAny": false,
+		"strict": false
+	},
+	"include": [
+		"src/**/*.ts",
+		"../../src/vscode-dts/vscode.d.ts"
+	],
+	"exclude": [
+		"node_modules",
+		".vscode-test"
+	]
+}

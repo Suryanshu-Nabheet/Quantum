@@ -1,0 +1,339 @@
+name: Release
+
+# Build installers and publish a GitHub Release so people can download Quantum.
+# Trigger: push a version tag (v0.0.1) or run manually from Actions.
+#
+# Asset version is ALWAYS Quantum's release version (product.json quantumVersion /
+# package.json quantumVersion), never the VS Code base (package.json version).
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to create/upload (e.g. v0.0.1). Required for manual runs.'
+        required: true
+        type: string
+      dry_run:
+        description: 'Build artifacts only (skip creating/updating the GitHub Release)'
+        type: boolean
+        default: false
+
+concurrency:
+  group: release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+env:
+  ELECTRON_SKIP_BINARY_DOWNLOAD: 0
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+
+jobs:
+  build:
+    name: Build (${{ matrix.asset_name }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            gulp_target: vscode-darwin-arm64-min
+            asset_name: Quantum-darwin-arm64
+            out_dir: ../VSCode-darwin-arm64
+            archive: zip
+          - os: windows-2022
+            gulp_target: vscode-win32-x64-min
+            asset_name: Quantum-win32-x64
+            out_dir: ../VSCode-win32-x64
+            archive: zip
+          - os: ubuntu-22.04
+            gulp_target: vscode-linux-x64-min
+            asset_name: Quantum-linux-x64
+            out_dir: ../VSCode-linux-x64
+            archive: tar
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          lfs: true
+          # Always build the commit the tag currently points at (so retargeting
+          # v0.0.1 to latest main ships current code, not a stale SHA).
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Resolve Quantum release version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Asset names use Quantum's release version (quantumVersion), NEVER the
+          # VS Code base in package.json "version" (1.121.03684).
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            RAW="${{ inputs.tag }}"
+          else
+            RAW="${GITHUB_REF_NAME}"
+          fi
+          QV="$(node -p "require('./product.json').quantumVersion || require('./package.json').quantumVersion || ''")"
+          PKG_VER="$(node -p "require('./package.json').version")"
+
+          if [[ "$RAW" == v* ]]; then
+            VERSION="${RAW#v}"
+          elif [ -n "$QV" ]; then
+            VERSION="$QV"
+          else
+            echo "Could not resolve Quantum release version from tag or product.json" >&2
+            exit 1
+          fi
+
+          if [ -z "$VERSION" ] || [ "$VERSION" = "$PKG_VER" ]; then
+            echo "Refusing release asset version='$VERSION' (must be Quantum version, not VS Code base $PKG_VER)." >&2
+            exit 1
+          fi
+          if [ -n "$QV" ] && [ "$VERSION" != "$QV" ]; then
+            echo "Tag version ($VERSION) does not match product.json quantumVersion ($QV)." >&2
+            exit 1
+          fi
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "vscode_base=$PKG_VER" >> "$GITHUB_OUTPUT"
+          echo "Resolved Quantum release version: $VERSION at $(git rev-parse --short HEAD) (VS Code base remains $PKG_VER)"
+
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y build-essential pkg-config libx11-dev libx11-xcb-dev \
+            libxkbfile-dev libsecret-1-dev libkrb5-dev libnotify-bin fakeroot rpm \
+            libgtk-3-0 libnss3 libxss1 libasound2t64 || \
+          sudo apt-get install -y build-essential pkg-config libx11-dev libx11-xcb-dev \
+            libxkbfile-dev libsecret-1-dev libkrb5-dev libnotify-bin fakeroot rpm \
+            libgtk-3-0 libnss3 libxss1 libasound2
+
+      - name: Install macOS build dependencies
+        if: runner.os == 'macOS'
+        run: |
+          brew list python@3.11 >/dev/null 2>&1 || brew install python@3.11
+          echo "PYTHON=$(brew --prefix python@3.11)/bin/python3.11" >> "$GITHUB_ENV"
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          set -e
+          for i in 1 2 3 4 5; do
+            if npm ci; then
+              exit 0
+            fi
+            echo "npm ci failed (attempt $i) — cleaning nested agent modules and retrying..."
+            rm -rf src/vs/workbench/contrib/agent/core/node_modules \
+                   src/vs/workbench/contrib/agent/gui/node_modules \
+                   src/vs/workbench/contrib/agent/node_modules \
+                   src/vs/workbench/contrib/agent/packages/*/node_modules \
+                   node_modules || true
+            sleep $((i * 10))
+          done
+          echo "npm ci failed too many times" >&2
+          exit 1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download built-in extensions
+        shell: bash
+        run: node build/lib/builtInExtensions.ts
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Package ${{ matrix.gulp_target }}
+        run: npm run gulp -- ${{ matrix.gulp_target }}
+
+      - name: Archive app (macOS zip)
+        if: matrix.archive == 'zip' && runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          VERSION="${{ steps.version.outputs.version }}"
+          OUT="${{ matrix.out_dir }}"
+          ASSET="${{ matrix.asset_name }}-${VERSION}.zip"
+          if [ ! -d "$OUT" ]; then
+            echo "Missing output directory: $OUT"
+            ls -la ..
+            exit 1
+          fi
+          (cd "$OUT" && zip -qry "$GITHUB_WORKSPACE/dist/$ASSET" .)
+          echo "Created dist/$ASSET"
+          ls -lh dist/
+
+      - name: Archive app (Windows zip)
+        if: matrix.archive == 'zip' && runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          $VERSION = '${{ steps.version.outputs.version }}'
+          $OUT = '${{ matrix.out_dir }}'
+          $ASSET = '${{ matrix.asset_name }}-' + $VERSION + '.zip'
+          $dest = Join-Path (Join-Path $PWD 'dist') $ASSET
+          if (-not (Test-Path $OUT)) {
+            Write-Error "Missing output directory: $OUT"
+            Get-ChildItem ..
+            exit 1
+          }
+          if (Test-Path $dest) { Remove-Item -Force $dest }
+          # Windows runners do not ship Info-ZIP `zip`; use Compress-Archive.
+          Compress-Archive -Path (Join-Path $OUT '*') -DestinationPath $dest -CompressionLevel Optimal
+          Write-Host "Created dist/$ASSET"
+          Get-ChildItem dist | Format-Table Name, Length
+
+      - name: Archive app (Linux tar.gz)
+        if: matrix.archive == 'tar'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          VERSION="${{ steps.version.outputs.version }}"
+          OUT="${{ matrix.out_dir }}"
+          ASSET="${{ matrix.asset_name }}-${VERSION}.tar.gz"
+          if [ ! -d "$OUT" ]; then
+            echo "Missing output directory: $OUT"
+            ls -la ..
+            exit 1
+          fi
+          tar -czf "dist/$ASSET" -C "$OUT" .
+          echo "Created dist/$ASSET"
+          ls -lh dist/
+
+      - name: Build Linux deb (best-effort)
+        if: runner.os == 'Linux'
+        continue-on-error: true
+        shell: bash
+        run: |
+          npm run gulp -- vscode-linux-x64-build-deb
+          VERSION="${{ steps.version.outputs.version }}"
+          mkdir -p dist
+          find .build/linux/deb -name '*.deb' -exec cp {} "dist/Quantum-linux-x64-${VERSION}.deb" \; || true
+          ls -lh dist/ || true
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset_name }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    name: Publish GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    # Run even if some platform builds failed, so platforms that DID build still ship.
+    if: ${{ always() && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.dry_run != true)) }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+
+      - name: Resolve release metadata
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${GITHUB_REF_NAME}"
+          fi
+          VERSION="${TAG#v}"
+          QV="$(node -p "require('./product.json').quantumVersion || ''")"
+          PKG_VER="$(node -p "require('./package.json').version")"
+          if [ -n "$QV" ] && [ "$VERSION" != "$QV" ]; then
+            echo "Tag version ($VERSION) does not match product.json quantumVersion ($QV)." >&2
+            exit 1
+          fi
+          SHA="$(git rev-parse HEAD)"
+          SHORT="$(git rev-parse --short HEAD)"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "vscode_base=$PKG_VER" >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "short_sha=$SHORT" >> "$GITHUB_OUTPUT"
+          echo "Publishing Quantum $VERSION from $SHORT"
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: false
+
+      - name: Flatten artifacts
+        run: |
+          set -euo pipefail
+          mkdir -p upload
+          find release-assets -type f \( -name '*.zip' -o -name '*.tar.gz' -o -name '*.deb' -o -name '*.rpm' -o -name '*.dmg' -o -name '*.exe' \) \
+            -exec cp {} upload/ \;
+          ls -lah upload/
+          test "$(find upload -type f | wc -l)" -gt 0
+          # Refuse to publish under the VS Code base version filename.
+          if ls upload/*1.121.* >/dev/null 2>&1; then
+            echo "Refusing assets named with VS Code base version:" >&2
+            ls upload/*1.121.* >&2 || true
+            exit 1
+          fi
+
+      - name: Checksums
+        working-directory: upload
+        run: |
+          for f in *; do
+            sha256sum "$f" > "$f.sha256"
+          done
+          ls -lah
+
+      - name: Create / update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          target_commitish: ${{ steps.meta.outputs.sha }}
+          name: Quantum ${{ steps.meta.outputs.tag }}
+          draft: false
+          generate_release_notes: true
+          files: upload/*
+          fail_on_unmatched_files: true
+          body: |
+            ## Quantum ${{ steps.meta.outputs.version }}
+
+            **Quantum — Open Source AI Code Editor**
+
+            Built from `${{ steps.meta.outputs.short_sha }}` (`${{ steps.meta.outputs.sha }}`).
+
+            | | |
+            |---|---|
+            | **Quantum version** | `${{ steps.meta.outputs.version }}` |
+            | **VS Code base** | `${{ steps.meta.outputs.vscode_base }}` |
+            | **License** | MIT |
+
+            ### Downloads
+
+            | Platform | Asset |
+            |----------|--------|
+            | macOS Apple Silicon | `Quantum-darwin-arm64-${{ steps.meta.outputs.version }}.zip` |
+            | Windows x64 | `Quantum-win32-x64-${{ steps.meta.outputs.version }}.zip` |
+            | Linux x64 | `Quantum-linux-x64-${{ steps.meta.outputs.version }}.tar.gz` |
+
+            ### Notes
+
+            - Unsigned macOS builds: right-click → Open on first launch, or run `xattr -dr com.apple.quarantine Quantum.app`.
+            - SHA-256 checksums are attached for each asset.
+            - To refresh this release with the latest `main`, retarget the tag: `git tag -f v${{ steps.meta.outputs.version }} && git push -f origin v${{ steps.meta.outputs.version }}`.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

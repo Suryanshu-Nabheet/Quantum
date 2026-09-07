@@ -1,0 +1,35 @@
+{
+	"compilerOptions": {
+		"module": "commonjs",
+		"target": "ESNext",
+		"outDir": "out",
+		"lib": [
+			"ESNext",
+			"DOM"
+		],
+		"sourceMap": true,
+		"esModuleInterop": true,
+		"strict": true,
+		"noUnusedLocals": true,
+		"resolveJsonModule": true,
+		"removeComments": true,
+		"skipLibCheck": true,
+		"rootDir": "src",
+		"types": [
+			"node"
+		],
+		"typeRoots": [
+			"../../node_modules/@types",
+			"../../src/vscode-dts",
+			"node_modules/@types"
+		]
+	},
+	"include": [
+		"src/**/*.ts",
+		"../../src/vscode-dts/vscode.d.ts"
+	],
+	"exclude": [
+		"node_modules",
+		".vscode-test"
+	]
+}
