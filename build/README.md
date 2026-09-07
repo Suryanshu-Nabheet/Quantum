@@ -31,7 +31,7 @@ This is **not** a long-lived fork of the VS Code git history in this repo. Inste
 3. Applies patches from `patches/`
 4. Compiles with Microsoft's build tooling
 
-After a one-time build, you can maintain your own `vscode/` tree without chasing upstream VSCodium releases.
+Built-in Quantum extensions for release builds live in repo-root [`extensions/`](../extensions/README.md).
 
 ## Build
 

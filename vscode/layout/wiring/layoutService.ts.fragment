@@ -1,7 +1,0 @@
-export function getAuxiliaryActivityBarPosition(configurationService: IConfigurationService): ActivityBarPosition {
-	// Quantum reserves the secondary sidebar for Agent only — no auxiliary activity bar.
-	if (configurationService.getValue<boolean>(ChatConfiguration.AIDisabled) === true) {
-		return ActivityBarPosition.HIDDEN;
-	}
-	return configurationService.getValue<ActivityBarPosition>(LayoutSettings.AUXILIARY_ACTIVITY_BAR_LOCATION) ?? ActivityBarPosition.DEFAULT;
-}

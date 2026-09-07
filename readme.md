@@ -55,21 +55,18 @@ quantum/
 │   ├── apps/server/       # Effect-based orchestration server
 │   └── apps/web/          # Management interface and timeline renderer
 │
-├── build/                 # Upstream VS Code → Quantum packaging (patches, branding)
+├── build/                 # Quantum release build (VS Code upstream → branded binary)
 │
-├── extensions/            # Quantum built-in extensions
+├── docs/                  # Documentation (Docusaurus)
 │
-├── vscode/                # Quantum workbench customizations (onboarding, watermark, themes)
+├── extensions/            # Quantum built-in extensions (for release build)
 │
-├── ide/                   # Quantum IDE
+├── ide/                   # Quantum IDE codebase
 │   ├── src/               # Editor core and workbench agent implementation
 │   ├── extensions/        # Built-in developer extensions
 │   └── build/             # Microsoft gulp toolchain (daily dev compile)
 │
 ├── scripts/               # Monorepo setup and verification (./scripts/setup.sh)
-│
-├── docs/                  # Central System Documentation
-│   └── readme.md          # Architectural specifications
 │
 ├── LICENCE                # MIT License
 ├── CONTRIBUTING.md        # Monorepo development guidelines

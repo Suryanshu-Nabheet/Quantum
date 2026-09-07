@@ -60,9 +60,11 @@ graph TD
 ```
 quantum/
 ├── agent/       # Quantum Agent Manager desktop app and orchestration server
+├── build/       # Quantum release build (VS Code upstream → branded binary)
+├── docs/        # Documentation (Docusaurus)
+├── extensions/  # Quantum built-in extensions (for release build)
 ├── ide/         # Quantum IDE editor core and workbench extensions
 ├── scripts/     # Monorepo setup (./scripts/setup.sh) and verification
-├── docs/        # Architectural documentation and specifications
 ├── LICENCE      # MIT License
 ├── CONTRIBUTING.md # Contribution policies
 └── SECURITY.md  # Security vulnerability reporting standards

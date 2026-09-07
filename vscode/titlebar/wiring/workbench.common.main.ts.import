@@ -1,2 +1,0 @@
-import './browser/parts/titlebar/layoutQuickMenuService.js';
-import './browser/parts/titlebar/layoutQuickMenu.contribution.js';

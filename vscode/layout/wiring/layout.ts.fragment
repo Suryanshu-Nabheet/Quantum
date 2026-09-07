@@ -1,5 +1,0 @@
-		const isCommandCenterVisible = titlebarVisible && this.configurationService.getValue<boolean>(LayoutSettings.COMMAND_CENTER) !== false;
-		if (isCommandCenterVisible) {
-			// Quantum: Do not overlap the titlebar. Drop it below like standard.
-			// quickPickTop = 6;
-		}

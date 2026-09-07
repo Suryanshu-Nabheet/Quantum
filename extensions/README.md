@@ -1,6 +1,6 @@
 # Quantum built-in extensions.
 
-First-party Quantum extensions by Suryanshu Nabheet.
+First-party Quantum extensions bundled into Quantum release builds.
 
 | Directory | Purpose |
 |-----------|---------|
