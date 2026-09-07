@@ -59,6 +59,8 @@ quantum/
 │
 ├── extensions/            # Quantum built-in extensions
 │
+├── vscode/                # Quantum workbench customizations (onboarding, watermark, themes)
+│
 ├── ide/                   # Quantum IDE
 │   ├── src/               # Editor core and workbench agent implementation
 │   ├── extensions/        # Built-in developer extensions

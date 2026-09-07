@@ -1,0 +1,1 @@
+import './contrib/onboarding/browser/onboarding.contribution.js';
