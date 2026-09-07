@@ -1,0 +1,48 @@
+{
+  "fonts": [
+    {
+      "id": "quantum-product-icons",
+      "src": [
+        {
+          "path": "./quantum-product-icons.ttf",
+          "format": "truetype"
+        }
+      ],
+      "weight": "normal",
+      "style": "normal"
+    }
+  ],
+  "iconDefinitions": {
+    "split-horizontal": {
+      "fontCharacter": "\\2710"
+    },
+    "split-vertical": {
+      "fontCharacter": "\\2711"
+    },
+
+    "layout-sidebar-left-off": {
+      "fontCharacter": "\\2713"
+    },
+    "layout-sidebar-right-off": {
+      "fontCharacter": "\\2714"
+    },
+    "layout-panel-off": {
+      "fontCharacter": "\\2715"
+    },
+    "layout-sidebar-left": {
+      "fontCharacter": "\\2716"
+    },
+    "layout-sidebar-right": {
+      "fontCharacter": "\\2717"
+    },
+    "layout-panel": {
+      "fontCharacter": "\\2718"
+    },
+    "symbol-boolean": {
+      "fontCharacter": "\\2719"
+    },
+    "symbol-null": {
+      "fontCharacter": "\\2719"
+    }
+  }
+}

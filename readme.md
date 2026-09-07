@@ -57,6 +57,8 @@ quantum/
 │
 ├── build/                 # Upstream VS Code → Quantum packaging (patches, branding)
 │
+├── extensions/            # Quantum built-in extensions
+│
 ├── ide/                   # Quantum IDE
 │   ├── src/               # Editor core and workbench agent implementation
 │   ├── extensions/        # Built-in developer extensions
