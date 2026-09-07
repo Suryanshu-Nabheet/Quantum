@@ -1,5 +1,5 @@
 # =============================================================================
-# Quantum build repo — .gitignore
+# Quantum packaging build (monorepo build/) — .gitignore
 #
 # KEEP IN GIT (do not add rules that block these):
 #   assets/Quantum.png / Quantum-dark.png — light/dark transparent marks

@@ -9,7 +9,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ASSETS="${ROOT}/assets"
 FONT_DIR="${ASSETS}/fonts"
 FONT_REG="${FONT_DIR}/Outfit-Bold.ttf"
-REPO_ROOT="$(cd "${ROOT}/.." && pwd)"
+REPO_ROOT="$(cd "${ROOT}/../ide" && pwd)"
 REPO_ASSETS="${REPO_ROOT}/assets"
 PY=""
 

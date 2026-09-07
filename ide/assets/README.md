@@ -23,7 +23,7 @@ assets/
 ## 1. Brand masters (root of `assets/`)
 
 **Keep these paths stable.** Packaging and icon scripts hardcode them
-(`quantum-build/icons/generate_quantum_assets.sh`, `prepare_icons.sh`, etc.).
+(`build/icons/generate_quantum_assets.sh`, `prepare_icons.sh`, etc.).
 
 | File | Purpose |
 |------|---------|
@@ -37,8 +37,8 @@ assets/
 | `banner-lockup-*.png` | Wide marketing banner variants |
 | `Quantum_Name.png` | Wordmark-only glyph |
 
-Regenerate derived icons: `quantum-build/icons/prepare_icons.sh`  
-Details: [quantum-build/icons/README.md](../quantum-build/icons/README.md)
+Regenerate derived icons: `build/icons/prepare_icons.sh`  
+Details: [build/icons/README.md](../../build/icons/README.md)
 
 ## 2. Marketing (`assets/marketing/`)
 
@@ -84,5 +84,5 @@ Do **not** put screenshots next to brand masters at the `assets/` root, and do
 |----------|------|
 | `src/vs/workbench/contrib/agent/gui/` Vite `assets/` | Built webview JS/CSS — generated, not brand art |
 | `extensions/*/media/` | Per-extension icons |
-| `quantum-build/` generated icons | Derived from the masters above — do not edit by hand |
+| `build/` generated icons | Derived from the masters above — do not edit by hand |
 | Cursor chat attachment folders | Local agent screenshots only — copy keepers into `screenshots/` if they belong in the repo |

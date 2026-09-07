@@ -72,9 +72,21 @@ Each product also has its own setup script:
 | Product | Script |
 |---------|--------|
 | Agent Manager | `agent/scripts/setup.sh` |
-| IDE | `ide/scripts/setup.sh` (macOS/Linux) / `ide/scripts/setup.bat` (Windows) |
+| IDE (dev) | `ide/scripts/setup.sh` (macOS/Linux) / `ide/scripts/setup.bat` (Windows) |
+| IDE (release packaging) | `build/dev/build.sh` — upstream VS Code → Quantum binaries |
 
 The root `scripts/setup.sh` orchestrates these and runs verification at the end.
+
+### Release builds (IDE)
+
+Daily development uses `ide/` (`npm run compile`, `./scripts/code.sh`). To produce packaged Quantum binaries from pinned upstream VS Code:
+
+```bash
+cd build && ./dev/build.sh      # compile
+cd build && ./dev/build.sh -p   # compile + package
+```
+
+See [`build/docs/howto-build.md`](../build/docs/howto-build.md).
 
 ## After setup
 

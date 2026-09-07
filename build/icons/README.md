@@ -21,7 +21,7 @@ Runs automatically from `prepare_vscode.sh` / `./build.sh`, or manually:
 | `assets/screenshots/` | Product UI demos for README/docs (not used by icon scripts) |
 | `assets/sessions-logo-*.svg` | Sessions UI logos (`-light` = light glyph for dark chrome) |
 
-Full asset map (brand vs marketing vs screenshots): [`assets/README.md`](../../assets/README.md).
+Full asset map (brand vs marketing vs screenshots): [`assets/README.md`](../../ide/assets/README.md).
 
 App icons downscale with Lanczos when the master is large enough; smaller masters are upscaled once to each target size (then lightly sharpened). In-app SVGs (empty-editor watermark, `code-icon.svg`) embed **512×512** rasters (2× the 256px UI size for Retina). Use a **square** `app-icon.png` (≥1024px ideal) and **≥1024px** marks for the sharpest in-app logos.
 

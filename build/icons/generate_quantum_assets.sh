@@ -430,7 +430,7 @@ for base in "${STABLE_MEDIA}" "${INSIDER_MEDIA}"; do
   fi
 done
 
-REPO_ROOT="$(cd "${ROOT}/.." && pwd)"
+REPO_ROOT="$(cd "${ROOT}/../ide" && pwd)"
 if [[ -d "${REPO_ROOT}/resources" && -d "${REPO_ROOT}/src/vs/workbench/browser" ]]; then
   echo "== Sync local development resources =="
   cp -f "${STABLE_RES}/darwin/code.icns" "${REPO_ROOT}/resources/darwin/code.icns"

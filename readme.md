@@ -55,10 +55,12 @@ quantum/
 │   ├── apps/server/       # Effect-based orchestration server
 │   └── apps/web/          # Management interface and timeline renderer
 │
+├── build/                 # Upstream VS Code → Quantum packaging (patches, branding)
+│
 ├── ide/                   # Quantum IDE
 │   ├── src/               # Editor core and workbench agent implementation
 │   ├── extensions/        # Built-in developer extensions
-│   └── build/             # Toolchain and packaging configurations
+│   └── build/             # Microsoft gulp toolchain (daily dev compile)
 │
 ├── scripts/               # Monorepo setup and verification (./scripts/setup.sh)
 │

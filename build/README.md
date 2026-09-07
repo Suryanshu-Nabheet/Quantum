@@ -1,6 +1,6 @@
 <div id="quantum-logo" align="center">
     <br />
-    <img src="../assets/marketing/readme-banner.png" alt="Quantum — The AI Native Code Editor" width="100%"/>
+    <img src="../ide/assets/marketing/readme-banner.png" alt="Quantum — The AI Native Code Editor" width="100%"/>
 </div>
 
 <div id="badges" align="center">

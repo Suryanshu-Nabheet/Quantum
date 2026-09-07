@@ -26,7 +26,7 @@ Discussions, issues or PR that consist solely of unvetted AI outputs may be clos
 
 ### Before Submitting an Issue
 
-Before creating bug reports, please check existing issues and [the Troubleshooting page](https://github.com/Suryanshu-Nabheet/Quantum/blob/main/quantum-build/docs/troubleshooting.md) as you might find out that you don't need to create one.
+Before creating bug reports, please check existing issues and [the Troubleshooting page](https://github.com/Suryanshu-Nabheet/Quantum/blob/main/build/docs/troubleshooting.md) as you might find out that you don't need to create one.
 When you are creating a bug report, please include as many details as possible. Fill out [the required template](https://github.com/Suryanshu-Nabheet/Quantum/issues/new?&labels=bug&&template=bug_report.md), the information it asks for helps us resolve issues faster.
 
 ## Making Changes

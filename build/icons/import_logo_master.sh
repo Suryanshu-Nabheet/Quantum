@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Rebuild branding masters from image/logo.png (black mark on white).
-# Usage (from quantum-build): ./icons/import_logo_master.sh [path-to-logo.png]
+# Usage (from build/): ./icons/import_logo_master.sh [path-to-logo.png]
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-REPO_ROOT="$(cd "${ROOT}/.." && pwd)"
+REPO_ROOT="$(cd "${ROOT}/../ide" && pwd)"
 SRC="${1:-${REPO_ROOT}/image/logo.png}"
 ASSETS="${ROOT}/assets"
 

@@ -1188,7 +1188,7 @@ export class GettingStartedPage extends EditorPane {
 			const showExtras = this.configurationService.getValue<boolean>('workbench.welcomePage.extraAnnouncements');
 
 			if (showExtras) {
-				await fetch(`https://raw.githubusercontent.com/Suryanshu-Nabheet/Quantum/main/quantum-build/announcements-extra.json`)
+				await fetch(`https://raw.githubusercontent.com/Suryanshu-Nabheet/Quantum/main/build/announcements-extra.json`)
 					.then(async res => {
 						if (res.ok) {
 							const extraAnnouncements = await res.json() as AnnouncementEntry[];

@@ -19,7 +19,7 @@ else
 fi
 
 # Sync into the parent Quantum repo assets/ (README + marketing)
-REPO_ROOT="$(cd "${ROOT}/.." && pwd)"
+REPO_ROOT="$(cd "${ROOT}/../ide" && pwd)"
 if [[ -d "${REPO_ROOT}/assets" ]]; then
   echo "== Sync parent repo assets/ =="
   cp -f "${ROOT}/assets/Quantum.png" "${REPO_ROOT}/assets/Quantum.png"
