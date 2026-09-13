@@ -126,7 +126,12 @@ run_subsystem_setup() {
 	log_step "Setting up ${name}"
 	(
 		cd "$dir"
-		bash "$script_rel" "${extra_args[@]}"
+		# With `set -u`, an empty array expansion is an unbound variable on Bash 3.2+/macOS.
+		if ((${#extra_args[@]} > 0)); then
+			bash "$script_rel" "${extra_args[@]}"
+		else
+			bash "$script_rel"
+		fi
 	)
 }
 

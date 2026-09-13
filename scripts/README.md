@@ -62,7 +62,7 @@ Recommended: install [nvm](https://github.com/nvm-sh/nvm) or [fnm](https://githu
 
 Checks:
 
-- **Agent** — workspace install, contracts/server/web/desktop build outputs
+- **Agent** — workspace install, contracts/server/web/desktop build outputs (`agent/scripts/verify.sh`)
 - **IDE** — delegates to `ide/scripts/verify-dev.sh`
 
 ## Subsystem scripts

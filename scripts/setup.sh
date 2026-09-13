@@ -59,7 +59,8 @@ else
 fi
 
 if [[ "$SKIP_IDE" -eq 0 ]]; then
-	run_subsystem_setup "Quantum IDE" "${ROOT}/ide" "scripts/setup.sh"
+	# Always install/compile only here; launch is handled below via --launch-ide.
+	run_subsystem_setup "Quantum IDE" "${ROOT}/ide" "scripts/setup.sh" --setup-only
 else
 	log_warn "Skipping IDE setup (--skip-ide)"
 fi

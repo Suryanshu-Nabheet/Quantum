@@ -74,13 +74,18 @@ verify_agent() {
 
 verify_ide() {
 	log_step "Verifying Quantum IDE"
-	if [[ -f "${ROOT}/ide/scripts/verify.sh" ]]; then
+	if [[ -f "${ROOT}/ide/scripts/verify-dev.sh" ]]; then
+		(
+			cd "${ROOT}/ide"
+			bash scripts/verify-dev.sh
+		) && log_ok "IDE verification passed" || FAILED=1
+	elif [[ -f "${ROOT}/ide/scripts/verify.sh" ]]; then
 		(
 			cd "${ROOT}/ide"
 			bash scripts/verify.sh
 		) && log_ok "IDE verification passed" || FAILED=1
 	else
-		log_warn "ide/scripts/verify.sh not found — skipping"
+		log_warn "ide/scripts/verify-dev.sh not found — skipping"
 	fi
 }
 
