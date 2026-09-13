@@ -39,7 +39,7 @@ npm run dev --prefix gui
 
 ## Configuration
 
-Open **Quantum Settings** from the title bar layout menu (gear → Quantum Settings) or **Agent: Open Settings**. All user settings are stored in `~/.agent/index/globalContext.json` — models, rules, prompts, and MCP servers. There is no `config.yaml` or user `config.json`.
+Open **Settings** with **⌘,** / **Ctrl+,** (title-bar layout menu → Settings, or command **Open Settings**). Workbench preferences are **VS Code Settings** (**⌘⇧,** / **Ctrl+Shift+,**). Agent config lives in `~/.agent/index/globalContext.json` — models, rules, prompts, and MCP servers. There is no `config.yaml` or user `config.json`.
 
 - **Models** — add / configure / remove providers (one trash removes the model everywhere)
 - **Model roles** — assign which model chat, autocomplete, edit, apply, embed, and rerank use

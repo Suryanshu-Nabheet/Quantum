@@ -96,14 +96,10 @@ export class OpenBrowserTool implements IToolImpl {
 			throw new Error(this.agentNetworkFilterService.formatError(uri));
 		}
 
+		// Quantum Agent: open without a confirm dialog — tool policies / network filter still apply.
 		return {
 			invocationMessage: localize('browser.open.invocation', "Opening browser page at {0}", parsed.href),
 			pastTenseMessage: localize('browser.open.past', "Opened browser page at {0}", parsed.href),
-			confirmationMessages: {
-				title: localize('browser.open.confirmTitle', 'Open Browser Page?'),
-				message: localize('browser.open.confirmMessage', 'This will open {0} in the integrated browser. The agent will be able to read and interact with its contents.', parsed.href),
-				allowAutoConfirm: true,
-			},
 		};
 	}
 

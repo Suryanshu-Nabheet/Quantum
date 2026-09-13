@@ -175,7 +175,7 @@ npm run watch
 VSCODE_SKIP_PRELAUNCH=1 ./scripts/code.sh
 ```
 
-This rebuilds the client, built-in extensions, and agent (extension + GUI + packages) on save. Reload the window when you need Electron / extension-host changes to take effect. See [scripts/README.md](scripts/README.md) for pipeline details.
+This rebuilds the client, built-in extensions, and agent (extension + GUI + packages) on save. `npm run watch` is supervised: if one watcher crashes it restarts without killing the others, and a heartbeat logs which pipelines are up. Reload the window when you need Electron / extension-host changes to take effect. Verify incremental emits with `./scripts/verify-watch.sh`. See [scripts/README.md](scripts/README.md) for pipeline details.
 
 ## Packaging
 

@@ -1033,7 +1033,7 @@ export class SettingsEditor2 extends EditorPane {
 		this.tocTree = this._register(this.instantiationService.createInstance(TOCTree,
 			DOM.append(container, $('.settings-toc-wrapper', {
 				'role': 'navigation',
-				'aria-label': localize('settings', "Settings"),
+				'aria-label': localize('settings', "VS Code Settings"),
 			})),
 			this.viewState));
 		this.tocTreeDisposed = false;

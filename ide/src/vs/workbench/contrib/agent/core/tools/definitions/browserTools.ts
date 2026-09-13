@@ -9,7 +9,7 @@ function browserTool(
   description: string,
   properties: Record<string, unknown>,
   required: string[],
-  defaultToolPolicy: ToolPolicy = "allowedWithPermission",
+  defaultToolPolicy: ToolPolicy = "allowedWithoutPermission",
 ): Tool {
   return {
     type: "function",
@@ -56,7 +56,7 @@ Returns a page ID for other browser tools. Prefer reusing shared tabs when possi
     },
   },
   [],
-  "allowedWithPermission",
+  "allowedWithoutPermission",
 );
 
 export const listOpenBrowserPagesTool = browserTool(
@@ -74,7 +74,7 @@ export const closeBrowserPageTool = browserTool(
   "Close an integrated browser tab by pageId and stop agent tracking for that page.",
   { pageId: pageIdParam },
   ["pageId"],
-  "allowedWithPermission",
+  "allowedWithoutPermission",
 );
 
 export const readBrowserPageTool = browserTool(

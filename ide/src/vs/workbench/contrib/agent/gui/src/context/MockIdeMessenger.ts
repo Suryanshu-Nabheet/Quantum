@@ -45,7 +45,7 @@ const DEFAULT_MOCK_CORE_RESPONSES: MockResponses = {
     profileId: "local",
     profiles: [
       {
-        title: "Quantum Settings",
+        title: "Settings",
         id: "local",
         errors: [],
         profileType: "local",

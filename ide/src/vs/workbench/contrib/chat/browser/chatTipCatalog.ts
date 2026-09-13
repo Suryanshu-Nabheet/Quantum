@@ -323,7 +323,7 @@ export const TIP_CATALOG: readonly ITipDefinition[] = [
 			return new MarkdownString(
 				localize(
 					'tip.agenticBrowser',
-					"Enable [{0}](command:workbench.action.openSettings?%5B%22workbench.browser.enableChatTools%22%5D \"Open Settings\") to let the agent open and interact with pages in the Integrated Browser.",
+					"Enable [{0}](command:workbench.action.openSettings?%5B%22workbench.browser.enableChatTools%22%5D \"Open VS Code Settings\") to let the agent open and interact with pages in the Integrated Browser.",
 					'agentic browser integration'
 				)
 			);
@@ -364,7 +364,7 @@ export const TIP_CATALOG: readonly ITipDefinition[] = [
 			return new MarkdownString(
 				localize(
 					'tip.thinkingPhrases',
-					"Customize the loading messages shown while the agent works with [{0}](command:workbench.action.openSettings?%5B%22{1}%22%5D \"Open Settings\").",
+					"Customize the loading messages shown while the agent works with [{0}](command:workbench.action.openSettings?%5B%22{1}%22%5D \"Open VS Code Settings\").",
 					'thinking phrases',
 					ChatConfiguration.ThinkingPhrases
 				)
@@ -381,7 +381,7 @@ export const TIP_CATALOG: readonly ITipDefinition[] = [
 			return new MarkdownString(
 				localize(
 					'tip.autoAcceptDelay',
-					"Configure [{0}](command:workbench.action.openSettings?%5B%22chat.editing.autoAcceptDelay%22%5D \"Open Settings\") to automatically accept changes from the agent after a short countdown.",
+					"Configure [{0}](command:workbench.action.openSettings?%5B%22chat.editing.autoAcceptDelay%22%5D \"Open VS Code Settings\") to automatically accept changes from the agent after a short countdown.",
 					'auto-accept delay'
 				)
 			);
@@ -437,7 +437,7 @@ export const TIP_CATALOG: readonly ITipDefinition[] = [
 			return new MarkdownString(
 				localize(
 					'tip.defaultPermissions',
-					"Configure [{0}](command:workbench.action.openSettings?%5B%22{1}%22%5D \"Open Settings\") to start new sessions in Bypass Approvals or Autopilot mode.",
+					"Configure [{0}](command:workbench.action.openSettings?%5B%22{1}%22%5D \"Open VS Code Settings\") to start new sessions in Bypass Approvals or Autopilot mode.",
 					'default permissions',
 					ChatConfiguration.DefaultPermissionLevel
 				)

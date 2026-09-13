@@ -806,7 +806,7 @@ registerAction2(class extends Action2 {
 			const message = localize({ key: 'cannotToggle', comment: ['{0} is a setting name'] }, "Cannot toggle between light and dark themes when `{0}` is enabled in settings.", ThemeSettings.DETECT_COLOR_SCHEME);
 			notificationService.prompt(Severity.Info, message, [
 				{
-					label: localize('goToSetting', "Open Settings"),
+					label: localize('goToSetting', "Open VS Code Settings"),
 					run: () => {
 						return preferencesService.openUserSettings({ query: ThemeSettings.DETECT_COLOR_SCHEME });
 					}

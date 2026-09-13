@@ -280,7 +280,7 @@ export abstract class MenubarControl extends Disposable {
 		const message = localize('menubar.customTitlebarAccessibilityNotification', "Accessibility support is enabled for you. For the most accessible experience, we recommend the custom menu style.");
 		this.notificationService.prompt(Severity.Info, message, [
 			{
-				label: localize('goToSetting', "Open Settings"),
+				label: localize('goToSetting', "Open VS Code Settings"),
 				run: () => {
 					return this.preferencesService.openUserSettings({ query: MenuSettings.MenuStyle });
 				}

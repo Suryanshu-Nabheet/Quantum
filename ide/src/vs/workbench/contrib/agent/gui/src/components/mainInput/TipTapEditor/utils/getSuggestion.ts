@@ -204,7 +204,7 @@ export function getSlashCommandDropdownOptions(
           dispatch(setShowDialog(true));
           dispatch(setDialogMessage(createElement(AddPromptDialog)));
         },
-        description: "Create a slash-command prompt in Quantum Settings",
+        description: "Create a slash-command prompt in Settings",
         name: "",
         id: "",
         label: "",

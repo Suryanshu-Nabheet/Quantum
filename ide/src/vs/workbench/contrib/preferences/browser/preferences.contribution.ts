@@ -150,9 +150,9 @@ Registry.as<IEditorFactoryRegistry>(EditorExtensions.EditorFactory).registerEdit
 Registry.as<IEditorFactoryRegistry>(EditorExtensions.EditorFactory).registerEditorSerializer(KeybindingsEditorInput.ID, KeybindingsEditorInputSerializer);
 Registry.as<IEditorFactoryRegistry>(EditorExtensions.EditorFactory).registerEditorSerializer(SettingsEditor2Input.ID, SettingsEditor2InputSerializer);
 
-const OPEN_USER_SETTINGS_UI_TITLE = nls.localize2('openSettings2', "Open Settings (UI)");
-const OPEN_USER_SETTINGS_JSON_TITLE = nls.localize2('openUserSettingsJson', "Open User Settings (JSON)");
-const OPEN_APPLICATION_SETTINGS_JSON_TITLE = nls.localize2('openApplicationSettingsJson', "Open Application Settings (JSON)");
+const OPEN_USER_SETTINGS_UI_TITLE = nls.localize2('openEditorSettings2', "Open VS Code Settings (UI)");
+const OPEN_USER_SETTINGS_JSON_TITLE = nls.localize2('openUserEditorSettingsJson', "Open VS Code User Settings (JSON)");
+const OPEN_APPLICATION_SETTINGS_JSON_TITLE = nls.localize2('openApplicationEditorSettingsJson', "Open VS Code Application Settings (JSON)");
 const category = Categories.Preferences;
 
 interface IOpenSettingsActionOptions {
@@ -226,13 +226,14 @@ class PreferencesActionsContribution extends Disposable implements IWorkbenchCon
 				super({
 					id: SETTINGS_COMMAND_OPEN_SETTINGS,
 					title: {
-						...nls.localize2('settings', "Settings"),
-						mnemonicTitle: nls.localize({ key: 'miOpenSettings', comment: ['&& denotes a mnemonic'] }, "&&Settings"),
+						...nls.localize2('editorSettings', "VS Code Settings"),
+						mnemonicTitle: nls.localize({ key: 'miOpenEditorSettings', comment: ['&& denotes a mnemonic'] }, "&&VS Code Settings"),
 					},
 					keybinding: {
 						weight: KeybindingWeight.WorkbenchContrib,
 						when: null,
-						primary: KeyMod.CtrlCmd | KeyCode.Comma,
+						// Quantum: Cmd/Ctrl+, opens Settings; VS Code Settings uses Shift+,
+						primary: KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.Comma,
 					},
 					menu: [{
 						id: MenuId.GlobalActivity,
@@ -255,7 +256,7 @@ class PreferencesActionsContribution extends Disposable implements IWorkbenchCon
 			constructor() {
 				super({
 					id: 'workbench.action.openSettings2',
-					title: nls.localize2('openSettings2', "Open Settings (UI)"),
+					title: nls.localize2('openEditorSettings2', "Open VS Code Settings (UI)"),
 					category,
 					f1: true,
 				});
@@ -1380,7 +1381,7 @@ class SettingsEditorTitleContribution extends Disposable implements IWorkbenchCo
 			constructor() {
 				super({
 					id: SETTINGS_EDITOR_COMMAND_SWITCH_TO_JSON,
-					title: nls.localize2('openSettingsJson', "Open Settings (JSON)"),
+					title: nls.localize2('openEditorSettingsJson', "Open VS Code Settings (JSON)"),
 					icon: preferencesOpenSettingsIcon,
 					menu: [{
 						id: MenuId.EditorTitle,

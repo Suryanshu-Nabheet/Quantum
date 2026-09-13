@@ -12,7 +12,7 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
-test("createRuleBlockImpl stores rule in Quantum Settings and returns uri", async () => {
+test("createRuleBlockImpl stores rule in Settings and returns uri", async () => {
   const args = {
     name: "TypeScript Rule",
     rule: "Use interfaces for object shapes",
@@ -23,7 +23,7 @@ test("createRuleBlockImpl stores rule in Quantum Settings and returns uri", asyn
 
   const result = await createRuleBlockImpl(args, mockExtras as any);
 
-  expect(result[0].content).toContain("Quantum Settings");
+  expect(result[0].content).toContain("Settings");
   expect(result[0].uri?.value).toMatch(
     new RegExp(`^${QUANTUM_SETTINGS_SCHEME.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}rule/`),
   );

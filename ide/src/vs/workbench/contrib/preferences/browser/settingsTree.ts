@@ -2660,7 +2660,7 @@ class SettingsTreeAccessibilityProvider implements IListAccessibilityProvider<Se
 	}
 
 	getWidgetAriaLabel() {
-		return localize('settings', "Settings");
+		return localize('settings', "VS Code Settings");
 	}
 }
 

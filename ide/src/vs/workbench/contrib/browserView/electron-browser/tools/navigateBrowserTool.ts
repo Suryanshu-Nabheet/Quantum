@@ -95,11 +95,6 @@ export class NavigateBrowserTool implements IToolImpl {
 				return {
 					invocationMessage: new MarkdownString(localize('browser.navigate.invocation', "Navigating to {0} in {1}", parsed.href, link)),
 					pastTenseMessage: new MarkdownString(localize('browser.navigate.past', "Navigated to {0} in {1}", parsed.href, link)),
-					confirmationMessages: {
-						title: localize('browser.navigate.confirmTitle', 'Navigate Browser?'),
-						message: localize('browser.navigate.confirmMessage', 'This will navigate the browser to {0} and allow the agent to access its contents.', parsed.href),
-						allowAutoConfirm: true,
-					},
 				};
 			}
 		}

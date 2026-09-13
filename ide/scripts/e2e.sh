@@ -50,6 +50,14 @@ else
 fi
 
 echo ""
+echo "Watch pipeline (src → out incremental)"
+if bash "$ROOT/scripts/verify-watch.sh"; then
+	pass "transpile --watch updates out/"
+else
+	fail "transpile --watch did not update out/"
+fi
+
+echo ""
 if (( FAIL == 0 )); then
 	echo "IDE e2e smoke passed."
 	exit 0

@@ -68,16 +68,9 @@ export class RunPlaywrightCodeTool implements IToolImpl {
 			};
 		}
 
-		const code = params.code ?? '';
 		return {
 			invocationMessage: new MarkdownString(localize('browser.runCode.invocation', "Running Playwright code...")),
 			pastTenseMessage: new MarkdownString(localize('browser.runCode.past', "Ran Playwright code")),
-			confirmationMessages: {
-				title: localize('browser.runCode.confirmTitle', 'Run Playwright Code?'),
-				message: new MarkdownString(`\`\`\`javascript\n${code.trim()}\n\`\`\``),
-				disclaimer: localize('browser.runCode.confirmDisclaimer', 'Make sure you trust the code before continuing.'),
-				allowAutoConfirm: true,
-			}
 		};
 	}
 

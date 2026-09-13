@@ -1837,7 +1837,7 @@ export class SearchView extends ViewPane {
 				const searchAgainButton = this.messageDisposables.add(new SearchLinkButton(nls.localize('rerunSearchInAll.message', "Search again in all files"), this.onSearchAgain.bind(this), this.hoverService));
 				dom.append(messageEl, searchAgainButton.element);
 			} else {
-				const openSettingsButton = this.messageDisposables.add(new SearchLinkButton(nls.localize('openSettings.message', "Open Settings"), this.onOpenSettings.bind(this), this.hoverService));
+				const openSettingsButton = this.messageDisposables.add(new SearchLinkButton(nls.localize('openSettings.message', "Open VS Code Settings"), this.onOpenSettings.bind(this), this.hoverService));
 				dom.append(messageEl, openSettingsButton.element);
 			}
 

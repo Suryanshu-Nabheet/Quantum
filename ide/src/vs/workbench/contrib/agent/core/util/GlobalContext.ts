@@ -29,13 +29,13 @@ export type GlobalContextType = {
   shownDeprecatedProviderWarnings: { [providerTitle: string]: boolean };
   autoUpdateCli: boolean;
 
-  /** Models configured through Quantum Settings (GUI). */
+  /** Models configured through Settings (GUI). */
   guiModels: ModelConfig[];
-  /** MCP servers configured through Quantum Settings (GUI). */
+  /** MCP servers configured through Settings (GUI). */
   guiMcpServers: MCPServer[];
-  /** Rules configured through Quantum Settings (GUI). */
+  /** Rules configured through Settings (GUI). */
   guiRules: StoredGuiRule[];
-  /** Slash-command prompts configured through Quantum Settings (GUI). */
+  /** Slash-command prompts configured through Settings (GUI). */
   guiPrompts: StoredGuiPrompt[];
 };
 

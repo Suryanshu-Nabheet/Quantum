@@ -491,7 +491,7 @@ Select the \`GPT-4o\` model below to complete your provider configuration, but n
     description:
       "One of the fastest ways to get started with local models on Mac, Linux, or Windows",
     longDescription:
-      'To get started with Ollama:\n1. Download from [ollama.ai](https://ollama.ai/download) and open the application\n2. For **local** models: `ollama run <MODEL_NAME>` (e.g. `qwen2.5-coder:3b`)\n3. For **cloud** models (`*:cloud`): run `ollama signin`, then use the same model name in Quantum Settings → Models. Optional: set `OLLAMA_API_KEY` in the API key field.\n4. Pick the model for each role (Chat, Autocomplete, etc.) in Quantum Settings → Models',
+      'To get started with Ollama:\n1. Download from [ollama.ai](https://ollama.ai/download) and open the application\n2. For **local** models: `ollama run <MODEL_NAME>` (e.g. `qwen2.5-coder:3b`)\n3. For **cloud** models (`*:cloud`): run `ollama signin`, then use the same model name in Settings → Models. Optional: set `OLLAMA_API_KEY` in the API key field.\n4. Pick the model for each role (Chat, Autocomplete, etc.) in Settings → Models',
     icon: "ollama.png",
     tags: [ModelProviderTags.Local, ModelProviderTags.OpenSource],
     packages: [

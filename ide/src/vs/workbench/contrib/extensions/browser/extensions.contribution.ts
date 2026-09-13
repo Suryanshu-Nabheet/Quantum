@@ -1709,7 +1709,7 @@ class ExtensionsContributions extends Disposable implements IWorkbenchContributi
 
 		this.registerExtensionAction({
 			id: 'workbench.extensions.action.configure',
-			title: localize2('workbench.extensions.action.configure', 'Settings'),
+			title: localize2('workbench.extensions.action.configure', 'VS Code Settings'),
 			menu: {
 				id: MenuId.ExtensionContext,
 				group: '2_configure',

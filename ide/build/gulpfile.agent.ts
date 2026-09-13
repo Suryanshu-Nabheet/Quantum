@@ -118,6 +118,43 @@ function spawnWatchProcess(scriptName: string, label: string, args: string[] = [
 	});
 }
 
+/**
+ * Keep agent sub-watchers alive. A single child exit must not fail the gulp
+ * stream — that previously made npm-run-all abort transpile/client/extensions
+ * and left orphaned esbuild/vite processes with a stale out/.
+ */
+function keepWatchProcessAlive(scriptName: string, label: string, args: string[] = []): void {
+	let delayMs = 1_000;
+	const maxDelayMs = 30_000;
+
+	const launch = () => {
+		const child = spawnWatchProcess(scriptName, label, args);
+		child.on('error', err => {
+			fancyLog.error(`[agent] ${label} watch failed to start: ${err}`);
+			scheduleRestart();
+		});
+		child.on('exit', (code, signal) => {
+			const reason = signal ? `signal ${signal}` : `code ${code ?? 'unknown'}`;
+			fancyLog.warn(`[agent] ${label} watch exited (${reason}); restarting in ${delayMs}ms`);
+			scheduleRestart();
+		});
+	};
+
+	const scheduleRestart = () => {
+		const wait = delayMs;
+		delayMs = Math.min(maxDelayMs, Math.round(delayMs * 1.5));
+		setTimeout(() => {
+			launch();
+			// Reset backoff after a stable run.
+			setTimeout(() => {
+				delayMs = 1_000;
+			}, 15_000);
+		}, wait);
+	};
+
+	launch();
+}
+
 export async function compileAgentExtension(): Promise<void> {
 	if (!agentPackagesBuilt()) {
 		await runNodeScript('build-packages.js');
@@ -141,22 +178,9 @@ function watchAgentExtension(): NodeJS.ReadWriteStream {
 
 			fancyLog('[agent] watching extension (esbuild) + GUI (vite) + packages + native assets');
 
-			const esbuildWatch = spawnWatchProcess('esbuild.js', 'extension', ['--sourcemap', '--watch']);
-			const guiChild = spawnWatchProcess('watch-gui.js', 'GUI');
-			const packagesChild = spawnWatchProcess('watch-packages.js', 'packages');
-
-			const onChildExit = (name: string, code: number | null) => {
-				if (code !== 0 && code !== null) {
-					stream.emit('error', new Error(`Agent ${name} watch exited with code ${code}`));
-				}
-			};
-
-			esbuildWatch.on('error', err => stream.emit('error', err));
-			guiChild.on('error', err => stream.emit('error', err));
-			packagesChild.on('error', err => stream.emit('error', err));
-			esbuildWatch.on('exit', code => onChildExit('extension', code));
-			guiChild.on('exit', code => onChildExit('GUI', code));
-			packagesChild.on('exit', code => onChildExit('packages', code));
+			keepWatchProcessAlive('esbuild.js', 'extension', ['--sourcemap', '--watch']);
+			keepWatchProcessAlive('watch-gui.js', 'GUI');
+			keepWatchProcessAlive('watch-packages.js', 'packages');
 		} catch (err) {
 			stream.emit('error', err);
 		}

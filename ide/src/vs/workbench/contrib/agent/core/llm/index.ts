@@ -414,7 +414,7 @@ export abstract class BaseLLM implements ILLM {
       (text.includes("subscription") || text.includes("ollama.com/upgrade"))
     ) {
       return new LLMError(
-        `This Ollama cloud model needs an active Ollama account/plan. Run \`ollama signin\` in a terminal, or set OLLAMA_API_KEY on the API key field for Ollama in Quantum Settings → Models.`,
+        `This Ollama cloud model needs an active Ollama account/plan. Run \`ollama signin\` in a terminal, or set OLLAMA_API_KEY on the API key field for Ollama in Settings → Models.`,
         this,
       );
     } else if (
@@ -424,11 +424,11 @@ export abstract class BaseLLM implements ILLM {
     ) {
       if (resp.url.includes("codestral.mistral.ai")) {
         return new Error(
-          "You are using a Mistral API key, which is not compatible with the Codestral API. Obtain a Codestral API key, or set apiBase to 'https://api.mistral.ai/v1' in Quantum Settings → Models.",
+          "You are using a Mistral API key, which is not compatible with the Codestral API. Obtain a Codestral API key, or set apiBase to 'https://api.mistral.ai/v1' in Settings → Models.",
         );
       } else {
         return new Error(
-          "You are using a Codestral API key, which is not compatible with the Mistral API. Obtain a Mistral API key, or set apiBase to 'https://codestral.mistral.ai/v1' in Quantum Settings → Models.",
+          "You are using a Codestral API key, which is not compatible with the Mistral API. Obtain a Mistral API key, or set apiBase to 'https://codestral.mistral.ai/v1' in Settings → Models.",
         );
       }
     }

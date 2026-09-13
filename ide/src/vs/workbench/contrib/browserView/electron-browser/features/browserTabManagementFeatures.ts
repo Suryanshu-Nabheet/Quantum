@@ -628,7 +628,7 @@ class LinkOpenedHintPill extends BrowserEditorContribution {
 			content: new MarkdownString(localize('browser.linkOpenedHint.detail', "**Integrated Browser**\n\nLocalhost links automatically open in the integrated browser.")),
 			actions: [
 				{
-					label: localize('browser.linkOpenedHint.openSettings', "Open Settings"),
+					label: localize('browser.linkOpenedHint.openSettings', "Open VS Code Settings"),
 					commandId: 'workbench.action.openSettings',
 					iconClass: ThemeIcon.asClassName(Codicon.settingsGear),
 					run: () => {

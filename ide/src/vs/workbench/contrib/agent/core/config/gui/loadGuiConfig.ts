@@ -50,7 +50,7 @@ function loadAgentSettingsFromStorage(
 
   const globalContext = new GlobalContext();
   const config: AgentSettings = {
-    name: "Quantum Settings",
+    name: "Settings",
     version: "1.0.0",
     models: globalContext.get("guiModels") ?? [],
     mcpServers: (globalContext.get("guiMcpServers") ?? []).map((server) => ({

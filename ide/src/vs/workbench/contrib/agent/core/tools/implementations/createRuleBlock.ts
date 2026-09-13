@@ -39,7 +39,7 @@ export const createRuleBlockImpl: ToolImpl = async (args, extras) => {
         type: "file",
         value: quantumSettingsRuleUri(ruleId),
       },
-      content: `Rule created in Quantum Settings`,
+      content: `Rule created in Settings`,
     },
   ];
 };

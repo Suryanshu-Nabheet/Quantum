@@ -488,7 +488,7 @@ describe("Anthropic", () => {
           },
         }),
       ).rejects.toThrow(
-        "Request not sent. You have an Anthropic model in Quantum Settings → Models, but the API key is not set.",
+        "Request not sent. You have an Anthropic model in Settings → Models, but the API key is not set.",
       );
     });
   });

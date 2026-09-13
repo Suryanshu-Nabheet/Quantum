@@ -177,6 +177,7 @@ app.once('ready', function () {
 							min_time_between_dumps_ms: 10000
 						},
 						{
+						
 							type: 'periodic_interval',
 							mode: 'light',
 							min_time_between_dumps_ms: 1000

@@ -9,7 +9,7 @@ export const SUPPORTED_AGENT_FILES = ["AGENTS.md", "AGENT.md", "CLAUDE.md"];
 
 /**
  * Loads project-level agent instruction files (AGENTS.md, AGENT.md, CLAUDE.md)
- * from the workspace root. User rules are stored in Quantum Settings (globalContext).
+ * from the workspace root. User rules are stored in Settings (globalContext).
  */
 export async function loadProjectAgentMarkdownRules(ide: IDE): Promise<{
   rules: RuleWithSource[];

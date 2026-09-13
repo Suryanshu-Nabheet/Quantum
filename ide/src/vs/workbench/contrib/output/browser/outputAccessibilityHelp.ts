@@ -82,7 +82,7 @@ class OutputAccessibilityHelpProvider extends Disposable implements IAccessibleV
 		lines.push('');
 
 		// Settings
-		lines.push(nls.localize('output.settingsHeader', 'Settings You Can Adjust ({0} opens Settings):', this._describeCommand('workbench.action.openSettings') || 'Ctrl+,'));
+		lines.push(nls.localize('output.settingsHeader', 'Settings You Can Adjust ({0} opens VS Code Settings):', this._describeCommand('workbench.action.openSettings') || 'Ctrl+Shift+,'));
 		lines.push(nls.localize('output.settingsIntro', 'These settings affect how the Output panel works.'));
 		lines.push(nls.localize('output.settingVerbosity', '- `accessibility.verbosity.find`: Controls whether the filter input announces the Accessibility Help hint.'));
 		lines.push(nls.localize('output.settingSmartScroll', '- `output.smartScroll.enabled`: Automatically scroll to the latest output when messages arrive.'));

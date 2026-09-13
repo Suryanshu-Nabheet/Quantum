@@ -60,9 +60,9 @@ function migrateToolPolicies(dispatch: AppDispatch) {
   }
 }
 
-const AUTONOMY_DEFAULTS_MIGRATION_KEY = "agent_autonomy_defaults_v002";
+const AUTONOMY_DEFAULTS_MIGRATION_KEY = "agent_autonomy_defaults_v004";
 
-/** Tools that should auto-run without approval (read-only / safe-by-default). */
+/** Tools that should auto-run without approval (autonomous agent defaults). */
 const AUTONOMOUS_TOOL_POLICIES: Record<string, ToolPolicy> = {
   [BuiltInToolNames.RunTerminalCommand]: "allowedWithoutPermission",
   [BuiltInToolNames.LSTool]: "allowedWithoutPermission",
@@ -73,6 +73,23 @@ const AUTONOMOUS_TOOL_POLICIES: Record<string, ToolPolicy> = {
   [BuiltInToolNames.FileGlobSearch]: "allowedWithoutPermission",
   [BuiltInToolNames.ViewDiff]: "allowedWithoutPermission",
   [BuiltInToolNames.ViewSubdirectory]: "allowedWithoutPermission",
+  [BuiltInToolNames.CreateNewFile]: "allowedWithoutPermission",
+  [BuiltInToolNames.EditExistingFile]: "allowedWithoutPermission",
+  [BuiltInToolNames.SingleFindAndReplace]: "allowedWithoutPermission",
+  [BuiltInToolNames.MultiEdit]: "allowedWithoutPermission",
+  // Integrated browser — first-party agent tools
+  open_browser_page: "allowedWithoutPermission",
+  list_open_pages: "allowedWithoutPermission",
+  close_browser_page: "allowedWithoutPermission",
+  read_page: "allowedWithoutPermission",
+  screenshot_page: "allowedWithoutPermission",
+  navigate_page: "allowedWithoutPermission",
+  click_element: "allowedWithoutPermission",
+  type_in_page: "allowedWithoutPermission",
+  hover_element: "allowedWithoutPermission",
+  drag_element: "allowedWithoutPermission",
+  run_playwright_code: "allowedWithoutPermission",
+  handle_dialog: "allowedWithoutPermission",
 };
 
 /** One-time upgrade from legacy "always ask" defaults to autonomous agent behavior. */
@@ -95,6 +112,10 @@ function migrateAutonomyToolDefaults(dispatch: AppDispatch) {
 
   const parsedSettings = JSON.parse(uiState)?.toolSettings;
   if (!parsedSettings) {
+    // Still apply defaults into Redux for fresh toolSettings objects.
+    for (const [toolName, newPolicy] of Object.entries(AUTONOMOUS_TOOL_POLICIES)) {
+      dispatch(setToolPolicy({ toolName, policy: newPolicy }));
+    }
     localStorage.setItem(AUTONOMY_DEFAULTS_MIGRATION_KEY, "1");
     return;
   }
@@ -112,7 +133,7 @@ function migrateAutonomyToolDefaults(dispatch: AppDispatch) {
 
   if (upgraded > 0) {
     console.log(
-      `Upgraded ${upgraded} tool policies to autonomous defaults (safe commands auto-approve).`,
+      `Upgraded ${upgraded} tool policies to autonomous defaults (browser + workspace tools auto-approve).`,
     );
   }
 

@@ -96,7 +96,7 @@ class TerminalFindAccessibilityHelpProvider extends Disposable implements IAcces
 		content.push('');
 
 		// Settings
-		content.push(localize('terminal.settingsHeader', "Settings You Can Adjust ({0} opens Settings):", '<keybinding:workbench.action.openSettings>'));
+		content.push(localize('terminal.settingsHeader', "Settings You Can Adjust ({0} opens VS Code Settings):", '<keybinding:workbench.action.openSettings>'));
 		content.push(localize('terminal.settingsDesc', "Terminal Find has limited configuration options. Most behavior is controlled by the terminal itself."));
 		content.push(localize('terminal.settingVerbosity', "- `accessibility.verbosity.find`: Controls whether the Terminal Find input announces the Accessibility Help hint."));
 		content.push('');

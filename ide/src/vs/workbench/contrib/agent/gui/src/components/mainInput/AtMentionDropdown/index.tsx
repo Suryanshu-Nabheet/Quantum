@@ -259,7 +259,7 @@ const AtMentionDropdown = forwardRef((props: AtMentionDropdownProps, ref) => {
             }
             props.onClose();
           },
-          description: "Create a rule in Quantum Settings",
+          description: "Create a rule in Settings",
         },
         {
           title: "Add prompt",

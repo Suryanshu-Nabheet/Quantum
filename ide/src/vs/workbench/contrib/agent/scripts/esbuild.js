@@ -12,6 +12,8 @@ const esbuild = require("esbuild");
 
 const flags = process.argv.slice(2);
 const agentRoot = path.join(__dirname, "..");
+// agent → contrib → workbench → vs → src → ide root
+const ideRoot = path.resolve(agentRoot, "../../../../../");
 const packageNames = [
   "config-types",
   "fetch",
@@ -20,6 +22,17 @@ const packageNames = [
   "openai-adapters",
   "terminal-security",
 ];
+
+// Local packages publish `main` as a relative path into ide/out/agent-packages.
+// npm installs them as symlinks under core/node_modules and gui/node_modules;
+// resolving `main` from the symlink path (not the realpath) misses the build
+// output and breaks watch-agent esbuild. Alias to absolute built entrypoints.
+const localPackageAliases = Object.fromEntries(
+  packageNames.map((name) => [
+    name,
+    path.join(ideRoot, "out/agent-packages", name, "index.js"),
+  ]),
+);
 
 const esbuildConfig = {
   entryPoints: ["src/extension.ts"],
@@ -34,6 +47,7 @@ const esbuildConfig = {
   // All copies are the same version (verified), so resolve them to the
   // single hoisted copy in agent/node_modules to avoid bundling 2-4x.
   alias: {
+    ...localPackageAliases,
     "zod": path.join(agentRoot, "node_modules/zod"),
     "web-streams-polyfill": path.join(
       agentRoot,

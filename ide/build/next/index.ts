@@ -9,7 +9,7 @@ import * as path from 'path';
 import { promisify } from 'util';
 
 import glob from 'glob';
-import gulpWatch from '../lib/watch/index.ts';
+import chokidar from 'chokidar';
 import { nlsPlugin, createNLSCollector, finalizeNLS, postProcessNLS } from './nls-plugin.ts';
 import { convertPrivateFields, adjustSourceMap, type ConvertPrivateFieldsResult } from './private-to-property.ts';
 import { getVersion } from '../lib/getVersion.ts';
@@ -1146,6 +1146,7 @@ ${tslib}`,
 const WATCH_IGNORE_PATTERNS = [
 	'**/vs/workbench/contrib/agent/gui/dist/**',
 	'**/vs/workbench/contrib/agent/gui/node_modules/**',
+	'**/vs/workbench/contrib/agent/node_modules/**',
 ];
 
 async function watch(): Promise<void> {
@@ -1161,6 +1162,7 @@ async function watch(): Promise<void> {
 
 	const outDir = OUT_DIR;
 	const outMain = path.join(REPO_ROOT, outDir, 'main.js');
+	const srcDir = path.join(REPO_ROOT, SRC_DIR);
 
 	// Avoid wiping a live `out/` on every watch restart (races with watch-agent
 	// and forces a full cold rebuild). Only clean when the client output is missing.
@@ -1171,106 +1173,186 @@ async function watch(): Promise<void> {
 	}
 	console.log(`[transpile] ${SRC_DIR} → ${outDir}`);
 
-	// Initial full build so the app is current before incremental updates
-	const t1 = Date.now();
-	try {
-		await transpile(outDir, false);
-		await copyAllNonTsFiles(outDir, false);
-		console.log(`Finished transpilation with 0 errors after ${Date.now() - t1} ms`);
-	} catch (err) {
-		console.error('[watch] Initial build failed:', err);
-		console.log(`Finished transpilation with 1 errors after ${Date.now() - t1} ms`);
-		// Continue watching anyway
+	// When out/ already exists (typical after setup / prior watch), skip the expensive
+	// full rebuild so incremental watching starts immediately. A full pass can take
+	// minutes under parallel watch load and previously left the watcher never-armed.
+	const skipInitialFullBuild = fs.existsSync(outMain);
+	if (skipInitialFullBuild) {
+		console.log(`[watch] Skipping initial full transpile (found ${outDir}/main.js); incremental only`);
+		console.log(`Finished transpilation with 0 errors after 0 ms`);
+	} else {
+		const t0 = Date.now();
+		try {
+			await transpile(outDir, false);
+			await copyAllNonTsFiles(outDir, false);
+			console.log(`Finished transpilation with 0 errors after ${Date.now() - t0} ms`);
+		} catch (err) {
+			console.error('[watch] Initial build failed:', err);
+			console.log(`Finished transpilation with 1 errors after ${Date.now() - t0} ms`);
+			// Continue watching anyway — incremental updates can still recover
+		}
 	}
 
-	let pendingTsFiles: Set<string> = new Set();
-	let pendingCopyFiles: Set<string> = new Set();
+	const pendingTsFiles = new Set<string>();
+	const pendingCopyFiles = new Set<string>();
+	const pendingDeletes = new Set<string>();
+	let debounceTimer: ReturnType<typeof setTimeout> | undefined;
+	let processing = false;
+	let rerunRequested = false;
+
+	const scheduleProcessChanges = () => {
+		clearTimeout(debounceTimer);
+		debounceTimer = setTimeout(() => {
+			void processChanges();
+		}, 200);
+	};
 
 	const processChanges = async () => {
-		console.log('Starting transpilation...');
-		const t1 = Date.now();
-		const tsFiles = [...pendingTsFiles];
-		const filesToCopy = [...pendingCopyFiles];
-		pendingTsFiles = new Set();
-		pendingCopyFiles = new Set();
+		if (processing) {
+			rerunRequested = true;
+			return;
+		}
+		if (pendingTsFiles.size === 0 && pendingCopyFiles.size === 0 && pendingDeletes.size === 0) {
+			return;
+		}
 
-		try {
-			// Transform changed TypeScript files in parallel
-			if (tsFiles.length > 0) {
-				console.log(`[watch] Transpiling ${tsFiles.length} file(s)...`);
-				await Promise.all(tsFiles.map(srcPath => {
-					const relativePath = path.relative(path.join(REPO_ROOT, SRC_DIR), srcPath);
-					const destPath = path.join(REPO_ROOT, outDir, relativePath.replace(/\.ts$/, '.js'));
-					return transpileFile(srcPath, destPath);
-				}));
-			}
+		processing = true;
+		do {
+			rerunRequested = false;
+			console.log('Starting transpilation...');
+			const t1 = Date.now();
+			const tsFiles = [...pendingTsFiles];
+			const filesToCopy = [...pendingCopyFiles];
+			const filesToDelete = [...pendingDeletes];
+			pendingTsFiles.clear();
+			pendingCopyFiles.clear();
+			pendingDeletes.clear();
 
-			// Copy changed resource files in parallel
-			if (filesToCopy.length > 0) {
-				await Promise.all(filesToCopy.map(async (srcPath) => {
-					try {
+			try {
+				if (filesToDelete.length > 0) {
+					await Promise.all(filesToDelete.map(async (srcPath) => {
+						const relativePath = path.relative(srcDir, srcPath).replaceAll('\\', '/');
+						const destPath = path.join(
+							REPO_ROOT,
+							outDir,
+							relativePath.endsWith('.ts') && !relativePath.endsWith('.d.ts')
+								? relativePath.replace(/\.ts$/, '.js')
+								: relativePath
+						);
+						await fs.promises.rm(destPath, { force: true });
+					}));
+				}
+
+				if (tsFiles.length > 0) {
+					console.log(`[watch] Transpiling ${tsFiles.length} file(s)...`);
+					await Promise.all(tsFiles.map(async (srcPath) => {
 						if (!fs.existsSync(srcPath)) {
 							return;
 						}
-						const relativePath = path.relative(path.join(REPO_ROOT, SRC_DIR), srcPath);
-						const destPath = path.join(REPO_ROOT, outDir, relativePath);
-						await fs.promises.mkdir(path.dirname(destPath), { recursive: true });
-						await fs.promises.copyFile(srcPath, destPath);
-						console.log(`[watch] Copied ${relativePath}`);
-					} catch (err) {
-						const code = (err as NodeJS.ErrnoException).code;
-						if (code !== 'ENOENT') {
-							throw err;
-						}
-					}
-				}));
-			}
+						const relativePath = path.relative(srcDir, srcPath);
+						const destPath = path.join(REPO_ROOT, outDir, relativePath.replace(/\.ts$/, '.js'));
+						await transpileFile(srcPath, destPath);
+					}));
+				}
 
-			if (tsFiles.length > 0 || filesToCopy.length > 0) {
-				console.log(`Finished transpilation with 0 errors after ${Date.now() - t1} ms`);
+				if (filesToCopy.length > 0) {
+					await Promise.all(filesToCopy.map(async (srcPath) => {
+						try {
+							if (!fs.existsSync(srcPath)) {
+								return;
+							}
+							const relativePath = path.relative(srcDir, srcPath);
+							const destPath = path.join(REPO_ROOT, outDir, relativePath);
+							await fs.promises.mkdir(path.dirname(destPath), { recursive: true });
+							await fs.promises.copyFile(srcPath, destPath);
+							console.log(`[watch] Copied ${relativePath}`);
+						} catch (err) {
+							const code = (err as NodeJS.ErrnoException).code;
+							if (code !== 'ENOENT') {
+								throw err;
+							}
+						}
+					}));
+				}
+
+				if (tsFiles.length > 0 || filesToCopy.length > 0 || filesToDelete.length > 0) {
+					console.log(`Finished transpilation with 0 errors after ${Date.now() - t1} ms`);
+				}
+			} catch (err) {
+				console.error('[watch] Rebuild failed:', err);
+				console.log(`Finished transpilation with 1 errors after ${Date.now() - t1} ms`);
 			}
-		} catch (err) {
-			console.error('[watch] Rebuild failed:', err);
-			console.log(`Finished transpilation with 1 errors after ${Date.now() - t1} ms`);
-			// Continue watching
-		}
+		} while (
+			rerunRequested
+			|| pendingTsFiles.size > 0
+			|| pendingCopyFiles.size > 0
+			|| pendingDeletes.size > 0
+		);
+		processing = false;
 	};
 
-	// Watch src directory using existing gulp-watch based watcher
-	let debounceTimer: ReturnType<typeof setTimeout> | undefined;
-	const srcDir = path.join(REPO_ROOT, SRC_DIR);
-	const watchStream = gulpWatch('src/**', {
-		base: srcDir,
-		readDelay: 200,
-		ignored: WATCH_IGNORE_PATTERNS,
-	});
-
-	watchStream.on('data', (file: { path: string }) => {
-		const relativePath = path.relative(srcDir, file.path).replaceAll('\\', '/');
+	const enqueuePath = (filePath: string, removed: boolean) => {
+		const relativePath = path.relative(srcDir, filePath).replaceAll('\\', '/');
+		if (!relativePath || relativePath.startsWith('..')) {
+			return;
+		}
 		if (isAgentExtensionOnlySource(relativePath)) {
 			return;
 		}
-		if (file.path.endsWith('.ts') && !file.path.endsWith('.d.ts')) {
-			pendingTsFiles.add(file.path);
-		} else {
-			// Copy any non-TS file (matches old gulp build's `src/**` behavior)
-			pendingCopyFiles.add(file.path);
+
+		if (removed) {
+			pendingTsFiles.delete(filePath);
+			pendingCopyFiles.delete(filePath);
+			pendingDeletes.add(filePath);
+			scheduleProcessChanges();
+			return;
 		}
 
-		if (pendingTsFiles.size > 0 || pendingCopyFiles.size > 0) {
-			clearTimeout(debounceTimer);
-			debounceTimer = setTimeout(processChanges, 200);
+		pendingDeletes.delete(filePath);
+		if (filePath.endsWith('.ts') && !filePath.endsWith('.d.ts')) {
+			pendingTsFiles.add(filePath);
+		} else if (!filePath.endsWith('.d.ts')) {
+			pendingCopyFiles.add(filePath);
 		}
+		scheduleProcessChanges();
+	};
+
+	// chokidar (direct) is more reliable than gulp-watch for atomic editor saves
+	// and does not drop events while an incremental rebuild is in flight.
+	const watcher = chokidar.watch(srcDir, {
+		ignored: WATCH_IGNORE_PATTERNS,
+		ignoreInitial: true,
+		awaitWriteFinish: {
+			stabilityThreshold: 200,
+			pollInterval: 50,
+		},
+		ignorePermissionErrors: true,
+	});
+
+	watcher.on('add', (filePath) => enqueuePath(filePath, false));
+	watcher.on('change', (filePath) => enqueuePath(filePath, false));
+	watcher.on('unlink', (filePath) => enqueuePath(filePath, true));
+	watcher.on('error', (err) => {
+		console.error('[watch] Filesystem watcher error (continuing):', err);
 	});
 
 	console.log('[watch] Watching src/**/*.{ts,css,...} (Ctrl+C to stop)');
 
-	// Keep process alive
-	process.on('SIGINT', () => {
+	const shutdown = async () => {
 		console.log('\n[watch] Stopping...');
-		watchStream.end();
+		clearTimeout(debounceTimer);
+		try {
+			await watcher.close();
+		} catch {
+			// ignore close errors on shutdown
+		}
 		process.exit(0);
-	});
+	};
+	process.on('SIGINT', () => { void shutdown(); });
+	process.on('SIGTERM', () => { void shutdown(); });
+
+	// Keep process alive even if the event loop would otherwise drain
+	await new Promise(() => { });
 }
 
 // ============================================================================

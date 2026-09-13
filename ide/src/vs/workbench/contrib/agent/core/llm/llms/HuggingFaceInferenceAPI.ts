@@ -21,7 +21,7 @@ class HuggingFaceInferenceAPI extends BaseLLM {
   ): AsyncGenerator<string> {
     if (!this.apiBase) {
       throw new Error(
-        "No API base URL provided. Set apiBase in Quantum Settings → Models.",
+        "No API base URL provided. Set apiBase in Settings → Models.",
       );
     }
 

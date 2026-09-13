@@ -159,7 +159,7 @@ function AddRuleDialog({
       <div>
         <h1 className="mb-0">{title}</h1>
         <p className="text-description m-0 mt-2 p-0 text-sm">
-          Rules are stored in Quantum Settings.
+          Rules are stored in Settings.
         </p>
         <form onSubmit={handleSubmit} className="mt-3 flex flex-col gap-3">
           <label className="flex w-full flex-col gap-1">

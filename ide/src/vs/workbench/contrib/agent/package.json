@@ -72,7 +72,7 @@
         "agent.enableTabAutocomplete": {
           "type": "boolean",
           "default": true,
-          "markdownDescription": "Enable lightweight tab autocomplete. Configure models in Quantum Settings \u2192 Models."
+          "markdownDescription": "Enable lightweight tab autocomplete. Configure models in Settings \u2192 Models."
         },
         "agent.pauseTabAutocompleteOnBattery": {
           "type": "boolean",
@@ -261,6 +261,11 @@
       }
     ],
     "keybindings": [
+      {
+        "command": "agent.openConfigPage",
+        "mac": "cmd+,",
+        "key": "ctrl+,"
+      },
       {
         "command": "agent.focusAgentInput",
         "mac": "cmd+l",

@@ -23,7 +23,7 @@ export const INITIAL_PROFILES_STATE: ProfilesState = {
   selectedProfileId: "local",
   profiles: [
     {
-      title: "Quantum Settings",
+      title: "Settings",
       id: "local",
       errors: [],
       profileType: "local",

@@ -1,4 +1,4 @@
-/** Shared layout tokens for Quantum Settings (sidebar + main content). */
+/** Shared layout tokens for Settings (sidebar + main content). */
 
 export const CONFIG_TOP_INSET = "pt-6";
 
@@ -24,7 +24,7 @@ export const CONFIG_SIDEBAR_X = "px-1.5 xl:px-2.5";
 
 /**
  * Icon rail when the Settings webview is narrow (< xl / 720px), e.g. when the
- * Agent panel shares the window. Expanded width fits "Editor Settings".
+ * Agent panel shares the window. Expanded width fits "VS Code Settings".
  */
 export const CONFIG_SIDEBAR_WIDTH = "w-11 xl:w-[13.5rem]";
 

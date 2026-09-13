@@ -220,7 +220,7 @@ export const walkthroughs: GettingStartedWalkthroughContent = [
 					id: 'videoTutorial',
 					title: localize('gettingStarted.videoTutorial.title', "Watch video tutorials"),
 					description: localize('gettingStarted.videoTutorial.description.interpolated', "Watch the first in a series of short & practical video tutorials for Quantum's key features.\n{0}", Button(localize('watch', "Watch Tutorial"), 'https://aka.ms/vscode-getting-started-video')),
-					media: { type: 'svg', altText: 'Quantum Settings', path: 'learn.svg' },
+					media: { type: 'svg', altText: 'Settings', path: 'learn.svg' },
 				}
 			]
 		}
@@ -421,11 +421,11 @@ export const walkthroughs: GettingStartedWalkthroughContent = [
 				{
 					id: 'settingsAndSync',
 					title: localize('gettingStarted.settings.title', "Tune your settings"),
-					description: localize('gettingStarted.settingsAndSync.description.interpolated', "Customize every aspect of Quantum and [sync](command:workbench.userDataSync.actions.turnOn) customizations across devices.\n{0}", Button(localize('tweakSettings', "Open Settings"), 'command:toSide:workbench.action.openSettings')),
+					description: localize('gettingStarted.settingsAndSync.description.interpolated', "Customize every aspect of Quantum and [sync](command:workbench.userDataSync.actions.turnOn) customizations across devices.\n{0}", Button(localize('tweakSettings', "Open VS Code Settings"), 'command:toSide:workbench.action.openSettings')),
 					when: 'workspacePlatform != \'webworker\' && syncStatus != uninitialized',
 					completionEvents: ['onEvent:sync-enabled'],
 					media: {
-						type: 'svg', altText: 'Quantum Settings', path: 'settings.svg'
+						type: 'svg', altText: 'Settings', path: 'settings.svg'
 					},
 				},
 				{

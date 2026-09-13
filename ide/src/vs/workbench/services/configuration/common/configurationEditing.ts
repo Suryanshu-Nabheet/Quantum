@@ -291,7 +291,7 @@ export class ConfigurationEditing {
 		} else {
 			this.notificationService.prompt(Severity.Error, error.message,
 				[{
-					label: nls.localize('open', "Open Settings"),
+					label: nls.localize('open', "Open VS Code Settings"),
 					run: () => this.openSettings(operation)
 				}]
 			);
@@ -323,7 +323,7 @@ export class ConfigurationEditing {
 					run: () => this.writeConfiguration(operation.target, { key: operation.key, value: operation.value }, { handleDirtyFile: 'save', scopes })
 				},
 				{
-					label: nls.localize('open', "Open Settings"),
+					label: nls.localize('open', "Open VS Code Settings"),
 					run: () => this.openSettings(operation)
 				}]
 			);

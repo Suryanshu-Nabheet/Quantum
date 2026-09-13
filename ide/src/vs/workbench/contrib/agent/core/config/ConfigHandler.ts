@@ -127,7 +127,7 @@ export class ConfigHandler {
   }
 
   async getLocalProfiles(options: LoadAssistantFilesOptions) {
-    /** Single local profile backed by Quantum Settings (globalContext.json). */
+    /** Single local profile backed by Settings (globalContext.json). */
     const localProfiles: ProfileLifecycleManager[] = [];
 
     if (options.includeGlobal) {
@@ -270,7 +270,7 @@ export class ConfigHandler {
     _profileId?: string,
     _element?: { sourceFile?: string },
   ) {
-    // Models and settings are managed in Quantum Settings (GUI).
+    // Models and settings are managed in Settings (GUI).
   }
 
   // Ancient method of adding custom providers through vs code

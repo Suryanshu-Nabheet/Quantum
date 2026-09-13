@@ -80,7 +80,7 @@ function AddPromptDialog({ existingPrompt }: { existingPrompt?: ExistingPrompt }
       <div>
         <h1 className="mb-0">{title}</h1>
         <p className="text-description m-0 mt-2 p-0 text-sm">
-          Reusable slash commands stored in Quantum Settings.
+          Reusable slash commands stored in Settings.
         </p>
         <form onSubmit={handleSubmit} className="mt-3 flex flex-col gap-3">
           <label className="flex w-full flex-col gap-1">

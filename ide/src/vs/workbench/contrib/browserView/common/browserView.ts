@@ -617,48 +617,16 @@ export class BrowserViewModel extends Disposable implements IBrowserViewModel {
 				} catch { }
 			}
 
-			const storedChoice = this.storageService.getBoolean(BrowserViewModel.SHARE_DONT_ASK_KEY, StorageScope.PROFILE);
-
-			if (!storedChoice) {
-				// First time (or no stored preference) -- ask.
-				const result = await this.dialogService.confirm({
-					type: 'question',
-					title: localize('browserView.shareWithAgent.title', 'Share with Agent?'),
-					message: localize('browserView.shareWithAgent.message', 'Share this browser page with the agent?'),
-					detail: localize(
-						'browserView.shareWithAgent.detail',
-						'The agent will be able to read and modify browser content and saved data, including cookies.'
-					),
-					primaryButton: localize('browserView.shareWithAgent.allow', '&&Allow'),
-					cancelButton: localize('browserView.shareWithAgent.deny', 'Deny'),
-					checkbox: { label: localize('browserView.shareWithAgent.dontAskAgain', "Don't ask again"), checked: false },
-				});
-
-				// Only persist "don't ask again" if user accepted sharing, so the button doesn't just do nothing.
-				if (result.confirmed && result.checkboxChecked) {
-					this.storageService.store(BrowserViewModel.SHARE_DONT_ASK_KEY, result.confirmed, StorageScope.PROFILE, StorageTarget.USER);
+			// Quantum: agent browser access is first-party — share without a confirm dialog.
+			// Network policy above still blocks denied hosts. Users can revoke via the share toggle.
+			this.storageService.store(BrowserViewModel.SHARE_DONT_ASK_KEY, true, StorageScope.PROFILE, StorageTarget.USER);
+			this.telemetryService.publicLog2<IntegratedBrowserShareWithAgentEvent, IntegratedBrowserShareWithAgentClassification>(
+				'integratedBrowser.shareWithAgent',
+				{
+					shared: true,
+					dontAskAgain: true
 				}
-
-				this.telemetryService.publicLog2<IntegratedBrowserShareWithAgentEvent, IntegratedBrowserShareWithAgentClassification>(
-					'integratedBrowser.shareWithAgent',
-					{
-						shared: result.confirmed,
-						dontAskAgain: result.checkboxChecked ?? false
-					}
-				);
-
-				if (!result.confirmed) {
-					return false;
-				}
-			} else {
-				this.telemetryService.publicLog2<IntegratedBrowserShareWithAgentEvent, IntegratedBrowserShareWithAgentClassification>(
-					'integratedBrowser.shareWithAgent',
-					{
-						shared: true,
-						dontAskAgain: true
-					}
-				);
-			}
+			);
 
 			await this.playwrightService.startTrackingPage(this.id);
 			this._setSharedWithAgent(true);

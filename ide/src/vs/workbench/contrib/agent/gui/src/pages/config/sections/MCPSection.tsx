@@ -433,7 +433,7 @@ export function MCPSection() {
       setDialogMessage(
         <ConfirmationDialog
           title="Delete MCP Server"
-          text={`Remove "${server.name}" from Quantum Settings?`}
+          text={`Remove "${server.name}" from Settings?`}
           confirmText="Delete"
           onConfirm={async () => {
             try {

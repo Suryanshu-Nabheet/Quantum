@@ -25,7 +25,7 @@ export default class LocalProfileLoader implements IProfileLoader {
       iconUrl: "",
       title: overrideSettingsFile?.path
         ? getUriPathBasename(overrideSettingsFile.path)
-        : "Quantum Settings",
+        : "Settings",
       errors: undefined,
       uri:
         overrideSettingsFile?.path ??

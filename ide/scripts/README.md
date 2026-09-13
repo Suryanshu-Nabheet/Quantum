@@ -75,4 +75,6 @@ VSCODE_SKIP_PRELAUNCH=1 ./scripts/code.sh
 
 After a watched rebuild, use **Developer: Reload Window** (or relaunch) to pick up Electron / extension-host changes. Agent GUI webview updates usually apply on the next panel refresh.
 
+`npm run watch` is orchestrated by `scripts/watch-supervisor.mjs`: each pipeline is restarted on crash without aborting the others, and a periodic heartbeat reports which pipelines are up. Confirm emits with `./scripts/verify-watch.sh`.
+
 Do **not** run a second `npm run watch` (or a lone `watch-extensions`) in parallel — two watchers cleaning the same `out/` dirs will race and break activation.

@@ -115,4 +115,5 @@ cd ide && VSCODE_SKIP_PRELAUNCH=1 ./scripts/code.sh   # terminal 2
 | IDE npm too new | Use npm bundled with Node 22 via nvm (must be < 11.2) |
 | IDE `code.sh` fails on `.ts` extension | Use Node **22.22.1** from `ide/.nvmrc` (`nvm use` in `ide/`) — launch scripts call `node-ts.sh` with `--experimental-strip-types` |
 | Agent build fails | Ensure Bun >= 1.3.9; try `cd agent && bun install && bun run build` |
+| IDE `out/` stale while `npm run watch` runs | Stop watch (Ctrl+C) and restart `npm run watch`. Confirm heartbeat shows `watch-client-transpile=up`. Run `./scripts/verify-watch.sh`. Old npm-run-all could abort all watchers when one failed — supervisor restarts them. |
 | Re-run from scratch | Remove `node_modules` / `dist` / `out` in the affected subsystem, then `./scripts/setup.sh` |

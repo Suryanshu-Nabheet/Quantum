@@ -400,13 +400,13 @@ export class LayoutQuickMenuWidget extends Disposable {
 		const section = append(container, $('.layout-quick-menu__section.layout-quick-menu__footer'));
 		this._renderFooterLink(
 			section,
-			localize('layoutQuickMenu.quantumSettings', "Quantum Settings"),
+			localize('layoutQuickMenu.quantumSettings', "Settings"),
 			'agent.openConfigPage',
 			Codicon.settingsGear,
 		);
 		this._renderFooterLink(
 			section,
-			localize('layoutQuickMenu.editorSettings', "Editor Settings"),
+			localize('layoutQuickMenu.editorSettings', "VS Code Settings"),
 			'workbench.action.openSettings',
 			Codicon.settings,
 		);

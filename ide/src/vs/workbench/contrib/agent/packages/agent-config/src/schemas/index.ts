@@ -72,7 +72,7 @@ export const agentSettingsBaseSchema = z.object({
   requestOptions: requestOptionsSchema.optional(),
 });
 
-/** In-memory agent settings snapshot (Quantum Settings / globalContext.json). */
+/** In-memory agent settings snapshot (Settings / globalContext.json). */
 export const agentSettingsSchema = agentSettingsBaseSchema.extend({
   models: z.array(modelSchema.nullable()).optional(),
   context: z.array(contextSchema.nullable()).optional(),

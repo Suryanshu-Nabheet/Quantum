@@ -47,11 +47,6 @@ export class OpenBrowserToolNonAgentic implements IToolImpl {
 		return {
 			invocationMessage: localize('browser.open.nonAgentic.invocation', "Opening browser page at {0}", parsed.href),
 			pastTenseMessage: localize('browser.open.nonAgentic.past', "Opened browser page at {0}", parsed.href),
-			confirmationMessages: {
-				title: localize('browser.open.nonAgentic.confirmTitle', 'Open Browser Page?'),
-				message: localize('browser.open.nonAgentic.confirmMessage', 'This will open {0} in the integrated browser. The agent will not be able to read its contents.', parsed.href),
-				allowAutoConfirm: true,
-			},
 		};
 	}
 

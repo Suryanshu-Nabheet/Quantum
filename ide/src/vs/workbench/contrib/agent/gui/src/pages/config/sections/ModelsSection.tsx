@@ -55,7 +55,7 @@ export function ModelsSection() {
       setDialogMessage(
         <ConfirmationDialog
           title="Remove model"
-          text={`Remove "${model.title}" from Quantum Settings? It will be unavailable for every role (chat, autocomplete, edit, and others).`}
+          text={`Remove "${model.title}" from Settings? It will be unavailable for every role (chat, autocomplete, edit, and others).`}
           confirmText="Remove"
           onConfirm={async () => {
             try {

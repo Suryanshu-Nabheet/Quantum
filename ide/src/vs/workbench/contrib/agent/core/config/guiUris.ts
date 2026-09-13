@@ -1,4 +1,4 @@
-/** Browser-safe Quantum Settings URI helpers (no Node/fs deps). */
+/** Browser-safe Settings URI helpers (no Node/fs deps). */
 
 export const QUANTUM_SETTINGS_SCHEME = "quantum-settings://";
 

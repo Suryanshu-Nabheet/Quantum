@@ -400,7 +400,7 @@ class OpenAI extends BaseLLM {
   ) {
     if (!this.apiBase) {
       throw new Error(
-        "No API base URL provided. Set apiBase in Quantum Settings → Models.",
+        "No API base URL provided. Set apiBase in Settings → Models.",
       );
     }
 
@@ -700,7 +700,7 @@ class OpenAI extends BaseLLM {
   private _getEmbedEndpoint() {
     if (!this.apiBase) {
       throw new Error(
-        "No API base URL provided. Set apiBase in Quantum Settings → Models.",
+        "No API base URL provided. Set apiBase in Settings → Models.",
       );
     }
 

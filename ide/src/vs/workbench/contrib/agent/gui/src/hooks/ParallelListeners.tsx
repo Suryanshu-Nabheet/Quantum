@@ -68,7 +68,7 @@ function ParallelListeners() {
               {
                 fatal: true,
                 message:
-                  "Failed to load Quantum Settings. Check ~/.agent/index/globalContext.json and reload.",
+                  "Failed to load Settings. Check ~/.agent/index/globalContext.json and reload.",
               },
             ],
             configLoadInterrupted: true,
