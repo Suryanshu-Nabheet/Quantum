@@ -24,13 +24,13 @@ const DEFAULT_CHAT_MODEL_ROLES: ModelRole[] = [
 ];
 
 const ROLE_FORM_TITLES: Partial<Record<ModelRole, string>> = {
-  chat: "Add chat model",
-  autocomplete: "Add autocomplete model",
-  edit: "Add edit model",
-  apply: "Add apply model",
-  embed: "Add embedding model",
-  rerank: "Add rerank model",
-  subagent: "Add subagent model",
+  chat: "Add provider",
+  autocomplete: "Add provider",
+  edit: "Add provider",
+  apply: "Add provider",
+  embed: "Add provider",
+  rerank: "Add provider",
+  subagent: "Add provider",
 };
 
 export function ModelRolesSection() {
@@ -66,7 +66,7 @@ export function ModelRolesSection() {
       setDialogMessage(
         <AddModelForm
           roles={roles}
-          formTitle={ROLE_FORM_TITLES[role] ?? "Add model"}
+          formTitle={ROLE_FORM_TITLES[role] ?? "Add provider"}
           onDone={() => {
             dispatch(setShowDialog(false));
           }}
@@ -84,7 +84,7 @@ export function ModelRolesSection() {
     <div className={CONFIG_PAGE_GAP}>
       <ConfigHeader
         title="Model roles"
-        subtext="Choose which configured model each feature uses. Add or remove models on the Models page."
+        subtext="Choose which model each feature uses from your configured providers. Add providers on the Models page."
         showAddButton={false}
       />
 
@@ -92,7 +92,7 @@ export function ModelRolesSection() {
         className="-mt-1"
         onClick={() => navigate(buildConfigRoute("models"))}
       >
-        Manage models — add, configure, or remove providers
+        Manage providers — add, configure, or remove
       </ConfigCrossLink>
 
       <Card>

@@ -175,14 +175,25 @@ export function updateModel(
 ) {
   setGuiModels(
     getGuiModels().map((m) => {
-      if (m.name !== title) {
+      const matchByName = m.name === title;
+      // Provider credential rows use model AUTODETECT and name = provider title;
+      // expanded children use other titles — still update the credential by provider.
+      const matchProviderCredential =
+        !!updates.provider &&
+        m.provider === updates.provider &&
+        (m.model === "AUTODETECT" || m.name === title);
+      if (!matchByName && !matchProviderCredential) {
         return m;
       }
       const nextEnv = extractModelEnv(updates);
       return {
         ...m,
         provider: updates.provider ?? m.provider,
-        model: updates.model ?? m.model,
+        // Keep AUTODETECT so the provider continues to expand all models.
+        model:
+          m.model === "AUTODETECT"
+            ? "AUTODETECT"
+            : (updates.model ?? m.model),
         apiKey: updates.apiKey ?? m.apiKey,
         apiBase: updates.apiBase ?? m.apiBase,
         maxStopWords: updates.maxStopWords ?? m.maxStopWords,
@@ -207,6 +218,39 @@ export function deleteModel(title: string) {
     const cleaned = { ...roles };
     for (const role of Object.keys(cleaned) as (keyof typeof cleaned)[]) {
       if (cleaned[role] === title) {
+        cleaned[role] = null;
+        changed = true;
+      }
+    }
+    next[profileId] = cleaned;
+  }
+  if (changed) {
+    globalContext.update("selectedModelsByProfileId", next);
+  }
+}
+
+/** Remove every stored model/credential for a provider (Models page provider cards). */
+export function deleteModelsByProvider(
+  provider: string,
+  titlesToClear: string[] = [],
+) {
+  setGuiModels(getGuiModels().filter((m) => m.provider !== provider));
+
+  const clear = new Set(titlesToClear);
+  if (clear.size === 0) {
+    return;
+  }
+
+  const globalContext = new GlobalContext();
+  const selectedByProfile =
+    globalContext.get("selectedModelsByProfileId") ?? {};
+  let changed = false;
+  const next: typeof selectedByProfile = {};
+  for (const [profileId, roles] of Object.entries(selectedByProfile)) {
+    const cleaned = { ...roles };
+    for (const role of Object.keys(cleaned) as (keyof typeof cleaned)[]) {
+      const selected = cleaned[role];
+      if (selected && clear.has(selected)) {
         cleaned[role] = null;
         changed = true;
       }

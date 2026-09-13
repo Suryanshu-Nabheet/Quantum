@@ -138,6 +138,12 @@
         "group": "Agent"
       },
       {
+        "command": "agent.openModelPicker",
+        "category": "Quantum",
+        "title": "Open Model Picker",
+        "group": "Agent"
+      },
+      {
         "command": "agent.focusAgentInput",
         "category": "Quantum",
         "title": "Focus Chat",
@@ -311,6 +317,12 @@
         "key": "ctrl+i"
       },
       {
+        "command": "agent.openModelPicker",
+        "mac": "cmd+/",
+        "key": "ctrl+/",
+        "when": "focusedView == agent.agentGUIView || activeWebviewPanelId == agent.agentGUIView"
+      },
+      {
         "command": "agent.exitEditMode",
         "mac": "escape",
         "key": "escape",
@@ -361,6 +373,9 @@
         },
         {
           "command": "agent.focusAgentInputWithoutClear"
+        },
+        {
+          "command": "agent.openModelPicker"
         },
         {
           "command": "agent.debugTerminal"

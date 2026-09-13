@@ -229,6 +229,12 @@ describe("llmsFromModelConfig requestOptions merging", () => {
 
     // Should return multiple models from listModels()
     expect(result.length).toBeGreaterThan(0);
+    expect(result.map((llm) => llm.title)).toEqual(
+      expect.arrayContaining(["gpt-4", "gpt-3.5-turbo"]),
+    );
+    expect(result.every((llm) => !/autodetect/i.test(llm.title ?? ""))).toBe(
+      true,
+    );
 
     // Each detected model should have the merged requestOptions
     result.forEach((llm) => {
@@ -241,6 +247,36 @@ describe("llmsFromModelConfig requestOptions merging", () => {
         proxy: "global-proxy", // from global request options
       });
     });
+  });
+
+  it("falls back to catalog when listModels returns empty", async () => {
+    const { LLMClasses } = await import("../../llm/llms");
+    const OpenAI = LLMClasses.find((c) => c.providerName === "openai")!;
+    const original = OpenAI.prototype.listModels;
+    OpenAI.prototype.listModels = async () => [];
+
+    try {
+      const model: ModelConfig = {
+        name: "OpenAI",
+        provider: "openai",
+        model: "AUTODETECT",
+        apiKey: "sk-test",
+      };
+
+      const result = await llmsFromModelConfig({
+        model,
+        uniqueId: "test-id",
+        llmLogger: mockLLMLogger,
+        config: mockConfig,
+      });
+
+      expect(result.length).toBeGreaterThan(0);
+      expect(
+        result.every((llm) => llm.title && llm.title !== "AUTODETECT"),
+      ).toBe(true);
+    } finally {
+      OpenAI.prototype.listModels = original;
+    }
   });
 
   it("should handle unknown provider gracefully", async () => {

@@ -347,6 +347,13 @@ const getCommandsMap: (
       }
       await sidebar.webviewProtocol?.request("focusEdit", undefined);
     },
+    "agent.openModelPicker": async () => {
+      if (!(await ensureSidebarReady(sidebar))) {
+        return;
+      }
+      focusGUI();
+      await sidebar.webviewProtocol?.request("openModelPicker", undefined);
+    },
     "agent.exitEditMode": async () => {
       editDecorationManager.clear();
       void sidebar.webviewProtocol?.request("exitEditMode", undefined);

@@ -6,8 +6,11 @@ import {
 import { AgentConfig, ILLMLogger, LLMOptions } from "../..";
 import { BaseLLM } from "../../llm";
 import { LLMClasses } from "../../llm/llms";
-
-const AUTODETECT = "AUTODETECT";
+import {
+  AUTODETECT,
+  catalogModelNamesForProvider,
+  filterListedModelNames,
+} from "./providerModelCatalog";
 
 function getModelClass(
   model: ModelConfig,
@@ -145,6 +148,46 @@ async function modelConfigToBaseLLM({
   return llm;
 }
 
+async function expandModelNamesToLlms({
+  modelNames,
+  model,
+  uniqueId,
+  llmLogger,
+  config,
+}: {
+  modelNames: string[];
+  model: ModelConfig;
+  uniqueId: string;
+  llmLogger: ILLMLogger;
+  config: AgentConfig;
+}): Promise<BaseLLM[]> {
+  const usedTitles = new Set<string>();
+  const detectedModels = await Promise.all(
+    modelNames.map(async (modelName) => {
+      if (modelName === AUTODETECT) {
+        return undefined;
+      }
+      let title = modelName;
+      if (usedTitles.has(title)) {
+        title = `${model.provider}/${modelName}`;
+      }
+      usedTitles.add(title);
+      return await modelConfigToBaseLLM({
+        model: {
+          ...model,
+          model: modelName,
+          name: title,
+        },
+        uniqueId,
+        llmLogger,
+        config,
+        isFromAutoDetect: true,
+      });
+    }),
+  );
+  return detectedModels.filter((x) => typeof x !== "undefined") as BaseLLM[];
+}
+
 async function autodetectModels({
   llm,
   model,
@@ -158,32 +201,31 @@ async function autodetectModels({
   llmLogger: ILLMLogger;
   config: AgentConfig;
 }): Promise<BaseLLM[]> {
+  let modelNames: string[] = [];
   try {
-    const modelNames = await llm.listModels();
-    const detectedModels = await Promise.all(
-      modelNames.map(async (modelName) => {
-        // To ensure there are no infinite loops
-        if (modelName === AUTODETECT) {
-          return undefined;
-        }
-        return await modelConfigToBaseLLM({
-          model: {
-            ...model,
-            model: modelName,
-            name: modelName,
-          },
-          uniqueId,
-          llmLogger,
-          config,
-          isFromAutoDetect: true,
-        });
-      }),
+    modelNames = filterListedModelNames(
+      model.provider,
+      await llm.listModels(),
     );
-    return detectedModels.filter((x) => typeof x !== "undefined") as BaseLLM[];
   } catch (e) {
     console.warn("Error listing models: ", e);
+  }
+
+  if (modelNames.length === 0) {
+    modelNames = catalogModelNamesForProvider(model.provider);
+  }
+
+  if (modelNames.length === 0) {
     return [];
   }
+
+  return expandModelNamesToLlms({
+    modelNames,
+    model,
+    uniqueId,
+    llmLogger,
+    config,
+  });
 }
 
 export async function llmsFromModelConfig({

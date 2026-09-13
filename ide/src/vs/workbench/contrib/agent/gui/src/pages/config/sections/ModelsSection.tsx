@@ -14,7 +14,11 @@ import { ConfigEmptyAction } from "../components/ConfigEmptyAction";
 import { ConfigHeader } from "../components/ConfigHeader";
 import { ConfiguredModelsList } from "../components/ConfiguredModelsList";
 import { CONFIG_PAGE_GAP } from "../configLayout";
-import { uniqueModelsByTitle } from "../modelHelpers";
+import {
+  ConfiguredProviderGroup,
+  groupModelsByProvider,
+  uniqueModelsByTitle,
+} from "../modelHelpers";
 
 const DEFAULT_CHAT_MODEL_ROLES: ModelRole[] = [
   "chat",
@@ -28,20 +32,20 @@ export function ModelsSection() {
   const ideMessenger = useContext(IdeMessengerContext);
   const navigate = useNavigate();
   const config = useAppSelector((state) => state.config.config);
-  const configuredModels = useMemo(
-    () => uniqueModelsByTitle(config.modelsByRole),
-    [config.modelsByRole],
-  );
+  const configuredProviders = useMemo(() => {
+    const models = uniqueModelsByTitle(config.modelsByRole);
+    return groupModelsByProvider(models);
+  }, [config.modelsByRole]);
 
   const openConfigureModelDialog = useConfigureModelDialog();
 
-  function handleAddModel() {
+  function handleAddProvider() {
     dispatch(setShowDialog(true));
     dispatch(
       setDialogMessage(
         <AddModelForm
           roles={DEFAULT_CHAT_MODEL_ROLES}
-          formTitle="Add model"
+          formTitle="Add provider"
           onDone={() => {
             dispatch(setShowDialog(false));
           }}
@@ -50,20 +54,21 @@ export function ModelsSection() {
     );
   }
 
-  function handleDeleteModel(model: ModelDescription) {
+  function handleDeleteProvider(group: ConfiguredProviderGroup) {
     dispatch(
       setDialogMessage(
         <ConfirmationDialog
-          title="Remove model"
-          text={`Remove "${model.title}" from Settings? It will be unavailable for every role (chat, autocomplete, edit, and others).`}
+          title="Remove provider"
+          text={`Remove ${group.displayName} and all ${group.models.length} model${group.models.length === 1 ? "" : "s"} from Settings? They will be unavailable for every role.`}
           confirmText="Remove"
           onConfirm={async () => {
             try {
               await ideMessenger.request("config/deleteModel", {
-                title: model.title,
+                provider: group.credentialModel.provider,
+                titlesToClear: group.models.map((m) => m.title),
               });
             } catch (error) {
-              console.error("Failed to delete model:", error);
+              console.error("Failed to delete provider:", error);
             }
           }}
         />,
@@ -76,23 +81,25 @@ export function ModelsSection() {
     <div className={CONFIG_PAGE_GAP}>
       <ConfigHeader
         title="Models"
-        subtext="Add, configure, and remove providers. Assign which feature uses which model on Model roles."
-        onAddClick={handleAddModel}
-        addButtonTooltip="Add model"
-        addButtonLabel="Add model"
+        subtext="Connect providers with an API key. Assign which model each feature uses on Model roles."
+        onAddClick={handleAddProvider}
+        addButtonTooltip="Add provider"
+        addButtonLabel="Add provider"
       />
 
-      {configuredModels.length === 0 ? (
+      {configuredProviders.length === 0 ? (
         <ConfigEmptyAction
-          status="No models configured"
-          actionLabel="Add model"
-          onClick={handleAddModel}
+          status="No providers configured"
+          actionLabel="Add provider"
+          onClick={handleAddProvider}
         />
       ) : (
         <ConfiguredModelsList
-          models={configuredModels}
-          onConfigure={(model) => openConfigureModelDialog(model)}
-          onDelete={handleDeleteModel}
+          providers={configuredProviders}
+          onConfigure={(model: ModelDescription) =>
+            openConfigureModelDialog(model)
+          }
+          onDelete={handleDeleteProvider}
         />
       )}
 

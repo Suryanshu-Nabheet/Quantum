@@ -6,11 +6,10 @@ import { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FormProvider, useForm } from "react-hook-form";
 import { Button, Input, StyledActionButton } from "../components";
-import Alert from "../components/gui/Alert";
 import ModelSelectionListbox from "../components/modelSelection/ModelSelectionListbox";
 import { IdeMessengerContext } from "../context/IdeMessenger";
 import { completionParamsInputs } from "../pages/AddNewModel/configs/completionParamsInputs";
-import { DisplayInfo, ModelPackage } from "../pages/AddNewModel/configs/models";
+import { DisplayInfo, models } from "../pages/AddNewModel/configs/models";
 import {
   initializeOpenRouterModels,
   ProviderInfo,
@@ -33,18 +32,6 @@ function findProviderForModel(model: ModelDescription): ProviderInfo | undefined
   );
 }
 
-function findPackageForModel(
-  provider: ProviderInfo,
-  model: ModelDescription,
-): ModelPackage | undefined {
-  return provider.packages.find(
-    (pkg) =>
-      pkg.title === model.title ||
-      pkg.params.model === model.model ||
-      model.model.startsWith(pkg.params.model),
-  );
-}
-
 const DEFAULT_MODEL_ROLES: ModelRole[] = [
   "chat",
   "apply",
@@ -52,25 +39,19 @@ const DEFAULT_MODEL_ROLES: ModelRole[] = [
   "autocomplete",
 ];
 
-const CODESTRAL_URL = "https://console.mistral.ai/codestral";
-
 export function AddModelForm({
   onDone,
   roles = DEFAULT_MODEL_ROLES,
-  formTitle = "Add model",
+  formTitle = "Add provider",
   existingModel,
 }: AddModelFormProps) {
   const isEditing = !!existingModel;
   const initialProvider =
     (existingModel && findProviderForModel(existingModel)) ??
     providers["openai"]!;
-  const initialPackage =
-    (existingModel && findPackageForModel(initialProvider, existingModel)) ??
-    initialProvider.packages[0];
 
   const [selectedProvider, setSelectedProvider] =
     useState<ProviderInfo>(initialProvider);
-  const [selectedModel, setSelectedModel] = useState(initialPackage);
   const formMethods = useForm<Record<string, string>>({
     defaultValues: existingModel
       ? {
@@ -94,7 +75,6 @@ export function AddModelForm({
     void initializeOpenRouterModels();
   }, []);
 
-  // Prefill all known fields when configuring an existing model.
   useEffect(() => {
     if (!existingModel) {
       return;
@@ -146,11 +126,6 @@ export function AddModelForm({
     .filter((provider) => !popularProviderTitles.includes(provider.title))
     .sort((a, b) => a.title.localeCompare(b.title));
 
-  const selectedProviderApiKeyUrl =
-    selectedModel && selectedModel.params.model.startsWith("codestral")
-      ? CODESTRAL_URL
-      : selectedProvider.apiKeyUrl;
-
   function existingValueFor(key: string): string | undefined {
     if (!existingModel) {
       return undefined;
@@ -190,22 +165,12 @@ export function AddModelForm({
       if (value !== undefined && value.length > 0) {
         return true;
       }
-      // Editing: leave blank to keep the stored value (especially API keys).
       if (isEditing && existingValueFor(input.key)) {
         return true;
       }
       return false;
     });
   }
-
-  useEffect(() => {
-    if (existingModel) {
-      const pkg = findPackageForModel(selectedProvider, existingModel);
-      setSelectedModel(pkg ?? selectedProvider.packages[0]);
-      return;
-    }
-    setSelectedModel(selectedProvider.packages[0]);
-  }, [selectedProvider, existingModel]);
 
   async function onSubmit() {
     const reqInputFields: Record<string, string> = {};
@@ -215,7 +180,6 @@ export function AddModelForm({
         reqInputFields[input.key] = watched;
       } else if (isEditing) {
         const existing = existingValueFor(input.key);
-        // Don't re-send apiKeyLocation as apiKey — only real key values.
         if (input.key === "apiKey") {
           if (existingModel?.apiKey) {
             // omit — updateModel keeps previous via ??
@@ -231,10 +195,10 @@ export function AddModelForm({
 
     const model = {
       ...selectedProvider.params,
-      ...selectedModel.params,
+      ...models.AUTODETECT.params,
       ...reqInputFields,
       provider: selectedProvider.provider,
-      title: isEditing ? existingModel!.title : selectedModel.title,
+      title: selectedProvider.title,
       ...(hasValidApiKey ? { apiKey } : {}),
     };
 
@@ -243,7 +207,9 @@ export function AddModelForm({
         title: existingModel.title,
         model: {
           ...model,
-          title: existingModel.title,
+          // Prefer updating the provider credential row by provider id.
+          title: selectedProvider.title,
+          model: "AUTODETECT",
         },
       });
     } else {
@@ -267,11 +233,19 @@ export function AddModelForm({
       (field.required || isEditing || field.key === "apiBase"),
   );
 
+  const needsApiKey =
+    !!selectedProvider.apiKeyUrl ||
+    selectedProvider.collectInputFor?.some((f) => f.key === "apiKey");
+
   return (
     <FormProvider {...formMethods}>
       <form onSubmit={formMethods.handleSubmit(onSubmit)}>
         <div className="mx-auto max-w-md p-6">
           <h1 className="mb-0 text-center text-2xl">{formTitle}</h1>
+          <p className="text-description mt-2 mb-0 text-center text-sm">
+            Connect a provider once to use all of its available models in Model
+            roles and chat.
+          </p>
 
           <div className="my-8 flex flex-col gap-6">
             <div>
@@ -279,6 +253,9 @@ export function AddModelForm({
               <ModelSelectionListbox
                 selectedProvider={selectedProvider}
                 setSelectedProvider={(val: DisplayInfo) => {
+                  if (isEditing) {
+                    return;
+                  }
                   const match = [...popularProviders, ...otherProviders].find(
                     (provider) => provider.title === val.title,
                   );
@@ -306,48 +283,7 @@ export function AddModelForm({
               </div>
             )}
 
-            <div>
-              <label className="block text-sm font-medium">Model</label>
-              <ModelSelectionListbox
-                selectedProvider={selectedModel}
-                setSelectedProvider={(val: DisplayInfo) => {
-                  const options =
-                    Object.entries(providers).find(
-                      ([, provider]) =>
-                        provider?.title === selectedProvider.title,
-                    )?.[1]?.packages ?? [];
-                  const match = options.find(
-                    (option) => option.title === val.title,
-                  );
-                  if (match) {
-                    setSelectedModel(match);
-                  }
-                }}
-                topOptions={
-                  Object.entries(providers).find(
-                    ([, provider]) =>
-                      provider?.title === selectedProvider.title,
-                  )?.[1]?.packages
-                }
-              />
-            </div>
-
-            {selectedModel.params.model.startsWith("codestral") && (
-              <div className="my-2">
-                <Alert>
-                  <p className="m-0 text-sm font-bold">Codestral API key</p>
-                  <p className="m-0 mt-1">
-                    Note that codestral requires a different API key from other
-                    Mistral models
-                  </p>
-                </Alert>
-              </div>
-            )}
-
-            {(selectedProvider.apiKeyUrl ||
-              selectedProvider.collectInputFor?.some(
-                (f) => f.key === "apiKey",
-              )) && (
+            {needsApiKey && (
               <div>
                 <label className="mb-1 block text-sm font-medium">
                   API key
@@ -357,21 +293,22 @@ export function AddModelForm({
                   className="w-full"
                   type="password"
                   placeholder={
-                    isEditing && (existingModel?.apiKey || existingModel?.apiKeyLocation)
+                    isEditing &&
+                    (existingModel?.apiKey || existingModel?.apiKeyLocation)
                       ? "Leave blank to keep current key"
                       : `Enter your ${selectedProvider.title} API key`
                   }
                   autoComplete="off"
                   {...formMethods.register("apiKey")}
                 />
-                {selectedProviderApiKeyUrl && (
+                {selectedProvider.apiKeyUrl && (
                   <span className="text-description-muted mt-1 block text-xs">
                     <a
                       className="cursor-pointer text-inherit underline hover:text-inherit hover:brightness-125"
                       onClick={() => {
                         ideMessenger.post(
                           "openUrl",
-                          selectedProviderApiKeyUrl,
+                          selectedProvider.apiKeyUrl!,
                         );
                       }}
                     >
@@ -429,7 +366,7 @@ export function AddModelForm({
             </Button>
 
             <span className="text-description-muted block w-full text-center text-xs">
-              Model is saved in{" "}
+              Provider is saved in{" "}
               <span
                 className="cursor-pointer underline hover:brightness-125"
                 onClick={() => navigate(CONFIG_ROUTES.MODELS)}

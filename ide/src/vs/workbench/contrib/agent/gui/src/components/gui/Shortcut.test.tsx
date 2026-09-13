@@ -126,4 +126,50 @@ describe("Shortcut component", () => {
       expect(container.querySelector("kbd")?.textContent).toBe("Shift");
     });
   });
+
+  describe("Literal punctuation keys", () => {
+    beforeEach(() => {
+      vi.mocked(util.getMetaKeyLabel).mockReturnValue("⌘");
+    });
+
+    it('renders "cmd ," as ⌘ + ,', () => {
+      const { container } = render(<Shortcut>cmd ,</Shortcut>);
+      const keys = Array.from(container.querySelectorAll("kbd")).map(
+        (el) => el.textContent,
+      );
+      expect(keys).toEqual(["⌘", ","]);
+    });
+
+    it('renders "cmd ." as ⌘ + .', () => {
+      const { container } = render(<Shortcut>cmd .</Shortcut>);
+      const keys = Array.from(container.querySelectorAll("kbd")).map(
+        (el) => el.textContent,
+      );
+      expect(keys).toEqual(["⌘", "."]);
+    });
+
+    it('renders "cmd /" as ⌘ + /', () => {
+      const { container } = render(<Shortcut>cmd /</Shortcut>);
+      const keys = Array.from(container.querySelectorAll("kbd")).map(
+        (el) => el.textContent,
+      );
+      expect(keys).toEqual(["⌘", "/"]);
+    });
+
+    it('renders "cmd \'" as ⌘ + \'', () => {
+      const { container } = render(<Shortcut>{"cmd '"}</Shortcut>);
+      const keys = Array.from(container.querySelectorAll("kbd")).map(
+        (el) => el.textContent,
+      );
+      expect(keys).toEqual(["⌘", "'"]);
+    });
+
+    it("still splits chord sequences like cmd K, cmd A", () => {
+      const { container } = render(<Shortcut>cmd K, cmd A</Shortcut>);
+      const keys = Array.from(container.querySelectorAll("kbd")).map(
+        (el) => el.textContent,
+      );
+      expect(keys).toEqual(["⌘", "K", "⌘", "A"]);
+    });
+  });
 });

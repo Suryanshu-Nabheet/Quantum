@@ -12,7 +12,7 @@ export function useConfigureModelDialog() {
       setDialogMessage(
         <AddModelForm
           existingModel={model}
-          formTitle="Configure model"
+          formTitle="Configure provider"
           onDone={() => {
             dispatch(setShowDialog(false));
           }}

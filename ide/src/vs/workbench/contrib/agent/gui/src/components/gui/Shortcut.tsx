@@ -29,22 +29,64 @@ const getSpecialKeyMap = (): Record<string, string> => ({
   "⌫": "⌫",
   space: "Space",
   tab: "Tab",
+  comma: ",",
+  ",": ",",
+  period: ".",
+  ".": ".",
+  slash: "/",
+  "/": "/",
+  quote: "'",
+  apostrophe: "'",
+  "'": "'",
 });
 
-const parseShortcut = (shortcut: string) => {
+const MODIFIER_START =
+  /^(cmd|ctrl|meta|alt|option|opt|shift|⌘|⌥|⇧)\b/i;
+
+/**
+ * Split chord sequences like "cmd K, cmd A" without treating a literal
+ * comma key ("cmd ,") as a chord delimiter.
+ */
+export function splitShortcutCombos(shortcut: string): string[] {
+  const parts = shortcut.split(",");
+  if (parts.length === 1) {
+    return [shortcut.trim()].filter(Boolean);
+  }
+
+  const combos: string[] = [];
+  let buffer = parts[0];
+  for (let i = 1; i < parts.length; i++) {
+    const next = parts[i];
+    const nextTrim = next.trim();
+    const nextIsNewCombo =
+      nextTrim.length > 0 &&
+      MODIFIER_START.test(nextTrim) &&
+      MODIFIER_START.test(buffer.trim());
+    if (nextIsNewCombo) {
+      combos.push(buffer.trim());
+      buffer = next;
+    } else {
+      // Comma was a key (e.g. "cmd ,") — put it back.
+      buffer = `${buffer},${next}`;
+    }
+  }
+  combos.push(buffer.trim());
+  return combos.filter((c) => c.length > 0);
+}
+
+export const parseShortcut = (shortcut: string) => {
   if (!shortcut || typeof shortcut !== "string") {
     console.warn("Invalid shortcut provided:", shortcut);
     return [];
   }
 
   const specialKeyMap = getSpecialKeyMap();
-  return shortcut
-    .split(",")
+  return splitShortcutCombos(shortcut)
     .map((combo) =>
       combo
         .trim()
-        .split(" ")
-        .filter((key) => key)
+        .split(/\s+/)
+        .filter((key) => key.length > 0)
         .map((key) => {
           const lowerKey = key.toLowerCase();
           if (metaKeys.includes(lowerKey)) {
@@ -56,17 +98,28 @@ const parseShortcut = (shortcut: string) => {
           if (shiftKeys.includes(lowerKey)) {
             return getPlatform() === "mac" ? "⇧" : "Shift";
           }
-          return specialKeyMap[lowerKey] || capitalizeKey(key);
+          if (specialKeyMap[lowerKey] !== undefined) {
+            return specialKeyMap[lowerKey];
+          }
+          if (specialKeyMap[key] !== undefined) {
+            return specialKeyMap[key];
+          }
+          return capitalizeKey(key);
         }),
     )
     .filter((combo) => combo.length > 0);
 };
 
-const capitalizeKey = (key: string) =>
-  key.charAt(0).toUpperCase() + key.slice(1).toLowerCase();
+const capitalizeKey = (key: string) => {
+  if (key.length <= 1) {
+    return key;
+  }
+  return key.charAt(0).toUpperCase() + key.slice(1).toLowerCase();
+};
 
 const isSymbolOrSingleChar = (key: string) =>
-  key.length === 1 || ["⌘", "⌥", "⇧", "⌃", "⏎", "⌫", "↑", "↓", "←", "→"].includes(key);
+  key.length === 1 ||
+  ["⌘", "⌥", "⇧", "⌃", "⏎", "⌫", "↑", "↓", "←", "→"].includes(key);
 
 const Shortcut: React.FC<ShortcutProps> = ({ children }) => {
   if (!children || typeof children !== "string") {

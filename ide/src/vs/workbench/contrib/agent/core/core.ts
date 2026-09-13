@@ -17,6 +17,7 @@ import {
   deleteGuiRule,
   deleteMcpServer,
   deleteModel,
+  deleteModelsByProvider,
   updateGuiPrompt,
   updateGuiRule,
   updateMcpServer,
@@ -313,7 +314,14 @@ export class Core {
     });
 
     on("config/deleteModel", async (msg) => {
-      deleteModel(msg.data.title);
+      if (msg.data.provider) {
+        deleteModelsByProvider(
+          msg.data.provider,
+          msg.data.titlesToClear ?? [],
+        );
+      } else if (msg.data.title) {
+        deleteModel(msg.data.title);
+      }
       await this.configHandler.reloadConfig(
         "Model removed (config/deleteModel message)",
       );

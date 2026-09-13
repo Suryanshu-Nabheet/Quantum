@@ -77,6 +77,7 @@ export type ToWebviewFromIdeProtocol = ToWebviewFromIdeOrCoreProtocol & {
   updateApplyState: [ApplyState, void];
   exitEditMode: [undefined, void];
   focusEdit: [undefined, void];
+  openModelPicker: [undefined, void];
   generateRule: [undefined, void];
   addToChat: [AddToChatPayload, void];
   attachBrowserContext: [AttachBrowserContextPayload, { attached: boolean }];

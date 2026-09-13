@@ -46,7 +46,7 @@ export function ModelRoleRow({
         onAddModel ? (
           <ConfigEmptyAction
             status="Not configured"
-            actionLabel="Add model"
+            actionLabel="Add provider"
             onClick={onAddModel}
           />
         ) : (

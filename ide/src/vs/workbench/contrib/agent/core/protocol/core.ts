@@ -145,7 +145,14 @@ export type ToCoreFromIdeOrWebviewProtocol = {
       profiles: ProfileDescription[];
     },
   ];
-  "config/deleteModel": [{ title: string }, void];
+  "config/deleteModel": [
+    {
+      title?: string;
+      provider?: string;
+      titlesToClear?: string[];
+    },
+    void,
+  ];
   "config/refreshProfiles": [
     (
       | undefined

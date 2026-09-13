@@ -17,6 +17,7 @@ import {
   Transition,
 } from "../../../components/ui";
 import { fontSize } from "../../../util";
+import { formatModelLabel } from "../../../util/modelDisplay";
 
 interface ModelRoleSelectorProps {
   role: ModelRole;
@@ -83,7 +84,9 @@ const ModelRoleSelector = ({
                 className="line-clamp-1"
                 style={{ fontSize: fontSize(-1) }}
               >
-                {selectedModel?.title ?? `Select ${displayName} model`}
+                {selectedModel
+                  ? formatModelLabel(selectedModel)
+                  : `Select ${displayName} model`}
               </span>
             )}
 
@@ -99,7 +102,9 @@ const ModelRoleSelector = ({
               className="min-w-40"
             >
               {[...models]
-                .sort((a, b) => a.title.localeCompare(b.title))
+                .sort((a, b) =>
+                  formatModelLabel(a).localeCompare(formatModelLabel(b)),
+                )
                 .map((option) => {
                   const isConfigInvalid =
                     option.configurationStatus !==
@@ -135,7 +140,7 @@ const ModelRoleSelector = ({
                             className="line-clamp-1 truncate"
                             style={{ fontSize: fontSize(-1) }}
                           >
-                            {option.title}
+                            {formatModelLabel(option)}
                             {isConfigInvalid && (
                               <span className="ml-2 text-[10px] italic">
                                 {invalidMessage}
