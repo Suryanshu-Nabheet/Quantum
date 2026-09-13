@@ -1,5 +1,6 @@
 import { ToolPolicy } from "terminal-security";
 import {
+  ChevronDownIcon,
   ChevronRightIcon,
   InformationCircleIcon,
 } from "@heroicons/react/24/outline";
