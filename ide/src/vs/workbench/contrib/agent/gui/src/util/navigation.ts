@@ -3,7 +3,7 @@ export type ConfigTab =
   | "models"
   | "modelRoles"
   | "rules"
-  | "tools"
+  | "access"
   | "mcp"
   | "settings"
   | "shortcuts"
@@ -15,17 +15,15 @@ export const ROUTES = {
   CONFIG: "/config",
 };
 
-// Helper function to build config URLs with tabs
 export const buildConfigRoute = (tab?: ConfigTab): string => {
   return tab ? `${ROUTES.CONFIG}?tab=${tab}` : ROUTES.CONFIG;
 };
 
-// Typed config route builders for common tabs
 export const CONFIG_ROUTES = {
   MODELS: buildConfigRoute("models"),
   MODEL_ROLES: buildConfigRoute("modelRoles"),
   RULES: buildConfigRoute("rules"),
-  TOOLS: buildConfigRoute("tools"),
+  ACCESS: buildConfigRoute("access"),
   MCP: buildConfigRoute("mcp"),
   SETTINGS: buildConfigRoute("settings"),
   SHORTCUTS: buildConfigRoute("shortcuts"),
@@ -34,10 +32,12 @@ export const CONFIG_ROUTES = {
 
 const DEFAULT_CONFIG_TAB: ConfigTab = "settings";
 
+/** Legacy query values map to current tab ids. */
 const CONFIG_TAB_ALIASES: Record<string, ConfigTab> = {
   help: "about",
   roles: "modelRoles",
   "model-roles": "modelRoles",
+  tools: "access",
 };
 
 /** Resolve a raw `?tab=` query value to a valid settings tab id. */
@@ -53,7 +53,7 @@ export function resolveConfigTab(tabParam: string | null): ConfigTab {
     "models",
     "modelRoles",
     "rules",
-    "tools",
+    "access",
     "mcp",
     "settings",
     "shortcuts",

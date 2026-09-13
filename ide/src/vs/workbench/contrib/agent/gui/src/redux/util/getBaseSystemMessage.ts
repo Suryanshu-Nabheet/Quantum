@@ -7,7 +7,7 @@ import {
 } from "core/llm/defaultSystemMessages";
 
 export const NO_TOOL_WARNING =
-  "\n\nTHE USER HAS NOT PROVIDED ANY TOOLS, DO NOT ATTEMPT TO USE ANY TOOLS. STOP AND LET THE USER KNOW THAT THERE ARE NO TOOLS AVAILABLE. The user can provide tools by enabling them in the Tool Policies section of the notch (wrench icon)";
+  "\n\nTHE USER HAS NOT PROVIDED ANY TOOLS, DO NOT ATTEMPT TO USE ANY TOOLS. STOP AND LET THE USER KNOW THAT THERE ARE NO TOOLS AVAILABLE. The user can enable tools under Settings → Access and Settings → MCP.";
 
 export function getBaseSystemMessage(
   messageMode: string,

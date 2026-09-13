@@ -27,6 +27,7 @@ import { countTokens } from "./llm/countTokens";
 import Lemonade from "./llm/llms/Lemonade";
 import Ollama from "./llm/llms/Ollama";
 import { callTool } from "./tools/callTool";
+import { applyAgentAccessModes } from "./tools/policies/agentAccess";
 import { ChatDescriber } from "./util/chatDescriber";
 import { compactConversation } from "./util/conversationCompaction";
 import { GlobalContext } from "./util/GlobalContext";
@@ -821,7 +822,16 @@ export class Core {
 
     on(
       "tools/evaluatePolicy",
-      async ({ data: { toolName, basePolicy, parsedArgs, processedArgs } }) => {
+      async ({
+        data: {
+          toolName,
+          basePolicy,
+          parsedArgs,
+          processedArgs,
+          agentAccessMode,
+          terminalAutoExecution,
+        },
+      }) => {
         const { config } = await this.configHandler.loadConfig();
         if (!config) {
           throw new Error("Config not loaded");
@@ -829,7 +839,14 @@ export class Core {
 
         const tool = config.tools.find((t) => t.function.name === toolName);
         if (!tool) {
-          return { policy: basePolicy };
+          return {
+            policy: applyAgentAccessModes(
+              toolName,
+              basePolicy,
+              agentAccessMode,
+              terminalAutoExecution,
+            ),
+          };
         }
 
         // Extract display value for specific tools
@@ -838,15 +855,23 @@ export class Core {
           displayValue = parsedArgs.command as string;
         }
 
+        let policy = basePolicy;
         if (tool.evaluateToolCallPolicy) {
-          const evaluatedPolicy = tool.evaluateToolCallPolicy(
+          policy = tool.evaluateToolCallPolicy(
             basePolicy,
             parsedArgs,
             processedArgs,
           );
-          return { policy: evaluatedPolicy, displayValue };
         }
-        return { policy: basePolicy, displayValue };
+
+        policy = applyAgentAccessModes(
+          toolName,
+          policy,
+          agentAccessMode,
+          terminalAutoExecution,
+        );
+
+        return { policy, displayValue };
       },
     );
 

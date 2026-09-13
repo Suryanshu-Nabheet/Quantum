@@ -1,6 +1,11 @@
 import { ToolPolicy } from "terminal-security";
 import { BuiltInToolNames } from "core/tools/builtIn";
-import { clearToolPolicy, setToolPolicy } from "../redux/slices/uiSlice";
+import {
+  clearToolPolicy,
+  setAgentAccessMode,
+  setTerminalAutoExecution,
+  setToolPolicy,
+} from "../redux/slices/uiSlice";
 import { AppDispatch } from "../redux/store";
 
 const validPolicyValues: ToolPolicy[] = [
@@ -61,6 +66,7 @@ function migrateToolPolicies(dispatch: AppDispatch) {
 }
 
 const AUTONOMY_DEFAULTS_MIGRATION_KEY = "agent_autonomy_defaults_v004";
+const ACCESS_MODES_MIGRATION_KEY = "agent_access_modes_v001";
 
 /** Tools that should auto-run without approval (autonomous agent defaults). */
 const AUTONOMOUS_TOOL_POLICIES: Record<string, ToolPolicy> = {
@@ -140,7 +146,19 @@ function migrateAutonomyToolDefaults(dispatch: AppDispatch) {
   localStorage.setItem(AUTONOMY_DEFAULTS_MIGRATION_KEY, "1");
 }
 
+/** Seed Agent Access + Terminal Auto Execution defaults for existing installs. */
+function migrateAccessModes(dispatch: AppDispatch) {
+  if (localStorage.getItem(ACCESS_MODES_MIGRATION_KEY)) {
+    return;
+  }
+
+  dispatch(setAgentAccessMode("full"));
+  dispatch(setTerminalAutoExecution("auto"));
+  localStorage.setItem(ACCESS_MODES_MIGRATION_KEY, "1");
+}
+
 export function migrateLocalStorage(dispatch: AppDispatch) {
   migrateToolPolicies(dispatch);
   migrateAutonomyToolDefaults(dispatch);
+  migrateAccessModes(dispatch);
 }

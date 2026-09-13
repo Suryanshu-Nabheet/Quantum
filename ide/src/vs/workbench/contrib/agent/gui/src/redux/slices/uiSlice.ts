@@ -2,9 +2,19 @@ import { ToolPolicy } from "terminal-security";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { RuleWithSource, Tool } from "core";
 import { BUILT_IN_GROUP_NAME } from "core/tools/builtIn";
+import type {
+  AgentAccessMode,
+  TerminalAutoExecution,
+} from "core/tools/policies/agentAccess";
+import {
+  DEFAULT_AGENT_ACCESS_MODE,
+  DEFAULT_TERMINAL_AUTO_EXECUTION,
+} from "core/tools/policies/agentAccess";
 export type RulePolicy = "on" | "off";
 
 export type ToolGroupPolicy = "include" | "exclude";
+
+export type { AgentAccessMode, TerminalAutoExecution };
 
 export type ToolPolicies = { [toolName: string]: ToolPolicy };
 export type RulePolicies = { [ruleName: string]: RulePolicy };
@@ -20,6 +30,10 @@ type UIState = {
   ruleSettings: RulePolicies;
   reasoningSettings: ReasoningSettings;
   ttsActive: boolean;
+  /** High-level machine/filesystem access for the agent. */
+  agentAccessMode: AgentAccessMode;
+  /** Whether terminal commands auto-run or need approval. */
+  terminalAutoExecution: TerminalAutoExecution;
 };
 
 export const DEFAULT_TOOL_SETTING: ToolPolicy = "allowedWithoutPermission";
@@ -35,6 +49,8 @@ export const DEFAULT_UI_SLICE: UIState = {
   },
   ruleSettings: {},
   reasoningSettings: {},
+  agentAccessMode: DEFAULT_AGENT_ACCESS_MODE,
+  terminalAutoExecution: DEFAULT_TERMINAL_AUTO_EXECUTION,
 };
 
 export const uiSlice = createSlice({
@@ -66,24 +82,6 @@ export const uiSlice = createSlice({
     },
     clearToolPolicy: (state, action: PayloadAction<string>) => {
       delete state.toolSettings[action.payload];
-    },
-    toggleToolSetting: (state, action: PayloadAction<string>) => {
-      const setting = state.toolSettings[action.payload];
-
-      switch (setting) {
-        case "allowedWithPermission":
-          state.toolSettings[action.payload] = "allowedWithoutPermission";
-          break;
-        case "allowedWithoutPermission":
-          state.toolSettings[action.payload] = "disabled";
-          break;
-        case "disabled":
-          state.toolSettings[action.payload] = "allowedWithPermission";
-          break;
-        default:
-          state.toolSettings[action.payload] = DEFAULT_TOOL_SETTING;
-          break;
-      }
     },
     toggleToolGroupSetting: (state, action: PayloadAction<string>) => {
       const setting = state.toolGroupSettings[action.payload] ?? "include";
@@ -123,13 +121,21 @@ export const uiSlice = createSlice({
       state.reasoningSettings[action.payload.modelTitle] =
         action.payload.enabled;
     },
+    setAgentAccessMode: (state, action: PayloadAction<AgentAccessMode>) => {
+      state.agentAccessMode = action.payload;
+    },
+    setTerminalAutoExecution: (
+      state,
+      action: PayloadAction<TerminalAutoExecution>,
+    ) => {
+      state.terminalAutoExecution = action.payload;
+    },
   },
 });
 
 export const {
   setDialogMessage,
   setShowDialog,
-  toggleToolSetting,
   setToolPolicy,
   clearToolPolicy,
   toggleToolGroupSetting,
@@ -138,6 +144,8 @@ export const {
   toggleRuleSetting,
   setTTSActive,
   setReasoningSetting,
+  setAgentAccessMode,
+  setTerminalAutoExecution,
 } = uiSlice.actions;
 
 export default uiSlice.reducer;

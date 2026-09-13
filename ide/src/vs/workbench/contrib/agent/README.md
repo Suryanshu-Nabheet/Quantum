@@ -44,7 +44,7 @@ Open **Settings** with **⌘,** / **Ctrl+,** (title-bar layout menu → Settings
 - **Models** — add / configure / remove providers (one trash removes the model everywhere)
 - **Model roles** — assign which model chat, autocomplete, edit, apply, embed, and rerank use
 - **Browser** — Agent tools drive the integrated browser (list/open/close tabs, navigate, click, type, screenshot, Playwright)
-- **Rules, Tools, MCP**
+- **Rules, Access, MCP**
 - Secrets: `~/.agent/.env` or workspace `.env`
 - **Project rules** — `AGENTS.md` / `AGENT.md` / `CLAUDE.md` in the workspace root
 

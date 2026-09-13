@@ -284,6 +284,8 @@ export type ToCoreFromIdeOrWebviewProtocol = {
       basePolicy: ToolPolicy;
       parsedArgs: Record<string, unknown>;
       processedArgs?: Record<string, unknown>;
+      agentAccessMode?: "full" | "sandboxed" | "strict";
+      terminalAutoExecution?: "auto" | "allowlist" | "ask";
     },
     { policy: ToolPolicy; displayValue?: string },
   ];

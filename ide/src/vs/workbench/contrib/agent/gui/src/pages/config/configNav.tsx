@@ -7,8 +7,8 @@ import {
   CubeIcon,
   InformationCircleIcon,
   PencilIcon,
+  ShieldCheckIcon,
   Squares2X2Icon,
-  WrenchScrewdriverIcon,
 } from "@heroicons/react/24/outline";
 import { IDE_SETTINGS_LABEL } from "core/util/branding";
 import { CONFIG_NAV_ICON_CLASS } from "./configLayout";
@@ -78,10 +78,10 @@ export const configNavGroups: ConfigNavGroup[] = [
         action: { type: "tab", tabId: "rules" },
       },
       {
-        id: "tools",
-        label: "Tools",
-        icon: navIcon(WrenchScrewdriverIcon),
-        action: { type: "tab", tabId: "tools" },
+        id: "access",
+        label: "Access",
+        icon: navIcon(ShieldCheckIcon),
+        action: { type: "tab", tabId: "access" },
       },
       {
         id: "mcp",

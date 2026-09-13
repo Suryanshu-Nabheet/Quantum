@@ -10,30 +10,26 @@ import { Card } from "../../../components/ui";
 import { cn } from "../../../util/cn";
 import { useAppDispatch, useAppSelector } from "../../../redux/hooks";
 import { toggleToolGroupSetting } from "../../../redux/slices/uiSlice";
-import { CONFIG_HAIRLINE_DIVIDE } from "../configLayout";
 import { ToolPolicyItem } from "./ToolPolicyItem";
 
 interface ToolPoliciesGroupProps {
   showIcon: boolean;
   groupName: string;
   displayName: string;
-  subtext?: string;
   allToolsOff: boolean;
   duplicateDetection: Record<string, boolean>;
-  variant?: "collapsible" | "flat";
 }
 
+/** Collapsible MCP (or other) tool group with per-tool Automatic / Ask first / Excluded. */
 export function ToolPoliciesGroup({
   showIcon,
   groupName,
   displayName,
-  subtext,
   allToolsOff,
   duplicateDetection,
-  variant = "collapsible",
 }: ToolPoliciesGroupProps) {
   const dispatch = useAppDispatch();
-  const [isExpanded, setIsExpanded] = useState(variant === "flat");
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const availableTools = useAppSelector(
     (state) => state.config.config.tools as Tool[],
@@ -65,56 +61,6 @@ export function ToolPoliciesGroup({
     return `${enabledCount}/${totalCount}`;
   }, [enabledCount, totalCount]);
 
-  const isFlat = variant === "flat";
-  const showTools = isFlat || isExpanded;
-
-  const groupToggle = (
-    <ToolTip
-      content={
-        allToolsOff
-          ? "Tools disabled in current mode"
-          : isGroupEnabled
-            ? `Disable all tools in ${displayName}`
-            : `Enable all tools in ${displayName}`
-      }
-    >
-      <div>
-        <ToggleSwitch
-          isToggled={isGroupEnabled}
-          onToggle={() => dispatch(toggleToolGroupSetting(groupName))}
-          text=""
-          size={10}
-          disabled={allToolsOff}
-        />
-      </div>
-    </ToolTip>
-  );
-
-  if (isFlat) {
-    return (
-      <Card className="flex flex-col overflow-hidden p-0">
-        <div className={cn("flex flex-col", CONFIG_HAIRLINE_DIVIDE)}>
-          <div className="flex items-center justify-between gap-3 px-4 py-2">
-            <span className="text-description text-xs">
-              {enabledCount} of {totalCount} tools enabled
-            </span>
-            {groupToggle}
-          </div>
-
-          {tools.map((tool) => (
-            <ToolPolicyItem
-              key={tool.uri + tool.function.name}
-              tool={tool}
-              duplicatesDetected={duplicateDetection[tool.function.name]}
-              isGroupEnabled={isGroupEnabled}
-              compact
-            />
-          ))}
-        </div>
-      </Card>
-    );
-  }
-
   return (
     <Card className="flex flex-1 flex-col p-0">
       <div
@@ -138,10 +84,30 @@ export function ToolPoliciesGroup({
             </div>
           </div>
         </div>
-        <div onClick={(e) => e.stopPropagation()}>{groupToggle}</div>
+        <div onClick={(e) => e.stopPropagation()}>
+          <ToolTip
+            content={
+              allToolsOff
+                ? "Tools disabled in current mode"
+                : isGroupEnabled
+                  ? `Disable all tools in ${displayName}`
+                  : `Enable all tools in ${displayName}`
+            }
+          >
+            <div>
+              <ToggleSwitch
+                isToggled={isGroupEnabled}
+                onToggle={() => dispatch(toggleToolGroupSetting(groupName))}
+                text=""
+                size={10}
+                disabled={allToolsOff}
+              />
+            </div>
+          </ToolTip>
+        </div>
       </div>
 
-      {showTools && (
+      {isExpanded && (
         <div className="mt-1 space-y-1 pl-2">
           {tools.map((tool) => (
             <ToolPolicyItem

@@ -293,6 +293,10 @@ export const streamNormalInput = createAsyncThunk<
       activeTools,
       generatedCalls3,
       toolPolicies,
+      {
+        agentAccessMode: state3.ui.agentAccessMode,
+        terminalAutoExecution: state3.ui.terminalAutoExecution,
+      },
     );
     const autoApprovedPolicies = policies.filter(
       ({ policy }) => policy === "allowedWithoutPermission",

@@ -5,7 +5,7 @@ import { MCPSection } from "./sections/MCPSection";
 import { ModelRolesSection } from "./sections/ModelRolesSection";
 import { ModelsSection } from "./sections/ModelsSection";
 import { RulesSection } from "./sections/RulesSection";
-import { ToolsSection } from "./sections/ToolsSection";
+import { AccessSection } from "./sections/AccessSection";
 import { UserSettingsSection } from "./sections/UserSettingsSection";
 import type { ConfigTab as ConfigTabId } from "../../util/navigation";
 
@@ -48,10 +48,10 @@ export const configTabs: ConfigTabEntry[] = [
     ),
   },
   {
-    id: "tools",
+    id: "access",
     component: (
       <ConfigSection>
-        <ToolsSection />
+        <AccessSection />
       </ConfigSection>
     ),
   },

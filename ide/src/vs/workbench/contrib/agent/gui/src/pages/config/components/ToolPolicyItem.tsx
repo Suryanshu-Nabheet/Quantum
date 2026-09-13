@@ -1,6 +1,5 @@
 import { ToolPolicy } from "terminal-security";
 import {
-  ChevronDownIcon,
   ChevronRightIcon,
   InformationCircleIcon,
 } from "@heroicons/react/24/outline";
@@ -24,7 +23,6 @@ interface ToolPolicyItemProps {
   tool: Tool;
   duplicatesDetected: boolean;
   isGroupEnabled: boolean;
-  compact?: boolean;
 }
 
 function policyLabel(policy: ToolPolicy, disabled: boolean): string {
@@ -119,37 +117,6 @@ export function ToolPolicyItem(props: ToolPolicyItemProps) {
       </div>
     </Listbox>
   );
-
-  if (props.compact) {
-    return (
-      <div className="flex items-center justify-between gap-3 px-4 py-2.5">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
-            {props.duplicatesDetected ? (
-              <ToolTip
-                place="bottom"
-                content={`Duplicate tool name ${props.tool.function.name} detected. Permissions may conflict across servers.`}
-              >
-                <InformationCircleIcon className="h-3.5 w-3.5 shrink-0 cursor-help text-yellow-500" />
-              </ToolTip>
-            ) : null}
-            {props.tool.faviconUrl && (
-              <img
-                src={props.tool.faviconUrl}
-                alt={props.tool.displayTitle}
-                className="h-3.5 w-3.5 shrink-0"
-              />
-            )}
-            <span className="text-sm font-medium">{toolName}</span>
-          </div>
-          <p className="text-description mt-0.5 line-clamp-2 text-xs leading-snug">
-            {props.tool.function.description}
-          </p>
-        </div>
-        {policyControl}
-      </div>
-    );
-  }
 
   return (
     <div

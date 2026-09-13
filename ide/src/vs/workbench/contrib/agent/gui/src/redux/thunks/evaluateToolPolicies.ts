@@ -1,7 +1,14 @@
 import { ToolPolicy } from "terminal-security";
 import { Tool, ToolCallState } from "core";
+import type {
+  AgentAccessMode,
+  TerminalAutoExecution,
+} from "core/tools/policies/agentAccess";
+import {
+  DEFAULT_AGENT_ACCESS_MODE,
+  DEFAULT_TERMINAL_AUTO_EXECUTION,
+} from "core/tools/policies/agentAccess";
 import { IIdeMessenger } from "../../context/IdeMessenger";
-import { isEditTool } from "../../util/toolCallState";
 import { errorToolCall, updateToolCallOutput } from "../slices/sessionSlice";
 import { DEFAULT_TOOL_SETTING, ToolPolicies } from "../slices/uiSlice";
 import { AppThunkDispatch } from "../store";
@@ -12,15 +19,9 @@ interface EvaluatedPolicy {
   toolCallState: ToolCallState;
 }
 
-/** Most restrictive wins — user "always ask" overrides per-command auto-approve. */
-function getMostRestrictiveToolPolicy(...policies: ToolPolicy[]): ToolPolicy {
-  if (policies.some((p) => p === "disabled")) {
-    return "disabled";
-  }
-  if (policies.some((p) => p === "allowedWithPermission")) {
-    return "allowedWithPermission";
-  }
-  return "allowedWithoutPermission";
+export interface EvaluateToolPoliciesOptions {
+  agentAccessMode?: AgentAccessMode;
+  terminalAutoExecution?: TerminalAutoExecution;
 }
 
 /**
@@ -32,12 +33,8 @@ async function evaluateToolPolicy(
   activeTools: Tool[],
   toolCallState: ToolCallState,
   toolPolicies: ToolPolicies,
+  options: EvaluateToolPoliciesOptions,
 ): Promise<EvaluatedPolicy> {
-  // allow edit tool calls without permission
-  if (isEditTool(toolCallState.toolCall.function.name)) {
-    return { policy: "allowedWithoutPermission", toolCallState };
-  }
-
   const basePolicy =
     toolPolicies[toolCallState.toolCall.function.name] ??
     activeTools.find(
@@ -51,6 +48,9 @@ async function evaluateToolPolicy(
     basePolicy,
     parsedArgs: toolCallState.parsedArgs,
     processedArgs: toolCallState.processedArgs,
+    agentAccessMode: options.agentAccessMode ?? DEFAULT_AGENT_ACCESS_MODE,
+    terminalAutoExecution:
+      options.terminalAutoExecution ?? DEFAULT_TERMINAL_AUTO_EXECUTION,
   });
 
   // Evaluate the policy dynamically
@@ -62,9 +62,13 @@ async function evaluateToolPolicy(
   const dynamicPolicy = result.content.policy;
   const displayValue = result.content.displayValue;
 
-  // Combine user/tool default with per-call security evaluation (most restrictive wins).
-  const policy = getMostRestrictiveToolPolicy(basePolicy, dynamicPolicy);
-  return { policy, displayValue, toolCallState };
+  // Per-tool "disabled" always wins. Otherwise the mode-aware dynamic
+  // policy from core is the source of truth (Agent Access / Terminal Auto Execution).
+  if (basePolicy === "disabled") {
+    return { policy: "disabled", displayValue, toolCallState };
+  }
+
+  return { policy: dynamicPolicy, displayValue, toolCallState };
 }
 
 /*
@@ -78,6 +82,7 @@ export async function evaluateToolPolicies(
   activeTools: Tool[],
   generatedToolCalls: ToolCallState[],
   toolPolicies: ToolPolicies,
+  options: EvaluateToolPoliciesOptions = {},
 ): Promise<EvaluatedPolicy[]> {
   // Check if ALL tool calls are auto-approved using dynamic evaluation
   const policyResults = await Promise.all(
@@ -87,6 +92,7 @@ export async function evaluateToolPolicies(
         activeTools,
         toolCallState,
         toolPolicies,
+        options,
       ),
     ),
   );

@@ -54,6 +54,8 @@ const saveSubsetFilters = [
     "toolGroupSettings",
     "ruleSettings",
     "reasoningSettings",
+    "agentAccessMode",
+    "terminalAutoExecution",
   ]),
   createFilter("tabs", ["tabs"]),
   createFilter("profiles", [
