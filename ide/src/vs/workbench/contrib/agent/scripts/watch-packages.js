@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Watch agent packages/*/src and rebuild when sources change.
+ * Watch agent packages/<name>/src and rebuild when sources change.
  * Started by gulp watch-agent alongside esbuild --watch and watch-gui.
  */
 const { spawn } = require("child_process");
