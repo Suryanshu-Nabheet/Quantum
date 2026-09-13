@@ -158,8 +158,9 @@ export function HistoryTableRow({
       {hovered && !editing && (
         <td className="bg-input absolute right-2 top-12 ml-auto flex -translate-y-1/2 transform items-center gap-x-1 rounded-full px-2 py-1 shadow-md">
           <>
-            <HeaderButtonWithToolTip
+			<HeaderButtonWithToolTip
               text="Edit"
+              tooltipPlacement="left"
               onClick={async (e) => {
                 e.stopPropagation();
                 setEditing(true);
@@ -173,6 +174,7 @@ export function HistoryTableRow({
               ) && (
                 <HeaderButtonWithToolTip
                   text="Save Chat as Markdown"
+                  tooltipPlacement="left"
                   onClick={async (e) => {
                     e.stopPropagation();
                     await shareSession(sessionMetadata.sessionId);
@@ -183,6 +185,7 @@ export function HistoryTableRow({
               )}
             <HeaderButtonWithToolTip
               text="Delete"
+              tooltipPlacement="left"
               onClick={async (e) => {
                 e.stopPropagation();
                 await dispatch(deleteSession(sessionMetadata.sessionId));

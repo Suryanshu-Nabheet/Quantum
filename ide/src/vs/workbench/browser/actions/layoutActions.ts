@@ -212,7 +212,7 @@ MenuRegistry.appendMenuItems([{
 		group: '3_workbench_layout_move',
 		command: {
 			id: ToggleSidebarPositionAction.ID,
-			title: localize('move second sidebar left', "Move Secondary Side Bar Left")
+			title: localize('move second sidebar left', "Move Agent Left")
 		},
 		when: ContextKeyExpr.and(ContextKeyExpr.notEquals('config.workbench.sideBar.location', 'right'), ContextKeyExpr.equals('viewContainerLocation', ViewContainerLocationToString(ViewContainerLocation.AuxiliaryBar))),
 		order: 1
@@ -223,7 +223,7 @@ MenuRegistry.appendMenuItems([{
 		group: '3_workbench_layout_move',
 		command: {
 			id: ToggleSidebarPositionAction.ID,
-			title: localize('move second sidebar right', "Move Secondary Side Bar Right")
+			title: localize('move second sidebar right', "Move Agent Right")
 		},
 		when: ContextKeyExpr.and(ContextKeyExpr.equals('config.workbench.sideBar.location', 'right'), ContextKeyExpr.equals('viewContainerLocation', ViewContainerLocationToString(ViewContainerLocation.AuxiliaryBar))),
 		order: 1
@@ -890,7 +890,7 @@ registerAction2(class extends Action2 {
 					if (!hasAddedView) {
 						results.push({
 							type: 'separator',
-							label: localize('secondarySideBarContainer', "Secondary Side Bar / {0}", containerModel.title)
+							label: localize('secondarySideBarContainer', "Agent / {0}", containerModel.title)
 						});
 						hasAddedView = true;
 					}
@@ -999,7 +999,7 @@ class MoveFocusedViewAction extends Action2 {
 		if (!agentNativeMode && !(isViewSolo && currentLocation === ViewContainerLocation.AuxiliaryBar)) {
 			items.push({
 				id: '_.auxiliarybar.newcontainer',
-				label: localize('moveFocusedView.newContainerInSidePanel', "New Secondary Side Bar Entry")
+				label: localize('moveFocusedView.newContainerInSidePanel', "New Agent Entry")
 			});
 		}
 
@@ -1048,7 +1048,7 @@ class MoveFocusedViewAction extends Action2 {
 		if (!agentNativeMode) {
 			items.push({
 				type: 'separator',
-				label: localize('secondarySideBar', "Secondary Side Bar")
+				label: localize('secondarySideBar', "Agent")
 			});
 
 			const pinnedAuxPanels = paneCompositePartService.getPinnedPaneCompositeIds(ViewContainerLocation.AuxiliaryBar);
@@ -1370,7 +1370,7 @@ if (!isMacintosh || !isNative) {
 ToggleVisibilityActions.push(...[
 	CreateToggleLayoutItem(ToggleActivityBarVisibilityActionId, ContextKeyExpr.notEquals('config.workbench.activityBar.location', 'hidden'), localize('activityBar', "Activity Bar"), { whenA: ContextKeyExpr.equals('config.workbench.sideBar.location', 'left'), iconA: activityBarLeftIcon, iconB: activityBarRightIcon }),
 	CreateToggleLayoutItem(ToggleSidebarVisibilityAction.ID, SideBarVisibleContext, localize('sideBar', "Primary Side Bar"), { whenA: ContextKeyExpr.equals('config.workbench.sideBar.location', 'left'), iconA: panelLeftIcon, iconB: panelRightIcon }),
-	CreateToggleLayoutItem(ToggleAuxiliaryBarAction.ID, AuxiliaryBarVisibleContext, localize('secondarySideBar', "Secondary Side Bar"), { whenA: ContextKeyExpr.equals('config.workbench.sideBar.location', 'left'), iconA: panelRightIcon, iconB: panelLeftIcon }),
+	CreateToggleLayoutItem(ToggleAuxiliaryBarAction.ID, AuxiliaryBarVisibleContext, localize('secondarySideBar', "Agent"), { whenA: ContextKeyExpr.equals('config.workbench.sideBar.location', 'left'), iconA: panelRightIcon, iconB: panelLeftIcon }),
 	CreateToggleLayoutItem(TogglePanelAction.ID, PanelVisibleContext, localize('panel', "Panel"), panelIcon),
 	CreateToggleLayoutItem(ToggleStatusbarVisibilityAction.ID, ContextKeyExpr.equals('config.workbench.statusBar.visible', true), localize('statusBar', "Status Bar"), statusBarIcon),
 ]);

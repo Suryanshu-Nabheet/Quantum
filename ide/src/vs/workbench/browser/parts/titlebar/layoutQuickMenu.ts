@@ -340,11 +340,11 @@ export class LayoutQuickMenuWidget extends Disposable {
 	private _renderSecondarySideBarRow(section: HTMLElement): void {
 		const sideBarLocation = this.configurationService.getValue<string>('workbench.sideBar.location') ?? 'left';
 		const row = append(section, $('.layout-quick-menu__row.layout-quick-menu__row--position'));
-		append(row, $('span.layout-quick-menu__label')).textContent = localize('layoutQuickMenu.secondarySideBar', "Secondary Side Bar");
+		append(row, $('span.layout-quick-menu__label')).textContent = localize('layoutQuickMenu.secondarySideBar', "Agent");
 
 		const segmented = append(row, $('.layout-quick-menu__segmented'));
 		segmented.setAttribute('role', 'radiogroup');
-		segmented.setAttribute('aria-label', localize('layoutQuickMenu.secondarySideBarPosition', "Secondary Side Bar Position"));
+		segmented.setAttribute('aria-label', localize('layoutQuickMenu.secondarySideBarPosition', "Agent Position"));
 
 		this._secondarySideBarLeftSegment = append(segmented, $('button.layout-quick-menu__segment')) as HTMLButtonElement;
 		this._secondarySideBarLeftSegment.type = 'button';

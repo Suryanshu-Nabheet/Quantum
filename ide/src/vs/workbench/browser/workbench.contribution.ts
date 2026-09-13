@@ -567,7 +567,7 @@ const registry = Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Con
 				'type': 'string',
 				'enum': ['left', 'right'],
 				'default': 'left',
-				'description': localize('sideBarLocation', "Controls the location of the primary side bar and activity bar. They can either show on the left or right of the workbench. The secondary side bar will show on the opposite side of the workbench."),
+				'description': localize('sideBarLocation', "Controls the location of the primary side bar and activity bar. They can either show on the left or right of the workbench. The Agent will show on the opposite side of the workbench."),
 				agentsWindow: { default: 'left', readOnly: true },
 			},
 			'workbench.panel.showLabels': {
@@ -598,13 +598,13 @@ const registry = Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Con
 				'type': 'string',
 				'enum': ['hidden', 'visibleInWorkspace', 'visible', 'maximizedInWorkspace', 'maximized'],
 				'default': 'visibleInWorkspace',
-				'description': localize('secondarySideBarDefaultVisibility', "Controls the default visibility of the secondary side bar in workspaces or empty windows that are opened for the first time. Can be overridden by the agent sessions startup editor setting."),
+				'description': localize('secondarySideBarDefaultVisibility', "Controls the default visibility of the Agent in workspaces or empty windows that are opened for the first time. Can be overridden by the agent sessions startup editor setting."),
 				'enumDescriptions': [
-					localize('workbench.secondarySideBar.defaultVisibility.hidden', "The secondary side bar is hidden by default."),
-					localize('workbench.secondarySideBar.defaultVisibility.visibleInWorkspace', "The secondary side bar is visible by default if a workspace is opened."),
-					localize('workbench.secondarySideBar.defaultVisibility.visible', "The secondary side bar is visible by default."),
-					localize('workbench.secondarySideBar.defaultVisibility.maximizedInWorkspace', "The secondary side bar is visible and maximized by default if a workspace is opened."),
-					localize('workbench.secondarySideBar.defaultVisibility.maximized', "The secondary side bar is visible and maximized by default.")
+					localize('workbench.secondarySideBar.defaultVisibility.hidden', "The Agent is hidden by default."),
+					localize('workbench.secondarySideBar.defaultVisibility.visibleInWorkspace', "The Agent is visible by default if a workspace is opened."),
+					localize('workbench.secondarySideBar.defaultVisibility.visible', "The Agent is visible by default."),
+					localize('workbench.secondarySideBar.defaultVisibility.maximizedInWorkspace', "The Agent is visible and maximized by default if a workspace is opened."),
+					localize('workbench.secondarySideBar.defaultVisibility.maximized', "The Agent is visible and maximized by default.")
 				],
 				agentsWindow: { default: 'visibleInWorkspace', readOnly: true },
 			},
@@ -612,13 +612,13 @@ const registry = Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Con
 				'type': 'boolean',
 				'default': false,
 				tags: ['experimental'],
-				'description': localize('secondarySideBarForceMaximized', "Controls whether the secondary side bar is enforced to always show maximized on startup and when there are no open editors, in layouts that support a maximized secondary side bar."),
+				'description': localize('secondarySideBarForceMaximized', "Controls whether the Agent is enforced to always show maximized on startup and when there are no open editors, in layouts that support a maximized Agent."),
 				agentsWindow: { default: false, readOnly: true },
 			},
 			'workbench.secondarySideBar.showLabels': {
 				'type': 'boolean',
 				'default': true,
-				'markdownDescription': localize('secondarySideBarShowLabels', "Controls whether activity items in the secondary side bar title are shown as label or icon. This setting only has an effect when {0} is not set to {1}.", '`#workbench.auxiliaryActivityBar.location#`', '`top`'),
+				'markdownDescription': localize('secondarySideBarShowLabels', "Controls whether activity items in the Agent title are shown as label or icon. This setting only has an effect when {0} is not set to {1}.", '`#workbench.auxiliaryActivityBar.location#`', '`top`'),
 				agentsWindow: { default: true, readOnly: true },
 			},
 			'workbench.statusBar.visible': {
@@ -675,12 +675,12 @@ const registry = Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Con
 				'type': 'string',
 				'enum': ['default', 'top', 'bottom', 'hidden'],
 				'default': 'default',
-				'markdownDescription': localize({ comment: ['This is the description for a setting'], key: 'auxiliaryActivityBarLocation' }, "Controls the location of the Activity Bar relative to the Secondary Side Bar."),
+				'markdownDescription': localize({ comment: ['This is the description for a setting'], key: 'auxiliaryActivityBarLocation' }, "Controls the location of the Activity Bar relative to the Agent panel."),
 				'enumDescriptions': [
-					localize('workbench.auxiliaryActivityBar.location.default', "Show activity items in the Secondary Side Bar title."),
-					localize('workbench.auxiliaryActivityBar.location.top', "Show the Activity Bar on top of the Secondary Side Bar."),
-					localize('workbench.auxiliaryActivityBar.location.bottom', "Show the Activity Bar at the bottom of the Secondary Side Bar."),
-					localize('workbench.auxiliaryActivityBar.location.hide', "Hide the Activity Bar in the Secondary Side Bar.")
+					localize('workbench.auxiliaryActivityBar.location.default', "Show activity items in the Agent title."),
+					localize('workbench.auxiliaryActivityBar.location.top', "Show the Activity Bar on top of the Agent panel."),
+					localize('workbench.auxiliaryActivityBar.location.bottom', "Show the Activity Bar at the bottom of the Agent panel."),
+					localize('workbench.auxiliaryActivityBar.location.hide', "Hide the Activity Bar in the Agent panel.")
 				],
 				agentsWindow: { default: 'default', readOnly: true },
 			},
@@ -693,7 +693,7 @@ const registry = Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Con
 			[LayoutSettings.AUXILIARY_ACTIVITY_BAR_AUTO_HIDE]: {
 				'type': 'boolean',
 				'default': false,
-				'markdownDescription': localize({ comment: ['This is the description for a setting'], key: 'auxiliaryActivityBarAutoHide' }, "Controls whether the Activity Bar is automatically hidden when there is only one view container to show in the Secondary Side Bar when {0} is set to {1} or {2}.", '`#workbench.auxiliaryActivityBar.location#`', '`top`', '`bottom`'),
+				'markdownDescription': localize({ comment: ['This is the description for a setting'], key: 'auxiliaryActivityBarAutoHide' }, "Controls whether the Activity Bar is automatically hidden when there is only one view container to show in the Agent panel when {0} is set to {1} or {2}.", '`#workbench.auxiliaryActivityBar.location#`', '`top`', '`bottom`'),
 				agentsWindow: { default: false, readOnly: true },
 			},
 			[LayoutSettings.ACTIVITY_BAR_COMPACT]: {

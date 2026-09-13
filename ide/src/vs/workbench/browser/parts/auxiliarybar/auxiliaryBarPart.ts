@@ -297,13 +297,13 @@ export class AuxiliaryBarPart extends AbstractPaneCompositePart {
 
 		const menuActions: IAction[] = [new Separator()];
 		if (!agentNativeMode) {
-			menuActions.push(new SubmenuAction('workbench.action.auxiliaryActivityBar.position', localize('auxiliary activity bar position', "Secondary Side Bar Activity Bar Position"), positionActions));
-			menuActions.push(toAction({ id: ToggleSidebarPositionAction.ID, label: currentPositionRight ? localize('move second side bar left', "Move Secondary Side Bar Left") : localize('move second side bar right', "Move Secondary Side Bar Right"), run: () => this.commandService.executeCommand(ToggleSidebarPositionAction.ID) }));
+			menuActions.push(new SubmenuAction('workbench.action.auxiliaryActivityBar.position', localize('auxiliary activity bar position', "Agent Activity Bar Position"), positionActions));
+			menuActions.push(toAction({ id: ToggleSidebarPositionAction.ID, label: currentPositionRight ? localize('move second side bar left', "Move Agent Left") : localize('move second side bar right', "Move Agent Right"), run: () => this.commandService.executeCommand(ToggleSidebarPositionAction.ID) }));
 			menuActions.push(toggleShowLabelsAction);
 		}
 		menuActions.push(toAction({
 			id: ToggleAuxiliaryBarAction.ID,
-			label: agentNativeMode ? localize('hideAgentPanel', "Hide Agent") : localize('hide second side bar', "Hide Secondary Side Bar"),
+			label: agentNativeMode ? localize('hideAgentPanel', "Hide Agent") : localize('hide second side bar', "Hide Agent"),
 			run: () => this.commandService.executeCommand(ToggleAuxiliaryBarAction.ID)
 		}));
 		actions.push(...menuActions);

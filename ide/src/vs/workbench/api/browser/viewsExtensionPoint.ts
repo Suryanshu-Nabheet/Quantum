@@ -74,7 +74,7 @@ export const viewsContainersContribution: IJSONSchema = {
 			items: viewsContainerSchema
 		},
 		'secondarySidebar': {
-			description: localize('views.container.secondarySidebar', "Contribute views containers to Secondary Side Bar"),
+			description: localize('views.container.secondarySidebar', "Contribute views containers to Agent"),
 			type: 'array',
 			items: viewsContainerSchema
 		}

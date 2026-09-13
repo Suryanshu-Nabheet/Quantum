@@ -13,6 +13,7 @@ type HoverState = {
 type Listener = (state: HoverState) => void;
 
 const POINTER_GAP = 6;
+const VIEWPORT_PAD = 8;
 
 class WorkbenchHoverManager {
   private state: HoverState = null;
@@ -57,13 +58,40 @@ function getHoverPosition(
 ): { left: number; top: number; pointerClass: string } {
   const centerX = anchor.left + anchor.width / 2;
   const centerY = anchor.top + anchor.height / 2;
-  const pad = 8;
 
   let left: number;
   let top: number;
   let pointerClass: string;
+  let effectivePlacement = placement;
 
-  switch (placement) {
+  // Prefer the opposite side when the preferred placement would leave too little room.
+  if (
+    placement === "bottom" &&
+    anchor.bottom + POINTER_GAP + hoverHeight > viewportHeight - VIEWPORT_PAD &&
+    anchor.top - POINTER_GAP - hoverHeight >= VIEWPORT_PAD
+  ) {
+    effectivePlacement = "top";
+  } else if (
+    placement === "top" &&
+    anchor.top - POINTER_GAP - hoverHeight < VIEWPORT_PAD &&
+    anchor.bottom + POINTER_GAP + hoverHeight <= viewportHeight - VIEWPORT_PAD
+  ) {
+    effectivePlacement = "bottom";
+  } else if (
+    placement === "right" &&
+    anchor.right + POINTER_GAP + hoverWidth > viewportWidth - VIEWPORT_PAD &&
+    anchor.left - POINTER_GAP - hoverWidth >= VIEWPORT_PAD
+  ) {
+    effectivePlacement = "left";
+  } else if (
+    placement === "left" &&
+    anchor.left - POINTER_GAP - hoverWidth < VIEWPORT_PAD &&
+    anchor.right + POINTER_GAP + hoverWidth <= viewportWidth - VIEWPORT_PAD
+  ) {
+    effectivePlacement = "right";
+  }
+
+  switch (effectivePlacement) {
     case "bottom":
       left = centerX - hoverWidth / 2;
       top = anchor.bottom + POINTER_GAP;
@@ -88,8 +116,14 @@ function getHoverPosition(
   }
 
   // Keep the hover fully inside the agent webview — never clip off the side panel.
-  left = Math.max(pad, Math.min(left, viewportWidth - hoverWidth - pad));
-  top = Math.max(pad, Math.min(top, viewportHeight - hoverHeight - pad));
+  left = Math.max(
+    VIEWPORT_PAD,
+    Math.min(left, viewportWidth - hoverWidth - VIEWPORT_PAD),
+  );
+  top = Math.max(
+    VIEWPORT_PAD,
+    Math.min(top, viewportHeight - hoverHeight - VIEWPORT_PAD),
+  );
 
   return { left, top, pointerClass };
 }
@@ -100,42 +134,53 @@ function MeasuredHover({
   placement,
 }: NonNullable<HoverState>) {
   const hoverRef = useRef<HTMLDivElement>(null);
+  // Start off-screen so shrink-to-fit is not constrained by a corner anchor.
   const [position, setPosition] = useState<{ left: number; top: number }>({
-    left: anchor.left,
-    top: anchor.top - 40,
+    left: VIEWPORT_PAD,
+    top: -10_000,
   });
   const [pointerClass, setPointerClass] = useState(
     "workbench-hover-pointer bottom",
   );
+  const [ready, setReady] = useState(false);
 
   useLayoutEffect(() => {
     const el = hoverRef.current;
     if (!el) {
       return;
     }
+
+    // Natural size first (unconstrained). Corner anchors previously forced a
+    // tiny shrink-to-fit width and overflow-wrap turned "Delete" into "Dele/te".
     const rect = el.getBoundingClientRect();
+    const hoverWidth = Math.max(1, Math.ceil(rect.width));
+    const hoverHeight = Math.max(1, Math.ceil(rect.height));
     const next = getHoverPosition(
       anchor,
-      rect.width,
-      rect.height,
+      hoverWidth,
+      hoverHeight,
       placement,
       window.innerWidth,
       window.innerHeight,
     );
     setPosition({ left: next.left, top: next.top });
     setPointerClass(next.pointerClass);
+    setReady(true);
   }, [anchor, content, placement]);
 
   return (
     <div
       className="agent-workbench-hover-anchor"
-      style={{ left: position.left, top: position.top }}
+      style={{
+        left: position.left,
+        top: position.top,
+        visibility: ready ? "visible" : "hidden",
+      }}
     >
       <div
         ref={hoverRef}
         className="monaco-hover workbench-hover compact with-pointer fade-in"
         role="tooltip"
-        style={{ maxWidth: Math.min(280, window.innerWidth - 16) }}
       >
         <div className="hover-row markdown-hover">
           <div className="hover-contents">{content}</div>

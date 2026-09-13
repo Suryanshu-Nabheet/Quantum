@@ -5,7 +5,8 @@
 	font-size: 13px;
 	line-height: 19px;
 	z-index: 100000;
-	overflow: hidden;
+	overflow: visible;
+	width: max-content;
 	max-width: min(280px, calc(100vw - 16px));
 	background: var(--vscode-editorHoverWidget-background);
 	border: 1px solid var(--vscode-editorHoverWidget-border);
@@ -24,9 +25,9 @@
 
 .monaco-hover.workbench-hover.compact .hover-contents {
 	padding: 2px 8px;
-	white-space: normal;
-	overflow-wrap: anywhere;
-	word-break: break-word;
+	/* Short action labels (Delete, Edit) must stay on one line — corner
+	   anchors previously shrink-to-fit and overflow-wrap made "Delete" → "Dele/te". */
+	white-space: nowrap;
 }
 
 .workbench-hover-pointer {
