@@ -320,7 +320,7 @@
         "command": "agent.openModelPicker",
         "mac": "cmd+/",
         "key": "ctrl+/",
-        "when": "focusedView == agent.agentGUIView || activeWebviewPanelId == agent.agentGUIView"
+        "when": "!editorTextFocus && (view.agent.agentGUIView.visible || activeWebviewPanelId == agent.agentGUIView)"
       },
       {
         "command": "agent.exitEditMode",

@@ -189,6 +189,19 @@ const Layout = () => {
     [],
   );
 
+  useWebviewListener(
+    "openModelPicker",
+    async () => {
+      if (!isHome && !(window as any).isFullScreen) {
+        navigate(ROUTES.HOME);
+      }
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("quantum:openModelPicker"));
+      }, 50);
+    },
+    [isHome, navigate],
+  );
+
   useEffect(() => {
     const handleKeyDown = (event: any) => {
       if (isMetaEquivalentKeyPressed(event) && event.code === "KeyC") {
@@ -199,6 +212,27 @@ const Layout = () => {
           }, 100);
         }
       }
+
+      const isMeta =
+        isMetaEquivalentKeyPressed(event) ||
+        event.metaKey ||
+        event.ctrlKey;
+      if (!isMeta || event.altKey) {
+        return;
+      }
+      const isSlash =
+        event.code === "Slash" ||
+        event.key === "/" ||
+        event.key === "?" ||
+        event.keyCode === 191;
+      if (isSlash && !isHome && !(window as any).isFullScreen) {
+        event.preventDefault();
+        event.stopPropagation();
+        navigate(ROUTES.HOME);
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent("quantum:openModelPicker"));
+        }, 50);
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -206,7 +240,7 @@ const Layout = () => {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, []);
+  }, [isHome, navigate]);
 
 
   return (

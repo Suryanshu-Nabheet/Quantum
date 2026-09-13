@@ -54,6 +54,14 @@ interface ModelOptionProps {
 /**makeshift way to close the headlessui listbox due to absence of open state on the listbox */
 function closeDropDown(button: HTMLButtonElement | null) {
   if (!button) return;
+  button.dispatchEvent(
+    new KeyboardEvent("keydown", {
+      key: "Escape",
+      code: "Escape",
+      bubbles: true,
+      cancelable: true,
+    }),
+  );
   button.classList.add("hidden");
   setTimeout(() => {
     button.classList.remove("hidden");
@@ -275,15 +283,20 @@ function ModelSelect() {
     [dispatch, isInEdit, selectedModel?.title, selectedProfile],
   );
 
-  const requestOpenPicker = useCallback(() => {
-    setOpenRequestId((id) => id + 1);
+  const focusSearchInput = useCallback(() => {
+    const focus = () => {
+      if (searchInputRef.current) {
+        searchInputRef.current.focus();
+        searchInputRef.current.select();
+      }
+    };
+    requestAnimationFrame(focus);
+    setTimeout(focus, 30);
+    setTimeout(focus, 80);
+    setTimeout(focus, 150);
   }, []);
 
-  // Reliably open (or focus) the Headless listbox after ⌘+/ / IDE command.
-  useEffect(() => {
-    if (openRequestId === 0) {
-      return;
-    }
+  const openPicker = useCallback(() => {
     const button = buttonRef.current;
     if (!button) {
       return;
@@ -292,38 +305,77 @@ function ModelSelect() {
       pickerOpenRef.current ||
       button.getAttribute("aria-expanded") === "true";
     if (alreadyOpen) {
-      requestAnimationFrame(() => {
-        searchInputRef.current?.focus();
-        searchInputRef.current?.select();
-      });
+      focusSearchInput();
       return;
     }
-    // Defer past the keydown so Headless UI accepts the synthetic click.
-    const timer = window.setTimeout(() => {
-      button.click();
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, [openRequestId]);
+
+    // Headless UI ListboxButton toggles on pointerdown or Space/ArrowDown keydown
+    button.dispatchEvent(
+      new PointerEvent("pointerdown", {
+        bubbles: true,
+        cancelable: true,
+        pointerType: "mouse",
+        button: 0,
+      }),
+    );
+    button.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "ArrowDown",
+        code: "ArrowDown",
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+    button.click();
+
+    focusSearchInput();
+  }, [focusSearchInput]);
+
+  const togglePicker = useCallback(() => {
+    const button = buttonRef.current;
+    if (!button) {
+      return;
+    }
+    const alreadyOpen =
+      pickerOpenRef.current ||
+      button.getAttribute("aria-expanded") === "true";
+    if (alreadyOpen) {
+      closeDropDown(button);
+    } else {
+      openPicker();
+    }
+  }, [openPicker]);
 
   useWebviewListener(
     "openModelPicker",
     async () => {
-      requestOpenPicker();
+      openPicker();
     },
-    [requestOpenPicker],
+    [openPicker],
   );
 
   useEffect(() => {
+    const onCustomOpen = () => {
+      openPicker();
+    };
+    window.addEventListener("quantum:openModelPicker", onCustomOpen);
+    return () => {
+      window.removeEventListener("quantum:openModelPicker", onCustomOpen);
+    };
+  }, [openPicker]);
+
+  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (!isMetaEquivalentKeyPressed(event as any)) {
-        return;
-      }
-      if (event.altKey || event.shiftKey) {
+      const isMeta =
+        isMetaEquivalentKeyPressed(event as any) ||
+        event.metaKey ||
+        event.ctrlKey;
+      if (!isMeta || event.altKey) {
         return;
       }
 
       // ⌘/' — cycle selected model
-      if (event.key === "'") {
+      if ((event.key === "'" || event.code === "Quote") && !event.shiftKey) {
         if (!selectedProfile) {
           return;
         }
@@ -348,20 +400,16 @@ function ModelSelect() {
       }
 
       // ⌘+/ — open / toggle model picker (search focused).
-      // Prefer event.code: with Meta held, event.key is unreliable in Electron.
-      if (event.code === "Slash" || event.key === "/") {
+      const isSlash =
+        event.code === "Slash" ||
+        event.key === "/" ||
+        event.key === "?" ||
+        event.keyCode === 191;
+      if (isSlash) {
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation();
-        const button = buttonRef.current;
-        const alreadyOpen =
-          pickerOpenRef.current ||
-          button?.getAttribute("aria-expanded") === "true";
-        if (alreadyOpen) {
-          closeDropDown(button);
-        } else {
-          requestOpenPicker();
-        }
+        togglePicker();
       }
     };
 
@@ -369,16 +417,14 @@ function ModelSelect() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown, true);
     };
-  }, [options, selectedModel, selectedProfile, dispatch, requestOpenPicker]);
+  }, [options, selectedModel, selectedProfile, dispatch, togglePicker]);
 
   const handlePickerOpen = useCallback(() => {
     setSearchQuery("");
     setPickerOpen(true);
     pickerOpenRef.current = true;
-    requestAnimationFrame(() => {
-      searchInputRef.current?.focus();
-    });
-  }, []);
+    focusSearchInput();
+  }, [focusSearchInput]);
 
   const handlePickerClose = useCallback(() => {
     setSearchQuery("");
