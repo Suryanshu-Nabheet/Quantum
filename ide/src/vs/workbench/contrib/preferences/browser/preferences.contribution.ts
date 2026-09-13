@@ -41,7 +41,7 @@ import { KeybindingsEditorInput } from '../../../services/preferences/browser/ke
 import { DEFINE_KEYBINDING_EDITOR_CONTRIB_ID, IDefineKeybindingEditorContribution, IPreferencesService } from '../../../services/preferences/common/preferences.js';
 import { PreferencesEditorInput, SettingsEditor2Input } from '../../../services/preferences/common/preferencesEditorInput.js';
 import { SettingsEditorModel } from '../../../services/preferences/common/preferencesModels.js';
-import { CURRENT_PROFILE_CONTEXT, IUserDataProfileService } from '../../../services/userDataProfile/common/userDataProfile.js';
+import { IUserDataProfileService } from '../../../services/userDataProfile/common/userDataProfile.js';
 import { ExplorerFolderContext, ExplorerRootContext } from '../../files/common/files.js';
 import { CONTEXT_AI_SETTING_RESULTS_AVAILABLE, CONTEXT_KEYBINDINGS_EDITOR, CONTEXT_KEYBINDINGS_SEARCH_FOCUS, CONTEXT_KEYBINDINGS_SEARCH_HAS_VALUE, CONTEXT_KEYBINDING_FOCUS, CONTEXT_SETTINGS_EDITOR, CONTEXT_SETTINGS_JSON_EDITOR, CONTEXT_SETTINGS_ROW_FOCUS, CONTEXT_SETTINGS_SEARCH_FOCUS, CONTEXT_TOC_ROW_FOCUS, CONTEXT_WHEN_FOCUS, KEYBINDINGS_EDITOR_COMMAND_ACCEPT_WHEN, KEYBINDINGS_EDITOR_COMMAND_ADD, KEYBINDINGS_EDITOR_COMMAND_CLEAR_SEARCH_HISTORY, KEYBINDINGS_EDITOR_COMMAND_CLEAR_SEARCH_RESULTS, KEYBINDINGS_EDITOR_COMMAND_COPY, KEYBINDINGS_EDITOR_COMMAND_COPY_COMMAND, KEYBINDINGS_EDITOR_COMMAND_COPY_COMMAND_TITLE, KEYBINDINGS_EDITOR_COMMAND_DEFINE, KEYBINDINGS_EDITOR_COMMAND_DEFINE_WHEN, KEYBINDINGS_EDITOR_COMMAND_FOCUS_KEYBINDINGS, KEYBINDINGS_EDITOR_COMMAND_RECORD_SEARCH_KEYS, KEYBINDINGS_EDITOR_COMMAND_REJECT_WHEN, KEYBINDINGS_EDITOR_COMMAND_REMOVE, KEYBINDINGS_EDITOR_COMMAND_RESET, KEYBINDINGS_EDITOR_COMMAND_SEARCH, KEYBINDINGS_EDITOR_COMMAND_SHOW_SIMILAR, KEYBINDINGS_EDITOR_COMMAND_SORTBY_PRECEDENCE, KEYBINDINGS_EDITOR_SHOW_DEFAULT_KEYBINDINGS, KEYBINDINGS_EDITOR_SHOW_EXTENSION_KEYBINDINGS, KEYBINDINGS_EDITOR_SHOW_USER_KEYBINDINGS, REQUIRE_TRUSTED_WORKSPACE_SETTING_TAG, SETTINGS_EDITOR_COMMAND_CLEAR_SEARCH_RESULTS, SETTINGS_EDITOR_COMMAND_SHOW_CONTEXT_MENU, SETTINGS_EDITOR_COMMAND_TOGGLE_AI_SEARCH } from '../common/preferences.js';
 import { PreferencesContribution } from '../common/preferencesContribution.js';
@@ -154,6 +154,8 @@ const OPEN_USER_SETTINGS_UI_TITLE = nls.localize2('openEditorSettings2', "Open V
 const OPEN_USER_SETTINGS_JSON_TITLE = nls.localize2('openUserEditorSettingsJson', "Open VS Code User Settings (JSON)");
 const OPEN_APPLICATION_SETTINGS_JSON_TITLE = nls.localize2('openApplicationEditorSettingsJson', "Open VS Code Application Settings (JSON)");
 const category = Categories.Preferences;
+/** Hide power-user JSON/duplicate settings commands from the command palette. */
+const hideFromCommandPalette = { id: MenuId.CommandPalette, when: ContextKeyExpr.false() } as const;
 
 interface IOpenSettingsActionOptions {
 	openToSide?: boolean;
@@ -226,9 +228,11 @@ class PreferencesActionsContribution extends Disposable implements IWorkbenchCon
 				super({
 					id: SETTINGS_COMMAND_OPEN_SETTINGS,
 					title: {
-						...nls.localize2('editorSettings', "VS Code Settings"),
+						// Primary palette entry — no Preferences: category prefix (Cursor-style).
+						...nls.localize2('openVsCodeSettings', "Open VS Code Settings"),
 						mnemonicTitle: nls.localize({ key: 'miOpenEditorSettings', comment: ['&& denotes a mnemonic'] }, "&&VS Code Settings"),
 					},
+					f1: true,
 					keybinding: {
 						weight: KeybindingWeight.WorkbenchContrib,
 						when: null,
@@ -256,9 +260,10 @@ class PreferencesActionsContribution extends Disposable implements IWorkbenchCon
 			constructor() {
 				super({
 					id: 'workbench.action.openSettings2',
-					title: nls.localize2('openEditorSettings2', "Open VS Code Settings (UI)"),
+					title: OPEN_USER_SETTINGS_UI_TITLE,
 					category,
-					f1: true,
+					f1: false,
+					menu: [hideFromCommandPalette],
 				});
 			}
 			run(accessor: ServicesAccessor, args: IOpenSettingsActionOptions) {
@@ -276,7 +281,8 @@ class PreferencesActionsContribution extends Disposable implements IWorkbenchCon
 						description: nls.localize2('workbench.action.openSettingsJson.description', "Opens the JSON file containing the current user profile settings")
 					},
 					category,
-					f1: true,
+					f1: false,
+					menu: [hideFromCommandPalette],
 				});
 			}
 			run(accessor: ServicesAccessor, args: IOpenSettingsActionOptions) {
@@ -285,17 +291,14 @@ class PreferencesActionsContribution extends Disposable implements IWorkbenchCon
 			}
 		}));
 
-		const that = this;
 		this._register(registerAction2(class extends Action2 {
 			constructor() {
 				super({
 					id: 'workbench.action.openApplicationSettingsJson',
 					title: OPEN_APPLICATION_SETTINGS_JSON_TITLE,
 					category,
-					menu: {
-						id: MenuId.CommandPalette,
-						when: ContextKeyExpr.notEquals(CURRENT_PROFILE_CONTEXT.key, that.userDataProfilesService.defaultProfile.id)
-					}
+					f1: false,
+					menu: [hideFromCommandPalette],
 				});
 			}
 			run(accessor: ServicesAccessor, args: IOpenSettingsActionOptions) {
@@ -311,7 +314,8 @@ class PreferencesActionsContribution extends Disposable implements IWorkbenchCon
 					id: 'workbench.action.openGlobalSettings',
 					title: nls.localize2('openGlobalSettings', "Open User Settings"),
 					category,
-					f1: true,
+					f1: false,
+					menu: [hideFromCommandPalette],
 				});
 			}
 			run(accessor: ServicesAccessor, args: IOpenSettingsActionOptions) {
@@ -325,7 +329,8 @@ class PreferencesActionsContribution extends Disposable implements IWorkbenchCon
 					id: 'workbench.action.openRawDefaultSettings',
 					title: nls.localize2('openRawDefaultSettings', "Open Default Settings (JSON)"),
 					category,
-					f1: true,
+					f1: false,
+					menu: [hideFromCommandPalette],
 				});
 			}
 			run(accessor: ServicesAccessor) {
@@ -387,10 +392,8 @@ class PreferencesActionsContribution extends Disposable implements IWorkbenchCon
 					id: 'workbench.action.openWorkspaceSettingsFile',
 					title: nls.localize2('openWorkspaceSettingsFile', "Open Workspace Settings (JSON)"),
 					category,
-					menu: {
-						id: MenuId.CommandPalette,
-						when: WorkbenchStateContext.notEqualsTo('empty')
-					}
+					f1: false,
+					menu: [hideFromCommandPalette],
 				});
 			}
 			run(accessor: ServicesAccessor, args?: IOpenSettingsActionOptions) {
@@ -426,10 +429,8 @@ class PreferencesActionsContribution extends Disposable implements IWorkbenchCon
 					id: 'workbench.action.openFolderSettingsFile',
 					title: nls.localize2('openFolderSettingsFile', "Open Folder Settings (JSON)"),
 					category,
-					menu: {
-						id: MenuId.CommandPalette,
-						when: WorkbenchStateContext.isEqualTo('workspace')
-					}
+					f1: false,
+					menu: [hideFromCommandPalette],
 				});
 			}
 			async run(accessor: ServicesAccessor, args?: IOpenSettingsActionOptions) {
@@ -501,7 +502,7 @@ class PreferencesActionsContribution extends Disposable implements IWorkbenchCon
 						when: CONTEXT_AI_SETTING_RESULTS_AVAILABLE
 					},
 					category,
-					f1: true,
+					f1: false,
 					title: nls.localize2('settings.toggleAiSearch', "Toggle AI Settings Search")
 				});
 			}
@@ -570,10 +571,8 @@ class PreferencesActionsContribution extends Disposable implements IWorkbenchCon
 							id: 'workbench.action.openRemoteSettingsFile',
 							title: nls.localize2('openRemoteSettingsJSON', "Open Remote Settings (JSON) ({0})", hostLabel),
 							category,
-							menu: {
-								id: MenuId.CommandPalette,
-								when: RemoteNameContext.notEqualsTo('')
-							}
+							f1: false,
+							menu: [hideFromCommandPalette],
 						});
 					}
 					run(accessor: ServicesAccessor, args?: IOpenSettingsActionOptions) {
@@ -609,7 +608,7 @@ class PreferencesActionsContribution extends Disposable implements IWorkbenchCon
 						when: null
 					},
 					category,
-					f1: true,
+					f1: false,
 					title: nls.localize2('settings.focusSearch', "Focus Settings Search")
 				});
 			}
@@ -628,7 +627,7 @@ class PreferencesActionsContribution extends Disposable implements IWorkbenchCon
 						when: CONTEXT_SETTINGS_SEARCH_FOCUS
 					},
 					category,
-					f1: true,
+					f1: false,
 					title: nls.localize2('settings.clearResults', "Clear Settings Search Results")
 				});
 			}
@@ -706,7 +705,7 @@ class PreferencesActionsContribution extends Disposable implements IWorkbenchCon
 				super({
 					id: SETTINGS_EDITOR_COMMAND_FOCUS_TOC,
 					precondition: CONTEXT_SETTINGS_EDITOR,
-					f1: true,
+					f1: false,
 					keybinding: [
 						{
 							primary: KeyCode.LeftArrow,
@@ -764,7 +763,7 @@ class PreferencesActionsContribution extends Disposable implements IWorkbenchCon
 						weight: KeybindingWeight.WorkbenchContrib,
 						when: null
 					},
-					f1: true,
+					f1: false,
 					category,
 					title: nls.localize2('settings.showContextMenu', "Show Setting Context Menu")
 				});
@@ -788,7 +787,7 @@ class PreferencesActionsContribution extends Disposable implements IWorkbenchCon
 						weight: KeybindingWeight.WorkbenchContrib,
 						when: null
 					},
-					f1: true,
+					f1: false,
 					category,
 					title: nls.localize2('settings.focusLevelUp', "Move Focus Up One Level")
 				});
@@ -870,7 +869,8 @@ class PreferencesActionsContribution extends Disposable implements IWorkbenchCon
 					id: 'workbench.action.openDefaultKeybindingsFile',
 					title: nls.localize2('openDefaultKeybindingsFile', "Open Default Keyboard Shortcuts (JSON)"),
 					category,
-					menu: { id: MenuId.CommandPalette }
+					f1: false,
+					menu: [hideFromCommandPalette],
 				});
 			}
 			run(accessor: ServicesAccessor) {
@@ -884,8 +884,9 @@ class PreferencesActionsContribution extends Disposable implements IWorkbenchCon
 					title: nls.localize2('openGlobalKeybindingsFile', "Open Keyboard Shortcuts (JSON)"),
 					category,
 					icon: preferencesOpenSettingsIcon,
+					f1: false,
 					menu: [
-						{ id: MenuId.CommandPalette },
+						hideFromCommandPalette,
 						{
 							id: MenuId.EditorTitle,
 							when: ContextKeyExpr.and(CONTEXT_KEYBINDINGS_EDITOR),
