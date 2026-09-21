@@ -233,9 +233,21 @@ export class IdeMessenger implements IIdeMessenger {
     armIdleTimeout();
 
     const handleAbort = () => {
+      if (done) {
+        return;
+      }
+      // Do not wait for the extension host to acknowledge a user cancellation.
+      // The host may be unavailable or may already have torn down the stream.
+      // Marking the generator complete lets the UI settle immediately while
+      // the best-effort abort message is sent in the background.
+      done = true;
       this.post("abort", undefined, messageId);
     };
-    cancelToken?.addEventListener("abort", handleAbort);
+    if (cancelToken?.aborted) {
+      handleAbort();
+    } else {
+      cancelToken?.addEventListener("abort", handleAbort);
+    }
 
     try {
       while (!done) {

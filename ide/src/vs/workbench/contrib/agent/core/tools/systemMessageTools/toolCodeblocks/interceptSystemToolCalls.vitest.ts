@@ -203,6 +203,27 @@ describe("interceptSystemToolCalls", () => {
     expect(JSON.stringify(output)).toContain("test_tool");
   });
 
+  it("normalizes an XML marker split before its newline", async () => {
+    const messages: ChatMessage[][] = [
+      [{ role: "assistant", content: "<tool_call>tool" }],
+      [{ role: "assistant", content: "\nTOOL_NAME: test_tool\n" }],
+      [{ role: "assistant", content: "```" }],
+    ];
+
+    const generator = interceptSystemToolCalls(
+      createAsyncGenerator(messages),
+      abortController,
+      framework,
+    );
+    const output: unknown[] = [];
+    for await (const message of generator) {
+      output.push(message);
+    }
+
+    expect(JSON.stringify(output)).not.toContain("<tool_call>");
+    expect(JSON.stringify(output)).toContain('"name":"test_tool"');
+  });
+
   it("processes tool_name without codeblock format", async () => {
     const messages: ChatMessage[][] = [
       [{ role: "assistant", content: "I'll help you with that.\n" }],

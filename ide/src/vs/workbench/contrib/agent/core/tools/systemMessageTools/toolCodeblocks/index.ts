@@ -15,6 +15,10 @@ export class SystemMessageToolCodeblocksFramework
     // parsed a second time as an empty tool-name line.
     ["<tool_call>tool\n", "```tool\n"],
     ["<tool_call>\n", "```tool\n"],
+    // Some providers omit the delimiter while streaming the marker. Accept
+    // those forms too so the raw XML prefix can never reach the transcript.
+    ["<tool_call>tool", "```tool\n"],
+    ["<tool_call>", "```tool\n"],
     ["```tool\n", "```tool\n"],
     ["tool_name:", "```tool\nTOOL_NAME:"],
   ];

@@ -20,4 +20,23 @@ describe("IdeMessenger request lifecycle", () => {
 
     await rejection;
   });
+
+  it("settles immediately when the stream is already cancelled", async () => {
+    const postMessage = vi.fn();
+    vi.stubGlobal("vscode", { postMessage });
+    vi.stubGlobal("window", new EventTarget());
+    const messenger = new IdeMessenger();
+    const controller = new AbortController();
+    controller.abort();
+
+    const generator = messenger.streamRequest(
+      "llm/streamChat",
+      {} as never,
+      controller.signal,
+    );
+    const result = await generator.next();
+
+    expect(result.done).toBe(true);
+    expect(postMessage).toHaveBeenCalledTimes(2);
+  });
 });
