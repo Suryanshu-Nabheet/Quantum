@@ -26,6 +26,7 @@ declare const vscode: any;
 // not wait forever when the extension host or provider drops the terminal
 // message. This turns a silent spinner into a recoverable stream error.
 const STREAM_IDLE_TIMEOUT_MS = 90_000;
+const REQUEST_TIMEOUT_MS = 30_000;
 
 export interface IIdeMessenger {
   post<T extends keyof FromWebviewProtocol>(
@@ -140,13 +141,24 @@ export class IdeMessenger implements IIdeMessenger {
   ): Promise<WebviewSingleMessage<T>> {
     const messageId = uuidv4();
 
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+      let timeout: ReturnType<typeof setTimeout>;
       const handler = (event: any) => {
         if (event.data.messageId === messageId) {
+          clearTimeout(timeout);
           window.removeEventListener("message", handler);
           resolve(event.data.data as WebviewSingleMessage<T>);
         }
       };
+
+      timeout = setTimeout(() => {
+        window.removeEventListener("message", handler);
+        reject(
+          new Error(
+            `The agent request timed out while waiting for ${String(messageType)}.`,
+          ),
+        );
+      }, REQUEST_TIMEOUT_MS);
       window.addEventListener("message", handler);
 
       this.post(messageType, data, messageId);
