@@ -3,7 +3,7 @@
   "version": "1.1.0",
   "description": "Shared LLM, tools, indexing, and config logic for Quantum Agent",
   "scripts": {
-    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules IGNORE_API_KEY_TESTS=true jest --forceExit",
+    "test": "cross-env IGNORE_API_KEY_TESTS=true vitest run",
     "vitest": "vitest run",
     "test:coverage": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --coverage && open ./coverage/lcov-report/index.html",
     "tsc:check": "tsc -p ./ --noEmit",

@@ -253,6 +253,7 @@ describe("streamResponseThunk - tool calls", () => {
       "chat/streamWrapper/pending",
       "session/submitEditorAndInitAtIndex",
       "session/resetNextCodeBlockToApplyIndex",
+      "session/clearNewestToolbarPreviewForInput",
       "symbols/updateFromContextItems/pending",
       "session/updateHistoryItemAtIndex",
       "chat/streamNormalInput/pending",
@@ -438,6 +439,7 @@ describe("streamResponseThunk - tool calls", () => {
       ...initialState,
       session: {
         ...initialState.session,
+        isSessionMetadataLoading: false,
         history: [
           {
             contextItems: [],
@@ -495,6 +497,7 @@ describe("streamResponseThunk - tool calls", () => {
                 },
                 parsedArgs: { query: "test function" },
                 status: "done",
+                mcpUiState: undefined,
                 output: [
                   {
                     name: "Search Results",
@@ -677,6 +680,10 @@ describe("streamResponseThunk - tool calls", () => {
       {
         type: "session/resetNextCodeBlockToApplyIndex",
         payload: undefined,
+      },
+      {
+        type: "session/clearNewestToolbarPreviewForInput",
+        payload: { inputId: "main-editor-input" },
       },
       {
         type: "symbols/updateFromContextItems/pending",
@@ -973,6 +980,7 @@ describe("streamResponseThunk - tool calls", () => {
       ...initialState,
       session: {
         ...initialState.session,
+        isSessionMetadataLoading: false,
         history: [
           {
             contextItems: [],
@@ -1231,6 +1239,10 @@ describe("streamResponseThunk - tool calls", () => {
       {
         type: "session/resetNextCodeBlockToApplyIndex",
         payload: undefined,
+      },
+      {
+        type: "session/clearNewestToolbarPreviewForInput",
+        payload: { inputId: "main-editor-input" },
       },
       {
         type: "symbols/updateFromContextItems/pending",
@@ -1758,6 +1770,7 @@ describe("streamResponseThunk - tool calls", () => {
       ...initialState,
       session: {
         ...initialState.session,
+        isSessionMetadataLoading: false,
         title: "Session summary",
         history: [
           {
@@ -1817,6 +1830,7 @@ describe("streamResponseThunk - tool calls", () => {
                 },
                 parsedArgs: { query: "test function" },
                 status: "done", // Tool call completed successfully
+                mcpUiState: undefined,
                 output: [
                   {
                     name: "Search Results",

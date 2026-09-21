@@ -282,6 +282,10 @@ describe("streamResponseThunk", () => {
         payload: undefined,
       },
       {
+        type: "session/clearNewestToolbarPreviewForInput",
+        payload: { inputId: "main-editor-input" },
+      },
+      {
         type: "symbols/updateFromContextItems/pending",
         meta: {
           arg: [],
@@ -502,6 +506,7 @@ describe("streamResponseThunk", () => {
       ...initialState,
       session: {
         ...initialState.session,
+        isSessionMetadataLoading: false,
         title: "Hello",
         history: [
           {
@@ -623,6 +628,10 @@ describe("streamResponseThunk", () => {
       {
         type: "session/resetNextCodeBlockToApplyIndex",
         payload: undefined,
+      },
+      {
+        type: "session/clearNewestToolbarPreviewForInput",
+        payload: { inputId: "main-editor-input" },
       },
       {
         type: "symbols/updateFromContextItems/pending",

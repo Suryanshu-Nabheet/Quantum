@@ -11,8 +11,10 @@ interface NodeViewWrapperProps {
 export const NodeViewWrapper: React.FC<NodeViewWrapperProps> = ({
   children,
 }) => {
-    // Use `p` so foreign keyboard layouts behave correctly in the editor.
-  const nodeViewWrapperTag: TiptapNodeViewWrapperProps["as"] = "p";
+  // Context previews contain block-level controls and markdown. A paragraph
+  // wrapper makes the editor produce invalid nested markup and causes React
+  // to repair the DOM during streaming, which can make the preview jump.
+  const nodeViewWrapperTag: TiptapNodeViewWrapperProps["as"] = "div";
 
   return (
     <TiptapNodeViewWrapper className="my-1.5" as={nodeViewWrapperTag}>

@@ -188,41 +188,50 @@ function ParallelListeners() {
     async function restoreHistory() {
       dispatch(setIsSessionMetadataLoading(true));
       try {
-        await dispatch(refreshSessionMetadata({})).unwrap();
+        const refreshResult = dispatch(refreshSessionMetadata({}));
+        if (
+          refreshResult &&
+          typeof refreshResult.unwrap === "function"
+        ) {
+          await refreshResult.unwrap();
+        }
       } catch (error) {
         console.error("Failed to list saved chat sessions:", error);
+      }
+
+      try {
+        if (cancelled) {
+          return;
+        }
+
+        // PersistGate has already rehydrated session.id / lastSessionId.
+        // history[] itself is never persisted, so reload it from disk.
+        const sessionState = store.getState().session;
+        if (sessionState.history.length > 0) {
+          return;
+        }
+
+        const candidateIds = [
+          sessionState.id,
+          sessionState.lastSessionId,
+        ].filter((id): id is string => !!id);
+
+        for (const sessionId of [...new Set(candidateIds)]) {
+          try {
+            await dispatch(
+              loadSession({
+                sessionId,
+                saveCurrentSession: false,
+              }),
+            ).unwrap();
+            return;
+          } catch {
+            // Try next candidate (e.g. brand-new id never written to disk).
+          }
+        }
+      } finally {
         if (!cancelled) {
           dispatch(setIsSessionMetadataLoading(false));
-        }
-      }
-
-      if (cancelled) {
-        return;
-      }
-
-      // PersistGate has already rehydrated session.id / lastSessionId.
-      // history[] itself is never persisted, so reload it from disk.
-      const sessionState = store.getState().session;
-      if (sessionState.history.length > 0) {
-        return;
-      }
-
-      const candidateIds = [
-        sessionState.id,
-        sessionState.lastSessionId,
-      ].filter((id): id is string => !!id);
-
-      for (const sessionId of [...new Set(candidateIds)]) {
-        try {
-          await dispatch(
-            loadSession({
-              sessionId,
-              saveCurrentSession: false,
-            }),
-          ).unwrap();
-          return;
-        } catch {
-          // Try next candidate (e.g. brand-new id never written to disk).
         }
       }
     }

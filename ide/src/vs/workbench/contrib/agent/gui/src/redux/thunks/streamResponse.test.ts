@@ -170,6 +170,10 @@ describe("streamResponseThunk", () => {
         payload: undefined,
       },
       {
+        type: "session/clearNewestToolbarPreviewForInput",
+        payload: { inputId: "main-editor-input" },
+      },
+      {
         type: "symbols/updateFromContextItems/pending",
         meta: expect.objectContaining({
           arg: [],
@@ -404,6 +408,7 @@ describe("streamResponseThunk", () => {
       ...initialState,
       session: {
         ...initialState.session,
+        isSessionMetadataLoading: false,
         streamAborter: expect.any(AbortController),
         title: "Session summary",
         isPruned: false,
@@ -572,6 +577,7 @@ describe("streamResponseThunk", () => {
       "chat/streamWrapper/pending",
       "session/submitEditorAndInitAtIndex",
       "session/resetNextCodeBlockToApplyIndex",
+      "session/clearNewestToolbarPreviewForInput",
       "symbols/updateFromContextItems/pending",
       "session/updateHistoryItemAtIndex",
       "chat/streamNormalInput/pending",
@@ -745,6 +751,7 @@ describe("streamResponseThunk", () => {
       ...stateWithToolSettings,
       session: {
         ...stateWithToolSettings.session,
+        isSessionMetadataLoading: false,
         history: [
           {
             contextItems: [],
@@ -802,6 +809,7 @@ describe("streamResponseThunk", () => {
                 },
                 parsedArgs: { query: "test function" },
                 status: "done",
+                mcpUiState: undefined,
                 output: [
                   {
                     name: "Search Results",
@@ -953,6 +961,10 @@ describe("streamResponseThunk", () => {
       {
         type: "session/resetNextCodeBlockToApplyIndex",
         payload: undefined,
+      },
+      {
+        type: "session/clearNewestToolbarPreviewForInput",
+        payload: { inputId: "main-editor-input" },
       },
       {
         type: "symbols/updateFromContextItems/pending",
@@ -1213,6 +1225,7 @@ describe("streamResponseThunk", () => {
       ...abortState,
       session: {
         ...abortState.session,
+        isSessionMetadataLoading: false,
         history: [
           {
             contextItems: [],
