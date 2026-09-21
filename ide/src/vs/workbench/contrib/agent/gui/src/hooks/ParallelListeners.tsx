@@ -120,18 +120,62 @@ function ParallelListeners() {
 
   // Load config from the IDE
   useEffect(() => {
+    let cancelled = false;
+
     async function initialLoadConfig() {
       dispatch(setConfigLoading(true));
-      const result = await ideMessenger.request(
-        "config/getSerializedProfileInfo",
-        undefined,
-      );
-      if (result.status === "success") {
-        await handleConfigUpdate(true, result.content);
+      try {
+        const result = await ideMessenger.request(
+          "config/getSerializedProfileInfo",
+          undefined,
+        );
+        if (!cancelled && result.status === "success") {
+          await handleConfigUpdate(true, result.content);
+        }
+        if (!cancelled && result.status === "error") {
+          dispatch(
+            setConfigResult({
+              config: undefined,
+              errors: [
+                {
+                  fatal: true,
+                  message: result.error || "Failed to load Agent settings.",
+                },
+              ],
+              configLoadInterrupted: true,
+            }),
+          );
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Failed to load Agent settings:", error);
+          dispatch(
+            setConfigResult({
+              config: undefined,
+              errors: [
+                {
+                  fatal: true,
+                  message:
+                    error instanceof Error
+                      ? error.message
+                      : "Failed to load Agent settings.",
+                },
+              ],
+              configLoadInterrupted: true,
+            }),
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          dispatch(setConfigLoading(false));
+        }
       }
-      dispatch(setConfigLoading(false));
     }
+
     void initialLoadConfig();
+    return () => {
+      cancelled = true;
+    };
   }, [ideMessenger]);
 
   // Restore chat history from ~/.agent/sessions on webview boot.
