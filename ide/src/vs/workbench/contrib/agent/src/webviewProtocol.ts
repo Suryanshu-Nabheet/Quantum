@@ -105,13 +105,6 @@ export class VsCodeWebviewProtocol
             `Error handling webview message: ${stringified}\n\n${e}`,
           );
 
-          if (
-            stringified.includes("llm/streamChat") ||
-            stringified.includes("chatDescriber/describe")
-          ) {
-            return;
-          }
-
           if (e.cause) {
             if (e.cause.name === "ConnectTimeoutError") {
               message = `Connection timed out. Increase the timeout in config: "requestOptions": { "timeout": 10000 }`;
