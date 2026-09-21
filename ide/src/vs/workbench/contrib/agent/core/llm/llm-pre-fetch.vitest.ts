@@ -15,6 +15,9 @@ vi.mock("fetch", () => ({
     status: 200,
     statusText: "OK",
   })),
+  streamResponse: vi.fn(async function* () {
+    yield "";
+  }),
   streamSse: vi.fn(function* () {
     yield "";
   }),
@@ -71,8 +74,6 @@ describe("LLM Pre-fetch", () => {
     vi.mocked(openAiAdapters.getAnthropicHeaders).mockReturnValue({
       fake: "headers",
     });
-    // Log to verify the mock is properly set up
-    console.log("Mock setup:", openAiAdapters);
   });
 
   test("Invalid tool call args are ignored", async () => {
