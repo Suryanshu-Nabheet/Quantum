@@ -36,6 +36,7 @@ import historyManager from "./util/history";
 import {
   isProcessBackgrounded,
   killTerminalProcess,
+  killAllRunningTerminalProcesses,
   markProcessAsBackgrounded,
 } from "./util/processTerminalStates";
 import { getSymbolsForManyFiles } from "./util/symbols";
@@ -89,8 +90,37 @@ export class Core {
     });
     return controller;
   }
+
+  private releaseMessageAbortController(id: string, controller: AbortController): void {
+    if (this.messageAbortControllers.get(id) === controller) {
+      this.messageAbortControllers.delete(id);
+    }
+  }
+
+  private async *streamWithAbortCleanup<T, R>(
+    messageId: string,
+    controller: AbortController,
+    stream: AsyncGenerator<T, R>,
+  ): AsyncGenerator<T, R> {
+    try {
+      return yield* stream;
+    } finally {
+      this.releaseMessageAbortController(messageId, controller);
+    }
+  }
   private abortById(messageId: string) {
     this.messageAbortControllers.get(messageId)?.abort();
+  }
+
+  dispose(): void {
+    for (const controller of this.messageAbortControllers.values()) {
+      controller.abort();
+    }
+    this.messageAbortControllers.clear();
+    this.configHandler.dispose();
+    void killAllRunningTerminalProcesses();
+    void MCPManagerSingleton.getInstance().shutdown();
+    void TTS.kill();
   }
 
   invoke<T extends keyof ToCoreProtocol>(
@@ -454,7 +484,6 @@ export class Core {
 
 
     on("context/loadSubmenuItems", async (msg) => {
-      await this.configHandler.isInitialized;
       const { config } = await this.configHandler.loadConfig();
       if (!config) {
         return [];
@@ -546,12 +575,16 @@ export class Core {
 
     on("llm/streamChat", (msg) => {
       const abortController = this.addMessageAbortController(msg.messageId);
-      return llmStreamChat(
-        this.configHandler,
+      return this.streamWithAbortCleanup(
+        msg.messageId,
         abortController,
-        msg,
-        this.ide,
-        this.messenger,
+        llmStreamChat(
+          this.configHandler,
+          abortController,
+          msg,
+          this.ide,
+          this.messenger,
+        ),
       );
     });
 
@@ -563,12 +596,15 @@ export class Core {
       }
       const abortController = this.addMessageAbortController(msg.messageId);
 
-      const completion = await model.complete(
-        msg.data.prompt,
-        abortController.signal,
-        msg.data.completionOptions,
-      );
-      return completion;
+      try {
+        return await model.complete(
+          msg.data.prompt,
+          abortController.signal,
+          msg.data.completionOptions,
+        );
+      } finally {
+        this.releaseMessageAbortController(msg.messageId, abortController);
+      }
     });
     on("llm/listModels", this.handleListModels.bind(this));
 

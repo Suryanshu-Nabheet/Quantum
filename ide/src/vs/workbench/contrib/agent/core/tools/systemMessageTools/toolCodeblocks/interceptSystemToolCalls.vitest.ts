@@ -179,6 +179,30 @@ describe("interceptSystemToolCalls", () => {
     ).toBe("}");
   });
 
+  it("normalizes XML-style tool markers without leaking them", async () => {
+    const messages: ChatMessage[][] = [
+      [{ role: "assistant", content: "<tool_call>tool\n" }],
+      [{ role: "assistant", content: "TOOL_NAME: test_tool\n" }],
+      [{ role: "assistant", content: "BEGIN_ARG: arg1\n" }],
+      [{ role: "assistant", content: "value1\n" }],
+      [{ role: "assistant", content: "END_ARG\n" }],
+      [{ role: "assistant", content: "```" }],
+    ];
+
+    const generator = interceptSystemToolCalls(
+      createAsyncGenerator(messages),
+      abortController,
+      framework,
+    );
+    const output: unknown[] = [];
+    for await (const message of generator) {
+      output.push(message);
+    }
+
+    expect(JSON.stringify(output)).not.toContain("<tool_call>");
+    expect(JSON.stringify(output)).toContain("test_tool");
+  });
+
   it("processes tool_name without codeblock format", async () => {
     const messages: ChatMessage[][] = [
       [{ role: "assistant", content: "I'll help you with that.\n" }],

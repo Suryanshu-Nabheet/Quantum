@@ -192,7 +192,10 @@ export const streamNormalInput = createAsyncThunk<
     dispatch(setContextPercentage(contextPercentage));
 
     const start = Date.now();
-    const streamAborter = state.session.streamAborter;
+    // Read the controller at stream time. The retry wrapper replaces it after
+    // cancelling a failed attempt; using the controller captured at thunk
+    // creation makes every retry immediately abort itself.
+    const streamAborter = getState().session.streamAborter;
     try {
       let gen = extra.ideMessenger.llmStreamChat(
         {
@@ -248,6 +251,12 @@ export const streamNormalInput = createAsyncThunk<
             }),
           );
         }
+        // Do not continue into tool execution with incomplete arguments. The
+        // previous behavior swallowed the transport failure and attempted to
+        // execute the partially streamed call, which could strand the agent
+        // or run a malformed command. Let the wrapper surface the failure so
+        // the user can retry safely.
+        throw e;
       } else {
         throw e;
       }

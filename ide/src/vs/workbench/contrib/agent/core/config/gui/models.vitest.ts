@@ -5,8 +5,8 @@ import { AgentConfig, ILLMLogger } from "../..";
 import { llmsFromModelConfig } from "./models";
 
 // Mock the LLM classes
-vi.mock("../../llm/llms", () => ({
-  LLMClasses: [
+vi.mock("../../llm/llms", () => {
+  const LLMClasses = [
     class MockOpenAI {
       static providerName = "openai";
       static defaultOptions = {
@@ -39,8 +39,13 @@ vi.mock("../../llm/llms", () => ({
         return ["claude-3-5-sonnet-20241022", "claude-3-haiku-20240307"];
       }
     },
-  ],
-}));
+  ];
+  return {
+    LLMClasses,
+    getLLMClass: async (provider: string) =>
+      LLMClasses.find((llm) => llm.providerName === provider),
+  };
+});
 
 describe("llmsFromModelConfig requestOptions merging", () => {
   let mockLLMLogger: ILLMLogger;

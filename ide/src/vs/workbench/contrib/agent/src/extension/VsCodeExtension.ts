@@ -54,6 +54,8 @@ export class VsCodeExtension {
   private readonly completionProvider?: AgentCompletionProvider;
   private readonly uriHandler = new UriEventHandler();
   private runtimeStarted = false;
+  private runtimeInitialization: Promise<void> | undefined;
+  private readonly fileWatchDisposables: Array<{ dispose(): void }> = [];
 
   static agentVirtualDocumentScheme = EXTENSION_NAME;
 
@@ -201,7 +203,25 @@ export class VsCodeExtension {
     if (this.runtimeStarted) {
       return;
     }
-    this.runtimeStarted = true;
+    if (this.runtimeInitialization) {
+      return this.runtimeInitialization;
+    }
+
+    this.runtimeInitialization = this.initializeRuntime(reason).then(
+      () => {
+        this.runtimeStarted = true;
+      },
+      (error) => {
+        // A failed first load must not permanently disable the runtime. The
+        // next panel/command activation should be able to retry cleanly.
+        this.runtimeInitialization = undefined;
+        throw error;
+      },
+    );
+    return this.runtimeInitialization;
+  }
+
+  private async initializeRuntime(reason: string): Promise<void> {
     const context = this.extensionContext;
 
     await this.configHandler.loadConfig();
@@ -316,25 +336,36 @@ export class VsCodeExtension {
   private watchSharedConfig(): void {
     const sharedConfigPath = getSharedConfigFilePath();
     if (fs.existsSync(sharedConfigPath)) {
-      fs.watchFile(sharedConfigPath, { interval: 1000 }, async (stats) => {
+      const onSharedConfigChanged = (stats: fs.Stats) => {
         if (stats.size === 0) {
           return;
         }
-        await this.configHandler.reloadConfig(
-          "Shared config updated - fs file watch",
-        );
+        void this.configHandler
+          .reloadConfig("Shared config updated - fs file watch")
+          .catch((error) => console.warn("[Agent] config reload failed", error));
+      };
+      fs.watchFile(sharedConfigPath, { interval: 1000 }, onSharedConfigChanged);
+      this.fileWatchDisposables.push({
+        dispose: () => fs.unwatchFile(sharedConfigPath, onSharedConfigChanged),
       });
     }
 
     const globalRulesDir = path.join(getAgentGlobalPath(), "rules");
     if (fs.existsSync(globalRulesDir)) {
-      fs.watch(globalRulesDir, { recursive: true }, (eventType, filename) => {
-        if (filename && filename.toString().endsWith(".md")) {
-          void this.configHandler.reloadConfig(
-            "Global rules directory updated - fs file watch",
-          );
-        }
-      });
+      try {
+        const watcher = fs.watch(globalRulesDir, { recursive: true }, (_eventType, filename) => {
+          if (filename && filename.toString().endsWith(".md")) {
+            void this.configHandler
+              .reloadConfig("Global rules directory updated - fs file watch")
+              .catch((error) => console.warn("[Agent] rules reload failed", error));
+          }
+        });
+        this.fileWatchDisposables.push({ dispose: () => watcher.close() });
+      } catch (error) {
+        // Recursive fs.watch is not supported on every filesystem/platform.
+        // Agent functionality must continue even when live rule watching is not.
+        console.warn("[Agent] rules watcher unavailable", error);
+      }
     }
   }
 
@@ -343,6 +374,10 @@ export class VsCodeExtension {
   }
 
   dispose(): void {
+    for (const watcher of this.fileWatchDisposables.splice(0)) {
+      watcher.dispose();
+    }
+    this.core.dispose();
     while (this.extensionContext.subscriptions.length > 0) {
       const disposable = this.extensionContext.subscriptions.pop();
       disposable?.dispose();

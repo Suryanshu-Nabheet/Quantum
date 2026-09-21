@@ -22,6 +22,11 @@ interface vscode {
 
 declare const vscode: any;
 
+// A stream may legitimately spend time in a tool call, but the webview must
+// not wait forever when the extension host or provider drops the terminal
+// message. This turns a silent spinner into a recoverable stream error.
+const STREAM_IDLE_TIMEOUT_MS = 90_000;
+
 export interface IIdeMessenger {
   post<T extends keyof FromWebviewProtocol>(
     messageType: T,
@@ -174,6 +179,21 @@ export class IdeMessenger implements IIdeMessenger {
     let returnVal: GeneratorReturnType<FromWebviewProtocol[T][1]> | undefined =
       undefined;
     let error: string | null = null;
+    let idleTimeout: ReturnType<typeof setTimeout> | undefined;
+
+    const armIdleTimeout = () => {
+      if (idleTimeout) {
+        clearTimeout(idleTimeout);
+      }
+      idleTimeout = setTimeout(() => {
+        if (done || error) {
+          return;
+        }
+        error =
+          "The agent stream stopped receiving data. The model connection may have been interrupted.";
+        this.post("abort", undefined, messageId);
+      }, STREAM_IDLE_TIMEOUT_MS);
+    };
 
     // This handler receieves individual WebviewMessengerResults
     // And pushes them to buffer
@@ -181,9 +201,10 @@ export class IdeMessenger implements IIdeMessenger {
       data: Message<WebviewProtocolGeneratorMessage<T>>;
     }) => {
       if (event.data.messageId === messageId) {
+        armIdleTimeout();
         const responseData = event.data.data;
         if ("error" in responseData) {
-          error = responseData.error;
+          error = responseData.error || "The agent stream failed.";
           return;
           // throw new Error(responseData.error);
         }
@@ -197,6 +218,7 @@ export class IdeMessenger implements IIdeMessenger {
       }
     };
     window.addEventListener("message", handler);
+    armIdleTimeout();
 
     const handleAbort = () => {
       this.post("abort", undefined, messageId);
@@ -228,6 +250,10 @@ export class IdeMessenger implements IIdeMessenger {
     } catch (e) {
       throw e;
     } finally {
+      window.removeEventListener("message", handler);
+      if (idleTimeout) {
+        clearTimeout(idleTimeout);
+      }
       cancelToken?.removeEventListener("abort", handleAbort);
     }
   }

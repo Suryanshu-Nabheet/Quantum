@@ -36,6 +36,13 @@ export class ConfigHandler {
 
   public isInitialized: Promise<void>;
   private initter: EventEmitter;
+  private initializationPromise: Promise<void> | undefined;
+  private reloadInFlight:
+    | Promise<ConfigResult<AgentConfig>>
+    | undefined;
+  private pendingReload:
+    | { reason: string; injectErrors?: ConfigValidationError[] }
+    | undefined;
 
   cascadeAbortController: AbortController;
   private abortCascade() {
@@ -63,7 +70,6 @@ export class ConfigHandler {
     });
 
     this.cascadeAbortController = new AbortController();
-    void this.cascadeInit("Config handler initialization");
   }
 
   private workspaceDirs: string[] | null = null;
@@ -75,6 +81,19 @@ export class ConfigHandler {
     return this.workspaceDirs.join("&");
   }
 
+
+  private ensureInitialized(reason: string = "Config handler initialization"): Promise<void> {
+    if (!this.initializationPromise) {
+      this.initializationPromise = this.cascadeInit(reason).catch((error) => {
+        // Initialization must be retryable after a transient filesystem, workspace,
+        // or provider failure. A rejected promise cached here permanently bricks
+        // the agent for the lifetime of the extension host.
+        this.initializationPromise = undefined;
+        throw error;
+      });
+    }
+    return this.initializationPromise;
+  }
 
   private async cascadeInit(reason: string) {
     const signal = this.cascadeAbortController.signal;
@@ -113,6 +132,10 @@ export class ConfigHandler {
         });
       }
 
+      if (signal.aborted) {
+        return;
+      }
+
       await this.reloadConfig(reason);
     } catch (e) {
       if (!signal.aborted) {
@@ -142,13 +165,16 @@ export class ConfigHandler {
   // Should not be used internally
   //////////////////
   async refreshAll(reason?: string) {
-    await this.cascadeInit(reason ?? "External refresh all");
+    this.abortCascade();
+    this.initializationPromise = undefined;
+    await this.ensureInitialized(reason ?? "External refresh all");
   }
 
   // Ide settings change: refresh session and cascade refresh from the top
   async updateIdeSettings(ideSettings: IdeSettings) {
     this.abortCascade();
-    await this.cascadeInit("IDE settings update");
+    this.initializationPromise = undefined;
+    await this.ensureInitialized("IDE settings update");
   }
 
   async setSelectedProfileId(profileId: string) {
@@ -176,8 +202,46 @@ export class ConfigHandler {
   // Because of e.g. MCP singleton and docs service using things from config
   // Could improve this
   async reloadConfig(reason: string, injectErrors?: ConfigValidationError[]) {
+    if (!this.currentProfile) {
+      await this.ensureInitialized(reason);
+    }
+
+    // Configuration can be triggered by file watchers, MCP refreshes, settings
+    // changes, and authentication events at the same time. Keep only the latest
+    // request while one load is active so bursts do not create a reload backlog.
+    this.pendingReload = { reason, injectErrors };
+    if (!this.reloadInFlight) {
+      this.reloadInFlight = this.drainReloads();
+    }
+    return this.reloadInFlight;
+  }
+
+  private async drainReloads(): Promise<ConfigResult<AgentConfig>> {
+    let result: ConfigResult<AgentConfig> = {
+      config: undefined,
+      errors: undefined,
+      configLoadInterrupted: true,
+    };
+
+    try {
+      while (this.pendingReload) {
+        const request = this.pendingReload;
+        this.pendingReload = undefined;
+        result = await this.reloadConfigNow(request.reason, request.injectErrors);
+      }
+      return result;
+    } finally {
+      this.reloadInFlight = undefined;
+      // A request can arrive between the final loop check and cleanup. Start a
+      // new drain without allowing that request to get stranded.
+      if (this.pendingReload) {
+        this.reloadInFlight = this.drainReloads();
+      }
+    }
+  }
+
+  private async reloadConfigNow(reason: string, injectErrors?: ConfigValidationError[]) {
     this.totalConfigReloads += 1;
-    // console.log(`Reloading config (#${this.totalConfigLoads}): ${reason}`); // Uncomment to see config loading logs
     if (!this.currentProfile) {
       const out = {
         config: undefined,
@@ -205,7 +269,6 @@ export class ConfigHandler {
     }
 
     this.notifyConfigListeners({ config, errors, configLoadInterrupted });
-
     this.initter.emit("init");
 
     if (errors.length) {
@@ -232,13 +295,20 @@ export class ConfigHandler {
     this.updateListeners.push(listener);
   }
 
+  dispose(): void {
+    this.abortCascade();
+    this.initializationPromise = undefined;
+    this.pendingReload = undefined;
+    this.updateListeners = [];
+  }
+
   // Methods for loading (without reloading) config
   // Serialized for passing to GUI
   // Load for just awaiting current config load promise for the profile
   async getSerializedConfig(): Promise<
     ConfigResult<BrowserSerializedAgentConfig>
   > {
-    await this.isInitialized;
+    await this.ensureInitialized();
     if (!this.currentProfile) {
       return {
         config: undefined,
@@ -252,6 +322,7 @@ export class ConfigHandler {
   }
 
   async loadConfig(): Promise<ConfigResult<AgentConfig>> {
+    await this.ensureInitialized();
     if (!this.currentProfile) {
       return {
         config: undefined,
@@ -259,7 +330,6 @@ export class ConfigHandler {
         configLoadInterrupted: true,
       };
     }
-    await this.isInitialized;
     const config = await this.currentProfile.loadConfig(
       this.additionalContextProviders,
     );

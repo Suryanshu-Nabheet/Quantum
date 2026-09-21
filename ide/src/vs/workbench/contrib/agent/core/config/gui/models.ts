@@ -5,18 +5,16 @@ import {
 
 import { AgentConfig, ILLMLogger, LLMOptions } from "../..";
 import { BaseLLM } from "../../llm";
-import { LLMClasses } from "../../llm/llms";
+import { getLLMClass } from "../../llm/llms";
 import {
   AUTODETECT,
   catalogModelNamesForProvider,
   filterListedModelNames,
 } from "./providerModelCatalog";
 
-function getModelClass(
-  model: ModelConfig,
-): (typeof LLMClasses)[number] | undefined {
-  return LLMClasses.find((llm) => llm.providerName === model.provider);
-}
+// Model discovery is optional enrichment. It must never hold the whole agent
+// startup hostage when a local server is down or a remote endpoint is slow.
+const MODEL_DISCOVERY_TIMEOUT_MS = 1_500;
 
 async function modelConfigToBaseLLM({
   model,
@@ -31,7 +29,7 @@ async function modelConfigToBaseLLM({
   config: AgentConfig;
   isFromAutoDetect?: boolean;
 }): Promise<BaseLLM | undefined> {
-  const cls = getModelClass(model);
+  const cls = await getLLMClass(model.provider);
 
   if (!cls) {
     return undefined;
@@ -203,12 +201,27 @@ async function autodetectModels({
 }): Promise<BaseLLM[]> {
   let modelNames: string[] = [];
   try {
-    modelNames = filterListedModelNames(
-      model.provider,
-      await llm.listModels(),
-    );
+    let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<never>((_, reject) => {
+      timeoutHandle = setTimeout(
+        () => reject(new Error("Model discovery timed out")),
+        MODEL_DISCOVERY_TIMEOUT_MS,
+      );
+    });
+    try {
+      modelNames = filterListedModelNames(
+        model.provider,
+        await Promise.race([llm.listModels(), timeout]),
+      );
+    } finally {
+      if (timeoutHandle) {
+        clearTimeout(timeoutHandle);
+      }
+    }
   } catch (e) {
-    console.warn("Error listing models: ", e);
+    // Keep configuration responsive. The catalog below still provides known
+    // models, while an explicit model-list request can retry discovery later.
+    console.debug("Model discovery unavailable: ", e);
   }
 
   if (modelNames.length === 0) {

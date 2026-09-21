@@ -8,7 +8,6 @@ import { isUnsupportedPlatform } from "../util/util";
 
 import { VsCodeAgentApi } from "./api";
 import setupInlineTips from "./InlineTipManager";
-import { showQuantumAgentOnStartup } from "./showOnStartup";
 
 let activeExtension: VsCodeExtension | undefined;
 
@@ -40,8 +39,6 @@ export async function activateExtension(context: vscode.ExtensionContext) {
 
   const vscodeExtension = new VsCodeExtension(context);
   activeExtension = vscodeExtension;
-
-  void showQuantumAgentOnStartup(context);
 
   if (!context.globalState.get("hasBeenInstalled")) {
     void context.globalState.update("hasBeenInstalled", true);

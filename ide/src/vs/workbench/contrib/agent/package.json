@@ -34,7 +34,6 @@
     "local-first"
   ],
   "activationEvents": [
-    "onStartupFinished",
     "onView:agent.agentGUIView"
   ],
   "main": "./out/extension.js",
@@ -53,11 +52,6 @@
         "agent.useViteGuiDevServer": {
           "type": "boolean",
           "description": "Agent GUI development only. When true, load the GUI from Vite at http://localhost:5173 for live HMR. When false (default), use bundled out/agent/webview assets rebuilt automatically by `npm run watch` at the repo root \u2014 no separate Agent dev terminal required."
-        },
-        "agent.openOnStartup": {
-          "type": "boolean",
-          "default": false,
-          "description": "When Agent is built into Quantum IDE, open the Agent sidebar automatically on startup."
         },
         "agent.showInlineTip": {
           "type": "boolean",

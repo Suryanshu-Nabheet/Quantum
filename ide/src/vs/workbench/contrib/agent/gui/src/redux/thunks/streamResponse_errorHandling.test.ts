@@ -561,6 +561,7 @@ describe("streamResponseThunk", () => {
     ];
     const mockStore = createMockStore(initialState);
     const mockIdeMessenger = mockStore.mockIdeMessenger;
+    const originalRequest = mockIdeMessenger.request.bind(mockIdeMessenger);
     const requestSpy = vi.spyOn(mockIdeMessenger, "request");
     const chatSpy = vi.spyOn(mockIdeMessenger, "llmStreamChat");
 
@@ -573,7 +574,7 @@ describe("streamResponseThunk", () => {
           error: "Model configuration is invalid",
         };
       } else {
-        return await mockIdeMessenger.request(message, data);
+        return await originalRequest(message, data);
       }
     });
 

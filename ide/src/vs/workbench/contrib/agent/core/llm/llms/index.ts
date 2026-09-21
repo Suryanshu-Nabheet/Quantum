@@ -9,122 +9,89 @@ import {
 } from "../..";
 import { renderTemplatedString } from "../../util/handlebars/renderTemplatedString";
 import { BaseLLM } from "../index";
-import Anthropic from "./Anthropic";
-import Asksage from "./Asksage";
-import Azure from "./Azure";
-import Bedrock from "./Bedrock";
-import BedrockImport from "./BedrockImport";
-import Cerebras from "./Cerebras";
-import Cloudflare from "./Cloudflare";
-import Cohere from "./Cohere";
-import CometAPI from "./CometAPI";
-import DeepInfra from "./DeepInfra";
-import Deepseek from "./Deepseek";
-import Docker from "./Docker";
-import Fireworks from "./Fireworks";
-import FunctionNetwork from "./FunctionNetwork";
-import Gemini from "./Gemini";
-import Groq from "./Groq";
-import HuggingFaceInferenceAPI from "./HuggingFaceInferenceAPI";
-import HuggingFaceTEIEmbeddingsProvider from "./HuggingFaceTEI";
-import HuggingFaceTGI from "./HuggingFaceTGI";
-import Inception from "./Inception";
-import Kindo from "./Kindo";
-import LlamaCpp from "./LlamaCpp";
-import Llamafile from "./Llamafile";
-import LlamaStack from "./LlamaStack";
-import Lemonade from "./Lemonade";
-import LMStudio from "./LMStudio";
-import Mistral from "./Mistral";
-import Mimo from "./Mimo";
-import MockLLM from "./Mock";
-import Moonshot from "./Moonshot";
-import Msty from "./Msty";
-import NCompass from "./NCompass";
-import Nebius from "./Nebius";
-import Nous from "./Nous";
-import Novita from "./Novita";
-import Nvidia from "./Nvidia";
-import Ollama from "./Ollama";
-import OpenAI from "./OpenAI";
-import OpenRouter from "./OpenRouter";
-import OVHcloud from "./OVHcloud";
-import { Relace } from "./Relace";
-import SageMaker from "./SageMaker";
-import SambaNova from "./SambaNova";
-import Scaleway from "./Scaleway";
-import SiliconFlow from "./SiliconFlow";
-import Tensorix from "./Tensorix";
-import TARS from "./TARS";
-import TestLLM from "./Test";
-import TextGenWebUI from "./TextGenWebUI";
-import Together from "./Together";
-import Venice from "./Venice";
-import VertexAI from "./VertexAI";
-import Vllm from "./Vllm";
-import Voyage from "./Voyage";
-import WatsonX from "./WatsonX";
-import xAI from "./xAI";
-import zAI from "./zAI";
-export const LLMClasses = [
-  Anthropic,
-  Cohere,
-  CometAPI,
-  FunctionNetwork,
-  Gemini,
-  Llamafile,
-  Moonshot,
-  Ollama,
-  TextGenWebUI,
-  Together,
-  Novita,
-  HuggingFaceTGI,
-  HuggingFaceTEIEmbeddingsProvider,
-  HuggingFaceInferenceAPI,
-  Kindo,
-  LlamaCpp,
-  OpenAI,
-  OVHcloud,
-  Lemonade,
-  LMStudio,
-  Mistral,
-  Mimo,
-  Bedrock,
-  BedrockImport,
-  SageMaker,
-  DeepInfra,
-  Groq,
-  Fireworks,
-  NCompass,
-  Cloudflare,
-  Deepseek,
-  Docker,
-  Msty,
-  Azure,
-  WatsonX,
-  OpenRouter,
-  Nvidia,
-  Vllm,
-  SambaNova,
-  MockLLM,
-  TestLLM,
-  Cerebras,
-  Asksage,
-  Nebius,
-  Nous,
-  Venice,
-  VertexAI,
-  xAI,
-  SiliconFlow,
-  Tensorix,
-  Scaleway,
-  Relace,
-  Inception,
-  Voyage,
-  LlamaStack,
-  TARS,
-  zAI,
-];
+
+type LLMClass = {
+  providerName: string;
+  defaultOptions?: Partial<LLMOptions>;
+  new (options: LLMOptions): BaseLLM;
+};
+type ProviderLoader = () => Promise<LLMClass>;
+
+const providerLoaders: Record<string, ProviderLoader> = {
+  anthropic: async () => (await import("./Anthropic")).default,
+  asksage: async () => (await import("./Asksage")).default,
+  azure: async () => (await import("./Azure")).default,
+  bedrock: async () => (await import("./Bedrock")).default,
+  bedrockimport: async () => (await import("./BedrockImport")).default,
+  cerebras: async () => (await import("./Cerebras")).default,
+  cloudflare: async () => (await import("./Cloudflare")).default,
+  cohere: async () => (await import("./Cohere")).default,
+  cometapi: async () => (await import("./CometAPI")).default,
+  deepinfra: async () => (await import("./DeepInfra")).default,
+  deepseek: async () => (await import("./Deepseek")).default,
+  docker: async () => (await import("./Docker")).default,
+  fireworks: async () => (await import("./Fireworks")).default,
+  "function-network": async () => (await import("./FunctionNetwork")).default,
+  gemini: async () => (await import("./Gemini")).default,
+  groq: async () => (await import("./Groq")).default,
+  "huggingface-inference-api": async () => (await import("./HuggingFaceInferenceAPI")).default,
+  "huggingface-tei": async () => (await import("./HuggingFaceTEI")).default,
+  "huggingface-tgi": async () => (await import("./HuggingFaceTGI")).default,
+  inception: async () => (await import("./Inception")).default,
+  kindo: async () => (await import("./Kindo")).default,
+  "llama.cpp": async () => (await import("./LlamaCpp")).default,
+  llamafile: async () => (await import("./Llamafile")).default,
+  llamastack: async () => (await import("./LlamaStack")).default,
+  lemonade: async () => (await import("./Lemonade")).default,
+  lmstudio: async () => (await import("./LMStudio")).default,
+  mistral: async () => (await import("./Mistral")).default,
+  mimo: async () => (await import("./Mimo")).default,
+  mock: async () => (await import("./Mock")).default,
+  moonshot: async () => (await import("./Moonshot")).default,
+  msty: async () => (await import("./Msty")).default,
+  ncompass: async () => (await import("./NCompass")).default,
+  nebius: async () => (await import("./Nebius")).default,
+  nous: async () => (await import("./Nous")).default,
+  novita: async () => (await import("./Novita")).default,
+  nvidia: async () => (await import("./Nvidia")).default,
+  ollama: async () => (await import("./Ollama")).default,
+  openai: async () => (await import("./OpenAI")).default,
+  openrouter: async () => (await import("./OpenRouter")).default,
+  ovhcloud: async () => (await import("./OVHcloud")).default,
+  relace: async () => (await import("./Relace")).Relace,
+  sagemaker: async () => (await import("./SageMaker")).default,
+  sambanova: async () => (await import("./SambaNova")).default,
+  scaleway: async () => (await import("./Scaleway")).default,
+  siliconflow: async () => (await import("./SiliconFlow")).default,
+  tensorix: async () => (await import("./Tensorix")).default,
+  tars: async () => (await import("./TARS")).default,
+  test: async () => (await import("./Test")).default,
+  "text-gen-webui": async () => (await import("./TextGenWebUI")).default,
+  together: async () => (await import("./Together")).default,
+  venice: async () => (await import("./Venice")).default,
+  vertexai: async () => (await import("./VertexAI")).default,
+  vllm: async () => (await import("./Vllm")).default,
+  voyage: async () => (await import("./Voyage")).default,
+  watsonx: async () => (await import("./WatsonX")).default,
+  xai: async () => (await import("./xAI")).default,
+  zai: async () => (await import("./zAI")).default,
+};
+
+const loadedProviders = new Map<string, Promise<LLMClass | undefined>>();
+
+export async function getLLMClass(providerName: string): Promise<LLMClass | undefined> {
+  const key = providerName.toLowerCase();
+  let loader = loadedProviders.get(key);
+  if (!loader) {
+    const load = providerLoaders[key];
+    loader = load ? load() : Promise.resolve(undefined);
+    loadedProviders.set(key, loader);
+  }
+  return loader;
+}
+
+// Kept for consumers that explicitly need the complete provider inventory.
+export { LLMClasses } from "./all";
 
 export async function llmFromDescription(
   desc: JSONModelDescription,
@@ -135,7 +102,7 @@ export async function llmFromDescription(
   llmLogger: ILLMLogger,
   completionOptions?: BaseCompletionOptions,
 ): Promise<BaseLLM | undefined> {
-  const cls = LLMClasses.find((llm) => llm.providerName === desc.provider);
+  const cls = await getLLMClass(desc.provider);
 
   if (!cls) {
     return undefined;
@@ -180,11 +147,11 @@ export async function llmFromDescription(
   return new cls(options);
 }
 
-export function llmFromProviderAndOptions(
+export async function llmFromProviderAndOptions(
   providerName: string,
   llmOptions: LLMOptions,
-): ILLM {
-  const cls = LLMClasses.find((llm) => llm.providerName === providerName);
+): Promise<ILLM> {
+  const cls = await getLLMClass(providerName);
 
   if (!cls) {
     throw new Error(`Unknown LLM provider type "${providerName}"`);

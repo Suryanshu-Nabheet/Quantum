@@ -93,12 +93,12 @@ export class VsCodeWebviewProtocol
             respond({ done: true, content: response, status: "success" });
           }
         } catch (e: any) {
-          if (await handleLLMError(e)) {
-            // Respond without an error, so the UI doesn't show the error component
-            respond({ done: true, status: "error" });
-          }
-          let message = e.message;
-          respond({ done: true, error: message, status: "error" });
+          // Send exactly one terminal response. Sending a success-shaped
+          // terminal response before the actual error makes the webview
+          // remove its listener and lose the real failure, leaving the agent
+          // visibly stuck between steps.
+          const handledByProviderUi = await handleLLMError(e);
+          let message = e instanceof Error ? e.message : String(e);
 
           const stringified = JSON.stringify({ msg }, null, 2);
           console.error(
@@ -121,6 +121,15 @@ export class VsCodeWebviewProtocol
               message = `The request failed with "${e.cause.name}": ${e.cause.message}`;
             }
           }
+
+          respond({
+            done: true,
+            error:
+              handledByProviderUi && !message
+                ? "The provider reported an error. See the notification for details."
+                : message || "The agent request failed.",
+            status: "error",
+          });
 
           for (const handler of this._errorHandlers) {
             handler(msg, e instanceof Error ? e : new Error(message));

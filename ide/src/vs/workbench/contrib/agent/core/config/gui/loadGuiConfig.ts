@@ -16,7 +16,6 @@ import {
 } from "../..";
 import { MCPManagerSingleton } from "../../context/mcp/MCPManagerSingleton";
 
-import TransformersJsEmbeddingsProvider from "../../llm/llms/TransformersJsEmbeddingsProvider";
 import { GlobalContext } from "../../util/GlobalContext";
 import { modifyAnyConfigWithSharedConfig } from "../sharedConfig";
 
@@ -190,6 +189,11 @@ export async function buildAgentConfigFromGui(options: {
       }
       if (model.roles?.includes("embed")) {
         if (model.provider === "transformers.js") {
+          // Keep the ONNX/runtime dependency out of normal chat startup. It is
+          // only needed when a user explicitly configures local embeddings.
+          const { default: TransformersJsEmbeddingsProvider } = await import(
+            "../../llm/llms/TransformersJsEmbeddingsProvider"
+          );
           agentConfig.modelsByRole.embed.push(
             new TransformersJsEmbeddingsProvider(),
           );

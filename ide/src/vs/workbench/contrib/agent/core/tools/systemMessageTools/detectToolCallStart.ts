@@ -12,8 +12,9 @@ export function detectToolCallStart(
   for (let i = 0; i < starts.length; i++) {
     const [start, replacement] = starts[i];
     if (lowerCaseBuffer.startsWith(start)) {
-      // for non-standard cases like no ```tool codeblock, etc, replace before adding to buffer, case insensitive
-      if (i !== 0) {
+      // Normalize only non-canonical formats. Canonical fences are allowed to
+      // preserve their original casing because they are already parser-safe.
+      if (replacement !== start) {
         modifiedBuffer = buffer.replace(new RegExp(start, "i"), replacement);
       }
       isInToolCall = true;

@@ -47,7 +47,6 @@ export const streamThunkWrapper = createAsyncThunk<
         await dispatch(cancelStream());
         const delayMs = OVERLOADED_DELAY_MS * 2 ** attempt;
         await new Promise((resolve) => setTimeout(resolve, delayMs));
-        await dispatch(cancelStream());
       } else {
         await dispatch(cancelStream());
         dispatch(setDialogMessage(<StreamErrorDialog error={e} />));

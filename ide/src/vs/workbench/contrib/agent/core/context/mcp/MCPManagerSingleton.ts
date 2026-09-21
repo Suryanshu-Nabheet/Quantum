@@ -51,6 +51,7 @@ export class MCPManagerSingleton {
   }
 
   async shutdown() {
+    this.abortController.abort();
     if (this.connections.size > 0) {
       await Promise.allSettled(
         Array.from(this.connections.entries()).map(([id, connection]) => {

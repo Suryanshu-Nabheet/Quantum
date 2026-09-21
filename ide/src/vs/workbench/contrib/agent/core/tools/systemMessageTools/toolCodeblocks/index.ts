@@ -7,6 +7,14 @@ export class SystemMessageToolCodeblocksFramework
 {
   // Poor models are really bad at following instructions, alternate starts allowed:
   acceptedToolCallStarts: [string, string][] = [
+    // Some providers occasionally emit an XML-style marker despite the
+    // prompt requiring the canonical fenced format. Normalize it here so it
+    // can never leak into assistant-visible text.
+    // Match the complete marker including its newline. This is important for
+    // streaming: matching before the newline would leave that newline to be
+    // parsed a second time as an empty tool-name line.
+    ["<tool_call>tool\n", "```tool\n"],
+    ["<tool_call>\n", "```tool\n"],
     ["```tool\n", "```tool\n"],
     ["tool_name:", "```tool\nTOOL_NAME:"],
   ];
