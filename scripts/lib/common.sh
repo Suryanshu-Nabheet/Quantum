@@ -8,7 +8,7 @@ set -euo pipefail
 # Subsystem version pins (keep in sync with package.json / .nvmrc / .mise.toml)
 readonly QUANTUM_IDE_NODE_VERSION="22.22.1"
 readonly QUANTUM_AGENT_NODE_VERSION="24.13.1"
-readonly QUANTUM_NODE_MIN_MAJOR=22
+readonly QUANTUM_NODE_MIN_MAJOR=24
 readonly QUANTUM_BUN_MIN_VERSION="1.3.9"
 
 # Colors (disabled when NO_COLOR is set)
@@ -93,13 +93,53 @@ ensure_bun() {
 
 ensure_node_min() {
 	local min_major="$1"
-	require_command node "Install Node.js >= ${min_major}."
+	local nvm_script="${NVM_DIR:-$HOME/.nvm}/nvm.sh"
+	local brew_node=""
 
-	local version major
-	version="$(node -v | sed 's/^v//')"
-	major="$(echo "$version" | cut -d. -f1)"
+	local version=""
+	if command -v node >/dev/null 2>&1; then
+		version="$(node -v | sed 's/^v//')"
+	fi
+
+	local major="0"
+	if [[ -n "$version" ]]; then
+		major="${version%%.*}"
+	fi
+
+	# Homebrew versioned Node formulas are intentionally unlinked, so their
+	# binaries may be installed without appearing on PATH. Prefer one if the
+	# current node is absent or too old.
+	if (( major < min_major )) && command -v brew >/dev/null 2>&1; then
+		brew_node="$(brew --prefix node@${min_major} 2>/dev/null || true)"
+		if [[ -x "${brew_node}/bin/node" ]]; then
+			export PATH="${brew_node}/bin:${PATH}"
+			version="$(node -v | sed 's/^v//')"
+			major="${version%%.*}"
+		fi
+	fi
+
+	# Setup is commonly launched from a non-interactive shell where nvm's
+	# shell initialization has not run. Load it here and select the Agent
+	# Manager's pinned runtime before starting either subsystem.
+	if (( major < min_major )) && [[ -s "$nvm_script" ]]; then
+		# shellcheck source=/dev/null
+		source "$nvm_script"
+		nvm install "$QUANTUM_AGENT_NODE_VERSION"
+		nvm use "$QUANTUM_AGENT_NODE_VERSION" >/dev/null
+		version="$(node -v | sed 's/^v//')"
+		major="${version%%.*}"
+	fi
+
+	if (( major < min_major )) && command -v fnm >/dev/null 2>&1; then
+		eval "$(fnm env --shell bash 2>/dev/null || fnm env)"
+		fnm install "$QUANTUM_AGENT_NODE_VERSION" --if-not-present
+		fnm use "$QUANTUM_AGENT_NODE_VERSION" >/dev/null
+		version="$(node -v | sed 's/^v//')"
+		major="${version%%.*}"
+	fi
+
 	if (( major < min_major )); then
-		die "Node.js v${version} is too old (requires >= ${min_major})."
+		die "Node.js >= ${min_major} is required. Install Node.js or use nvm/fnm; if using nvm, run: nvm install ${QUANTUM_AGENT_NODE_VERSION}"
 	fi
 	log_ok "Node.js v${version}"
 }

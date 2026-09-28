@@ -20,6 +20,8 @@ Full setup installs dependencies and builds **Agent Manager → IDE**. The IDE c
 | npm | — | required, **< 11.2** |
 | Python | — | 3.10–3.13 (native modules) |
 
+The root setup detects Homebrew's versioned Node formula and can load nvm or fnm from a non-interactive shell. It selects the Agent Manager's pinned Node version when a manager is available and Node is missing or too old. The IDE setup then selects its own pinned version from `ide/.nvmrc`.
+
 Recommended: install [nvm](https://github.com/nvm-sh/nvm) or [fnm](https://github.com/Schniz/fnm) for IDE Node version management, and [mise](https://mise.jdx.dev) for Agent Manager (`agent/.mise.toml`).
 
 ## Setup options
