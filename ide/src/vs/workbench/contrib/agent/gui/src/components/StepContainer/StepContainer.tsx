@@ -1,6 +1,6 @@
 import { ChatHistoryItem } from "core";
 import { renderChatMessage, stripImages } from "core/util/messageContent";
-import { useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { useDispatch } from "react-redux";
 import { useAppSelector } from "../../redux/hooks";
 import { selectUIConfig } from "../../redux/slices/configSlice";
@@ -16,13 +16,14 @@ interface StepContainerProps {
   item: ChatHistoryItem;
   index: number;
   isLast: boolean;
+  inProgress?: boolean;
   latestSummaryIndex?: number;
 }
 
-export default function StepContainer(props: StepContainerProps) {
+function StepContainer(props: StepContainerProps) {
   const dispatch = useDispatch();
   const [isTruncated, setIsTruncated] = useState(false);
-  const isStreaming = useAppSelector((state) => state.session.isStreaming);
+  const inProgress = props.inProgress ?? false;
   const uiConfig = useAppSelector(selectUIConfig);
   const compactionLoading = useAppSelector(
     (state) => state.session.compactionLoading[props.index] || false,
@@ -40,7 +41,7 @@ export default function StepContainer(props: StepContainerProps) {
   );
   const showResponseActions =
     (props.isLast || historyItemAfterThis?.message.role === "user") &&
-    !(props.isLast && (isStreaming || props.item.toolCallStates));
+    !(props.isLast && (inProgress || props.item.toolCallStates));
 
   const messageText = useMemo(
     () => renderChatMessage(props.item.message).trim(),
@@ -53,7 +54,7 @@ export default function StepContainer(props: StepContainerProps) {
     hasMessageBody || hasReasoning || !!uiConfig?.displayRawMarkdown;
 
   useEffect(() => {
-    if (!isStreaming) {
+    if (!inProgress) {
       const content = messageText;
       const endingPunctuation = [".", "?", "!", "```", ":"];
 
@@ -70,7 +71,7 @@ export default function StepContainer(props: StepContainerProps) {
         setIsTruncated(false);
       }
     }
-  }, [messageText, isStreaming]);
+  }, [messageText, inProgress]);
 
   function onDelete() {
     dispatch(deleteMessage(props.index));
@@ -137,7 +138,7 @@ export default function StepContainer(props: StepContainerProps) {
 
       {showResponseActions && (
         <div
-          className={`mt-1 h-7 transition-opacity duration-300 ease-in-out ${isBeforeLatestSummary || isStreaming ? "opacity-35" : ""} ${isStreaming && "pointer-events-none cursor-not-allowed"}`}
+          className={`mt-1 h-7 transition-opacity duration-300 ease-in-out ${isBeforeLatestSummary || inProgress ? "opacity-35" : ""} ${inProgress && "pointer-events-none cursor-not-allowed"}`}
         >
           <ResponseActions
             isTruncated={isTruncated}
@@ -166,3 +167,5 @@ export default function StepContainer(props: StepContainerProps) {
     </div>
   );
 }
+
+export default memo(StepContainer);

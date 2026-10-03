@@ -26,7 +26,7 @@ export const streamThunkWrapper = createAsyncThunk<
       await runStream();
       const state = getState();
       if (!state.session.isInEdit) {
-        await dispatch(
+        void dispatch(
           saveCurrentSession({
             openNewSession: false,
             generateTitle: true,

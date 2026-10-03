@@ -1334,6 +1334,8 @@ export interface AgentUIConfig {
   codeWrap?: boolean;
   showSessionTabs?: boolean;
   resumeAfterToolRejection?: boolean;
+  /** Max tool/LLM rounds per user message before pausing (default 500). */
+  maxAgentSteps?: number;
   /** Read LLM chat responses aloud using system TTS */
   readResponseTTS?: boolean;
 }

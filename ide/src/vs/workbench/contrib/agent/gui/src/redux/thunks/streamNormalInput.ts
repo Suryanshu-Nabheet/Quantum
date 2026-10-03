@@ -1,11 +1,10 @@
 import { createAsyncThunk, unwrapResult } from "@reduxjs/toolkit";
-import { LLMFullCompletionOptions, ModelDescription } from "core";
+import { ChatMessage, LLMFullCompletionOptions, ModelDescription } from "core";
 import { getRuleId } from "core/llm/rules/getSystemMessageWithRules";
 import { ToCoreProtocol } from "core/protocol";
 import { selectActiveTools } from "../selectors/selectActiveTools";
 import { selectSelectedChatModel } from "../slices/configSlice";
 import {
-  abortStream,
   addPromptCompletionPair,
   errorToolCall,
   setActive,
@@ -17,7 +16,7 @@ import {
   setToolGenerated,
   streamUpdate,
 } from "../slices/sessionSlice";
-import { ThunkApiType } from "../store";
+import { ThunkApiType, AppDispatch, RootState } from "../store";
 import { constructMessages } from "../util/constructMessages";
 
 import { modelSupportsNativeTools } from "core/llm/toolSupport";
@@ -34,6 +33,13 @@ import { callToolById } from "./callToolById";
 import { evaluateToolPolicies } from "./evaluateToolPolicies";
 import { preprocessToolCalls } from "./preprocessToolCallArgs";
 import { streamResponseAfterToolCall } from "./streamResponseAfterToolCall";
+import {
+  agentStepLimitMessage,
+  isAgentStepLimitReached,
+  resolveMaxAgentSteps,
+} from "../../util/agentLoopLimits";
+import { createStreamRenderBatcher } from "../util/streamRenderBatch";
+import { withAgentStreamLock } from "../util/agentStreamLock";
 
 /**
  * Builds completion options with reasoning configuration based on session state and model capabilities.
@@ -43,6 +49,26 @@ import { streamResponseAfterToolCall } from "./streamResponseAfterToolCall";
  * @param model - The selected model with provider and completion options
  * @returns Completion options with reasoning configuration
  */
+async function resumeAgentAfterParallelTools(
+  dispatch: AppDispatch,
+  toolCallIds: string[],
+  depth: number,
+): Promise<void> {
+  const lastToolCallId = toolCallIds[toolCallIds.length - 1];
+  if (!lastToolCallId) {
+    return;
+  }
+  unwrapResult(
+    await dispatch(
+      streamResponseAfterToolCall({
+        toolCallId: lastToolCallId,
+        depth,
+        skipToolMessage: true,
+      }),
+    ),
+  );
+}
+
 function buildReasoningCompletionOptions(
   baseOptions: LLMFullCompletionOptions,
   hasReasoningEnabled: boolean | undefined,
@@ -80,20 +106,54 @@ export const streamNormalInput = createAsyncThunk<
     { legacySlashCommandData, depth = 0 },
     { dispatch, extra, getState },
   ) => {
-    if (process.env.NODE_ENV === "test" && depth > 50) {
-      const message = `Max stream depth of ${50} reached in test`;
-      console.error(message, JSON.stringify(getState(), null, 2));
-      throw new Error(message);
-    }
     const state = getState();
+    if (isAgentStepLimitReached(depth, state.config.config.ui)) {
+      const maxSteps = resolveMaxAgentSteps(state.config.config.ui);
+      const message = agentStepLimitMessage(maxSteps);
+      if (process.env.NODE_ENV === "test") {
+        console.error(message, JSON.stringify(getState(), null, 2));
+        throw new Error(message);
+      }
+      dispatch(setInlineErrorMessage("max-agent-steps"));
+      dispatch(setInactive());
+      return;
+    }
     const selectedChatModel = selectSelectedChatModel(state);
 
     if (!selectedChatModel) {
       throw new Error("No chat model selected");
     }
 
-    // Get tools and apply model-level overrides (disabled, description, etc.)
-    let activeTools = selectActiveTools(state);
+    await withAgentStreamLock(async () => {
+      await runStreamNormalInputLocked({
+        legacySlashCommandData,
+        depth,
+        dispatch,
+        extra,
+        getState,
+        selectedChatModel,
+      });
+    });
+  },
+);
+
+async function runStreamNormalInputLocked({
+  legacySlashCommandData,
+  depth,
+  dispatch,
+  extra,
+  getState,
+  selectedChatModel,
+}: {
+  legacySlashCommandData?: ToCoreProtocol["llm/streamChat"][0]["legacySlashCommandData"];
+  depth: number;
+  dispatch: AppDispatch;
+  extra: ThunkApiType["extra"];
+  getState: () => RootState;
+  selectedChatModel: ModelDescription;
+}) {
+  const state = getState();
+  let activeTools = selectActiveTools(state);
     if (selectedChatModel.toolOverrides?.length) {
       const { tools: overriddenTools, errors } = applyToolOverrides(
         activeTools,
@@ -215,16 +275,20 @@ export const streamNormalInput = createAsyncThunk<
         );
       }
 
+      const renderBatch = createStreamRenderBatcher(dispatch);
       let next = await gen.next();
       while (!next.done) {
-        if (!getState().session.isStreaming) {
-          dispatch(abortStream());
+        if (streamAborter.signal.aborted) {
           break;
         }
 
-        dispatch(streamUpdate(next.value));
+        const chunk = next.value as ChatMessage[] | undefined;
+        if (chunk?.length) {
+          renderBatch.push(chunk);
+        }
         next = await gen.next();
       }
+      renderBatch.flushNow();
 
       if (next.done && next.value) {
         dispatch(addPromptCompletionPair([next.value]));
@@ -265,7 +329,7 @@ export const streamNormalInput = createAsyncThunk<
     // Tool call sequence:
     // 1. Mark generating tool calls as generated
     const state1 = getState();
-    if (streamAborter.signal.aborted || !state1.session.isStreaming) {
+    if (streamAborter.signal.aborted) {
       return;
     }
     const originalToolCalls = selectCurrentToolCalls(state1);
@@ -283,7 +347,7 @@ export const streamNormalInput = createAsyncThunk<
 
     // 2. Pre-process args to catch invalid args before checking policies
     const state2 = getState();
-    if (streamAborter.signal.aborted || !state2.session.isStreaming) {
+    if (streamAborter.signal.aborted) {
       return;
     }
     const generatedCalls2 = selectPendingToolCalls(state2);
@@ -291,7 +355,7 @@ export const streamNormalInput = createAsyncThunk<
 
     // 3. Security check: evaluate updated policies based on args
     const state3 = getState();
-    if (streamAborter.signal.aborted || !state3.session.isStreaming) {
+    if (streamAborter.signal.aborted) {
       return;
     }
     const generatedCalls3 = selectPendingToolCalls(state3);
@@ -320,7 +384,7 @@ export const streamNormalInput = createAsyncThunk<
     } else if (needsApprovalPolicies.length > 0) {
       if (autoApprovedPolicies.length > 0) {
         const state4 = getState();
-        if (streamAborter.signal.aborted || !state4.session.isStreaming) {
+        if (streamAborter.signal.aborted) {
           return;
         }
         await Promise.all(
@@ -331,6 +395,7 @@ export const streamNormalInput = createAsyncThunk<
                   toolCallId: toolCallState.toolCallId,
                   isAutoApproved: true,
                   depth: depth + 1,
+                  deferAgentContinuation: true,
                 }),
               ),
             );
@@ -340,13 +405,13 @@ export const streamNormalInput = createAsyncThunk<
 
       dispatch(setInactive());
     } else {
-      // auto stream cases increase thunk depth by 1 for debugging
       const state4 = getState();
       const generatedCalls4 = selectPendingToolCalls(state4);
-      if (streamAborter.signal.aborted || !state4.session.isStreaming) {
+      if (streamAborter.signal.aborted) {
         return;
       }
       if (generatedCalls4.length > 0) {
+        const toolCallIds = generatedCalls4.map(({ toolCallId }) => toolCallId);
         await Promise.all(
           generatedCalls4.map(async ({ toolCallId }) => {
             unwrapResult(
@@ -355,17 +420,25 @@ export const streamNormalInput = createAsyncThunk<
                   toolCallId,
                   isAutoApproved: true,
                   depth: depth + 1,
+                  deferAgentContinuation: true,
                 }),
               ),
             );
           }),
         );
+        await resumeAgentAfterParallelTools(
+          dispatch,
+          toolCallIds,
+          depth + 1,
+        );
       } else {
-        for (const { toolCallId } of originalToolCalls) {
+        const lastToolCallId =
+          originalToolCalls[originalToolCalls.length - 1]?.toolCallId;
+        if (lastToolCallId) {
           unwrapResult(
             await dispatch(
               streamResponseAfterToolCall({
-                toolCallId,
+                toolCallId: lastToolCallId,
                 depth: depth + 1,
               }),
             ),
@@ -373,5 +446,4 @@ export const streamNormalInput = createAsyncThunk<
         }
       }
     }
-  },
-);
+}

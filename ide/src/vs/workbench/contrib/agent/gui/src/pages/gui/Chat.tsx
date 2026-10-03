@@ -289,6 +289,7 @@ export function Chat() {
                   <StepContainer
                     index={index}
                     isLast={isLast}
+                    inProgress={isLast && isStreaming}
                     item={item}
                     latestSummaryIndex={latestSummaryIndex}
                   />
@@ -335,6 +336,7 @@ export function Chat() {
             <StepContainer
               index={index}
               isLast={index === history.length - 1}
+              inProgress={index === history.length - 1 && isStreaming}
               item={item}
               latestSummaryIndex={latestSummaryIndex}
             />

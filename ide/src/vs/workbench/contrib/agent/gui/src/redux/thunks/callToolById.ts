@@ -13,14 +13,21 @@ import {
 } from "../slices/sessionSlice";
 import { ThunkApiType } from "../store";
 import { findToolCallById, logToolUsage } from "../util";
+import { appendToolResultMessage } from "../util/toolResultMessages";
 import { streamResponseAfterToolCall } from "./streamResponseAfterToolCall";
 
 export const callToolById = createAsyncThunk<
   void,
-  { toolCallId: string; isAutoApproved?: boolean; depth?: number },
+  {
+    toolCallId: string;
+    isAutoApproved?: boolean;
+    depth?: number;
+    deferAgentContinuation?: boolean;
+  },
   ThunkApiType
 >("chat/callTool", async (inputs, { dispatch, extra, getState }) => {
-  const { toolCallId, isAutoApproved, depth = 0 } = inputs;
+  const { toolCallId, isAutoApproved, depth = 0, deferAgentContinuation } =
+    inputs;
 
   const state = getState();
   const toolCallState = findToolCallById(state.session.history, toolCallId);
@@ -135,14 +142,22 @@ export const callToolById = createAsyncThunk<
       );
     }
 
-    // Send to the LLM to resume the conversation
-    const wrapped = await dispatch(
-      streamResponseAfterToolCall({
+    // Send to the LLM to resume the conversation (once all parallel tools finish).
+    if (deferAgentContinuation) {
+      appendToolResultMessage(
+        dispatch,
+        getState().session.history,
         toolCallId,
-        depth: depth + 1,
-      }),
-    );
-    unwrapResult(wrapped);
+      );
+    } else {
+      const wrapped = await dispatch(
+        streamResponseAfterToolCall({
+          toolCallId,
+          depth: depth + 1,
+        }),
+      );
+      unwrapResult(wrapped);
+    }
   } else {
     dispatch(setInactive());
   }

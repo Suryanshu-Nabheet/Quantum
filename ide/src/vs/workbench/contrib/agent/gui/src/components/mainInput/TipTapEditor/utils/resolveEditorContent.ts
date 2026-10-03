@@ -141,15 +141,20 @@ async function gatherContextItems({
 
   const isInAgentMode = getState().session.mode === "agent";
 
-  // Process context item attributes
-  for (const item of deduplicatedInputs) {
-    const result = await ideMessenger.request("context/getContextItems", {
-      name: item.provider,
-      query: item.query ?? "",
-      fullInput: stripImages(parts),
-      selectedCode,
-      isInAgentMode,
-    });
+  // Fetch all context providers in parallel — sequential awaits added seconds per submit.
+  const results = await Promise.all(
+    deduplicatedInputs.map((item) =>
+      ideMessenger.request("context/getContextItems", {
+        name: item.provider,
+        query: item.query ?? "",
+        fullInput: stripImages(parts),
+        selectedCode,
+        isInAgentMode,
+      }),
+    ),
+  );
+
+  for (const result of results) {
     if (result.status === "success") {
       contextItems.push(...result.content);
     }

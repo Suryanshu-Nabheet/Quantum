@@ -22,10 +22,10 @@ interface vscode {
 
 declare const vscode: any;
 
-// A stream may legitimately spend time in a tool call, but the webview must
-// not wait forever when the extension host or provider drops the terminal
-// message. This turns a silent spinner into a recoverable stream error.
+// Generic streams: fail fast if the host stops responding.
 const STREAM_IDLE_TIMEOUT_MS = 90_000;
+// Chat/reasoning can go minutes between tokens; do not kill long-horizon agent work.
+const LLM_STREAM_IDLE_TIMEOUT_MS = 600_000;
 const REQUEST_TIMEOUT_MS = 30_000;
 
 export interface IIdeMessenger {
@@ -51,6 +51,7 @@ export interface IIdeMessenger {
     messageType: T,
     data: FromWebviewProtocol[T][0],
     cancelToken?: AbortSignal,
+    options?: { idleTimeoutMs?: number },
   ): AsyncGenerator<
     GeneratorYieldType<FromWebviewProtocol[T][1]>[],
     GeneratorReturnType<FromWebviewProtocol[T][1]> | undefined
@@ -177,6 +178,7 @@ export class IdeMessenger implements IIdeMessenger {
     messageType: T,
     data: FromWebviewProtocol[T][0],
     cancelToken?: AbortSignal,
+    options?: { idleTimeoutMs?: number },
   ): AsyncGenerator<
     GeneratorYieldType<FromWebviewProtocol[T][1]>[],
     GeneratorReturnType<FromWebviewProtocol[T][1]> | undefined
@@ -192,6 +194,8 @@ export class IdeMessenger implements IIdeMessenger {
       undefined;
     let error: string | null = null;
     let idleTimeout: ReturnType<typeof setTimeout> | undefined;
+    const idleTimeoutMs =
+      options?.idleTimeoutMs ?? STREAM_IDLE_TIMEOUT_MS;
 
     const armIdleTimeout = () => {
       if (idleTimeout) {
@@ -204,7 +208,13 @@ export class IdeMessenger implements IIdeMessenger {
         error =
           "The agent stream stopped receiving data. The model connection may have been interrupted.";
         this.post("abort", undefined, messageId);
-      }, STREAM_IDLE_TIMEOUT_MS);
+      }, idleTimeoutMs);
+    };
+
+    let resolveWake: (() => void) | null = null;
+    const notifyStreamWaiter = () => {
+      resolveWake?.();
+      resolveWake = null;
     };
 
     // This handler receieves individual WebviewMessengerResults
@@ -217,15 +227,17 @@ export class IdeMessenger implements IIdeMessenger {
         const responseData = event.data.data;
         if ("error" in responseData) {
           error = responseData.error || "The agent stream failed.";
+          notifyStreamWaiter();
           return;
-          // throw new Error(responseData.error);
         }
         if (responseData.done) {
           window.removeEventListener("message", handler);
           done = true;
           returnVal = responseData.content;
+          notifyStreamWaiter();
         } else {
           buffer.push(responseData.content);
+          notifyStreamWaiter();
         }
       }
     };
@@ -242,6 +254,7 @@ export class IdeMessenger implements IIdeMessenger {
       // the best-effort abort message is sent in the background.
       done = true;
       this.post("abort", undefined, messageId);
+      notifyStreamWaiter();
     };
     if (cancelToken?.aborted) {
       handleAbort();
@@ -258,8 +271,14 @@ export class IdeMessenger implements IIdeMessenger {
           const chunks = buffer.slice(index);
           index = buffer.length;
           yield chunks;
+          continue;
         }
-        await new Promise((resolve) => setTimeout(resolve, 50));
+        if (done) {
+          break;
+        }
+        await new Promise<void>((resolve) => {
+          resolveWake = resolve;
+        });
       }
 
       if (buffer.length > index) {
@@ -286,7 +305,9 @@ export class IdeMessenger implements IIdeMessenger {
     msg: ToCoreProtocol["llm/streamChat"][0],
     cancelToken: AbortSignal,
   ): AsyncGenerator<ChatMessage[], PromptLog | undefined> {
-    const gen = this.streamRequest("llm/streamChat", msg, cancelToken);
+    const gen = this.streamRequest("llm/streamChat", msg, cancelToken, {
+      idleTimeoutMs: LLM_STREAM_IDLE_TIMEOUT_MS,
+    });
 
     let next = await gen.next();
     while (!next.done) {

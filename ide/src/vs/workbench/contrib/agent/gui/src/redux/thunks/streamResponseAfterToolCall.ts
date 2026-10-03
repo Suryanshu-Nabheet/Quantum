@@ -1,15 +1,14 @@
 import { createAsyncThunk, unwrapResult } from "@reduxjs/toolkit";
-import { ChatMessage } from "core";
-import { renderContextItems } from "core/util/messageContent";
 import { selectCurrentToolCalls } from "../selectors/selectToolCalls";
 import {
   ChatHistoryItemWithMessageId,
   resetNextCodeBlockToApplyIndex,
-  streamUpdate,
+  setActive,
 } from "../slices/sessionSlice";
 import { ThunkApiType } from "../store";
 import { streamNormalInput } from "./streamNormalInput";
 import { streamThunkWrapper } from "./streamThunkWrapper";
+import { appendToolResultMessage } from "../util/toolResultMessages";
 
 /**
  * Determines if we should resume streaming based on tool call completion status.
@@ -36,11 +35,11 @@ function areAllToolsDoneStreaming(
 
 export const streamResponseAfterToolCall = createAsyncThunk<
   void,
-  { toolCallId: string; depth?: number },
+  { toolCallId: string; depth?: number; skipToolMessage?: boolean },
   ThunkApiType
 >(
   "chat/streamAfterToolCall",
-  async ({ toolCallId, depth = 0 }, { dispatch, getState }) => {
+  async ({ toolCallId, depth = 0, skipToolMessage = false }, { dispatch, getState }) => {
     await dispatch(
       streamThunkWrapper(async () => {
         const state = getState();
@@ -50,22 +49,19 @@ export const streamResponseAfterToolCall = createAsyncThunk<
         );
 
         if (!toolCallState) {
-          return; // in cases where edit tool is cancelled mid apply, this will be triggered
+          return;
         }
-
-        const toolOutput = toolCallState.output ?? [];
 
         dispatch(resetNextCodeBlockToApplyIndex());
 
-        // Create and dispatch the tool message
-        const newMessage: ChatMessage = {
-          role: "tool",
-          content: renderContextItems(toolOutput),
-          toolCallId,
-        };
-        dispatch(streamUpdate([newMessage]));
+        if (!skipToolMessage) {
+          appendToolResultMessage(
+            dispatch,
+            getState().session.history,
+            toolCallId,
+          );
+        }
 
-        // Check if we should resume streaming based on tool call completion
         const history = getState().session.history;
         const assistantMessage = history.findLast(
           (item) =>
@@ -74,14 +70,20 @@ export const streamResponseAfterToolCall = createAsyncThunk<
         );
 
         if (
-          assistantMessage &&
-          areAllToolsDoneStreaming(
+          !assistantMessage ||
+          !areAllToolsDoneStreaming(
             assistantMessage,
-            state.config.config.ui?.resumeAfterToolRejection,
+            getState().config.config.ui?.resumeAfterToolRejection,
           )
         ) {
-          unwrapResult(await dispatch(streamNormalInput({ depth: depth + 1 })));
+          return;
         }
+
+        if (!getState().session.isStreaming) {
+          dispatch(setActive());
+        }
+
+        unwrapResult(await dispatch(streamNormalInput({ depth: depth + 1 })));
       }),
     );
   },

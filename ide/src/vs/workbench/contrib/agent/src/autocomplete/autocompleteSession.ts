@@ -211,7 +211,7 @@ export class AutocompleteSession {
         }
       }
     } else {
-      while (this.inFlightFetches.size > 2) {
+      while (this.inFlightFetches.size > 3) {
         const oldestKey = this.inFlightFetches.keys().next().value;
         if (!oldestKey) {
           break;

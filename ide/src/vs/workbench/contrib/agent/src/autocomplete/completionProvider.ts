@@ -30,7 +30,7 @@ const LIGHTWEIGHT_PREFIX_LINE_LIMIT = 96;
 const LIGHTWEIGHT_SUFFIX_LINE_LIMIT = 48;
 const LIGHTWEIGHT_PREFIX_CHAR_LIMIT = 16_000;
 const LIGHTWEIGHT_SUFFIX_CHAR_LIMIT = 6_000;
-const FIRST_RESULT_WAIT_MS = 250;
+const FIRST_RESULT_WAIT_MS = 120;
 
 function clipPrefixContext(text: string): string {
   const lines = text.split("\n").slice(-LIGHTWEIGHT_PREFIX_LINE_LIMIT);
@@ -203,6 +203,21 @@ export class AgentCompletionProvider
         this.autocompleteSession.invalidateDocument(
           event.document.uri.toString(),
         );
+      }),
+    );
+
+    context.subscriptions.push(
+      vscode.window.onDidChangeTextEditorSelection((event) => {
+        if (getStatusBarStatus() !== StatusBarStatus.Enabled) {
+          return;
+        }
+        if (event.textEditor.document.uri.scheme === "vscode-scm") {
+          return;
+        }
+        if (event.selections.length !== 1 || !event.selections[0]?.isEmpty) {
+          return;
+        }
+        this.autocompleteSession.scheduleSuggestRefresh();
       }),
     );
 
