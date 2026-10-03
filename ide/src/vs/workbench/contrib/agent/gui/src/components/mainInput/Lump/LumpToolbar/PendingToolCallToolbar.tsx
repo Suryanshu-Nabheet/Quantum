@@ -1,6 +1,7 @@
 import { useAppDispatch, useAppSelector } from "../../../../redux/hooks";
 import { selectPendingToolCalls } from "../../../../redux/selectors/selectToolCalls";
 import { callToolById } from "../../../../redux/thunks/callToolById";
+import { acceptAllPendingToolCalls } from "../../../../redux/thunks/acceptAllPendingToolCalls";
 import { cancelToolCallThunk } from "../../../../redux/thunks/cancelToolCall";
 import { getMetaKeyLabel } from "../../../../util";
 import { Button } from "../../../ui";
@@ -17,6 +18,7 @@ export function PendingToolCallToolbar() {
   const dispatch = useAppDispatch();
   const pendingToolCalls = useAppSelector(selectPendingToolCalls);
   const isStreaming = useAppSelector((state) => state.session.isStreaming);
+  const agentStepDepth = useAppSelector((state) => state.session.agentStepDepth);
   const editor = useMainEditor();
 
   if (pendingToolCalls.length === 0 || isStreaming) {
@@ -24,7 +26,13 @@ export function PendingToolCallToolbar() {
   }
 
   const handleAccept = (toolCallId: string) => {
-    void dispatch(callToolById({ toolCallId }));
+    void dispatch(
+      callToolById({ toolCallId, depth: agentStepDepth + 1 }),
+    );
+  };
+
+  const handleAcceptAll = () => {
+    void dispatch(acceptAllPendingToolCalls());
   };
 
   const handleReject = (toolCallId: string) => {
@@ -36,7 +44,21 @@ export function PendingToolCallToolbar() {
   };
 
   return (
-    <div className="flex w-full flex-col pb-0.5">
+    <div className="flex w-full flex-col gap-1 pb-0.5">
+      {pendingToolCalls.length > 1 && (
+        <div className="flex justify-end px-0.5">
+          <Button
+            variant="primary"
+            size="sm"
+            className="font-medium"
+            tooltip="Run all pending tool calls, then continue the agent"
+            onClick={handleAcceptAll}
+            data-testid="accept-all-tool-calls-button"
+          >
+            Accept all ({pendingToolCalls.length})
+          </Button>
+        </div>
+      )}
       {pendingToolCalls.map((toolCall, index) => (
         <div
           key={toolCall.toolCallId}

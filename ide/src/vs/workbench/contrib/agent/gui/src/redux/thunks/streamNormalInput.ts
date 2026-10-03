@@ -1,6 +1,5 @@
 import { createAsyncThunk, unwrapResult } from "@reduxjs/toolkit";
 import { ChatMessage, LLMFullCompletionOptions, ModelDescription } from "core";
-import { getRuleId } from "core/llm/rules/getSystemMessageWithRules";
 import { ToCoreProtocol } from "core/protocol";
 import { selectActiveTools } from "../selectors/selectActiveTools";
 import { selectSelectedChatModel } from "../slices/configSlice";
@@ -8,13 +7,13 @@ import {
   addPromptCompletionPair,
   errorToolCall,
   setActive,
+  setAgentStepDepth,
   setAppliedRulesAtIndex,
   setContextPercentage,
   setInactive,
   setInlineErrorMessage,
   setIsPruned,
   setToolGenerated,
-  streamUpdate,
 } from "../slices/sessionSlice";
 import { ThunkApiType, AppDispatch, RootState } from "../store";
 import { constructMessages } from "../util/constructMessages";
@@ -29,7 +28,6 @@ import {
   selectPendingToolCalls,
 } from "../selectors/selectToolCalls";
 import { getBaseSystemMessage } from "../util/getBaseSystemMessage";
-import { callToolById } from "./callToolById";
 import { evaluateToolPolicies } from "./evaluateToolPolicies";
 import { preprocessToolCalls } from "./preprocessToolCallArgs";
 import { streamResponseAfterToolCall } from "./streamResponseAfterToolCall";
@@ -40,6 +38,7 @@ import {
 } from "../../util/agentLoopLimits";
 import { createStreamRenderBatcher } from "../util/streamRenderBatch";
 import { withAgentStreamLock } from "../util/agentStreamLock";
+import { runParallelToolCalls } from "../util/agentToolPipeline";
 
 /**
  * Builds completion options with reasoning configuration based on session state and model capabilities.
@@ -49,26 +48,6 @@ import { withAgentStreamLock } from "../util/agentStreamLock";
  * @param model - The selected model with provider and completion options
  * @returns Completion options with reasoning configuration
  */
-async function resumeAgentAfterParallelTools(
-  dispatch: AppDispatch,
-  toolCallIds: string[],
-  depth: number,
-): Promise<void> {
-  const lastToolCallId = toolCallIds[toolCallIds.length - 1];
-  if (!lastToolCallId) {
-    return;
-  }
-  unwrapResult(
-    await dispatch(
-      streamResponseAfterToolCall({
-        toolCallId: lastToolCallId,
-        depth,
-        skipToolMessage: true,
-      }),
-    ),
-  );
-}
-
 function buildReasoningCompletionOptions(
   baseOptions: LLMFullCompletionOptions,
   hasReasoningEnabled: boolean | undefined,
@@ -118,6 +97,7 @@ export const streamNormalInput = createAsyncThunk<
       dispatch(setInactive());
       return;
     }
+    dispatch(setAgentStepDepth(depth));
     const selectedChatModel = selectSelectedChatModel(state);
 
     if (!selectedChatModel) {
@@ -154,296 +134,275 @@ async function runStreamNormalInputLocked({
 }) {
   const state = getState();
   let activeTools = selectActiveTools(state);
-    if (selectedChatModel.toolOverrides?.length) {
-      const { tools: overriddenTools, errors } = applyToolOverrides(
-        activeTools,
-        selectedChatModel.toolOverrides,
-      );
-      activeTools = overriddenTools;
-      for (const error of errors) {
-        if (!error.fatal) {
-          console.warn(`Tool override warning: ${error.message}`);
-        }
+  if (selectedChatModel.toolOverrides?.length) {
+    const { tools: overriddenTools, errors } = applyToolOverrides(
+      activeTools,
+      selectedChatModel.toolOverrides,
+    );
+    activeTools = overriddenTools;
+    for (const error of errors) {
+      if (!error.fatal) {
+        console.warn(`Tool override warning: ${error.message}`);
       }
     }
+  }
 
-    // Use the centralized selector to determine if system message tools should be used
-    const useNativeTools = state.config.config.experimental
+  const useNativeTools = state.config.config.experimental
       ?.onlyUseSystemMessageTools
       ? false
       : modelSupportsNativeTools(selectedChatModel);
-    const systemToolsFramework = !useNativeTools
-      ? new SystemMessageToolCodeblocksFramework()
-      : undefined;
+  const systemToolsFramework = !useNativeTools
+    ? new SystemMessageToolCodeblocksFramework()
+    : undefined;
 
-    // Construct completion options
-    let completionOptions: LLMFullCompletionOptions = {};
-    if (useNativeTools && activeTools.length > 0) {
-      completionOptions = {
-        tools: activeTools,
-      };
-    }
+  // Construct completion options
+  let completionOptions: LLMFullCompletionOptions = {};
+  if (useNativeTools && activeTools.length > 0) {
+    completionOptions = {
+      tools: activeTools,
+    };
+  }
 
-    completionOptions = buildReasoningCompletionOptions(
-      completionOptions,
-      state.session.hasReasoningEnabled,
-      selectedChatModel,
-    );
+  completionOptions = buildReasoningCompletionOptions(
+    completionOptions,
+    state.session.hasReasoningEnabled,
+    selectedChatModel,
+  );
 
-    // Construct messages (excluding system message)
-    const baseSystemMessage = getBaseSystemMessage(
-      state.session.mode,
-      selectedChatModel,
-      activeTools,
-    );
+  // Construct messages (excluding system message)
+  const baseSystemMessage = getBaseSystemMessage(
+    state.session.mode,
+    selectedChatModel,
+    activeTools,
+  );
 
-    const systemMessage = systemToolsFramework
-      ? addSystemMessageToolsToSystemMessage(
-          systemToolsFramework,
-          baseSystemMessage,
-          activeTools,
-        )
-      : baseSystemMessage;
+  const systemMessage = systemToolsFramework
+    ? addSystemMessageToolsToSystemMessage(
+        systemToolsFramework,
+        baseSystemMessage,
+        activeTools,
+      )
+    : baseSystemMessage;
 
-    const withoutMessageIds = state.session.history.map((item) => {
-      const { id, ...messageWithoutId } = item.message;
-      return { ...item, message: messageWithoutId };
-    });
+  const withoutMessageIds = state.session.history.map((item) => {
+    const { id, ...messageWithoutId } = item.message;
+    return { ...item, message: messageWithoutId };
+  });
 
-    const { messages, appliedRules, appliedRuleIndex } = constructMessages(
-      withoutMessageIds,
-      systemMessage,
-      state.config.config.rules,
-      state.ui.ruleSettings,
-      systemToolsFramework,
-    );
+  const { messages, appliedRules, appliedRuleIndex } = constructMessages(
+    withoutMessageIds,
+    systemMessage,
+    state.config.config.rules,
+    state.ui.ruleSettings,
+    systemToolsFramework,
+  );
 
-    // parallel tool calls will cause issues with this
-    // because there will be multiple tool messages, so which one should have applied rules?
-    dispatch(
-      setAppliedRulesAtIndex({
-        index: appliedRuleIndex,
-        appliedRules: appliedRules,
-      }),
-    );
+  // parallel tool calls will cause issues with this
+  // because there will be multiple tool messages, so which one should have applied rules?
+  dispatch(
+    setAppliedRulesAtIndex({
+      index: appliedRuleIndex,
+      appliedRules: appliedRules,
+    }),
+  );
 
-    dispatch(setActive());
-    dispatch(setInlineErrorMessage(undefined));
+  dispatch(setActive());
+  dispatch(setInlineErrorMessage(undefined));
 
-    const precompiledRes = await extra.ideMessenger.request("llm/compileChat", {
-      messages,
-      options: completionOptions,
-    });
+  const precompiledRes = await extra.ideMessenger.request("llm/compileChat", {
+    messages,
+    options: completionOptions,
+  });
 
-    if (precompiledRes.status === "error") {
-      if (precompiledRes.error.includes("Not enough context")) {
-        dispatch(setInlineErrorMessage("out-of-context"));
-        dispatch(setInactive());
-        return;
-      } else {
-        throw new Error(precompiledRes.error);
-      }
-    }
-
-    const { compiledChatMessages, didPrune, contextPercentage } =
-      precompiledRes.content;
-
-    dispatch(setIsPruned(didPrune));
-    dispatch(setContextPercentage(contextPercentage));
-
-    const start = Date.now();
-    // Read the controller at stream time. The retry wrapper replaces it after
-    // cancelling a failed attempt; using the controller captured at thunk
-    // creation makes every retry immediately abort itself.
-    const streamAborter = getState().session.streamAborter;
-    try {
-      let gen = extra.ideMessenger.llmStreamChat(
-        {
-          completionOptions,
-          title: selectedChatModel.title,
-          messages: compiledChatMessages,
-          legacySlashCommandData,
-          messageOptions: { precompiled: true },
-        },
-        streamAborter.signal,
-      );
-      if (systemToolsFramework && activeTools.length > 0) {
-        gen = interceptSystemToolCalls(
-          gen,
-          streamAborter,
-          systemToolsFramework,
-        );
-      }
-
-      const renderBatch = createStreamRenderBatcher(dispatch);
-      let next = await gen.next();
-      while (!next.done) {
-        if (streamAborter.signal.aborted) {
-          break;
-        }
-
-        const chunk = next.value as ChatMessage[] | undefined;
-        if (chunk?.length) {
-          renderBatch.push(chunk);
-        }
-        next = await gen.next();
-      }
-      renderBatch.flushNow();
-
-      if (next.done && next.value) {
-        dispatch(addPromptCompletionPair([next.value]));
-      }
-    } catch (e) {
-      const toolCallsToCancel = selectCurrentToolCalls(getState());
-      if (
-        toolCallsToCancel.length > 0 &&
-        e instanceof Error &&
-        e.message.toLowerCase().includes("premature close")
-      ) {
-        for (const tc of toolCallsToCancel) {
-          dispatch(
-            errorToolCall({
-              toolCallId: tc.toolCallId,
-              output: [
-                {
-                  name: "Tool Call Error",
-                  description: "Premature Close",
-                  content: `"Premature Close" error: this tool call was aborted mid-stream because the arguments took too long to stream or there were network issues. Please re-attempt by breaking the operation into smaller chunks or trying something else`,
-                  icon: "problems",
-                },
-              ],
-            }),
-          );
-        }
-        // Do not continue into tool execution with incomplete arguments. The
-        // previous behavior swallowed the transport failure and attempted to
-        // execute the partially streamed call, which could strand the agent
-        // or run a malformed command. Let the wrapper surface the failure so
-        // the user can retry safely.
-        throw e;
-      } else {
-        throw e;
-      }
-    }
-
-    // Tool call sequence:
-    // 1. Mark generating tool calls as generated
-    const state1 = getState();
-    if (streamAborter.signal.aborted) {
-      return;
-    }
-    const originalToolCalls = selectCurrentToolCalls(state1);
-    const generatingCalls = originalToolCalls.filter(
-      (tc) => tc.status === "generating",
-    );
-    for (const { toolCallId } of generatingCalls) {
-      dispatch(
-        setToolGenerated({
-          toolCallId,
-          tools: state1.config.config.tools,
-        }),
-      );
-    }
-
-    // 2. Pre-process args to catch invalid args before checking policies
-    const state2 = getState();
-    if (streamAborter.signal.aborted) {
-      return;
-    }
-    const generatedCalls2 = selectPendingToolCalls(state2);
-    await preprocessToolCalls(dispatch, extra.ideMessenger, generatedCalls2);
-
-    // 3. Security check: evaluate updated policies based on args
-    const state3 = getState();
-    if (streamAborter.signal.aborted) {
-      return;
-    }
-    const generatedCalls3 = selectPendingToolCalls(state3);
-    const toolPolicies = state3.ui.toolSettings;
-    const policies = await evaluateToolPolicies(
-      dispatch,
-      extra.ideMessenger,
-      activeTools,
-      generatedCalls3,
-      toolPolicies,
-      {
-        agentAccessMode: state3.ui.agentAccessMode,
-        terminalAutoExecution: state3.ui.terminalAutoExecution,
-      },
-    );
-    const autoApprovedPolicies = policies.filter(
-      ({ policy }) => policy === "allowedWithoutPermission",
-    );
-    const needsApprovalPolicies = policies.filter(
-      ({ policy }) => policy === "allowedWithPermission",
-    );
-
-    // 4. Execute remaining tool calls
-    if (originalToolCalls.length === 0) {
+  if (precompiledRes.status === "error") {
+    if (precompiledRes.error.includes("Not enough context")) {
+      dispatch(setInlineErrorMessage("out-of-context"));
       dispatch(setInactive());
-    } else if (needsApprovalPolicies.length > 0) {
-      if (autoApprovedPolicies.length > 0) {
-        const state4 = getState();
-        if (streamAborter.signal.aborted) {
-          return;
-        }
-        await Promise.all(
-          autoApprovedPolicies.map(async ({ toolCallState }) => {
-            unwrapResult(
-              await dispatch(
-                callToolById({
-                  toolCallId: toolCallState.toolCallId,
-                  isAutoApproved: true,
-                  depth: depth + 1,
-                  deferAgentContinuation: true,
-                }),
-              ),
-            );
+      return;
+    } else {
+      throw new Error(precompiledRes.error);
+    }
+  }
+
+  const { compiledChatMessages, didPrune, contextPercentage } =
+    precompiledRes.content;
+
+  dispatch(setIsPruned(didPrune));
+  dispatch(setContextPercentage(contextPercentage));
+
+  const streamAborter = getState().session.streamAborter;
+  try {
+    let gen = extra.ideMessenger.llmStreamChat(
+      {
+        completionOptions,
+        title: selectedChatModel.title,
+        messages: compiledChatMessages,
+        legacySlashCommandData,
+        messageOptions: { precompiled: true },
+      },
+      streamAborter.signal,
+    );
+    if (systemToolsFramework && activeTools.length > 0) {
+      gen = interceptSystemToolCalls(
+        gen,
+        streamAborter,
+        systemToolsFramework,
+      );
+    }
+
+    const renderBatch = createStreamRenderBatcher(dispatch);
+    let next = await gen.next();
+    while (!next.done) {
+      if (streamAborter.signal.aborted) {
+        break;
+      }
+
+      const chunk = next.value as ChatMessage[] | undefined;
+      if (chunk?.length) {
+        renderBatch.push(chunk);
+      }
+      next = await gen.next();
+    }
+    renderBatch.flushNow();
+
+    if (next.done && next.value) {
+      dispatch(addPromptCompletionPair([next.value]));
+    }
+  } catch (e) {
+    const toolCallsToCancel = selectCurrentToolCalls(getState());
+    if (
+      toolCallsToCancel.length > 0 &&
+      e instanceof Error &&
+      e.message.toLowerCase().includes("premature close")
+    ) {
+      for (const tc of toolCallsToCancel) {
+        dispatch(
+          errorToolCall({
+            toolCallId: tc.toolCallId,
+            output: [
+              {
+                name: "Tool Call Error",
+                description: "Premature Close",
+                content: `"Premature Close" error: this tool call was aborted mid-stream because the arguments took too long to stream or there were network issues. Please re-attempt by breaking the operation into smaller chunks or trying something else`,
+                icon: "problems",
+              },
+            ],
           }),
         );
       }
-
-      dispatch(setInactive());
+      // Do not continue into tool execution with incomplete arguments. The
+      // previous behavior swallowed the transport failure and attempted to
+      // execute the partially streamed call, which could strand the agent
+      // or run a malformed command. Let the wrapper surface the failure so
+      // the user can retry safely.
+      throw e;
     } else {
-      const state4 = getState();
-      const generatedCalls4 = selectPendingToolCalls(state4);
+      throw e;
+    }
+  }
+
+  // Tool call sequence:
+  // 1. Mark generating tool calls as generated
+  const state1 = getState();
+  if (streamAborter.signal.aborted) {
+    return;
+  }
+  const originalToolCalls = selectCurrentToolCalls(state1);
+  const generatingCalls = originalToolCalls.filter(
+    (tc) => tc.status === "generating",
+  );
+  for (const { toolCallId } of generatingCalls) {
+    dispatch(
+      setToolGenerated({
+        toolCallId,
+        tools: state1.config.config.tools,
+      }),
+    );
+  }
+
+  // 2. Pre-process args to catch invalid args before checking policies
+  const state2 = getState();
+  if (streamAborter.signal.aborted) {
+    return;
+  }
+  const generatedCalls2 = selectPendingToolCalls(state2);
+  await preprocessToolCalls(dispatch, extra.ideMessenger, generatedCalls2);
+
+  // 3. Security check: evaluate updated policies based on args
+  const state3 = getState();
+  if (streamAborter.signal.aborted) {
+    return;
+  }
+  const generatedCalls3 = selectPendingToolCalls(state3);
+  const toolPolicies = state3.ui.toolSettings;
+  const policies = await evaluateToolPolicies(
+    dispatch,
+    extra.ideMessenger,
+    activeTools,
+    generatedCalls3,
+    toolPolicies,
+    {
+      agentAccessMode: state3.ui.agentAccessMode,
+      terminalAutoExecution: state3.ui.terminalAutoExecution,
+    },
+  );
+  const autoApprovedPolicies = policies.filter(
+    ({ policy }) => policy === "allowedWithoutPermission",
+  );
+  const needsApprovalPolicies = policies.filter(
+    ({ policy }) => policy === "allowedWithPermission",
+  );
+
+  // 4. Execute remaining tool calls
+  if (originalToolCalls.length === 0) {
+    dispatch(setInactive());
+  } else if (needsApprovalPolicies.length > 0) {
+    if (autoApprovedPolicies.length > 0) {
       if (streamAborter.signal.aborted) {
         return;
       }
-      if (generatedCalls4.length > 0) {
-        const toolCallIds = generatedCalls4.map(({ toolCallId }) => toolCallId);
-        await Promise.all(
-          generatedCalls4.map(async ({ toolCallId }) => {
-            unwrapResult(
-              await dispatch(
-                callToolById({
-                  toolCallId,
-                  isAutoApproved: true,
-                  depth: depth + 1,
-                  deferAgentContinuation: true,
-                }),
-              ),
-            );
-          }),
+      await runParallelToolCalls(
+        dispatch,
+        autoApprovedPolicies.map(({ toolCallState }) => toolCallState.toolCallId),
+        {
+          depth: depth + 1,
+          isAutoApproved: true,
+          deferToolResults: true,
+          resumeAgent: false,
+        },
+      );
+    }
+
+    dispatch(setInactive());
+  } else {
+    const generatedCalls4 = selectPendingToolCalls(getState());
+    if (streamAborter.signal.aborted) {
+      return;
+    }
+    if (generatedCalls4.length > 0) {
+      await runParallelToolCalls(
+        dispatch,
+        generatedCalls4.map(({ toolCallId }) => toolCallId),
+        {
+          depth: depth + 1,
+          isAutoApproved: true,
+          deferToolResults: true,
+          resumeAgent: true,
+        },
+      );
+    } else {
+      const lastToolCallId =
+        originalToolCalls[originalToolCalls.length - 1]?.toolCallId;
+      if (lastToolCallId) {
+        unwrapResult(
+          await dispatch(
+            streamResponseAfterToolCall({
+              toolCallId: lastToolCallId,
+              depth: depth + 1,
+            }),
+          ),
         );
-        await resumeAgentAfterParallelTools(
-          dispatch,
-          toolCallIds,
-          depth + 1,
-        );
-      } else {
-        const lastToolCallId =
-          originalToolCalls[originalToolCalls.length - 1]?.toolCallId;
-        if (lastToolCallId) {
-          unwrapResult(
-            await dispatch(
-              streamResponseAfterToolCall({
-                toolCallId: lastToolCallId,
-                depth: depth + 1,
-              }),
-            ),
-          );
-        }
       }
     }
+  }
 }

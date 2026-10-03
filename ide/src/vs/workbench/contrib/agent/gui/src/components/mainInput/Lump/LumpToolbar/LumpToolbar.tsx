@@ -23,6 +23,7 @@ export function LumpToolbar() {
   const isInEdit = useAppSelector((state) => state.session.isInEdit);
   const pendingToolCalls = useAppSelector(selectPendingToolCalls);
   const firstPendingToolCall = useAppSelector(selectFirstPendingToolCall);
+  const agentStepDepth = useAppSelector((state) => state.session.agentStepDepth);
   const editApplyState = useAppSelector(
     (state) => state.editModeState.applyState,
   );
@@ -46,7 +47,10 @@ export function LumpToolbar() {
         event.preventDefault();
         event.stopPropagation();
         void dispatch(
-          callToolById({ toolCallId: firstPendingToolCall.toolCallId }),
+          callToolById({
+            toolCallId: firstPendingToolCall.toolCallId,
+            depth: agentStepDepth + 1,
+          }),
         );
       }
     };
@@ -55,7 +59,7 @@ export function LumpToolbar() {
     return () => {
       document.removeEventListener("keydown", handleToolCallKeyboardShortcuts);
     };
-  }, [dispatch, firstPendingToolCall]);
+  }, [dispatch, firstPendingToolCall, agentStepDepth]);
 
   let content = null;
 

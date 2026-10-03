@@ -73,6 +73,8 @@ export class OpenAIApi implements BaseLlmApi {
       if (body.tools?.length && !body.model.startsWith("o3")) {
         body.parallel_tool_calls = false;
       }
+    } else if (body.tools?.length && !body.model.startsWith("o3")) {
+      body.parallel_tool_calls = true;
     }
     return body;
   }

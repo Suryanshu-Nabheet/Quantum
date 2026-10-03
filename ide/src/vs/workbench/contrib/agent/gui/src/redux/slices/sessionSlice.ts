@@ -224,6 +224,8 @@ type SessionState = {
   contextPercentage?: number;
   inlineErrorMessage?: InlineErrorMessageType;
   compactionLoading: Record<number, boolean>; // Track compaction loading by message index
+  /** Tool/LLM rounds in the current user turn (for step limits + manual tool approval). */
+  agentStepDepth: number;
 };
 
 export const INITIAL_SESSION_STATE: SessionState = {
@@ -244,6 +246,7 @@ export const INITIAL_SESSION_STATE: SessionState = {
   lastSessionId: undefined,
   newestToolbarPreviewForInput: {},
   compactionLoading: {},
+  agentStepDepth: 0,
 };
 
 export const sessionSlice = createSlice({
@@ -411,6 +414,7 @@ export const sessionSlice = createSlice({
       }
 
       state.isStreaming = true;
+      state.agentStepDepth = 0;
     },
     truncateHistoryToMessage: (
       state,
@@ -435,6 +439,7 @@ export const sessionSlice = createSlice({
         state.inlineErrorMessage = undefined;
         state.isPruned = false;
         state.contextPercentage = undefined;
+        state.agentStepDepth = 0;
       }
     },
     deleteMessage: (state, action: PayloadAction<number>) => {
@@ -508,6 +513,9 @@ export const sessionSlice = createSlice({
       if (state.history[payload.index]) {
         state.history[payload.index].appliedRules = payload.appliedRules;
       }
+    },
+    setAgentStepDepth: (state, { payload }: PayloadAction<number>) => {
+      state.agentStepDepth = Math.max(0, Math.floor(payload));
     },
     setInactive: (state) => {
       const curMessage = state.history.at(-1);
@@ -696,6 +704,7 @@ export const sessionSlice = createSlice({
       state.inlineErrorMessage = undefined;
       state.isPruned = false;
       state.contextPercentage = undefined;
+      state.agentStepDepth = 0;
 
       if (payload) {
         state.history = payload.history as any;
@@ -1068,6 +1077,7 @@ export const {
   addHighlightedCode,
   addPromptCompletionPair,
   setActive,
+  setAgentStepDepth,
   submitEditorAndInitAtIndex,
   truncateHistoryToMessage,
   updateHistoryItemAtIndex,

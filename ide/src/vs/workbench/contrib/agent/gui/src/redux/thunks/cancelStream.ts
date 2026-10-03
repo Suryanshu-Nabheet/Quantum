@@ -4,6 +4,7 @@ import {
   clearDanglingMessages,
   setInactive,
 } from "../slices/sessionSlice";
+import { flushDebouncedSessionSave } from "../util/debouncedSessionSave";
 import { ThunkApiType } from "../store";
 
 export const cancelStream = createAsyncThunk<void, undefined, ThunkApiType>(
@@ -14,5 +15,6 @@ export const cancelStream = createAsyncThunk<void, undefined, ThunkApiType>(
 
     // Clear any dangling incomplete tool calls, thinking messages, etc.
     dispatch(clearDanglingMessages());
+    flushDebouncedSessionSave(dispatch);
   },
 );

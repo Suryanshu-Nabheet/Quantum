@@ -26,8 +26,12 @@ export const callToolById = createAsyncThunk<
   },
   ThunkApiType
 >("chat/callTool", async (inputs, { dispatch, extra, getState }) => {
-  const { toolCallId, isAutoApproved, depth = 0, deferAgentContinuation } =
-    inputs;
+  const {
+    toolCallId,
+    isAutoApproved,
+    deferAgentContinuation,
+  } = inputs;
+  const depth = inputs.depth ?? getState().session.agentStepDepth;
 
   const state = getState();
   const toolCallState = findToolCallById(state.session.history, toolCallId);
