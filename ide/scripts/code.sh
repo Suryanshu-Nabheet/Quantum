@@ -16,6 +16,23 @@ fi
 function code() {
 	cd "$ROOT"
 
+	# Match node-ts.sh: bare `node` is not on PATH until nvm/fnm is loaded.
+	local required
+	required="$(tr -d '[:space:]' < "$ROOT/.nvmrc")"
+	if [[ -s "${NVM_DIR:-$HOME/.nvm}/nvm.sh" ]]; then
+		# shellcheck disable=SC1090
+		source "${NVM_DIR:-$HOME/.nvm}/nvm.sh"
+		nvm use --silent "$required" >/dev/null 2>&1 || nvm use --silent >/dev/null 2>&1 || true
+	elif command -v fnm >/dev/null 2>&1; then
+		# shellcheck disable=SC1090
+		eval "$(fnm env --shell bash 2>/dev/null || fnm env)"
+		fnm use "$required" --silent-if-installed >/dev/null 2>&1 || true
+	fi
+	if ! command -v node >/dev/null 2>&1; then
+		echo "error: Node.js not found. Run: cd ide && ./scripts/setup.sh --setup-only" >&2
+		exit 1
+	fi
+
 	if [[ "$OSTYPE" == "darwin"* ]]; then
 		NAME=`node -p "require('./product.json').nameLong"`
 		EXE_NAME=`node -p "require('./product.json').nameShort"`
