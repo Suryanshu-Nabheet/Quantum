@@ -41,12 +41,3 @@ export function flushDebouncedSessionSave(dispatch: AppDispatch): void {
     }),
   );
 }
-
-/** Test-only reset */
-export function resetDebouncedSessionSaveForTests(): void {
-  if (debounceTimer) {
-    clearTimeout(debounceTimer);
-    debounceTimer = undefined;
-  }
-  pendingDispatch = undefined;
-}

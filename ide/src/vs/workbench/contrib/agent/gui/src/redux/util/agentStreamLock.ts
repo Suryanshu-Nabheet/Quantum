@@ -12,8 +12,3 @@ export function withAgentStreamLock<T>(task: () => Promise<T>): Promise<T> {
   );
   return run;
 }
-
-/** Test-only reset */
-export function resetAgentStreamLockForTests(): void {
-  streamLock = Promise.resolve();
-}

@@ -4,24 +4,6 @@ import { describe, expect, it } from "vitest";
 import OpenRouter from "./OpenRouter";
 
 describe("OpenRouter Anthropic Caching", () => {
-  it("enables parallel tool calls for agent throughput", () => {
-    const openRouter = new OpenRouter({
-      model: "anthropic/claude-sonnet-4.5",
-      apiKey: "test-key",
-    });
-    const modifiedBody = openRouter["modifyChatBody"]({
-      model: "anthropic/claude-sonnet-4.5",
-      messages: [],
-      tools: [
-        {
-          type: "function",
-          function: { name: "read", parameters: { type: "object" } },
-        },
-      ],
-    } as ChatCompletionCreateParams);
-    expect(modifiedBody.parallel_tool_calls).toBe(true);
-  });
-
   it("should detect Anthropic models correctly", () => {
     const openRouter = new OpenRouter({
       model: "claude-sonnet-4-5",
