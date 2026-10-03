@@ -17,7 +17,8 @@ import { getMetaKeyLabel, isMetaEquivalentKeyPressed } from "../../util";
 import {
   formatModelLabel,
   getModelDisplayId,
-  getProviderDisplayName,
+  getModelPickerProviderLabel,
+  getRawModelSlug,
 } from "../../util/modelDisplay";
 import { CONFIG_ROUTES } from "../../util/navigation";
 import {
@@ -40,6 +41,7 @@ interface Option {
   providerLabel: string;
   apiKey?: string;
   sourceFile?: string;
+  rawModelSlug: string;
 }
 
 interface ModelOptionProps {
@@ -190,10 +192,9 @@ function ModelSelect() {
   useEffect(() => {
     setOptions(
       allModels.map((model) => {
-        const providerLabel = getProviderDisplayName(
-          model.underlyingProviderName || model.provider,
-        );
+        const providerLabel = getModelPickerProviderLabel(model);
         const modelId = getModelDisplayId(model);
+        const rawModelSlug = getRawModelSlug(model);
         return {
           value: model.title,
           title: formatModelLabel(model),
@@ -201,6 +202,7 @@ function ModelSelect() {
           providerLabel,
           apiKey: model.apiKey,
           sourceFile: model.sourceFile,
+          rawModelSlug,
         };
       }),
     );
@@ -224,6 +226,7 @@ function ModelSelect() {
       return (
         option.title.toLowerCase().includes(q) ||
         option.modelId.toLowerCase().includes(q) ||
+        option.rawModelSlug.toLowerCase().includes(q) ||
         option.providerLabel.toLowerCase().includes(q) ||
         option.value.toLowerCase().includes(q)
       );
