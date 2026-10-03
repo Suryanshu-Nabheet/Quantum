@@ -31,7 +31,10 @@ export const callToolById = createAsyncThunk<
     isAutoApproved,
     deferAgentContinuation,
   } = inputs;
-  const depth = inputs.depth ?? getState().session.agentStepDepth;
+  const depth =
+    inputs.depth !== undefined
+      ? inputs.depth
+      : getState().session.agentStepDepth + 1;
 
   const state = getState();
   const toolCallState = findToolCallById(state.session.history, toolCallId);
