@@ -222,6 +222,18 @@ class OpenAI extends BaseLLM {
     return !!model && (!!model.match(/^o[0-9]+/) || model.includes("gpt-5"));
   }
 
+  protected isOfficialOpenAiApi(): boolean {
+    if (!this.apiBase) {
+      return false;
+    }
+    try {
+      const normalized = new URL(this.apiBase).href.replace(/\/+$/, "");
+      return normalized === "https://api.openai.com/v1";
+    } catch {
+      return false;
+    }
+  }
+
   private isFireworksAiModel(model?: string): boolean {
     return !!model && model.startsWith("accounts/fireworks/models");
   }
@@ -466,19 +478,18 @@ class OpenAI extends BaseLLM {
       body.max_completion_tokens = undefined;
     }
 
-    if (body.tools?.length) {
+    if (body.tools?.length && !body.model.startsWith("o3")) {
       if (this.isFireworksAiModel(body.model)) {
         // fireworks.ai does not support parallel tool calls, but their api expects this to be true anyway otherwise they return an error.
-        // tooling works with them as a inference provider once this is set to true.
         // https://docs.fireworks.ai/guides/function-calling#openai-compatibility
         body.parallel_tool_calls = true;
-      }
-      // To ensure schema adherence: https://platform.openai.com/docs/guides/function-calling#parallel-function-calling-and-structured-outputs
-      // In practice, setting this to true and asking for multiple tool calls
-      // leads to "arguments" being something like '{"file": "test.ts"}{"file": "test.js"}'
-      // o3 does not support this
-      if (!body.model.startsWith("o3")) {
+      } else if (this.isOfficialOpenAiApi()) {
+        // Official API only: parallel calls can break structured tool arg streaming.
+        // https://platform.openai.com/docs/guides/function-calling#parallel-function-calling-and-structured-outputs
         body.parallel_tool_calls = false;
+      } else {
+        // OpenRouter, Azure, local proxies: parallel tool calls are required for agent speed.
+        body.parallel_tool_calls = true;
       }
     }
 

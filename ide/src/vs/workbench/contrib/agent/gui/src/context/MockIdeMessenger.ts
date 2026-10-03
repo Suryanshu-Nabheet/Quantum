@@ -205,6 +205,7 @@ export class MockIdeMessenger implements IIdeMessenger {
   async request<T extends keyof FromWebviewProtocol>(
     messageType: T,
     data: FromWebviewProtocol[T][0],
+    _options?: { timeoutMs?: number },
   ): Promise<WebviewSingleProtocolMessage<T>> {
     if (this.responseHandlers[messageType]) {
       const content = await this.responseHandlers[messageType](data);

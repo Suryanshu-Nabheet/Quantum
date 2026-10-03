@@ -26,7 +26,27 @@ declare const vscode: any;
 const STREAM_IDLE_TIMEOUT_MS = 90_000;
 // Chat/reasoning can go minutes between tokens; do not kill long-horizon agent work.
 const LLM_STREAM_IDLE_TIMEOUT_MS = 600_000;
-const REQUEST_TIMEOUT_MS = 30_000;
+const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
+/** Builds, test runs, and large repo reads can exceed 30s. */
+const AGENT_TOOL_REQUEST_TIMEOUT_MS = 600_000;
+const COMPILE_CHAT_REQUEST_TIMEOUT_MS = 120_000;
+
+const REQUEST_TIMEOUT_MS_BY_TYPE: Partial<
+  Record<keyof FromWebviewProtocol, number>
+> = {
+  "tools/call": AGENT_TOOL_REQUEST_TIMEOUT_MS,
+  "llm/compileChat": COMPILE_CHAT_REQUEST_TIMEOUT_MS,
+};
+
+function resolveRequestTimeoutMs<T extends keyof FromWebviewProtocol>(
+  messageType: T,
+  overrideMs?: number,
+): number {
+  if (overrideMs !== undefined) {
+    return overrideMs;
+  }
+  return REQUEST_TIMEOUT_MS_BY_TYPE[messageType] ?? DEFAULT_REQUEST_TIMEOUT_MS;
+}
 
 export interface IIdeMessenger {
   post<T extends keyof FromWebviewProtocol>(
@@ -45,6 +65,7 @@ export interface IIdeMessenger {
   request<T extends keyof FromWebviewProtocol>(
     messageType: T,
     data: FromWebviewProtocol[T][0],
+    options?: { timeoutMs?: number },
   ): Promise<WebviewSingleProtocolMessage<T>>;
 
   streamRequest<T extends keyof FromWebviewProtocol>(
@@ -139,8 +160,10 @@ export class IdeMessenger implements IIdeMessenger {
   request<T extends keyof FromWebviewProtocol>(
     messageType: T,
     data: FromWebviewProtocol[T][0],
+    options?: { timeoutMs?: number },
   ): Promise<WebviewSingleMessage<T>> {
     const messageId = uuidv4();
+    const timeoutMs = resolveRequestTimeoutMs(messageType, options?.timeoutMs);
 
     return new Promise((resolve, reject) => {
       let timeout: ReturnType<typeof setTimeout>;
@@ -159,7 +182,7 @@ export class IdeMessenger implements IIdeMessenger {
             `The agent request timed out while waiting for ${String(messageType)}.`,
           ),
         );
-      }, REQUEST_TIMEOUT_MS);
+      }, timeoutMs);
       window.addEventListener("message", handler);
 
       this.post(messageType, data, messageId);

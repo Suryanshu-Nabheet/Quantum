@@ -5,7 +5,10 @@ import { selectSelectedChatModel } from "../slices/configSlice";
 import { setDialogMessage, setShowDialog } from "../slices/uiSlice";
 import { ThunkApiType } from "../store";
 import { cancelStream } from "./cancelStream";
-import { saveCurrentSession } from "./session";
+import {
+  flushDebouncedSessionSave,
+  scheduleDebouncedSessionSave,
+} from "../util/debouncedSessionSave";
 
 const OVERLOADED_RETRIES = 3;
 const OVERLOADED_DELAY_MS = 1000;
@@ -26,12 +29,11 @@ export const streamThunkWrapper = createAsyncThunk<
       await runStream();
       const state = getState();
       if (!state.session.isInEdit) {
-        void dispatch(
-          saveCurrentSession({
-            openNewSession: false,
-            generateTitle: true,
-          }),
-        );
+        if (state.session.isStreaming) {
+          scheduleDebouncedSessionSave(dispatch);
+        } else {
+          flushDebouncedSessionSave(dispatch);
+        }
       }
       return;
     } catch (e) {
