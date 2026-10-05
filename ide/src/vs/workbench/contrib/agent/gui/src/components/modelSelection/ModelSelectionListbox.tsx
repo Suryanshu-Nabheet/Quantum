@@ -4,7 +4,7 @@ import {
   CubeIcon,
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   Listbox,
   ListboxButton,
@@ -61,6 +61,26 @@ function ModelSelectionListbox({
   searchPlaceholder = "Search models...",
 }: ModelSelectionListboxProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [menuWidth, setMenuWidth] = useState<number>();
+
+  useLayoutEffect(() => {
+    const el = buttonRef.current;
+    if (!el) {
+      return;
+    }
+    const syncWidth = () => {
+      setMenuWidth(el.getBoundingClientRect().width);
+    };
+    syncWidth();
+    const observer = new ResizeObserver(syncWidth);
+    observer.observe(el);
+    window.addEventListener("resize", syncWidth);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", syncWidth);
+    };
+  }, []);
 
   // Clear search query when provider changes
   useEffect(() => {
@@ -103,10 +123,11 @@ function ModelSelectionListbox({
         setSearchQuery("");
       }}
     >
-      <div className="relative mb-2 mt-1">
+      <div className="relative mt-1 w-full min-w-0">
         <ListboxButton
+          ref={buttonRef}
           className={cn(
-            "bg-vsc-input-background text-foreground hover:bg-input relative m-0 grid h-full w-full cursor-pointer grid-cols-[1fr_auto] items-center rounded-lg border border-solid py-2 pl-3 pr-10 text-left focus:outline-none",
+            "bg-vsc-input-background text-foreground hover:bg-input relative m-0 !flex-none grid min-h-9 w-full min-w-0 cursor-pointer grid-cols-[1fr_auto] items-center rounded-lg border border-solid py-2 pl-3 pr-10 text-left focus:outline-none",
             HAIRLINE_BORDER,
           )}
         >
@@ -130,28 +151,44 @@ function ModelSelectionListbox({
 
         <Transition
           as={Fragment}
-          leave="transition ease-in duration-100"
+          leave="transition ease-out duration-100"
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <ListboxOptions className="bg-input rounded-default absolute left-0 top-full z-10 mt-1 flex h-fit w-3/5 flex-col overflow-y-auto p-0 focus:outline-none [&]:!max-h-[30vh]">
+          <ListboxOptions
+            matchTriggerWidth={menuWidth === undefined}
+            style={
+              menuWidth !== undefined
+                ? {
+                    width: menuWidth,
+                    minWidth: menuWidth,
+                    maxWidth: menuWidth,
+                  }
+                : undefined
+            }
+            className={cn(
+              "bg-input rounded-default flex max-h-[min(30vh,280px)] flex-col overflow-hidden p-0 focus:outline-none",
+              menuWidth !== undefined && "!w-auto !min-w-0 !max-w-none",
+              "[--anchor-gap:0.25rem]",
+            )}
+          >
             {/* Search Box */}
-            <div className="border-border sticky top-0 border-b p-2">
-              <div className="bg-background border-border flex items-center rounded border pl-2">
-                <MagnifyingGlassIcon className="text-description-muted h-4 w-4" />
+            <div className="border-border shrink-0 border-b p-2">
+              <div className="bg-background border-border flex min-w-0 items-center rounded border pl-2">
+                <MagnifyingGlassIcon className="text-description-muted h-4 w-4 shrink-0" />
                 <input
                   type="text"
                   placeholder={searchPlaceholder}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="bg-background text-foreground placeholder-description-muted w-full border-0 px-2 py-1.5 outline-none"
+                  className="bg-background text-foreground placeholder-description-muted min-w-0 flex-1 border-0 px-2 py-1.5 text-xs outline-none"
                   onClick={(e) => e.stopPropagation()}
                 />
               </div>
             </div>
 
             {/* Results */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
               {!hasResults ? (
                 <div className="text-description-muted px-3 py-4 text-center text-xs">
                   No models found matching "{searchQuery}"

@@ -38,17 +38,33 @@ const ListboxButton = React.forwardRef<HTMLButtonElement, ListboxButtonProps>(
 
 type ListboxOptionsProps = React.ComponentProps<typeof HLOptions> & {
   fontSizeModifier?: FontSizeModifier;
+  /** When true, menu width matches the listbox button (--button-width). */
+  matchTriggerWidth?: boolean;
+  /** Pass false to render in-flow under the trigger (full-width of relative parent). */
+  anchor?: React.ComponentProps<typeof HLOptions>["anchor"] | false;
 };
 const ListboxOptions = React.forwardRef<HTMLUListElement, ListboxOptionsProps>(
-  ({ fontSizeModifier = -3, ...props }, ref) => {
+  (
+    {
+      fontSizeModifier = -3,
+      matchTriggerWidth = false,
+      anchor = "bottom start",
+      ...props
+    },
+    ref,
+  ) => {
     const fontSize = useFontSize(fontSizeModifier);
+    const resolvedAnchor = anchor === false ? undefined : anchor;
     return (
       <HLOptions
         ref={ref}
-        anchor={"bottom start"}
+        anchor={resolvedAnchor}
         {...props}
         className={cn(
-          "bg-vsc-input-background flex w-max min-w-[160px] max-w-[400px] flex-col overflow-auto border border-solid px-0 shadow-md",
+          "bg-vsc-input-background flex flex-col overflow-auto border border-solid px-0 shadow-md",
+          matchTriggerWidth
+            ? "w-[var(--button-width)] min-w-[var(--button-width)] max-w-[var(--button-width)]"
+            : "w-max min-w-[160px] max-w-[400px]",
           HAIRLINE_BORDER,
           props.className,
         )}

@@ -240,7 +240,7 @@ export function AddModelForm({
   return (
     <FormProvider {...formMethods}>
       <form onSubmit={formMethods.handleSubmit(onSubmit)}>
-        <div className="mx-auto max-w-md p-6">
+        <div className="mx-auto w-full min-w-0 max-w-md p-4 sm:p-6">
           <h1 className="mb-0 text-center text-2xl">{formTitle}</h1>
           <p className="text-description mt-2 mb-0 text-center text-sm">
             Connect a provider once to use all of its available models in Model
@@ -248,8 +248,8 @@ export function AddModelForm({
           </p>
 
           <div className="my-8 flex flex-col gap-6">
-            <div>
-              <label className="block text-sm font-medium">Provider</label>
+            <div className="min-w-0">
+              <label className="mb-1 block text-sm font-medium">Provider</label>
               <ModelSelectionListbox
                 selectedProvider={selectedProvider}
                 setSelectedProvider={(val: DisplayInfo) => {
