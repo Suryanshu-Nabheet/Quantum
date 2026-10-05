@@ -74,8 +74,8 @@ const ModelRoleSelector = ({
             {noConfiguredModels ? (
               <span className="text-description line-clamp-1 text-xs italic">
                 {`No valid ${displayName.toLowerCase()} models${
-                  ["Chat", "Apply", "Edit"].includes(displayName)
-                    ? " — using Chat model"
+                  ["Agent model", "Apply", "Edit"].includes(displayName)
+                    ? " — using Agent model"
                     : ""
                 }`}
               </span>

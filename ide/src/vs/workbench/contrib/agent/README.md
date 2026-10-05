@@ -42,7 +42,7 @@ npm run dev --prefix gui
 Open **Settings** with **⌘,** / **Ctrl+,** (title-bar layout menu → Settings, or command **Open Settings**). Workbench preferences are **VS Code Settings** (**⌘⇧,** / **Ctrl+Shift+,**). Agent config lives in `~/.agent/index/globalContext.json` — models, rules, prompts, and MCP servers. There is no `config.yaml` or user `config.json`.
 
 - **Models** — add / configure / remove providers (one card per provider; removing deletes that credential and its models everywhere)
-- **Model roles** — assign which model chat, autocomplete, edit, apply, embed, and rerank use (`Provider · model`)
+- **Agent** and **Tab** — pick one model for the Agent sidebar (plus inline edit/apply) and one for Tab completions; optional embed/rerank under Agent
 - **Browser** — Agent tools drive the integrated browser (list/open/close tabs, navigate, click, type, screenshot, Playwright)
 - **Rules, Access, MCP**
 - Secrets: `~/.agent/.env` or workspace `.env`

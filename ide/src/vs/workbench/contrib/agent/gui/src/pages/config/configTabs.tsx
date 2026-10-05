@@ -2,7 +2,8 @@ import { ConfigSection } from "./components/ConfigSection";
 import { AboutSection } from "./sections/AboutSection";
 import { KeyboardShortcutsSection } from "./sections/KeyboardShortcutsSection";
 import { MCPSection } from "./sections/MCPSection";
-import { ModelRolesSection } from "./sections/ModelRolesSection";
+import { AgentSettingsSection } from "./sections/AgentSettingsSection";
+import { TabSettingsSection } from "./sections/TabSettingsSection";
 import { ModelsSection } from "./sections/ModelsSection";
 import { RulesSection } from "./sections/RulesSection";
 import { AccessSection } from "./sections/AccessSection";
@@ -32,10 +33,18 @@ export const configTabs: ConfigTabEntry[] = [
     ),
   },
   {
-    id: "modelRoles",
+    id: "agent",
     component: (
       <ConfigSection>
-        <ModelRolesSection />
+        <AgentSettingsSection />
+      </ConfigSection>
+    ),
+  },
+  {
+    id: "tab",
+    component: (
+      <ConfigSection>
+        <TabSettingsSection />
       </ConfigSection>
     ),
   },

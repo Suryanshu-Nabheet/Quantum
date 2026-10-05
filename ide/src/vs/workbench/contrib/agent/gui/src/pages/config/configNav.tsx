@@ -4,11 +4,12 @@ import {
   CircleStackIcon,
   Cog6ToothIcon,
   CommandLineIcon,
+  Bars3BottomLeftIcon,
   CubeIcon,
+  SparklesIcon,
   InformationCircleIcon,
   PencilIcon,
   ShieldCheckIcon,
-  Squares2X2Icon,
 } from "@heroicons/react/24/outline";
 import { IDE_SETTINGS_LABEL } from "core/util/branding";
 import { CONFIG_NAV_ICON_CLASS } from "./configLayout";
@@ -66,10 +67,16 @@ export const configNavGroups: ConfigNavGroup[] = [
         action: { type: "tab", tabId: "models" },
       },
       {
-        id: "modelRoles",
-        label: "Model roles",
-        icon: navIcon(Squares2X2Icon),
-        action: { type: "tab", tabId: "modelRoles" },
+        id: "agent",
+        label: "Agent",
+        icon: navIcon(SparklesIcon),
+        action: { type: "tab", tabId: "agent" },
+      },
+      {
+        id: "tab",
+        label: "Tab",
+        icon: navIcon(Bars3BottomLeftIcon),
+        action: { type: "tab", tabId: "tab" },
       },
       {
         id: "rules",

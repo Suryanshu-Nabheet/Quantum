@@ -1,7 +1,8 @@
 // Valid config tab names
 export type ConfigTab =
   | "models"
-  | "modelRoles"
+  | "agent"
+  | "tab"
   | "rules"
   | "access"
   | "mcp"
@@ -21,7 +22,12 @@ export const buildConfigRoute = (tab?: ConfigTab): string => {
 
 export const CONFIG_ROUTES = {
   MODELS: buildConfigRoute("models"),
-  MODEL_ROLES: buildConfigRoute("modelRoles"),
+  AGENT: buildConfigRoute("agent"),
+  TAB: buildConfigRoute("tab"),
+  /** @deprecated Use CONFIG_ROUTES.AGENT */
+  CHAT: buildConfigRoute("agent"),
+  /** @deprecated Use CONFIG_ROUTES.AGENT */
+  MODEL_ROLES: buildConfigRoute("agent"),
   RULES: buildConfigRoute("rules"),
   ACCESS: buildConfigRoute("access"),
   MCP: buildConfigRoute("mcp"),
@@ -35,8 +41,12 @@ const DEFAULT_CONFIG_TAB: ConfigTab = "settings";
 /** Legacy query values map to current tab ids. */
 const CONFIG_TAB_ALIASES: Record<string, ConfigTab> = {
   help: "about",
-  roles: "modelRoles",
-  "model-roles": "modelRoles",
+  chat: "agent",
+  roles: "agent",
+  "model-roles": "agent",
+  modelRoles: "agent",
+  autocomplete: "tab",
+  "model-roles-tab": "tab",
   tools: "access",
 };
 
@@ -51,7 +61,8 @@ export function resolveConfigTab(tabParam: string | null): ConfigTab {
   }
   const validTabs: ConfigTab[] = [
     "models",
-    "modelRoles",
+    "agent",
+    "tab",
     "rules",
     "access",
     "mcp",

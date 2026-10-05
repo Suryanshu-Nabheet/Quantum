@@ -11,6 +11,7 @@ import { languageForFilepath } from "./constants/AutocompleteLanguageInfo.js";
 import { AutocompleteDebouncer } from "./util/AutocompleteDebouncer.js";
 import { AutocompleteInflight } from "./util/AutocompleteInflight.js";
 import AutocompleteLruCache from "./util/AutocompleteLruCache.js";
+import { isAutocompleteDisabledInFile } from "./util/disableInFiles.js";
 import { AutocompleteInput, AutocompleteOutcome } from "./util/types.js";
 
 export type AutocompleteHandlers = {
@@ -242,6 +243,10 @@ export class CompletionProvider {
     }
 
     const options = await this._getAutocompleteOptions(llm);
+
+    if (isAutocompleteDisabledInFile(input.filepath, options.disableInFiles)) {
+      return undefined;
+    }
 
     if (
       input.manuallyPassPrefix === undefined ||

@@ -81,7 +81,7 @@ export function ModelsSection() {
     <div className={CONFIG_PAGE_GAP}>
       <ConfigHeader
         title="Models"
-        subtext="Connect providers with an API key. Assign which model each feature uses on Model roles."
+        subtext="Connect providers with an API key. Choose defaults under Agent and Tab."
         onAddClick={handleAddProvider}
         addButtonTooltip="Add provider"
         addButtonLabel="Add provider"
@@ -103,8 +103,8 @@ export function ModelsSection() {
         />
       )}
 
-      <ConfigCrossLink onClick={() => navigate(buildConfigRoute("modelRoles"))}>
-        Assign models to chat, autocomplete, edit, and other roles
+      <ConfigCrossLink onClick={() => navigate(buildConfigRoute("agent"))}>
+        Set your Agent and Tab models
       </ConfigCrossLink>
     </div>
   );
