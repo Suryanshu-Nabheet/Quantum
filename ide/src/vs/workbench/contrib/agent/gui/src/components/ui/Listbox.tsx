@@ -40,6 +40,8 @@ type ListboxOptionsProps = React.ComponentProps<typeof HLOptions> & {
   fontSizeModifier?: FontSizeModifier;
   /** When true, menu width matches the listbox button (--button-width). */
   matchTriggerWidth?: boolean;
+  /** Exact menu width in px (e.g. measured from the trigger). Avoids Tailwind width tokens fighting inline styles. */
+  fixedWidthPx?: number;
   /** Pass false to render in-flow under the trigger (full-width of relative parent). */
   anchor?: React.ComponentProps<typeof HLOptions>["anchor"] | false;
 };
@@ -48,6 +50,7 @@ const ListboxOptions = React.forwardRef<HTMLUListElement, ListboxOptionsProps>(
     {
       fontSizeModifier = -3,
       matchTriggerWidth = false,
+      fixedWidthPx,
       anchor = "bottom start",
       ...props
     },
@@ -55,6 +58,14 @@ const ListboxOptions = React.forwardRef<HTMLUListElement, ListboxOptionsProps>(
   ) => {
     const fontSize = useFontSize(fontSizeModifier);
     const resolvedAnchor = anchor === false ? undefined : anchor;
+    const fixedWidthStyle =
+      fixedWidthPx !== undefined && fixedWidthPx > 0
+        ? {
+            width: fixedWidthPx,
+            minWidth: fixedWidthPx,
+            maxWidth: fixedWidthPx,
+          }
+        : undefined;
     return (
       <HLOptions
         ref={ref}
@@ -62,9 +73,11 @@ const ListboxOptions = React.forwardRef<HTMLUListElement, ListboxOptionsProps>(
         {...props}
         className={cn(
           "bg-vsc-input-background flex flex-col overflow-auto border border-solid px-0 shadow-md",
-          matchTriggerWidth
-            ? "w-[var(--button-width)] min-w-[var(--button-width)] max-w-[var(--button-width)]"
-            : "w-max min-w-[160px] max-w-[400px]",
+          fixedWidthPx !== undefined && fixedWidthPx > 0
+            ? "box-border"
+            : matchTriggerWidth
+              ? "w-[var(--button-width)] min-w-[var(--button-width)] max-w-[var(--button-width)]"
+              : "w-max min-w-[160px] max-w-[400px]",
           HAIRLINE_BORDER,
           props.className,
         )}
@@ -72,6 +85,7 @@ const ListboxOptions = React.forwardRef<HTMLUListElement, ListboxOptionsProps>(
           fontSize,
           borderRadius: defaultBorderRadius,
           zIndex: 200000,
+          ...fixedWidthStyle,
           ...props.style,
         }}
       />

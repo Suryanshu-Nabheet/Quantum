@@ -70,7 +70,10 @@ function ModelSelectionListbox({
       return;
     }
     const syncWidth = () => {
-      setMenuWidth(el.getBoundingClientRect().width);
+      const w = el.getBoundingClientRect().width;
+      if (w > 0) {
+        setMenuWidth(w);
+      }
     };
     syncWidth();
     const observer = new ResizeObserver(syncWidth);
@@ -157,18 +160,9 @@ function ModelSelectionListbox({
         >
           <ListboxOptions
             matchTriggerWidth={menuWidth === undefined}
-            style={
-              menuWidth !== undefined
-                ? {
-                    width: menuWidth,
-                    minWidth: menuWidth,
-                    maxWidth: menuWidth,
-                  }
-                : undefined
-            }
+            fixedWidthPx={menuWidth}
             className={cn(
               "bg-input rounded-default flex max-h-[min(30vh,280px)] flex-col overflow-hidden p-0 focus:outline-none",
-              menuWidth !== undefined && "!w-auto !min-w-0 !max-w-none",
               "[--anchor-gap:0.25rem]",
             )}
           >
