@@ -1,5 +1,4 @@
 import { ConfigSection } from "./components/ConfigSection";
-import { AboutSection } from "./sections/AboutSection";
 import { KeyboardShortcutsSection } from "./sections/KeyboardShortcutsSection";
 import { MCPSection } from "./sections/MCPSection";
 import { AgentSettingsSection } from "./sections/AgentSettingsSection";
@@ -68,14 +67,6 @@ export const configTabs: ConfigTabEntry[] = [
     component: (
       <ConfigSection>
         <KeyboardShortcutsSection />
-      </ConfigSection>
-    ),
-  },
-  {
-    id: "about",
-    component: (
-      <ConfigSection>
-        <AboutSection />
       </ConfigSection>
     ),
   },

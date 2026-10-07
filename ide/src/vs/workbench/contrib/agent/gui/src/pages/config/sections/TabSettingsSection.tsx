@@ -5,43 +5,25 @@ import {
 } from "core/config/sharedConfig";
 import { useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card } from "../../../components/ui";
+import { ConfigPanel } from "../components/ConfigPanel";
 import { IdeMessengerContext } from "../../../context/IdeMessenger";
 import { AddModelForm } from "../../../forms/AddModelForm";
 import { useConfigureModelDialog } from "../../../hooks/useConfigureModelDialog";
 import { useAppDispatch, useAppSelector } from "../../../redux/hooks";
-import { selectSelectedProfile } from "../../../redux/slices/profilesSlice";
 import { updateConfig } from "../../../redux/slices/configSlice";
+import { selectSelectedProfile } from "../../../redux/slices/profilesSlice";
 import { setDialogMessage, setShowDialog } from "../../../redux/slices/uiSlice";
 import { updateSelectedModelByRole } from "../../../redux/thunks/updateSelectedModelByRole";
 import { buildConfigRoute } from "../../../util/navigation";
 import { ConfigCrossLink } from "../components/ConfigCrossLink";
 import { ConfigHeader } from "../components/ConfigHeader";
+import { ConfigPageSection } from "../components/ConfigPageSection";
 import { ModelRoleRow } from "../components/ModelRoleRow";
 import { PathPatternsEditor } from "../components/PathPatternsEditor";
+import { UserSetting } from "../components/UserSetting";
+import { CONFIG_PAGE_GAP, CONFIG_SECTIONS_STACK } from "../configLayout";
 
 const TAB_IGNORE_SUGGESTIONS = [".env", ".env.*", "**/*.md", "**/secrets/**"];
-import { UserSetting } from "../components/UserSetting";
-import { CONFIG_CARD_STACK, CONFIG_PAGE_GAP } from "../configLayout";
-
-function ConfigSubsectionTitle({
-  title,
-  description,
-}: {
-  title: string;
-  description?: string;
-}) {
-  return (
-    <div className="mb-3">
-      <p className="text-sm font-medium leading-5">{title}</p>
-      {description && (
-        <p className="text-description mt-1 text-xs leading-snug">
-          {description}
-        </p>
-      )}
-    </div>
-  );
-}
 
 export function TabSettingsSection() {
   const dispatch = useAppDispatch();
@@ -106,96 +88,101 @@ export function TabSettingsSection() {
         Manage providers — enable Tab on a model under Models
       </ConfigCrossLink>
 
-      <div className="flex flex-col gap-4">
-        <Card>
-          <ModelRoleRow
-            role="autocomplete"
-            displayName="Tab model"
-            description="Inline suggestions only — can differ from your Agent model."
-            models={config.modelsByRole.autocomplete}
-            selectedModel={config.selectedModelByRole.autocomplete ?? undefined}
-            onSelect={handleTabModelSelect}
-            onConfigure={(model) => model && openConfigureModelDialog(model)}
-            onAddModel={openAddProviderDialog}
-          />
-        </Card>
+      <div className={CONFIG_SECTIONS_STACK}>
+        <ConfigPageSection
+          title="Model"
+          description="Inline suggestions only — can differ from your Agent model."
+        >
+          <ConfigPanel variant="padded">
+            <ModelRoleRow
+              role="autocomplete"
+              displayName="Tab model"
+              description="Enable Tab on a model under Models, then select it here."
+              models={config.modelsByRole.autocomplete}
+              selectedModel={config.selectedModelByRole.autocomplete ?? undefined}
+              onSelect={handleTabModelSelect}
+              onConfigure={(model) => model && openConfigureModelDialog(model)}
+              onAddModel={openAddProviderDialog}
+            />
+          </ConfigPanel>
+        </ConfigPageSection>
 
-        <Card>
-          <ConfigSubsectionTitle
-            title="Ignored paths"
-            description="Glob patterns or bare names (e.g. .env). Tab stays off in matching files."
-          />
-          <PathPatternsEditor
-            patterns={ignorePatterns}
-            onChange={(patterns) =>
-              handleUpdate({ disableAutocompleteInFiles: patterns })
-            }
-            emptyMessage="None yet — Tab is allowed in all files (security exclusions still apply)."
-            inputPlaceholder="e.g. .env or **/*.sql"
-            suggestedPatterns={TAB_IGNORE_SUGGESTIONS}
-          />
-        </Card>
+        <ConfigPageSection
+          title="Ignored paths"
+          description="Glob patterns or bare names (e.g. .env). Tab stays off in matching files."
+        >
+          <ConfigPanel variant="padded">
+            <PathPatternsEditor
+              patterns={ignorePatterns}
+              onChange={(patterns) =>
+                handleUpdate({ disableAutocompleteInFiles: patterns })
+              }
+              emptyMessage="None yet — Tab is allowed in all files (security exclusions still apply)."
+              inputPlaceholder="e.g. .env or **/*.sql"
+              suggestedPatterns={TAB_IGNORE_SUGGESTIONS}
+            />
+          </ConfigPanel>
+        </ConfigPageSection>
 
-        <Card>
-          <ConfigSubsectionTitle title="Behavior" />
-          <div className={CONFIG_CARD_STACK}>
-            <UserSetting
-              type="toggle"
-              title="Completion cache"
-              description="Reuse recent completions for identical prefixes."
-              value={useAutocompleteCache}
-              onChange={(value) => handleUpdate({ useAutocompleteCache: value })}
-            />
-            <UserSetting
-              type="select"
-              title="Multiline completions"
-              description="Whether Tab may suggest multiple lines at once."
-              value={useAutocompleteMultilineCompletions}
-              onChange={(value) =>
-                handleUpdate({
-                  useAutocompleteMultilineCompletions: value as
-                    | "auto"
-                    | "always"
-                    | "never",
-                })
-              }
-              options={[
-                { label: "Auto", value: "auto" },
-                { label: "Always", value: "always" },
-                { label: "Never", value: "never" },
-              ]}
-            />
-            <UserSetting
-              type="number"
-              title="Request timeout (ms)"
-              description="Maximum time to wait for a Tab completion."
-              value={modelTimeout}
-              onChange={(val) => handleUpdate({ modelTimeout: val })}
-              min={100}
-              max={15000}
-            />
-            <UserSetting
-              type="number"
-              title="Debounce (ms)"
-              description="Delay after a keystroke before requesting a completion."
-              value={debounceDelay}
-              onChange={(val) => handleUpdate({ debounceDelay: val })}
-              min={0}
-              max={2500}
-            />
-            <UserSetting
-              type="number"
-              title="Show partial after (ms)"
-              description="Stream partial suggestions after this delay."
-              value={autocompleteFirstTokenMs}
-              onChange={(val) =>
-                handleUpdate({ autocompleteFirstTokenMs: val })
-              }
-              min={50}
-              max={2000}
-            />
-          </div>
-        </Card>
+        <ConfigPageSection title="Behavior">
+          <ConfigPanel>
+              <UserSetting
+                type="toggle"
+                title="Completion cache"
+                description="Reuse recent completions for identical prefixes."
+                value={useAutocompleteCache}
+                onChange={(value) => handleUpdate({ useAutocompleteCache: value })}
+              />
+              <UserSetting
+                type="select"
+                title="Multiline completions"
+                description="Whether Tab may suggest multiple lines at once."
+                value={useAutocompleteMultilineCompletions}
+                onChange={(value) =>
+                  handleUpdate({
+                    useAutocompleteMultilineCompletions: value as
+                      | "auto"
+                      | "always"
+                      | "never",
+                  })
+                }
+                options={[
+                  { label: "Auto", value: "auto" },
+                  { label: "Always", value: "always" },
+                  { label: "Never", value: "never" },
+                ]}
+              />
+              <UserSetting
+                type="number"
+                title="Request timeout (ms)"
+                description="Maximum time to wait for a Tab completion."
+                value={modelTimeout}
+                onChange={(val) => handleUpdate({ modelTimeout: val })}
+                min={100}
+                max={15000}
+              />
+              <UserSetting
+                type="number"
+                title="Debounce (ms)"
+                description="Delay after a keystroke before requesting a completion."
+                value={debounceDelay}
+                onChange={(val) => handleUpdate({ debounceDelay: val })}
+                min={0}
+                max={2500}
+              />
+              <UserSetting
+                type="number"
+                title="Show partial after (ms)"
+                description="Stream partial suggestions after this delay."
+                value={autocompleteFirstTokenMs}
+                onChange={(val) =>
+                  handleUpdate({ autocompleteFirstTokenMs: val })
+                }
+                min={50}
+                max={2000}
+              />
+          </ConfigPanel>
+        </ConfigPageSection>
       </div>
     </div>
   );

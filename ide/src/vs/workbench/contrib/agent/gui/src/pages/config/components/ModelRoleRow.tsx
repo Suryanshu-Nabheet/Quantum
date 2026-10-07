@@ -2,6 +2,7 @@ import { ModelRole } from "agent-config";
 import { ModelDescription } from "core";
 import { ReactNode } from "react";
 import { defaultBorderRadius } from "../../../components";
+import { CONFIG_ROW_DESC, CONFIG_ROW_TITLE } from "../configLayout";
 import { ConfigEmptyAction } from "./ConfigEmptyAction";
 import ModelRoleSelector from "./ModelRoleSelector";
 
@@ -31,15 +32,13 @@ export function ModelRoleRow({
   const isEmpty = models.length === 0;
 
   return (
-    <div className="py-2.5 first:pt-0 last:pb-0">
+    <div className="py-0 first:pt-0 last:pb-0">
       <div className="mb-1.5">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{displayName}</span>
+          <span className={CONFIG_ROW_TITLE}>{displayName}</span>
           {shortcut && shortcut}
         </div>
-        <p className="text-description mt-0.5 text-xs leading-snug">
-          {description}
-        </p>
+        <p className={CONFIG_ROW_DESC}>{description}</p>
       </div>
 
       {isEmpty ? (

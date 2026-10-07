@@ -1,6 +1,12 @@
 import { PlusIcon } from "@heroicons/react/24/outline";
 import { Button } from "../../../components/ui";
 import { cn } from "../../../util/cn";
+import {
+  CONFIG_PAGE_SUBTITLE,
+  CONFIG_PAGE_TITLE,
+  CONFIG_GROUP_DESC,
+  CONFIG_GROUP_TITLE,
+} from "../configLayout";
 
 interface ConfigHeaderProps {
   title: string;
@@ -24,11 +30,10 @@ export function ConfigHeader({
   showAddButton = true,
 }: ConfigHeaderProps) {
   const isSmall = variant === "sm";
-  const marginBottom = isSmall ? "mb-3" : "";
-  const titleSize = isSmall
-    ? "text-sm font-semibold"
-    : "text-lg font-semibold tracking-tight";
-  const HeadingTag = isSmall ? "h3" : "h2";
+  const marginBottom = isSmall ? "mb-2.5" : "";
+  const titleClassName = isSmall ? CONFIG_GROUP_TITLE : CONFIG_PAGE_TITLE;
+  const subtextClassName = isSmall ? CONFIG_GROUP_DESC : CONFIG_PAGE_SUBTITLE;
+  const HeadingTag = isSmall ? "p" : "h2";
 
   return (
     <div
@@ -38,14 +43,8 @@ export function ConfigHeader({
       )}
     >
       <div className="flex min-w-0 flex-col">
-        <HeadingTag className={`my-0 leading-tight ${titleSize}`}>
-          {title}
-        </HeadingTag>
-        {subtext && (
-          <p className="text-description mt-1 text-sm leading-snug">
-            {subtext}
-          </p>
-        )}
+        <HeadingTag className={cn("my-0", titleClassName)}>{title}</HeadingTag>
+        {subtext && <p className={cn("my-0", subtextClassName)}>{subtext}</p>}
       </div>
       {showAddButton && onAddClick && (
         <Button

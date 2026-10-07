@@ -1,5 +1,6 @@
 import { ArrowRightIcon } from "@heroicons/react/24/outline";
 import { cn } from "../../../util/cn";
+import { CONFIG_PANEL_BORDER } from "../configLayout";
 
 interface ConfigCrossLinkProps {
   children: React.ReactNode;
@@ -19,7 +20,8 @@ export function ConfigCrossLink({
       onClick={onClick}
       className={cn(
         "bg-vsc-input-background text-foreground hover:bg-list-hover",
-        "flex w-full cursor-pointer items-center justify-between gap-3 rounded-md border-0 px-3 py-2.5 text-left text-sm transition-colors",
+        "flex w-full cursor-pointer items-center justify-between gap-3 rounded-md border border-solid px-3 py-2.5 text-left text-[13px] transition-colors",
+        CONFIG_PANEL_BORDER,
         className,
       )}
     >

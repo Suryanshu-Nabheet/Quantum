@@ -4,6 +4,7 @@ import {
     XMarkIcon,
 } from "@heroicons/react/24/outline";
 import React from "react";
+import { cn } from "../../../util/cn";
 import ToggleSwitch from "../../../components/gui/Switch";
 import { ToolTip } from "../../../components/gui/Tooltip";
 import {
@@ -12,6 +13,12 @@ import {
     ListboxOption,
     ListboxOptions,
 } from "../../../components/ui";
+import {
+  CONFIG_NUMBER_INPUT,
+  CONFIG_PANEL_BORDER,
+  CONFIG_ROW_DESC,
+  CONFIG_ROW_TITLE,
+} from "../configLayout";
 
 interface BaseUserSettingProps {
   title: string;
@@ -75,7 +82,7 @@ export function UserSetting(props: UserSettingProps) {
 
       case "number":
         return (
-          <div className="border-[color:var(--vscode-sideBar-border,rgba(128,128,128,0.22))] bg-vsc-input-background focus-within:border-border-focus focus-within:ring-border-focus flex w-20 items-center rounded-md border border-solid focus-within:ring-1">
+          <div className={CONFIG_NUMBER_INPUT}>
             <input
               type="number"
               value={props.value}
@@ -128,7 +135,12 @@ export function UserSetting(props: UserSettingProps) {
             onChange={props.onChange}
             disabled={disabled}
           >
-            <ListboxButton className="border-[color:var(--vscode-sideBar-border,rgba(128,128,128,0.22))] !w-20 w-20 !flex-none justify-between !rounded-md px-2 py-1">
+            <ListboxButton
+              className={cn(
+                CONFIG_PANEL_BORDER,
+                "!w-[5.5rem] w-[5.5rem] !flex-none justify-between !rounded-md border border-solid bg-vsc-input-background px-2 py-1.5 text-xs",
+              )}
+            >
               {props.options.find((opt) => opt.value === props.value)?.label ||
                 props.value}
               <ChevronDownIcon className="h-3 w-3" />
@@ -224,10 +236,8 @@ export function UserSetting(props: UserSettingProps) {
     return (
       <div className="flex flex-col gap-3">
         <div className="flex flex-col">
-          <span className="text-sm font-medium">{title}</span>
-          <div className="text-description mt-0.5 text-xs leading-snug">
-            {description}
-          </div>
+          <span className={CONFIG_ROW_TITLE}>{title}</span>
+          <div className={CONFIG_ROW_DESC}>{description}</div>
         </div>
         {renderControl()}
       </div>
@@ -235,14 +245,12 @@ export function UserSetting(props: UserSettingProps) {
   }
 
   return (
-    <div className="flex items-center justify-between gap-4">
-      <div className="flex min-w-0 flex-1 flex-col justify-center">
-        <span className="text-sm font-medium leading-5">{title}</span>
-        <div className="text-description mt-0.5 text-xs leading-snug">
-          {description}
-        </div>
+    <div className="grid grid-cols-1 items-center gap-x-4 gap-y-1 sm:grid-cols-[minmax(0,1fr)_2.75rem]">
+      <div className="flex min-w-0 flex-col justify-center">
+        <span className={CONFIG_ROW_TITLE}>{title}</span>
+        <div className={CONFIG_ROW_DESC}>{description}</div>
       </div>
-      <div className="flex flex-shrink-0 items-center self-center">
+      <div className="flex shrink-0 items-center justify-start sm:justify-end">
         {renderControl()}
       </div>
     </div>

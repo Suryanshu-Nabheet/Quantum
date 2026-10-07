@@ -4,14 +4,16 @@ import {
 } from "core/config/sharedConfig";
 import { getReadResponseTTS } from "core/config/uiPreferences";
 import { useContext } from "react";
-import { Card, useFontSize } from "../../../components/ui";
+import { useFontSize } from "../../../components/ui";
+import { ConfigPanel } from "../components/ConfigPanel";
 import { IdeMessengerContext } from "../../../context/IdeMessenger";
 import { useAppDispatch, useAppSelector } from "../../../redux/hooks";
 import { updateConfig } from "../../../redux/slices/configSlice";
 import { setLocalStorage } from "../../../util/localStorage";
 import { ConfigHeader } from "../components/ConfigHeader";
+import { ConfigPageSection } from "../components/ConfigPageSection";
 import { UserSetting } from "../components/UserSetting";
-import { CONFIG_CARD_STACK, CONFIG_PAGE_GAP } from "../configLayout";
+import { CONFIG_PAGE_GAP, CONFIG_SECTIONS_STACK } from "../configLayout";
 
 export function UserSettingsSection() {
   const dispatch = useAppDispatch();
@@ -44,15 +46,10 @@ export function UserSettingsSection() {
         subtext="Appearance and Agent sidebar preferences. Models live under Agent and Tab."
         showAddButton={false}
       />
-      <div className={CONFIG_PAGE_GAP}>
-        <div>
-          <ConfigHeader
-            title="Agent sidebar"
-            variant="sm"
-            showAddButton={false}
-          />
-          <Card>
-            <div className={CONFIG_CARD_STACK}>
+
+      <div className={CONFIG_SECTIONS_STACK}>
+        <ConfigPageSection title="Agent sidebar">
+          <ConfigPanel>
               <UserSetting
                 type="toggle"
                 title="Show Session Tabs"
@@ -119,34 +116,25 @@ export function UserSettingsSection() {
                   handleUpdate({ onlyUseSystemMessageTools: value })
                 }
               />
-            </div>
-          </Card>
-        </div>
+          </ConfigPanel>
+        </ConfigPageSection>
 
-        <div>
-          <ConfigHeader
-            title="Appearance"
-            variant="sm"
-            showAddButton={false}
-          />
-          <Card>
-            <div className={CONFIG_CARD_STACK}>
-              <UserSetting
-                type="number"
-                title="Font Size"
-                description="Specifies base font size for UI elements."
-                value={fontSize}
-                onChange={(val) => {
-                  setLocalStorage("fontSize", val);
-                  handleUpdate({ fontSize: val });
-                }}
-                min={7}
-                max={50}
-              />
-            </div>
-          </Card>
-        </div>
-
+        <ConfigPageSection title="Appearance">
+          <ConfigPanel>
+            <UserSetting
+              type="number"
+              title="Font Size"
+              description="Specifies base font size for UI elements."
+              value={fontSize}
+              onChange={(val) => {
+                setLocalStorage("fontSize", val);
+                handleUpdate({ fontSize: val });
+              }}
+              min={7}
+              max={50}
+            />
+          </ConfigPanel>
+        </ConfigPageSection>
       </div>
     </div>
   );

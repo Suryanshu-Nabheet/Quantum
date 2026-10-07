@@ -1,7 +1,7 @@
 import { ChevronRightIcon } from "@heroicons/react/24/outline";
 import { Divider } from "../../../components/ui";
-import { HAIRLINE_BORDER } from "../../../styles/borders";
 import { cn } from "../../../util/cn";
+import { CONFIG_PANEL_SURFACE } from "../configLayout";
 
 interface ConfigDisclosurePanelProps {
   open: boolean;
@@ -23,10 +23,7 @@ export function ConfigDisclosurePanel({
 
   return (
     <div
-      className={cn(
-        "bg-vsc-input-background rounded-default overflow-hidden border border-solid",
-        HAIRLINE_BORDER,
-      )}
+      className={CONFIG_PANEL_SURFACE}
     >
       <button
         type="button"
@@ -34,7 +31,7 @@ export function ConfigDisclosurePanel({
         onClick={onToggle}
         className={cn(
           "bg-vsc-input-background text-description hover:bg-list-hover hover:text-foreground",
-          "flex w-full items-center gap-2 border-0 px-4 py-2.5 text-left text-xs transition-colors",
+          "flex w-full items-center gap-2 border-0 px-3 py-2 text-left text-xs transition-colors sm:px-4",
         )}
       >
         <ChevronRightIcon
@@ -49,7 +46,7 @@ export function ConfigDisclosurePanel({
       {open && (
         <>
           <Divider className="!my-0" />
-          <div className="px-4 py-3">{children}</div>
+          <div className="px-3 py-2.5 sm:px-4 sm:py-3">{children}</div>
         </>
       )}
     </div>

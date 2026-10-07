@@ -16,7 +16,9 @@ import { DEFAULT_PROTECTED_FILE_PATTERNS } from "core/tools/policies/protectedPa
 import { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Shortcut from "../../../components/gui/Shortcut";
-import { Button, Card, Divider } from "../../../components/ui";
+import { Button } from "../../../components/ui";
+import { cn } from "../../../util/cn";
+import { ConfigPanel } from "../components/ConfigPanel";
 import { IdeMessengerContext } from "../../../context/IdeMessenger";
 import { AddModelForm } from "../../../forms/AddModelForm";
 import { useConfigureModelDialog } from "../../../hooks/useConfigureModelDialog";
@@ -44,10 +46,15 @@ import {
 import { ConfigCrossLink } from "../components/ConfigCrossLink";
 import { ConfigDisclosurePanel } from "../components/ConfigDisclosurePanel";
 import { ConfigHeader } from "../components/ConfigHeader";
+import { ConfigPageSection } from "../components/ConfigPageSection";
 import { ModelRoleRow } from "../components/ModelRoleRow";
 import { PathPatternsEditor } from "../components/PathPatternsEditor";
 import { UserSetting } from "../components/UserSetting";
-import { CONFIG_CARD_STACK, CONFIG_PAGE_GAP } from "../configLayout";
+import {
+  CONFIG_HAIRLINE_DIVIDE,
+  CONFIG_PAGE_GAP,
+  CONFIG_SECTIONS_STACK,
+} from "../configLayout";
 
 const DEFAULT_PROVIDER_ROLES: ModelRole[] = [
   "chat",
@@ -103,25 +110,6 @@ const PROTECTED_PATH_SUGGESTIONS = [
   "**/*.key",
   "**/secrets/**",
 ];
-
-function ConfigSubsectionTitle({
-  title,
-  description,
-}: {
-  title: string;
-  description?: string;
-}) {
-  return (
-    <div className="mb-3">
-      <p className="text-sm font-medium leading-5">{title}</p>
-      {description && (
-        <p className="text-description mt-1 text-xs leading-snug">
-          {description}
-        </p>
-      )}
-    </div>
-  );
-}
 
 export function AgentSettingsSection() {
   const selectedProfile = useAppSelector(selectSelectedProfile);
@@ -207,60 +195,67 @@ export function AgentSettingsSection() {
         Manage providers — API keys and credentials
       </ConfigCrossLink>
 
-      <div className="flex flex-col gap-4">
-        <Card>
-          <ModelRoleRow
-            role="chat"
-            displayName="Agent model"
-            shortcut={
-              <span className="text-2xs text-description-muted">
-                (<Shortcut>{`${getMetaKeyLabel()} L`}</Shortcut> focus ·{" "}
-                <Shortcut>{`${getMetaKeyLabel()} I`}</Shortcut> edit)
-              </span>
-            }
-            description="Used in the Agent sidebar (Chat, Plan, and Agent modes), inline edit, and apply."
-            models={config.modelsByRole.chat}
-            selectedModel={config.selectedModelByRole.chat ?? undefined}
-            onSelect={handleAgentModelSelect}
-            onConfigure={(model) => model && openConfigureModelDialog(model)}
-            onAddModel={openAddProviderDialog}
-          />
-        </Card>
-
-        <ConfigDisclosurePanel
-          open={showAdvanced}
-          onToggle={() => setShowAdvanced((v) => !v)}
-          label="Show context & search models (optional)"
-          expandedLabel="Hide context & search models (optional)"
+      <div className={CONFIG_SECTIONS_STACK}>
+        <ConfigPageSection
+          title="Model"
+          description="Default model for chat, plan, agent mode, inline edit, and apply."
         >
-          <ModelRoleRow
-            role="embed"
-            displayName="Embeddings"
-            description="Improves @-mention and codebase context retrieval. Defaults to a local model if unset."
-            models={config.modelsByRole.embed}
-            selectedModel={config.selectedModelByRole.embed ?? undefined}
-            onSelect={(m) => handleAdvancedRoleUpdate("embed", m)}
-            onConfigure={(model) => model && openConfigureModelDialog(model)}
-            onAddModel={openAddProviderDialog}
-          />
-          <Divider />
-          <ModelRoleRow
-            role="rerank"
-            displayName="Rerank"
-            description="Reorders retrieved snippets for better relevance."
-            models={config.modelsByRole.rerank}
-            selectedModel={config.selectedModelByRole.rerank ?? undefined}
-            onSelect={(m) => handleAdvancedRoleUpdate("rerank", m)}
-            onConfigure={(model) => model && openConfigureModelDialog(model)}
-            onAddModel={openAddProviderDialog}
-          />
-        </ConfigDisclosurePanel>
+          <div className="flex flex-col gap-2">
+          <ConfigPanel variant="padded">
+            <ModelRoleRow
+              role="chat"
+              displayName="Agent model"
+              shortcut={
+                <span className="text-2xs text-description-muted">
+                  (<Shortcut>{`${getMetaKeyLabel()} L`}</Shortcut> focus ·{" "}
+                  <Shortcut>{`${getMetaKeyLabel()} I`}</Shortcut> edit)
+                </span>
+              }
+              description="Pick a provider under Models if this list is empty."
+              models={config.modelsByRole.chat}
+              selectedModel={config.selectedModelByRole.chat ?? undefined}
+              onSelect={handleAgentModelSelect}
+              onConfigure={(model) => model && openConfigureModelDialog(model)}
+              onAddModel={openAddProviderDialog}
+            />
+          </ConfigPanel>
 
-        <Card>
-          <ConfigSubsectionTitle
-            title="Permissions"
-            description="Filesystem and terminal behavior for agent tool calls."
-          />
+          <ConfigDisclosurePanel
+            open={showAdvanced}
+            onToggle={() => setShowAdvanced((v) => !v)}
+            label="Show context & search models (optional)"
+            expandedLabel="Hide context & search models (optional)"
+          >
+            <div className={cn("flex flex-col", CONFIG_HAIRLINE_DIVIDE)}>
+              <ModelRoleRow
+                role="embed"
+                displayName="Embeddings"
+                description="Improves @-mention and codebase context retrieval."
+                models={config.modelsByRole.embed}
+                selectedModel={config.selectedModelByRole.embed ?? undefined}
+                onSelect={(m) => handleAdvancedRoleUpdate("embed", m)}
+                onConfigure={(model) => model && openConfigureModelDialog(model)}
+                onAddModel={openAddProviderDialog}
+              />
+              <ModelRoleRow
+                role="rerank"
+                displayName="Rerank"
+                description="Reorders retrieved snippets for better relevance."
+                models={config.modelsByRole.rerank}
+                selectedModel={config.selectedModelByRole.rerank ?? undefined}
+                onSelect={(m) => handleAdvancedRoleUpdate("rerank", m)}
+                onConfigure={(model) => model && openConfigureModelDialog(model)}
+                onAddModel={openAddProviderDialog}
+              />
+            </div>
+          </ConfigDisclosurePanel>
+          </div>
+        </ConfigPageSection>
+
+        <ConfigPageSection
+          title="Permissions"
+          description="Filesystem and terminal behavior for agent tool calls."
+        >
           <AccessModeStack>
             <AccessModeGroup
               title="Agent access"
@@ -281,71 +276,73 @@ export function AgentSettingsSection() {
               disabledHint="Strict mode always requires terminal review. Choose a less restrictive agent access mode to change this."
             />
           </AccessModeStack>
-        </Card>
+        </ConfigPageSection>
 
-        <Card>
-          <ConfigSubsectionTitle
-            title="Protected paths"
-            description="Glob patterns for sensitive files. The agent must get your approval before touching matching paths — even in Full access mode."
-          />
+        <ConfigPageSection
+          title="Protected paths"
+          description="Sensitive files always require your approval — even in Full access mode."
+        >
           <div className="flex flex-col gap-3">
-            <PathPatternsEditor
-              patterns={protectedFilePatterns}
-              onChange={(patterns) =>
-                dispatch(setProtectedFilePatterns(patterns))
-              }
-              emptyMessage="No protected paths — only built-in security blocks (e.g. .ssh) apply."
-              inputPlaceholder="e.g. .env or **/secrets/**"
-              suggestedPatterns={PROTECTED_PATH_SUGGESTIONS}
-            />
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="my-0"
-                onClick={() =>
-                  dispatch(
-                    setProtectedFilePatterns([
-                      ...DEFAULT_PROTECTED_FILE_PATTERNS,
-                    ]),
-                  )
+          <ConfigPanel variant="padded">
+            <div className="flex flex-col gap-3">
+              <PathPatternsEditor
+                patterns={protectedFilePatterns}
+                onChange={(patterns) =>
+                  dispatch(setProtectedFilePatterns(patterns))
                 }
-              >
-                Restore defaults
-              </Button>
+                emptyMessage="No protected paths — only built-in security blocks (e.g. .ssh) apply."
+                inputPlaceholder="e.g. .env or **/secrets/**"
+                suggestedPatterns={PROTECTED_PATH_SUGGESTIONS}
+              />
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="my-0"
+                  onClick={() =>
+                    dispatch(
+                      setProtectedFilePatterns([
+                        ...DEFAULT_PROTECTED_FILE_PATTERNS,
+                      ]),
+                    )
+                  }
+                >
+                  Restore defaults
+                </Button>
+              </div>
             </div>
+          </ConfigPanel>
+          <ConfigPanel>
             <UserSetting
               type="toggle"
               title="Require approval to read protected files"
-              description="When off, only writes and edits on protected paths need confirmation; reads can still auto-run in Full access mode."
+              description="When off, only writes and edits need confirmation; reads can auto-run in Full access mode."
               value={protectedPathsRequireReadApproval}
               onChange={(value) =>
                 dispatch(setProtectedPathsRequireReadApproval(value))
               }
             />
+          </ConfigPanel>
           </div>
-        </Card>
+        </ConfigPageSection>
 
-        <Card>
-          <ConfigSubsectionTitle
-            title="Agent loop"
-            description="Limits how many model and tool rounds run from a single message before the agent pauses."
-          />
-          <div className={CONFIG_CARD_STACK}>
+        <ConfigPageSection
+          title="Agent loop"
+          description="How many model and tool rounds run from one message before the agent pauses."
+        >
+          <ConfigPanel>
             <UserSetting
               type="number"
               title="Max steps per message"
-              description="Each tool call and follow-up model turn counts as one step. Send another message to continue after the limit."
+              description="Each tool call and follow-up model turn counts as one step."
               value={maxAgentSteps}
-              onChange={(val) =>
-                handleSharedConfigUpdate({ maxAgentSteps: val })
-              }
+              onChange={(val) => handleSharedConfigUpdate({ maxAgentSteps: val })}
               min={5}
               max={2000}
             />
-          </div>
-        </Card>
+          </ConfigPanel>
+        </ConfigPageSection>
       </div>
 
       <ConfigCrossLink onClick={() => navigate(CONFIG_ROUTES.MCP)}>

@@ -1,10 +1,11 @@
 import type { ReactNode } from "react";
 import { cn } from "../../../util/cn";
-import { Card } from "../../../components/ui";
-import { ConfigHeader } from "./ConfigHeader";
+import { ConfigGroupHeader } from "./ConfigGroupHeader";
+import { ConfigPanel } from "./ConfigPanel";
 import {
-  CONFIG_CARD_STACK,
   CONFIG_HAIRLINE_DIVIDE,
+  CONFIG_ROW_DESC,
+  CONFIG_ROW_TITLE,
 } from "../configLayout";
 
 export interface AccessModeChoice<T extends string> {
@@ -21,10 +22,6 @@ interface AccessModeOptionProps<T extends string> {
   disabled?: boolean;
 }
 
-/**
- * Same shell as Shortcuts / General rows: Card + hairline list.
- * Selection is only the radio fill — no row background tint.
- */
 function AccessModeOption<T extends string>({
   choice,
   selected,
@@ -35,7 +32,7 @@ function AccessModeOption<T extends string>({
   return (
     <label
       className={cn(
-        "relative flex items-start gap-3 px-4 py-3",
+        "relative flex items-start gap-2.5 px-3 py-2.5 sm:px-4",
         disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer",
       )}
     >
@@ -59,10 +56,8 @@ function AccessModeOption<T extends string>({
         ) : null}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="text-foreground block text-sm font-medium leading-5">
-          {choice.title}
-        </span>
-        <span className="text-description mt-1 block text-xs leading-5">
+        <span className={cn("block", CONFIG_ROW_TITLE)}>{choice.title}</span>
+        <span className={cn("mt-0.5 block", CONFIG_ROW_DESC)}>
           {choice.description}
         </span>
       </span>
@@ -81,6 +76,7 @@ interface AccessModeGroupProps<T extends string> {
   disabledHint?: string;
 }
 
+/** One radio group — use inside {@link AccessModeStack} for a single bordered panel. */
 export function AccessModeGroup<T extends string>({
   title,
   description,
@@ -92,41 +88,41 @@ export function AccessModeGroup<T extends string>({
   disabledHint,
 }: AccessModeGroupProps<T>) {
   return (
-    <div>
-      <ConfigHeader
-        title={title}
-        subtext={description}
-        variant="sm"
-        showAddButton={false}
-      />
-      {disabled && disabledHint ? (
-        <p className="text-description mb-3 mt-0 text-xs leading-5">
-          {disabledHint}
-        </p>
-      ) : null}
-      <Card className="!p-0 overflow-hidden">
-        <div
-          className={cn("flex flex-col", CONFIG_HAIRLINE_DIVIDE)}
-          role="radiogroup"
-          aria-label={title}
-          aria-disabled={disabled || undefined}
-        >
-          {choices.map((choice) => (
-            <AccessModeOption
-              key={choice.value}
-              name={name}
-              choice={choice}
-              selected={value === choice.value}
-              onSelect={onChange}
-              disabled={disabled}
-            />
-          ))}
-        </div>
-      </Card>
+    <div className="flex flex-col">
+      <div className="px-3 pb-1 pt-2.5 sm:px-4 sm:pt-3">
+        <ConfigGroupHeader title={title} description={description} />
+        {disabled && disabledHint ? (
+          <p className="text-description m-0 mt-1.5 text-xs leading-snug">
+            {disabledHint}
+          </p>
+        ) : null}
+      </div>
+      <div
+        className={cn("flex flex-col", CONFIG_HAIRLINE_DIVIDE)}
+        role="radiogroup"
+        aria-label={title}
+        aria-disabled={disabled || undefined}
+      >
+        {choices.map((choice) => (
+          <AccessModeOption
+            key={choice.value}
+            name={name}
+            choice={choice}
+            selected={value === choice.value}
+            onSelect={onChange}
+            disabled={disabled}
+          />
+        ))}
+      </div>
     </div>
   );
 }
 
+/** Multiple {@link AccessModeGroup} blocks in one settings panel. */
 export function AccessModeStack({ children }: { children: ReactNode }) {
-  return <div className={CONFIG_CARD_STACK}>{children}</div>;
+  return (
+    <ConfigPanel variant="raw">
+      <div className={cn("flex flex-col", CONFIG_HAIRLINE_DIVIDE)}>{children}</div>
+    </ConfigPanel>
+  );
 }

@@ -6,8 +6,7 @@ export type ConfigTab =
   | "rules"
   | "mcp"
   | "settings"
-  | "shortcuts"
-  | "about";
+  | "shortcuts";
 
 export const VALID_CONFIG_TABS: readonly ConfigTab[] = [
   "models",
@@ -17,7 +16,6 @@ export const VALID_CONFIG_TABS: readonly ConfigTab[] = [
   "mcp",
   "settings",
   "shortcuts",
-  "about",
 ];
 
 export const DEFAULT_CONFIG_TAB: ConfigTab = "settings";
@@ -40,7 +38,6 @@ export const CONFIG_ROUTES = {
   MCP: buildConfigRoute("mcp"),
   SETTINGS: buildConfigRoute("settings"),
   SHORTCUTS: buildConfigRoute("shortcuts"),
-  ABOUT: buildConfigRoute("about"),
 } as const;
 
 export function isConfigTab(value: string): value is ConfigTab {

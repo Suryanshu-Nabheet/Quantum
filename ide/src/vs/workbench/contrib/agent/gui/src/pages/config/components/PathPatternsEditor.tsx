@@ -2,9 +2,12 @@ import { XMarkIcon } from "@heroicons/react/24/outline";
 import { useState } from "react";
 import { Button } from "../../../components/ui";
 import { cn } from "../../../util/cn";
+import { CONFIG_PANEL_BORDER } from "../configLayout";
 
-const chipClass =
-  "bg-vsc-input-background text-foreground border border-solid border-[color:var(--vscode-sideBar-border,rgba(128,128,128,0.22))]";
+const chipClass = cn(
+  "bg-vsc-input-background text-foreground border border-solid",
+  CONFIG_PANEL_BORDER,
+);
 
 export interface PathPatternsEditorProps {
   patterns: string[];
@@ -37,7 +40,7 @@ export function PathPatternsEditor({
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-2.5">
       <div className="flex min-h-[1.25rem] flex-wrap gap-1.5">
         {patterns.length === 0 ? (
           <span className="text-description-muted text-xs leading-snug italic">

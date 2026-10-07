@@ -7,7 +7,6 @@ import {
   Bars3BottomLeftIcon,
   CubeIcon,
   SparklesIcon,
-  InformationCircleIcon,
   PencilIcon,
 } from "@heroicons/react/24/outline";
 import { IDE_SETTINGS_LABEL } from "core/util/branding";
@@ -100,12 +99,6 @@ export const configNavGroups: ConfigNavGroup[] = [
 ];
 
 export const configNavFooter: ConfigNavItem[] = [
-  {
-    id: "about",
-    label: "About",
-    icon: navIcon(InformationCircleIcon),
-    action: { type: "tab", tabId: "about" },
-  },
   {
     id: "docs",
     label: "Docs",
