@@ -13,6 +13,7 @@ import { setLocalStorage } from "../../../util/localStorage";
 import { ConfigHeader } from "../components/ConfigHeader";
 import { ConfigPageSection } from "../components/ConfigPageSection";
 import { UserSetting } from "../components/UserSetting";
+import { useWorkbenchAppearanceLayout } from "../../../hooks/useWorkbenchAppearanceLayout";
 import { CONFIG_PAGE_GAP, CONFIG_SECTIONS_STACK } from "../configLayout";
 
 export function UserSettingsSection() {
@@ -38,6 +39,12 @@ export function UserSettingsSection() {
     config.experimental?.onlyUseSystemMessageTools ?? false;
 
   const fontSize = useFontSize();
+  const {
+    layout: workbenchLayout,
+    loading: workbenchLayoutLoading,
+    setStatusBarVisible,
+    setActivityBarOrientation,
+  } = useWorkbenchAppearanceLayout();
 
   return (
     <div className={CONFIG_PAGE_GAP}>
@@ -123,8 +130,8 @@ export function UserSettingsSection() {
           <ConfigPanel>
             <UserSetting
               type="number"
-              title="Font Size"
-              description="Specifies base font size for UI elements."
+              title="Font size"
+              description="Base text size for chat and settings in this panel."
               value={fontSize}
               onChange={(val) => {
                 setLocalStorage("fontSize", val);
@@ -132,6 +139,31 @@ export function UserSettingsSection() {
               }}
               min={7}
               max={50}
+            />
+            <UserSetting
+              type="toggle"
+              title="Status bar"
+              description="Show branch, problems, and language mode along the bottom of the window."
+              value={workbenchLayout?.statusBarVisible ?? true}
+              disabled={workbenchLayoutLoading || workbenchLayout === null}
+              onChange={(value) => void setStatusBarVisible(value)}
+            />
+            <UserSetting
+              type="segmented"
+              title="Activity bar layout"
+              description="Classic icons on the side, or a horizontal row above the primary sidebar."
+              controlAriaLabel="Activity bar layout"
+              value={workbenchLayout?.activityBarOrientation ?? "vertical"}
+              disabled={workbenchLayoutLoading || workbenchLayout === null}
+              onChange={(value) =>
+                void setActivityBarOrientation(
+                  value as "vertical" | "horizontal",
+                )
+              }
+              options={[
+                { label: "Vertical", value: "vertical" },
+                { label: "Horizontal", value: "horizontal" },
+              ]}
             />
           </ConfigPanel>
         </ConfigPageSection>

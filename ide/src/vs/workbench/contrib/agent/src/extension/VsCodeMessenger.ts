@@ -121,6 +121,37 @@ export class VsCodeMessenger {
     this.onWebview("openVscodeSettings", () => {
       void vscode.commands.executeCommand("workbench.action.openSettings");
     });
+
+    this.onWebview("workbench/getAppearanceLayout", () => {
+      const config = vscode.workspace.getConfiguration();
+      const orientation = config.get<string>(
+        "workbench.activityBar.orientation",
+        "vertical",
+      );
+      return {
+        statusBarVisible: config.get<boolean>("workbench.statusBar.visible", true),
+        activityBarOrientation:
+          orientation === "horizontal" ? "horizontal" : "vertical",
+      };
+    });
+
+    this.onWebview("workbench/setAppearanceLayout", async ({ data }) => {
+      const config = vscode.workspace.getConfiguration();
+      if (data.statusBarVisible !== undefined) {
+        await config.update(
+          "workbench.statusBar.visible",
+          data.statusBarVisible,
+          vscode.ConfigurationTarget.Global,
+        );
+      }
+      if (data.activityBarOrientation !== undefined) {
+        await config.update(
+          "workbench.activityBar.orientation",
+          data.activityBarOrientation,
+          vscode.ConfigurationTarget.Global,
+        );
+      }
+    });
     this.onWebview("openKeyboardShortcuts", () => {
       void vscode.commands.executeCommand(
         "workbench.action.openGlobalKeybindings",

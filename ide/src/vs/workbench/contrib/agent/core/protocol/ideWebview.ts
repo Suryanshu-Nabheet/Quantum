@@ -36,6 +36,20 @@ export type ToIdeFromWebviewProtocol = ToIdeFromWebviewOrCoreProtocol & {
   hideWorkbenchHover: [undefined, void];
   openConfigPage: [undefined, void];
   openVscodeSettings: [undefined, void];
+  "workbench/getAppearanceLayout": [
+    undefined,
+    {
+      statusBarVisible: boolean;
+      activityBarOrientation: "vertical" | "horizontal";
+    },
+  ];
+  "workbench/setAppearanceLayout": [
+    {
+      statusBarVisible?: boolean;
+      activityBarOrientation?: "vertical" | "horizontal";
+    },
+    void,
+  ];
   openKeyboardShortcuts: [undefined, void];
   toggleFullScreen: [{ newWindow?: boolean } | undefined, void];
   insertAtCursor: [{ text: string }, void];

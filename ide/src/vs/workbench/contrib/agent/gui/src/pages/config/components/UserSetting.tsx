@@ -17,8 +17,10 @@ import {
   CONFIG_NUMBER_INPUT,
   CONFIG_PANEL_BORDER,
   CONFIG_ROW_DESC,
+  CONFIG_ROW_TEXT,
   CONFIG_ROW_TITLE,
 } from "../configLayout";
+import { SettingSegmentedControl } from "./SettingSegmentedControl";
 
 interface BaseUserSettingProps {
   title: string;
@@ -47,6 +49,14 @@ interface SelectUserSettingProps extends BaseUserSettingProps {
   options: { label: string; value: string }[];
 }
 
+interface SegmentedUserSettingProps extends BaseUserSettingProps {
+  type: "segmented";
+  value: string;
+  onChange: (value: string) => void;
+  options: { label: string; value: string }[];
+  controlAriaLabel: string;
+}
+
 interface InputUserSettingProps extends BaseUserSettingProps {
   type: "input";
   value: string;
@@ -63,7 +73,23 @@ type UserSettingProps =
   | ToggleUserSettingProps
   | NumberUserSettingProps
   | SelectUserSettingProps
+  | SegmentedUserSettingProps
   | InputUserSettingProps;
+
+function SettingRowCopy({
+  title,
+  description,
+}: {
+  title: string;
+  description: React.ReactNode;
+}) {
+  return (
+    <div className={CONFIG_ROW_TEXT}>
+      <span className={CONFIG_ROW_TITLE}>{title}</span>
+      <div className={cn(CONFIG_ROW_DESC, "max-w-prose")}>{description}</div>
+    </div>
+  );
+}
 
 export function UserSetting(props: UserSettingProps) {
   const { title, description, disabled = false } = props;
@@ -138,14 +164,14 @@ export function UserSetting(props: UserSettingProps) {
             <ListboxButton
               className={cn(
                 CONFIG_PANEL_BORDER,
-                "!w-[5.5rem] w-[5.5rem] !flex-none justify-between !rounded-md border border-solid bg-vsc-input-background px-2 py-1.5 text-xs",
+                "min-w-[5.5rem] !w-auto !flex-none justify-between gap-2 !rounded-md border border-solid bg-vsc-input-background px-2.5 py-1.5 text-xs",
               )}
             >
               {props.options.find((opt) => opt.value === props.value)?.label ||
                 props.value}
-              <ChevronDownIcon className="h-3 w-3" />
+              <ChevronDownIcon className="h-3 w-3 shrink-0" />
             </ListboxButton>
-            <ListboxOptions className="!w-20 !min-w-0">
+            <ListboxOptions className="!min-w-[5.5rem] !w-auto">
               {props.options.map((option) => (
                 <ListboxOption key={option.value} value={option.value}>
                   {option.label}
@@ -153,6 +179,17 @@ export function UserSetting(props: UserSettingProps) {
               ))}
             </ListboxOptions>
           </Listbox>
+        );
+
+      case "segmented":
+        return (
+          <SettingSegmentedControl
+            value={props.value}
+            options={props.options}
+            onChange={props.onChange}
+            disabled={disabled}
+            ariaLabel={props.controlAriaLabel}
+          />
         );
 
       case "input":
@@ -235,22 +272,18 @@ export function UserSetting(props: UserSettingProps) {
   if (isInputType) {
     return (
       <div className="flex flex-col gap-3">
-        <div className="flex flex-col">
-          <span className={CONFIG_ROW_TITLE}>{title}</span>
-          <div className={CONFIG_ROW_DESC}>{description}</div>
-        </div>
+        <SettingRowCopy title={title} description={description} />
         {renderControl()}
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 items-center gap-x-5 gap-y-1 sm:grid-cols-[minmax(0,1fr)_2.75rem]">
-      <div className="flex min-w-0 flex-col justify-center">
-        <span className={CONFIG_ROW_TITLE}>{title}</span>
-        <div className={CONFIG_ROW_DESC}>{description}</div>
-      </div>
-      <div className="flex shrink-0 items-center justify-start sm:justify-end">
+    <div
+      className="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start"
+    >
+      <SettingRowCopy title={title} description={description} />
+      <div className="flex shrink-0 items-center justify-start sm:justify-end sm:pt-px">
         {renderControl()}
       </div>
     </div>

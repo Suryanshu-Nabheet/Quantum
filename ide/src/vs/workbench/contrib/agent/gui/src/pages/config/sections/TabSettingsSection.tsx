@@ -134,9 +134,10 @@ export function TabSettingsSection() {
                 onChange={(value) => handleUpdate({ useAutocompleteCache: value })}
               />
               <UserSetting
-                type="select"
-                title="Multiline completions"
-                description="Whether Tab may suggest multiple lines at once."
+                type="segmented"
+                title="Multiline"
+                description="Allow Tab to suggest more than one line at a time."
+                controlAriaLabel="Multiline Tab completions"
                 value={useAutocompleteMultilineCompletions}
                 onChange={(value) =>
                   handleUpdate({

@@ -67,6 +67,9 @@ export const CONFIG_ROW_TITLE =
 export const CONFIG_ROW_DESC =
   "text-description mt-0.5 text-xs leading-snug";
 
+/** Title + description stack — same rhythm on every settings row. */
+export const CONFIG_ROW_TEXT = "flex min-w-0 flex-col";
+
 /** Sidebar nav icon size — keep in sync with ConfigSidebarCell. */
 export const CONFIG_NAV_ICON_CLASS = "h-3.5 w-3.5 flex-shrink-0";
 

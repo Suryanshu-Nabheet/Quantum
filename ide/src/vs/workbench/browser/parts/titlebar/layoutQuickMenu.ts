@@ -324,17 +324,12 @@ export class LayoutQuickMenuWidget extends Disposable {
 	}
 
 	private _renderOptionsSection(container: HTMLElement): void {
-		const section = append(container, $('.layout-quick-menu__section'));
 		const chatDisabled = this.configurationService.getValue<boolean>(ChatConfiguration.AIDisabled) === true;
-		if (!chatDisabled) {
-			this._renderSecondarySideBarRow(section);
-			append(section, $('.layout-quick-menu__divider'));
+		if (chatDisabled) {
+			return;
 		}
-		// Note: no Title Bar toggle here. In this layout the title bar hosts the
-		// window controls and this very layout-controls menu, so it is required
-		// and cannot be hidden — `toggle.toggleCustomTitleBar` only flips the
-		// setting without changing visibility, making the toggle a no-op.
-		this._renderPartToggle(section, localize('layoutQuickMenu.statusBar', "Status Bar"), () => this.layoutService.isVisible(Parts.STATUSBAR_PART, mainWindow), () => this.commandService.executeCommand('workbench.action.toggleStatusbarVisibility'));
+		const section = append(container, $('.layout-quick-menu__section'));
+		this._renderSecondarySideBarRow(section);
 	}
 
 	private _renderSecondarySideBarRow(section: HTMLElement): void {
