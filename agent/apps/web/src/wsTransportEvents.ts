@@ -22,6 +22,10 @@ export interface WsCompatibilityIssueEventDetail {
 }
 
 // Emits a browser-local event without leaking transport internals into UI code.
+export function readLatestWsTransportState(): WsTransportState | null {
+  return latestTransportState;
+}
+
 export function emitWsTransportState(state: WsTransportState): void {
   latestTransportState = state;
   if (

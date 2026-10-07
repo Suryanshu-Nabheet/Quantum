@@ -8,6 +8,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { type ProfileStats, type ProfileTokenStats, type ProviderKind } from "@quantum/contracts";
+import { useWsTransportOpen } from "~/hooks/useWsTransportOpen";
 import {
   serverProfileStatsQueryOptions,
   serverProfileTokenStatsQueryOptions,
@@ -37,10 +38,21 @@ import {
 } from "../profile/profileFormatting";
 
 export function ProfileSettingsPanel() {
-  const coreQuery = useQuery(serverProfileStatsQueryOptions());
-  const tokenQuery = useQuery(serverProfileTokenStatsQueryOptions());
+  const transportOpen = useWsTransportOpen();
+  const coreQuery = useQuery(serverProfileStatsQueryOptions({ enabled: transportOpen }));
+  const tokenQuery = useQuery(
+    serverProfileTokenStatsQueryOptions({
+      enabled: transportOpen && coreQuery.data !== undefined,
+    }),
+  );
 
-  if (coreQuery.isPending) {
+  const waitingForTransport = !transportOpen;
+  const loadingCore =
+    waitingForTransport ||
+    coreQuery.isPending ||
+    (coreQuery.isFetching && coreQuery.data === undefined);
+
+  if (loadingCore) {
     return <ProfileSkeleton />;
   }
   if (coreQuery.isError || !coreQuery.data) {

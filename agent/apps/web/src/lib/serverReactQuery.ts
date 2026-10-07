@@ -8,6 +8,10 @@ import type {
 } from "@quantum/contracts";
 import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react-query";
 import { ensureNativeApi } from "~/nativeApi";
+import {
+  profileStatsQueryRetry,
+  profileStatsQueryRetryDelay,
+} from "~/lib/transientNativeApiErrors";
 
 export const LOCAL_SERVERS_VISIBLE_REFETCH_INTERVAL_MS = 10_000;
 const LOCAL_SERVERS_DEFAULT_STALE_TIME_MS = 3_000;
@@ -316,7 +320,8 @@ export function serverProfileStatsQueryOptions(input: { enabled?: boolean } = {}
     enabled: input.enabled ?? true,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
-    retry: false,
+    retry: profileStatsQueryRetry,
+    retryDelay: profileStatsQueryRetryDelay,
     queryFn: async () => {
       const api = ensureNativeApi();
       return api.stats.getProfileStats({
@@ -335,7 +340,8 @@ export function serverProfileTokenStatsQueryOptions(input: { enabled?: boolean }
     enabled: input.enabled ?? true,
     staleTime: 5 * 60_000,
     refetchOnWindowFocus: false,
-    retry: false,
+    retry: profileStatsQueryRetry,
+    retryDelay: profileStatsQueryRetryDelay,
     queryFn: async () => {
       const api = ensureNativeApi();
       return api.stats.getProfileTokenStats({
