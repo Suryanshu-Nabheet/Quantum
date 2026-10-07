@@ -56,6 +56,14 @@ function readTextFile(
   });
 }
 
+/** Porcelain file changes only (Git 2.55+ adds `## branch` lines to `--short`). */
+function workingTreeFileStatus(statusOutput: string): string {
+  return statusOutput
+    .split("\n")
+    .filter((line) => line.length > 0 && !line.startsWith("##"))
+    .join("\n");
+}
+
 /** Run a raw git command for test setup (not under test). */
 function git(
   cwd: string,
@@ -849,7 +857,7 @@ it.layer(TestLayer)("git integration", (it) => {
         const branches = yield* core.listBranches({ cwd: tmp });
         expect(branches.branches.find((branch) => branch.current)?.name).toBe("conflicting");
         expect(yield* readTextFile(path.join(tmp, "README.md"))).toBe("conflicting content\n");
-        expect((yield* git(tmp, ["status", "--short"])).trim()).toBe("");
+        expect(workingTreeFileStatus((yield* git(tmp, ["status", "--short"])).trim())).toBe("");
         expect(yield* git(tmp, ["stash", "list"])).toContain(
           "quantum: stash before switching to conflicting",
         );

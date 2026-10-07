@@ -130,8 +130,7 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
       {
         id: "analytics-configuration-removed",
         title: "Zero remote telemetry — verified",
-        description:
-          "Quantum ships with no third-party product analytics in the client or server.",
+        description: "Quantum ships with no third-party product analytics in the client or server.",
         details:
           "A full audit confirmed remote analytics configuration was removed. Quantum does not send prompts, source code, filenames, or file contents to external analytics services.",
       },

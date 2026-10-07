@@ -2,6 +2,13 @@
   "name": "@quantum/shared",
   "version": "0.0.1",
   "private": true,
+  "description": "Quantum Agent Manager Shared Utilities",
+  "license": "MIT",
+  "author": "Suryanshu Nabheet",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Suryanshu-Nabheet/Quantum.git"
+  },
   "type": "module",
   "exports": {
     "./model": {
@@ -296,12 +303,5 @@
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
-  },
-  "description": "Quantum Agent Manager Shared Utilities",
-  "author": "Suryanshu Nabheet",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Suryanshu-Nabheet/Quantum.git"
   }
 }

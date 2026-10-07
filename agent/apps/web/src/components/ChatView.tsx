@@ -307,10 +307,7 @@ import {
   providerModelSupportsAutoRuntimeMode,
 } from "../lib/runtimeMode";
 import { QuantumLogo } from "./QuantumLogo";
-import {
-  QUANTUM_EMPTY_HOME_HEADING,
-  QUANTUM_EMPTY_PROJECT_HEADING_PREFIX,
-} from "../productVoice";
+import { QUANTUM_EMPTY_HOME_HEADING, QUANTUM_EMPTY_PROJECT_HEADING_PREFIX } from "../productVoice";
 import { ThreadWorktreeHandoffDialog } from "./ThreadWorktreeHandoffDialog";
 import {
   formatShortcutLabel,

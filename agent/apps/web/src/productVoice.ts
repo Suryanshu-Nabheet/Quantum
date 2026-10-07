@@ -60,11 +60,9 @@ export function quantumSpaceEmptyTitle(spaceName: string): string {
   return `${spaceName} is empty`;
 }
 
-export const QUANTUM_SPACE_EMPTY_HINT =
-  "Move projects here, or right-click a project to file it.";
+export const QUANTUM_SPACE_EMPTY_HINT = "Move projects here, or right-click a project to file it.";
 
 export const QUANTUM_ACTIVITY_ONBOARDING = {
   title: "Activity",
-  description:
-    "See running tasks, completed work, and anything that needs your attention.",
+  description: "See running tasks, completed work, and anything that needs your attention.",
 } as const;

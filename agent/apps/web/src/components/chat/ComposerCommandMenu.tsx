@@ -25,10 +25,7 @@ import {
 import { slashCommandIcon } from "~/lib/slashCommandIcons";
 import { formatSkillScope } from "~/lib/providerDiscovery";
 import { cn } from "~/lib/utils";
-import {
-  QUANTUM_CHECKOUT_OPTION_LABEL,
-  QUANTUM_CHECKOUT_SHORT_LABEL,
-} from "~/productVoice";
+import { QUANTUM_CHECKOUT_OPTION_LABEL, QUANTUM_CHECKOUT_SHORT_LABEL } from "~/productVoice";
 import {
   Command,
   CommandGroup,

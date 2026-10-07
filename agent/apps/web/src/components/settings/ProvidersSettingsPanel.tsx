@@ -331,7 +331,8 @@ const PROVIDER_INSTALL_SETTINGS: readonly ProviderInstallSettings[] = [
         settingsKey: "openCodeServerUrl",
         label: "OpenCode server URL",
         placeholder: "http://127.0.0.1:4096",
-        description: "Optional existing OpenCode server URL. Leave blank to spawn a managed server.",
+        description:
+          "Optional existing OpenCode server URL. Leave blank to spawn a managed server.",
       },
       {
         kind: "password",

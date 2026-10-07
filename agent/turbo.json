@@ -48,6 +48,16 @@
       "dependsOn": ["^build"],
       "cache": false,
       "outputs": []
+    },
+    "@quantum/web#test": {
+      "dependsOn": ["^build", "@quantum/server#test"],
+      "cache": false,
+      "outputs": []
+    },
+    "@quantum/desktop#test": {
+      "dependsOn": ["^build", "@quantum/server#test"],
+      "cache": false,
+      "outputs": []
     }
   }
 }

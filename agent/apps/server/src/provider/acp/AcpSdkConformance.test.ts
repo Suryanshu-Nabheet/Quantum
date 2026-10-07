@@ -116,7 +116,7 @@ afterEach(() => {
   }
 });
 
-describe("official ACP SDK conformance at the current Quantum boundary", () => {
+describe.sequential("official ACP SDK conformance at the current Quantum boundary", () => {
   it.effect("negotiates initialize and authentication using official SDK handlers", () => {
     const logPath = createFixtureLog();
     return Effect.gen(function* () {
@@ -197,6 +197,7 @@ describe("official ACP SDK conformance at the current Quantum boundary", () => {
         events.flatMap((event) => (event._tag === "ContentDelta" ? [event.text] : [])),
       ).toEqual(["early-new", "prompt-one", "prompt-two"]);
     }).pipe(
+      Effect.timeout("3 minutes"),
       Effect.provide(runtimeLayer(logPath)),
       Effect.scoped,
       Effect.provide(NodeServices.layer),

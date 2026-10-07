@@ -11,8 +11,7 @@ const layer = it.layer(
 );
 
 layer("ThreadDiagnosticsQuery", (it) => {
-  const recentTimestamp = (offsetMs: number) =>
-    new Date(Date.now() - offsetMs).toISOString();
+  const recentTimestamp = (offsetMs: number) => new Date(Date.now() - offsetMs).toISOString();
 
   it.effect("pages filtered activity at a captured high-water sequence", () =>
     Effect.gen(function* () {

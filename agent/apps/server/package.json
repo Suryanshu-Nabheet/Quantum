@@ -1,6 +1,7 @@
 {
   "name": "@quantum/server",
   "version": "0.0.1",
+  "description": "Quantum Agent Manager Backend Server and Provider Orchestrator",
   "license": "SEE LICENSE IN LICENSE",
   "author": "Suryanshu Nabheet",
   "repository": {
@@ -57,6 +58,5 @@
   },
   "engines": {
     "node": "^22.19 || ^23.11 || >=24.10"
-  },
-  "description": "Quantum Agent Manager Backend Server and Provider Orchestrator"
+  }
 }

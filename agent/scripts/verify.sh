@@ -59,6 +59,18 @@ else
 	fail "desktop dist missing — run bun run build"
 fi
 
+if bun run typecheck >/dev/null 2>&1; then
+	pass "TypeScript (bun run typecheck)"
+else
+	fail "TypeScript errors — run bun run typecheck"
+fi
+
+if bun run fmt:check >/dev/null 2>&1; then
+	pass "Formatting (bun run fmt:check)"
+else
+	fail "Format drift — run bun run fmt"
+fi
+
 echo ""
 if (( FAIL == 0 )); then
 	echo "All checks passed. Dev: bun run dev"

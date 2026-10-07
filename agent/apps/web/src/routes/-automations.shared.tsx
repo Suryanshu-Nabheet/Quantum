@@ -20,6 +20,7 @@ import { automationRequiresTargetThread } from "@quantum/shared/automationMode";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 
+import { useAppSettings } from "~/appSettings";
 import { QUANTUM_CHECKOUT_SHORT_LABEL } from "~/productVoice";
 import type { Thread } from "~/types";
 import {

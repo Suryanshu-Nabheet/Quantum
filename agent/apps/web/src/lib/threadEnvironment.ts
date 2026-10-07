@@ -44,7 +44,10 @@ export interface ThreadEnvironmentPresentation {
   shortLabel: typeof QUANTUM_CHECKOUT_SHORT_LABEL | typeof QUANTUM_WORKTREE_SHORT_LABEL;
   localOptionLabel: typeof QUANTUM_CHECKOUT_OPTION_LABEL;
   worktreeOptionLabel: typeof QUANTUM_WORKTREE_SHORT_LABEL;
-  worktreeBadgeLabel: typeof QUANTUM_WORKTREE_SHORT_LABEL | typeof QUANTUM_WORKTREE_PENDING_LABEL | null;
+  worktreeBadgeLabel:
+    | typeof QUANTUM_WORKTREE_SHORT_LABEL
+    | typeof QUANTUM_WORKTREE_PENDING_LABEL
+    | null;
 }
 
 export function resolveThreadEnvironmentPresentation(input: {

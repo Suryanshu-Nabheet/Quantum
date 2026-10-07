@@ -51,9 +51,7 @@ if (process.platform === "darwin" && process.env.QUANTUM_SKIP_APPSNAP_BUILD !== 
     });
 }
 
-console.error(
-  `[desktop-dev] Waiting for Vite at ${devServerUrl} and desktop bundles...`,
-);
+console.error(`[desktop-dev] Waiting for Vite at ${devServerUrl} and desktop bundles...`);
 await waitOn({
   resources: [
     `http-get://localhost:${port}/`,

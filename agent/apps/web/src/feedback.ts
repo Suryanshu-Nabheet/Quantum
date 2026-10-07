@@ -156,12 +156,7 @@ function buildGitHubIssueUrl(submission: FeedbackSubmission): string {
   const category = FEEDBACK_CATEGORIES.find((option) => option.value === submission.category);
   const titlePrefix = category?.label ?? "Feedback";
   const title = `${titlePrefix}: ${submission.details.split("\n")[0]?.slice(0, 80) ?? "Quantum"}`;
-  const body = [
-    submission.details,
-    "",
-    "---",
-    submission.summary,
-  ].join("\n");
+  const body = [submission.details, "", "---", submission.summary].join("\n");
   const url = new URL(QUANTUM_ISSUES_URL);
   url.searchParams.set("title", title);
   url.searchParams.set("body", body);
