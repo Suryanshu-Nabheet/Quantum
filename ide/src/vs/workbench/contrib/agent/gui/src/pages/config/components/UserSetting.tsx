@@ -245,7 +245,7 @@ export function UserSetting(props: UserSettingProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 items-center gap-x-4 gap-y-1 sm:grid-cols-[minmax(0,1fr)_2.75rem]">
+    <div className="grid grid-cols-1 items-center gap-x-5 gap-y-1 sm:grid-cols-[minmax(0,1fr)_2.75rem]">
       <div className="flex min-w-0 flex-col justify-center">
         <span className={CONFIG_ROW_TITLE}>{title}</span>
         <div className={CONFIG_ROW_DESC}>{description}</div>

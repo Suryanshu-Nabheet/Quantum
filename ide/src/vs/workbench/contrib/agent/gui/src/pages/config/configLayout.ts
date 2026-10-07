@@ -5,11 +5,12 @@ export const CONFIG_TOP_INSET = "pt-5";
 export const CONFIG_CONTENT_SHELL = [
   "text-foreground text-sm",
   CONFIG_TOP_INSET,
-  "px-4 pb-6 md:px-6 md:pb-8",
+  "px-4 pb-6 sm:px-5 md:pb-8",
 ].join(" ");
 
-/** Narrow column keeps labels and controls visually paired. */
-export const CONFIG_CONTENT_MAX_WIDTH = "mx-auto w-full max-w-[34rem]";
+/** Centered column in the main pane — balanced gutters left and right. */
+export const CONFIG_CONTENT_MAX_WIDTH =
+  "mx-auto w-full min-w-0 max-w-[38rem]";
 
 export const CONFIG_PAGE_GAP = "flex flex-col gap-4";
 
