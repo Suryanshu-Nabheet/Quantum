@@ -293,6 +293,8 @@ export type ToCoreFromIdeOrWebviewProtocol = {
       processedArgs?: Record<string, unknown>;
       agentAccessMode?: "full" | "sandboxed" | "strict";
       terminalAutoExecution?: "auto" | "allowlist" | "ask";
+      protectedFilePatterns?: string[];
+      protectedPathsRequireReadApproval?: boolean;
     },
     { policy: ToolPolicy; displayValue?: string },
   ];

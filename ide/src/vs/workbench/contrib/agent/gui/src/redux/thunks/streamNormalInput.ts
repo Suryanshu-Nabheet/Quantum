@@ -344,6 +344,9 @@ async function runStreamNormalInputLocked({
     {
       agentAccessMode: state3.ui.agentAccessMode,
       terminalAutoExecution: state3.ui.terminalAutoExecution,
+      protectedFilePatterns: state3.ui.protectedFilePatterns,
+      protectedPathsRequireReadApproval:
+        state3.ui.protectedPathsRequireReadApproval,
     },
   );
   const autoApprovedPolicies = policies.filter(

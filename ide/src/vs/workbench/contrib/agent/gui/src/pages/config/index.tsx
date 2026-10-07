@@ -1,7 +1,12 @@
 
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { buildConfigRoute, resolveConfigTab } from "../../util/navigation";
+import {
+  buildConfigRoute,
+  DEFAULT_CONFIG_TAB,
+  isConfigTab,
+  resolveConfigTab,
+} from "../../util/navigation";
 import { ConfigSidebar } from "./components/ConfigSidebar";
 import {
   CONFIG_CONTENT_MAX_WIDTH,
@@ -17,17 +22,15 @@ function ConfigPage() {
   const activeTab = resolveConfigTab(tabParam);
 
   useEffect(() => {
-    if (tabParam === null) {
-      return;
-    }
-    const resolved = resolveConfigTab(tabParam);
-    if (tabParam !== resolved) {
-      navigate(buildConfigRoute(resolved), { replace: true });
+    if (tabParam !== null && !isConfigTab(tabParam)) {
+      navigate(buildConfigRoute(DEFAULT_CONFIG_TAB), { replace: true });
     }
   }, [tabParam, navigate]);
 
   const handleTabClick = (tabId: string) => {
-    navigate(buildConfigRoute(resolveConfigTab(tabId)));
+    if (isConfigTab(tabId)) {
+      navigate(buildConfigRoute(tabId));
+    }
   };
 
   const activeTabContent = configTabs.find((tab) => tab.id === activeTab)

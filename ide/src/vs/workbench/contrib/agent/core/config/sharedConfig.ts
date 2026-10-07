@@ -33,6 +33,7 @@ export const sharedConfigSchema = z
     modelTimeout: z.number(),
     debounceDelay: z.number(),
     autocompleteFirstTokenMs: z.number(),
+    maxAgentSteps: z.number().int().min(1).max(2000),
   })
   .partial();
 
@@ -152,6 +153,10 @@ export function modifyAnyConfigWithSharedConfig<
   if (sharedConfig.onlyUseSystemMessageTools !== undefined) {
     configCopy.experimental.onlyUseSystemMessageTools =
       sharedConfig.onlyUseSystemMessageTools;
+  }
+
+  if (sharedConfig.maxAgentSteps !== undefined) {
+    configCopy.ui.maxAgentSteps = sharedConfig.maxAgentSteps;
   }
 
   return configCopy;

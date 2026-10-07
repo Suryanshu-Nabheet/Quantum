@@ -29,6 +29,11 @@ import Lemonade from "./llm/llms/Lemonade";
 import Ollama from "./llm/llms/Ollama";
 import { callTool } from "./tools/callTool";
 import { applyAgentAccessModes } from "./tools/policies/agentAccess";
+import {
+  applyProtectedPathPolicy,
+  DEFAULT_PROTECTED_FILE_PATTERNS,
+  extractToolTargetPath,
+} from "./tools/policies/protectedPaths";
 import { ChatDescriber } from "./util/chatDescriber";
 import { compactConversation } from "./util/conversationCompaction";
 import { GlobalContext } from "./util/GlobalContext";
@@ -874,6 +879,8 @@ export class Core {
           processedArgs,
           agentAccessMode,
           terminalAutoExecution,
+          protectedFilePatterns,
+          protectedPathsRequireReadApproval,
         },
       }) => {
         const { config } = await this.configHandler.loadConfig();
@@ -914,6 +921,27 @@ export class Core {
           agentAccessMode,
           terminalAutoExecution,
         );
+
+        const targetPath = extractToolTargetPath(parsedArgs, processedArgs);
+        if (targetPath) {
+          const policyBeforeProtected = policy;
+          policy = applyProtectedPathPolicy(
+            toolName,
+            policy,
+            targetPath,
+            protectedFilePatterns ?? DEFAULT_PROTECTED_FILE_PATTERNS,
+            {
+              requireReadApproval: protectedPathsRequireReadApproval ?? true,
+            },
+          );
+          if (
+            policy === "allowedWithPermission" &&
+            policyBeforeProtected === "allowedWithoutPermission" &&
+            !displayValue
+          ) {
+            displayValue = targetPath;
+          }
+        }
 
         return { policy, displayValue };
       },

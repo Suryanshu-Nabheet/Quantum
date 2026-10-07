@@ -10,6 +10,7 @@ import {
   DEFAULT_AGENT_ACCESS_MODE,
   DEFAULT_TERMINAL_AUTO_EXECUTION,
 } from "core/tools/policies/agentAccess";
+import { DEFAULT_PROTECTED_FILE_PATTERNS } from "core/tools/policies/protectedPaths";
 export type RulePolicy = "on" | "off";
 
 export type ToolGroupPolicy = "include" | "exclude";
@@ -34,6 +35,10 @@ type UIState = {
   agentAccessMode: AgentAccessMode;
   /** Whether terminal commands auto-run or need approval. */
   terminalAutoExecution: TerminalAutoExecution;
+  /** Globs that always require approval before agent file access. */
+  protectedFilePatterns: string[];
+  /** When true, reads of protected paths also require approval. */
+  protectedPathsRequireReadApproval: boolean;
 };
 
 export const DEFAULT_TOOL_SETTING: ToolPolicy = "allowedWithoutPermission";
@@ -51,6 +56,8 @@ export const DEFAULT_UI_SLICE: UIState = {
   reasoningSettings: {},
   agentAccessMode: DEFAULT_AGENT_ACCESS_MODE,
   terminalAutoExecution: DEFAULT_TERMINAL_AUTO_EXECUTION,
+  protectedFilePatterns: [...DEFAULT_PROTECTED_FILE_PATTERNS],
+  protectedPathsRequireReadApproval: true,
 };
 
 export const uiSlice = createSlice({
@@ -130,6 +137,15 @@ export const uiSlice = createSlice({
     ) => {
       state.terminalAutoExecution = action.payload;
     },
+    setProtectedFilePatterns: (state, action: PayloadAction<string[]>) => {
+      state.protectedFilePatterns = action.payload;
+    },
+    setProtectedPathsRequireReadApproval: (
+      state,
+      action: PayloadAction<boolean>,
+    ) => {
+      state.protectedPathsRequireReadApproval = action.payload;
+    },
   },
 });
 
@@ -146,6 +162,8 @@ export const {
   setReasoningSetting,
   setAgentAccessMode,
   setTerminalAutoExecution,
+  setProtectedFilePatterns,
+  setProtectedPathsRequireReadApproval,
 } = uiSlice.actions;
 
 export default uiSlice.reducer;

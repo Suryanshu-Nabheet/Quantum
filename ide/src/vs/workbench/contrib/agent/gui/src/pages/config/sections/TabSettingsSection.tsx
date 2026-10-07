@@ -18,7 +18,9 @@ import { buildConfigRoute } from "../../../util/navigation";
 import { ConfigCrossLink } from "../components/ConfigCrossLink";
 import { ConfigHeader } from "../components/ConfigHeader";
 import { ModelRoleRow } from "../components/ModelRoleRow";
-import { TabIgnorePatternsEditor } from "../components/TabIgnorePatternsEditor";
+import { PathPatternsEditor } from "../components/PathPatternsEditor";
+
+const TAB_IGNORE_SUGGESTIONS = [".env", ".env.*", "**/*.md", "**/secrets/**"];
 import { UserSetting } from "../components/UserSetting";
 import { CONFIG_CARD_STACK, CONFIG_PAGE_GAP } from "../configLayout";
 
@@ -123,11 +125,14 @@ export function TabSettingsSection() {
             title="Ignored paths"
             description="Glob patterns or bare names (e.g. .env). Tab stays off in matching files."
           />
-          <TabIgnorePatternsEditor
+          <PathPatternsEditor
             patterns={ignorePatterns}
             onChange={(patterns) =>
               handleUpdate({ disableAutocompleteInFiles: patterns })
             }
+            emptyMessage="None yet — Tab is allowed in all files (security exclusions still apply)."
+            inputPlaceholder="e.g. .env or **/*.sql"
+            suggestedPatterns={TAB_IGNORE_SUGGESTIONS}
           />
         </Card>
 

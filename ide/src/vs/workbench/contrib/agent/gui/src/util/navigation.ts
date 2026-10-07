@@ -4,11 +4,23 @@ export type ConfigTab =
   | "agent"
   | "tab"
   | "rules"
-  | "access"
   | "mcp"
   | "settings"
   | "shortcuts"
   | "about";
+
+export const VALID_CONFIG_TABS: readonly ConfigTab[] = [
+  "models",
+  "agent",
+  "tab",
+  "rules",
+  "mcp",
+  "settings",
+  "shortcuts",
+  "about",
+];
+
+export const DEFAULT_CONFIG_TAB: ConfigTab = "settings";
 
 export const ROUTES = {
   HOME: "/",
@@ -24,54 +36,21 @@ export const CONFIG_ROUTES = {
   MODELS: buildConfigRoute("models"),
   AGENT: buildConfigRoute("agent"),
   TAB: buildConfigRoute("tab"),
-  /** @deprecated Use CONFIG_ROUTES.AGENT */
-  CHAT: buildConfigRoute("agent"),
-  /** @deprecated Use CONFIG_ROUTES.AGENT */
-  MODEL_ROLES: buildConfigRoute("agent"),
   RULES: buildConfigRoute("rules"),
-  ACCESS: buildConfigRoute("access"),
   MCP: buildConfigRoute("mcp"),
   SETTINGS: buildConfigRoute("settings"),
   SHORTCUTS: buildConfigRoute("shortcuts"),
   ABOUT: buildConfigRoute("about"),
 } as const;
 
-const DEFAULT_CONFIG_TAB: ConfigTab = "settings";
+export function isConfigTab(value: string): value is ConfigTab {
+  return (VALID_CONFIG_TABS as readonly string[]).includes(value);
+}
 
-/** Legacy query values map to current tab ids. */
-const CONFIG_TAB_ALIASES: Record<string, ConfigTab> = {
-  help: "about",
-  chat: "agent",
-  roles: "agent",
-  "model-roles": "agent",
-  modelRoles: "agent",
-  autocomplete: "tab",
-  "model-roles-tab": "tab",
-  tools: "access",
-};
-
-/** Resolve a raw `?tab=` query value to a valid settings tab id. */
+/** Resolve `?tab=` to a valid settings tab id. Unknown values fall back to General. */
 export function resolveConfigTab(tabParam: string | null): ConfigTab {
-  if (!tabParam) {
-    return DEFAULT_CONFIG_TAB;
-  }
-  const alias = CONFIG_TAB_ALIASES[tabParam];
-  if (alias) {
-    return alias;
-  }
-  const validTabs: ConfigTab[] = [
-    "models",
-    "agent",
-    "tab",
-    "rules",
-    "access",
-    "mcp",
-    "settings",
-    "shortcuts",
-    "about",
-  ];
-  if (validTabs.includes(tabParam as ConfigTab)) {
-    return tabParam as ConfigTab;
+  if (tabParam && isConfigTab(tabParam)) {
+    return tabParam;
   }
   return DEFAULT_CONFIG_TAB;
 }

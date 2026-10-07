@@ -56,6 +56,8 @@ const saveSubsetFilters = [
     "reasoningSettings",
     "agentAccessMode",
     "terminalAutoExecution",
+    "protectedFilePatterns",
+    "protectedPathsRequireReadApproval",
   ]),
   createFilter("tabs", ["tabs"]),
   createFilter("profiles", [

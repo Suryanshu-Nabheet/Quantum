@@ -22,6 +22,8 @@ interface EvaluatedPolicy {
 export interface EvaluateToolPoliciesOptions {
   agentAccessMode?: AgentAccessMode;
   terminalAutoExecution?: TerminalAutoExecution;
+  protectedFilePatterns?: string[];
+  protectedPathsRequireReadApproval?: boolean;
 }
 
 /**
@@ -51,6 +53,9 @@ async function evaluateToolPolicy(
     agentAccessMode: options.agentAccessMode ?? DEFAULT_AGENT_ACCESS_MODE,
     terminalAutoExecution:
       options.terminalAutoExecution ?? DEFAULT_TERMINAL_AUTO_EXECUTION,
+    protectedFilePatterns: options.protectedFilePatterns,
+    protectedPathsRequireReadApproval:
+      options.protectedPathsRequireReadApproval,
   });
 
   // Evaluate the policy dynamically

@@ -9,7 +9,6 @@ import {
   SparklesIcon,
   InformationCircleIcon,
   PencilIcon,
-  ShieldCheckIcon,
 } from "@heroicons/react/24/outline";
 import { IDE_SETTINGS_LABEL } from "core/util/branding";
 import { CONFIG_NAV_ICON_CLASS } from "./configLayout";
@@ -83,12 +82,6 @@ export const configNavGroups: ConfigNavGroup[] = [
         label: "Rules",
         icon: navIcon(PencilIcon),
         action: { type: "tab", tabId: "rules" },
-      },
-      {
-        id: "access",
-        label: "Access",
-        icon: navIcon(ShieldCheckIcon),
-        action: { type: "tab", tabId: "access" },
       },
       {
         id: "mcp",

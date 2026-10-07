@@ -3,20 +3,24 @@ import { useState } from "react";
 import { Button } from "../../../components/ui";
 import { cn } from "../../../util/cn";
 
-const SUGGESTED_PATTERNS = [".env", ".env.*", "**/*.md", "**/secrets/**"];
-
 const chipClass =
   "bg-vsc-input-background text-foreground border border-solid border-[color:var(--vscode-sideBar-border,rgba(128,128,128,0.22))]";
 
-interface TabIgnorePatternsEditorProps {
+export interface PathPatternsEditorProps {
   patterns: string[];
   onChange: (patterns: string[]) => void;
+  emptyMessage: string;
+  inputPlaceholder?: string;
+  suggestedPatterns?: string[];
 }
 
-export function TabIgnorePatternsEditor({
+export function PathPatternsEditor({
   patterns,
   onChange,
-}: TabIgnorePatternsEditorProps) {
+  emptyMessage,
+  inputPlaceholder = "e.g. .env or **/*.sql",
+  suggestedPatterns = [],
+}: PathPatternsEditorProps) {
   const [draft, setDraft] = useState("");
 
   function addPattern(raw: string) {
@@ -37,8 +41,7 @@ export function TabIgnorePatternsEditor({
       <div className="flex min-h-[1.25rem] flex-wrap gap-1.5">
         {patterns.length === 0 ? (
           <span className="text-description-muted text-xs leading-snug italic">
-            None yet — Tab is allowed in all files (security exclusions still
-            apply).
+            {emptyMessage}
           </span>
         ) : (
           patterns.map((pattern) => (
@@ -70,7 +73,7 @@ export function TabIgnorePatternsEditor({
         <input
           type="text"
           value={draft}
-          placeholder="e.g. .env or **/*.sql"
+          placeholder={inputPlaceholder}
           className={cn(
             chipClass,
             "placeholder-description-muted min-w-0 flex-1 rounded-md px-2.5 py-2 text-xs outline-none focus:border-[color:var(--vscode-focusBorder)]",
@@ -95,31 +98,33 @@ export function TabIgnorePatternsEditor({
         </Button>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-description-muted text-2xs shrink-0">
-          Quick add:
-        </span>
-        {SUGGESTED_PATTERNS.map((suggestion) => {
-          const added = patterns.includes(suggestion);
-          return (
-            <button
-              key={suggestion}
-              type="button"
-              disabled={added}
-              className={cn(
-                chipClass,
-                "rounded-md px-2 py-0.5 font-mono text-2xs transition-colors",
-                added
-                  ? "cursor-not-allowed opacity-40"
-                  : "hover:bg-list-hover cursor-pointer",
-              )}
-              onClick={() => addPattern(suggestion)}
-            >
-              {suggestion}
-            </button>
-          );
-        })}
-      </div>
+      {suggestedPatterns.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-description-muted text-2xs shrink-0">
+            Quick add:
+          </span>
+          {suggestedPatterns.map((suggestion) => {
+            const added = patterns.includes(suggestion);
+            return (
+              <button
+                key={suggestion}
+                type="button"
+                disabled={added}
+                className={cn(
+                  chipClass,
+                  "rounded-md px-2 py-0.5 font-mono text-2xs transition-colors",
+                  added
+                    ? "cursor-not-allowed opacity-40"
+                    : "hover:bg-list-hover cursor-pointer",
+                )}
+                onClick={() => addPattern(suggestion)}
+              >
+                {suggestion}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

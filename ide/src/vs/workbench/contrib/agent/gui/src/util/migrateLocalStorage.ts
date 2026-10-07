@@ -66,7 +66,7 @@ function migrateToolPolicies(dispatch: AppDispatch) {
 }
 
 const AUTONOMY_DEFAULTS_MIGRATION_KEY = "agent_autonomy_defaults_v004";
-const ACCESS_MODES_MIGRATION_KEY = "agent_access_modes_v001";
+const AGENT_PERMISSION_DEFAULTS_MIGRATION_KEY = "agent_access_modes_v001";
 
 /** Tools that should auto-run without approval (autonomous agent defaults). */
 const AUTONOMOUS_TOOL_POLICIES: Record<string, ToolPolicy> = {
@@ -146,19 +146,19 @@ function migrateAutonomyToolDefaults(dispatch: AppDispatch) {
   localStorage.setItem(AUTONOMY_DEFAULTS_MIGRATION_KEY, "1");
 }
 
-/** Seed Agent Access + Terminal Auto Execution defaults for existing installs. */
-function migrateAccessModes(dispatch: AppDispatch) {
-  if (localStorage.getItem(ACCESS_MODES_MIGRATION_KEY)) {
+/** Seed agent permission defaults (access mode + terminal auto-run) for existing installs. */
+function migrateAgentPermissionDefaults(dispatch: AppDispatch) {
+  if (localStorage.getItem(AGENT_PERMISSION_DEFAULTS_MIGRATION_KEY)) {
     return;
   }
 
   dispatch(setAgentAccessMode("full"));
   dispatch(setTerminalAutoExecution("auto"));
-  localStorage.setItem(ACCESS_MODES_MIGRATION_KEY, "1");
+  localStorage.setItem(AGENT_PERMISSION_DEFAULTS_MIGRATION_KEY, "1");
 }
 
 export function migrateLocalStorage(dispatch: AppDispatch) {
   migrateToolPolicies(dispatch);
   migrateAutonomyToolDefaults(dispatch);
-  migrateAccessModes(dispatch);
+  migrateAgentPermissionDefaults(dispatch);
 }

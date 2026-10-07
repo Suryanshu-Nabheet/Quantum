@@ -6,7 +6,6 @@ import { AgentSettingsSection } from "./sections/AgentSettingsSection";
 import { TabSettingsSection } from "./sections/TabSettingsSection";
 import { ModelsSection } from "./sections/ModelsSection";
 import { RulesSection } from "./sections/RulesSection";
-import { AccessSection } from "./sections/AccessSection";
 import { UserSettingsSection } from "./sections/UserSettingsSection";
 import type { ConfigTab as ConfigTabId } from "../../util/navigation";
 
@@ -53,14 +52,6 @@ export const configTabs: ConfigTabEntry[] = [
     component: (
       <ConfigSection>
         <RulesSection />
-      </ConfigSection>
-    ),
-  },
-  {
-    id: "access",
-    component: (
-      <ConfigSection>
-        <AccessSection />
       </ConfigSection>
     ),
   },
