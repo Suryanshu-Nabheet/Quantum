@@ -59,7 +59,6 @@ const saveSubsetFilters = [
     "protectedFilePatterns",
     "protectedPathsRequireReadApproval",
   ]),
-  createFilter("tabs", ["tabs"]),
   createFilter("profiles", [
     "preferencesByProfileId",
     "selectedProfileId",

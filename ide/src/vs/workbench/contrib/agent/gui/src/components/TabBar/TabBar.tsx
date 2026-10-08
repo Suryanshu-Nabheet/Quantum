@@ -1,44 +1,35 @@
 import { XMarkIcon } from "@heroicons/react/24/outline";
-import React, { useCallback, useEffect } from "react";
+import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import styled from "styled-components";
 import { defaultBorderRadius } from "..";
 import { newSession } from "../../redux/slices/sessionSlice";
 import {
-  addTab,
-  handleSessionChange,
-  removeTab,
-  setActiveTab,
-  setTabs,
+  closeSession,
+  openSession,
+  pruneSessions,
+  setActiveSession,
 } from "../../redux/slices/tabsSlice";
 import { AppDispatch, RootState } from "../../redux/store";
-import { loadSession, saveCurrentSession } from "../../redux/thunks/session";
+import { loadSession } from "../../redux/thunks/session";
 import { varWithFallback } from "../../styles/theme";
 
-// Haven't set up theme colors for tabs yet
-// Will keep it simple and choose from existing ones. Comments show vars we could use
-const tabBorderVar = varWithFallback("border"); // --vscode-tab-border
-const tabBackgroundVar = varWithFallback("background"); // --vscode-tab-inactiveBackground
-const tabForegroundVar = varWithFallback("foreground"); // --vscode-tab-inactiveForeground
-const tabHoverBackgroundVar = varWithFallback("list-hover"); // --vscode-tab-hoverBackground
-const tabHoverForegroundVar = varWithFallback("foreground"); // --vscode-tab-hoverForeground
-const tabSelectedBackgroundVar = varWithFallback("background"); // --vscode-tab-activeBackground
-const tabSelectedForegroundVar = varWithFallback("foreground"); // --vscode-tab-activeForeground
-const tabAccentVar = varWithFallback("accent"); // --vscode-tab-activeBorderTop
+const tabBorderVar = varWithFallback("border");
+const tabBackgroundVar = varWithFallback("background");
+const tabForegroundVar = varWithFallback("foreground");
+const tabHoverBackgroundVar = varWithFallback("list-hover");
+const tabAccentVar = varWithFallback("accent");
 
 const TabBarContainer = styled.div`
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   flex-shrink: 0;
-  flex-grow: 0;
   background-color: ${tabBackgroundVar};
-  border-bottom: none;
   position: relative;
   margin-top: 2px;
-  max-height: 100px;
-  overflow: auto;
-
-  /* Hide scrollbar but keep functionality */
+  height: 27px;
+  overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
   &::-webkit-scrollbar {
     display: none;
@@ -50,35 +41,27 @@ const Tab = styled.div<{ isActive: boolean }>`
   align-items: center;
   box-sizing: border-box;
   padding: 0 5px 0 12px;
-  flex-grow: 1;
-  width: 100px;
-  max-width: 150px;
+  flex: 0 0 auto;
+  min-width: 100px;
+  max-width: 180px;
   height: 25px;
-  background-color: ${(props) =>
-    props.isActive ? tabSelectedBackgroundVar : tabBackgroundVar};
-  color: ${(props) =>
-    props.isActive ? tabSelectedForegroundVar : tabForegroundVar};
   cursor: pointer;
-  border: 1px solid ${tabBorderVar};
-  border-bottom: ${(props) =>
-    props.isActive ? "none" : `1px solid ${tabBorderVar}`};
   user-select: none;
-  position: relative;
-  transition: background-color 0.2s;
+  color: ${tabForegroundVar};
+  background-color: ${(props) =>
+    props.isActive ? tabBackgroundVar : "transparent"};
+  border: 1px solid ${tabBorderVar};
+  border-left: none;
   border-top: ${(props) =>
     props.isActive ? `1px solid ${tabAccentVar}` : `1px solid ${tabBorderVar}`};
+  border-bottom: ${(props) => (props.isActive ? "none" : `1px solid ${tabBorderVar}`)};
+
   &:first-child {
-    border-left: none;
-  }
-  & + & {
-    border-left: none;
+    border-left: 1px solid ${tabBorderVar};
   }
 
   &:hover {
-    background-color: ${(props) =>
-      props.isActive ? tabSelectedBackgroundVar : tabHoverBackgroundVar};
-    color: ${(props) =>
-      props.isActive ? tabSelectedForegroundVar : tabHoverForegroundVar};
+    background-color: ${tabHoverBackgroundVar};
   }
 `;
 
@@ -104,164 +87,102 @@ const CloseButton = styled.button`
   cursor: pointer;
   border-radius: ${defaultBorderRadius};
   padding: 2px;
-  visibility: hidden;
 
   &:hover {
     opacity: 1;
     background-color: ${tabHoverBackgroundVar};
   }
-
-  ${Tab}:hover & {
-    visibility: visible;
-  }
-
-  &[disabled] {
-    display: none !important;
-  }
-`;
-
-const TabBarSpace = styled.div`
-  flex: 1;
-  display: flex;
-  border-bottom: 1px solid ${tabBorderVar};
-  background-color: ${tabBackgroundVar};
 `;
 
 export const TabBar = React.forwardRef<HTMLDivElement>((_, ref) => {
   const dispatch = useDispatch<AppDispatch>();
   const currentSessionId = useSelector((state: RootState) => state.session.id);
-  const currentSessionTitle = useSelector(
-    (state: RootState) => state.session.title,
-  );
   const hasHistory = useSelector(
     (state: RootState) => state.session.history.length > 0,
   );
-  const tabs = useSelector((state: RootState) => state.tabs.tabs);
+  const allSessionMetadata = useSelector(
+    (state: RootState) => state.session.allSessionMetadata,
+  );
+  const openSessionIds = useSelector(
+    (state: RootState) => state.tabs.openSessionIds,
+  );
+  const activeSessionId = useSelector(
+    (state: RootState) => state.tabs.activeSessionId,
+  );
 
-  // Simple UUID generator for our needs
-  const generateId = useCallback(() => {
-    return Date.now().toString(36) + Math.random().toString(36).substring(2);
-  }, []);
-
+  // Track the live session: opening it adds at most one tab (deduped by id).
   useEffect(() => {
     if (!currentSessionId) return;
+    dispatch(openSession(currentSessionId));
+  }, [currentSessionId]);
 
-    dispatch(
-      handleSessionChange({
-        currentSessionId,
-        currentSessionTitle,
-        newTabId: generateId(), // Pass the ID generator result
-      }),
-    );
-  }, [currentSessionId, currentSessionTitle]);
+  // Drop tabs whose session file no longer exists.
+  useEffect(() => {
+    dispatch(pruneSessions(allSessionMetadata.map((m) => m.sessionId)));
+  }, [allSessionMetadata]);
 
-  const handleNewTab = async () => {
-    // Save current session before creating new one
-    if (hasHistory) {
-      await dispatch(
-        saveCurrentSession({ openNewSession: false, generateTitle: true }),
-      );
+  const titleFor = (id: string): string => {
+    if (id === currentSessionId) {
+      const meta = allSessionMetadata.find((m) => m.sessionId === id);
+      return meta?.title || "New Session";
     }
-
-    dispatch(newSession());
-
-    dispatch(
-      addTab({
-        id: generateId(),
-        title: `Chat ${tabs.length + 1}`,
-        isActive: true,
-        sessionId: undefined,
-      }),
+    return (
+      allSessionMetadata.find((m) => m.sessionId === id)?.title || "New Session"
     );
   };
 
-  useEffect(() => {
-    if (!tabs.length) {
-      void handleNewTab();
-    }
-  }, [tabs.map((t) => t.id).join(",")]);
-
   const handleTabClick = async (id: string) => {
-    const targetTab = tabs.find((tab) => tab.id === id);
-    if (!targetTab) return;
-
-    if (targetTab.sessionId) {
-      // Switch to existing session
-      await dispatch(
-        loadSession({
-          sessionId: targetTab.sessionId,
-          saveCurrentSession: hasHistory,
-        }),
-      );
-    }
-
-    dispatch(setActiveTab(id));
+    if (id === activeSessionId) return;
+    dispatch(setActiveSession(id));
+    await dispatch(
+      loadSession({ sessionId: id, saveCurrentSession: hasHistory }),
+    );
   };
 
   const handleTabClose = async (id: string) => {
-    //if (tabs.length <= 1) return;
+    const wasActive = id === activeSessionId;
+    dispatch(closeSession(id));
 
-    const isClosingActive = tabs.find((t) => t.id === id)?.isActive;
-    const filtered = tabs.filter((t) => t.id !== id);
+    if (!wasActive) return;
 
-    if (isClosingActive) {
-      const lastTab = filtered[filtered.length - 1];
-      if (filtered.length) {
-        await handleTabClick(lastTab.id);
-        dispatch(
-          setTabs(
-            filtered.map((tab, i) => ({
-              ...tab,
-              isActive: i === filtered.length - 1,
-            })),
-          ),
-        );
-      } else {
-        dispatch(setTabs([]));
-        dispatch(newSession());
-      }
-    } else {
-      dispatch(removeTab(id));
+    const next = openSessionIds.filter((s) => s !== id);
+    if (!next.length) {
+      dispatch(newSession());
+      return;
     }
+    const neighbour = next[Math.min(openSessionIds.indexOf(id), next.length - 1)];
+    await dispatch(
+      loadSession({ sessionId: neighbour, saveCurrentSession: hasHistory }),
+    );
   };
 
+  if (!openSessionIds.length) return null;
+
   return (
-    <TabBarContainer
-      ref={ref}
-      style={{
-        display: tabs.length === 1 ? "none" : "flex",
-      }}
-    >
-      {tabs.map((tab) => (
+    <TabBarContainer ref={ref}>
+      {openSessionIds.map((id) => (
         <Tab
-          key={tab.id}
-          isActive={tab.isActive}
-          onClick={() => handleTabClick(tab.id)}
+          key={id}
+          isActive={id === activeSessionId}
+          onClick={() => void handleTabClick(id)}
           onAuxClick={(e) => {
-            // Middle mouse button
             if (e.button === 1) {
               e.preventDefault();
-              void handleTabClose(tab.id);
+              void handleTabClose(id);
             }
           }}
         >
-          <TabTitle>{tab.title}</TabTitle>
+          <TabTitle>{titleFor(id)}</TabTitle>
           <CloseButton
-            /* disabled={tabs.length === 1} */
             onClick={(e) => {
               e.stopPropagation();
-              void handleTabClose(tab.id);
+              void handleTabClose(id);
             }}
           >
             <XMarkIcon width={12} height={12} />
           </CloseButton>
         </Tab>
       ))}
-      <TabBarSpace>
-        {/* <NewTabButton onClick={handleNewTab}>
-          <PlusIcon width={16} height={16} />
-        </NewTabButton> */}
-      </TabBarSpace>
     </TabBarContainer>
   );
 });
