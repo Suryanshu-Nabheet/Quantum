@@ -6,8 +6,10 @@ import { Editor, JSONContent } from "@tiptap/react";
 import { ChatHistoryItem, InputModifiers } from "core";
 import { renderChatMessage } from "core/util/messageContent";
 import {
+  memo,
   useCallback,
   useContext,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -21,6 +23,7 @@ import ThinkingBlockPeek from "../../components/mainInput/belowMainInput/Thinkin
 import AgentInputBox from "../../components/mainInput/AgentInputBox";
 import StepContainer from "../../components/StepContainer";
 import { TabBar } from "../../components/TabBar/TabBar";
+import { TodoBlock } from "../../components/TodoPanel/TodoPanel";
 import { IdeMessengerContext } from "../../context/IdeMessenger";
 import { useWebviewListener } from "../../hooks/useWebviewListener";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
@@ -77,6 +80,47 @@ const StepsDiv = styled.div`
 `;
 
 export const MAIN_EDITOR_INPUT_ID = "main-editor-input";
+
+// Stable references so memoized timeline rows can skip re-rendering.
+const ASSISTANT_TIMELINE_ICON = (
+  <ChatBubbleOvalLeftIcon width="16px" height="16px" />
+);
+const NOOP_TIMELINE_TOGGLE = () => {};
+
+// Memoized so unchanged assistant rows skip re-rendering their StepContainer
+// subtree while the tail row streams. Props are primitives or stable item refs.
+const AssistantMessageRow = memo(function AssistantMessageRow({
+  index,
+  item,
+  isLast,
+  inProgress,
+  latestSummaryIndex,
+  open,
+}: {
+  index: number;
+  item: ChatHistoryItemWithMessageId;
+  isLast: boolean;
+  inProgress: boolean;
+  latestSummaryIndex: number;
+  open: boolean;
+}) {
+  return (
+    <TimelineItem
+      item={item}
+      iconElement={ASSISTANT_TIMELINE_ICON}
+      open={open}
+      onToggle={NOOP_TIMELINE_TOGGLE}
+    >
+      <StepContainer
+        index={index}
+        isLast={isLast}
+        inProgress={inProgress}
+        item={item}
+        latestSummaryIndex={latestSummaryIndex}
+      />
+    </TimelineItem>
+  );
+});
 
 function fallbackRender({ error, resetErrorBoundary }: any) {
   // Call resetErrorBoundary() to reset the error boundary and retry the render.
@@ -211,6 +255,12 @@ export function Chat() {
     [dispatch],
   );
 
+  // Computed once per history change; the row renderer reads it for every item.
+  const latestSummaryIndex = useMemo(
+    () => findLatestSummaryIndex(history),
+    [history],
+  );
+
   const isLastUserInput = useCallback(
     (index: number): boolean => {
       return !history
@@ -219,6 +269,24 @@ export function Chat() {
     },
     [history],
   );
+
+  // Stable per-row Enter handlers. Each row keeps one function identity, so the
+  // memoized AgentInputBox skips re-rendering during streaming. The handler reads
+  // the latest sendInput through a ref, so it never goes stale.
+  const sendInputRef = useRef(sendInput);
+  sendInputRef.current = sendInput;
+  const userRowEnterHandlers = useRef(
+    new Map<number, (editorState: any, modifiers: InputModifiers) => void>(),
+  );
+  const getUserRowEnterHandler = useCallback((index: number) => {
+    let handler = userRowEnterHandlers.current.get(index);
+    if (!handler) {
+      handler = (editorState, modifiers) =>
+        sendInputRef.current(editorState, modifiers, index);
+      userRowEnterHandlers.current.set(index, handler);
+    }
+    return handler;
+  }, []);
 
   const renderChatHistoryItem = useCallback(
     (item: ChatHistoryItemWithMessageId, index: number) => {
@@ -230,17 +298,13 @@ export function Chat() {
         toolCallStates,
       } = item;
 
-      // Calculate once for the entire function
-      const latestSummaryIndex = findLatestSummaryIndex(history);
       const isBeforeLatestSummary =
         latestSummaryIndex !== -1 && index < latestSummaryIndex;
 
       if (message.role === "user") {
         return (
           <AgentInputBox
-            onEnter={(editorState, modifiers) =>
-              sendInput(editorState, modifiers, index)
-            }
+            onEnter={getUserRowEnterHandler(index)}
             isLastUserInput={isLastUserInput(index)}
             isMainInput={false}
             editorState={editorState ?? item.message.content}
@@ -274,26 +338,18 @@ export function Chat() {
           <div className={CHAT_TURN_GAP_CLASS}>
             {showMessageShell ? (
               <div className="thread-message">
-                <TimelineItem
+                <AssistantMessageRow
+                  index={index}
                   item={item}
-                  iconElement={
-                    <ChatBubbleOvalLeftIcon width="16px" height="16px" />
-                  }
+                  isLast={isLast}
+                  inProgress={isLast && isStreaming}
+                  latestSummaryIndex={latestSummaryIndex}
                   open={
                     typeof stepsOpen[index] === "undefined"
                       ? true
                       : stepsOpen[index]!
                   }
-                  onToggle={() => {}}
-                >
-                  <StepContainer
-                    index={index}
-                    isLast={isLast}
-                    inProgress={isLast && isStreaming}
-                    item={item}
-                    latestSummaryIndex={latestSummaryIndex}
-                  />
-                </TimelineItem>
+                />
               </div>
             ) : null}
 
@@ -327,11 +383,11 @@ export function Chat() {
         <div className="thread-message">
           <TimelineItem
             item={item}
-            iconElement={<ChatBubbleOvalLeftIcon width="16px" height="16px" />}
+            iconElement={ASSISTANT_TIMELINE_ICON}
             open={
               typeof stepsOpen[index] === "undefined" ? true : stepsOpen[index]!
             }
-            onToggle={() => {}}
+            onToggle={NOOP_TIMELINE_TOGGLE}
           >
             <StepContainer
               index={index}
@@ -344,10 +400,24 @@ export function Chat() {
         </div>
       );
     },
-    [sendInput, isLastUserInput, history, stepsOpen, isStreaming],
+    [
+      getUserRowEnterHandler,
+      sendInput,
+      isLastUserInput,
+      history,
+      latestSummaryIndex,
+      stepsOpen,
+      isStreaming,
+    ],
   );
 
   const showScrollbar = showChatScrollbar ?? window.innerHeight > 5000;
+
+  // Only the most recent todo block is editable; earlier blocks are snapshots.
+  const lastTodoToolCallId = history
+    .flatMap((item) => item.toolCallStates ?? [])
+    .filter((state) => state.todosSnapshot)
+    .at(-1)?.toolCallId;
 
   return (
     <div className={`${CHAT_SURFACE_CLASS} flex min-h-0 flex-1 flex-col`}>
@@ -383,6 +453,15 @@ export function Chat() {
                 >
                   {rendered}
                 </ErrorBoundary>
+                {item.toolCallStates?.map((state) =>
+                  state.todosSnapshot ? (
+                    <TodoBlock
+                      key={state.toolCallId}
+                      todos={state.todosSnapshot}
+                      editable={state.toolCallId === lastTodoToolCallId}
+                    />
+                  ) : null,
+                )}
                 {index === history.length - 1 && <InlineErrorMessage />}
               </div>
             );

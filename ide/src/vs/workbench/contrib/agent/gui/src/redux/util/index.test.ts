@@ -4,7 +4,6 @@ import {
   findAllCurToolCalls,
   findAllCurToolCallsByStatus,
   findToolCallById,
-  hasCurrentToolCalls,
 } from "./index";
 
 // Helper function to create a tool call state
@@ -58,47 +57,6 @@ function createChatHistoryItem(
 
   return historyItem;
 }
-
-describe("hasCurrentToolCalls", () => {
-  it("should return false for empty chat history", () => {
-    const result = hasCurrentToolCalls([]);
-    expect(result).toBe(false);
-  });
-
-  it("should return false when last message has no tool calls", () => {
-    const chatHistory = [
-      createChatHistoryItem("user", "Hello"),
-      createChatHistoryItem("assistant", "Hi there!"),
-    ];
-    const result = hasCurrentToolCalls(chatHistory);
-    expect(result).toBe(false);
-  });
-
-  it("should return true when last message has tool calls", () => {
-    const toolCallStates = [
-      createToolCallState("tool-1", "get_weather"),
-      createToolCallState("tool-2", "get_time"),
-    ];
-    const chatHistory = [
-      createChatHistoryItem("user", "What's the weather?"),
-      createChatHistoryItem("assistant", "I'll check the weather for you", {
-        toolCallStates,
-      }),
-    ];
-    const result = hasCurrentToolCalls(chatHistory);
-    expect(result).toBe(true);
-  });
-
-  it("should return false when toolCallStates is empty array", () => {
-    const chatHistory = [
-      createChatHistoryItem("assistant", "I'll help you", {
-        toolCallStates: [],
-      }),
-    ];
-    const result = hasCurrentToolCalls(chatHistory);
-    expect(result).toBe(false);
-  });
-});
 
 describe("findCurrentToolCallsByStatus", () => {
   it("should return empty array for empty chat history", () => {
@@ -343,9 +301,6 @@ describe("Edge cases and integration", () => {
       }),
     ];
 
-    // hasCurrentToolCalls should return true
-    expect(hasCurrentToolCalls(chatHistory)).toBe(true);
-
     // findCurrentToolCalls should return all tool calls
     expect(findAllCurToolCalls(chatHistory)).toEqual(toolCallStates);
 
@@ -365,7 +320,6 @@ describe("Edge cases and integration", () => {
       }),
     ];
 
-    expect(hasCurrentToolCalls(chatHistory)).toBe(true);
     expect(findAllCurToolCalls(chatHistory)).toEqual(toolCallStates);
     expect(findToolCallById(chatHistory, "tool-1")).toBe(toolCallStates[0]);
   });

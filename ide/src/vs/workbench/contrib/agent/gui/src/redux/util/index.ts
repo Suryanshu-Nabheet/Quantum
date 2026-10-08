@@ -4,18 +4,6 @@ import { ChatHistoryItemWithMessageId } from "../slices/sessionSlice";
 import { RootState } from "../store";
 
 /**
- * Checks if there are any current tool calls in the most recent assistant message.
- *
- * @param chatHistory - The chat history array from Redux state
- * @returns True if there are any current tool calls, false otherwise
- */
-export function hasCurrentToolCalls(
-  chatHistory: RootState["session"]["history"],
-): boolean {
-  return findAllCurToolCalls(chatHistory).length > 0;
-}
-
-/**
  * Finds current tool calls with a specific status.
  *
  * @param chatHistory - The chat history array from Redux state

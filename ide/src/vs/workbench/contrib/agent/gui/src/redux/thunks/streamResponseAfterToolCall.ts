@@ -1,12 +1,13 @@
-import { createAsyncThunk, unwrapResult } from "@reduxjs/toolkit";
+import { createAsyncThunk } from "@reduxjs/toolkit";
 import { selectCurrentToolCalls } from "../selectors/selectToolCalls";
+import { findAllCurToolCalls } from "../util";
 import {
   ChatHistoryItemWithMessageId,
   resetNextCodeBlockToApplyIndex,
   setActive,
 } from "../slices/sessionSlice";
 import { ThunkApiType } from "../store";
-import { streamNormalInput } from "./streamNormalInput";
+import { runAgentDriver } from "./streamNormalInput";
 import { streamThunkWrapper } from "./streamThunkWrapper";
 import { appendToolResultMessage } from "../util/toolResultMessages";
 
@@ -33,13 +34,42 @@ function areAllToolsDoneStreaming(
   return completedToolCalls.length === assistantMessage.toolCallStates.length;
 }
 
+/**
+ * Finalization gate shared by the loop and the external resume thunk: the
+ * agent may take its next LLM turn only once every tool call on the assistant
+ * message that produced `toolCallId` has settled.
+ */
+export function canResumeAfterToolCall(
+  history: ChatHistoryItemWithMessageId[],
+  toolCallId: string,
+  resumeAfterToolRejection: boolean | undefined,
+): boolean {
+  // Mirror the resume thunk: the anchor must belong to the current tool calls
+  // (the most recent assistant message with tool call states), not an older one.
+  if (!findAllCurToolCalls(history).some((tc) => tc.toolCallId === toolCallId)) {
+    return false;
+  }
+  const assistantMessage = history.findLast(
+    (item) =>
+      item.message.role === "assistant" &&
+      item.toolCallStates?.some((tc) => tc.toolCallId === toolCallId),
+  );
+  return (
+    !!assistantMessage &&
+    areAllToolsDoneStreaming(assistantMessage, resumeAfterToolRejection)
+  );
+}
+
 export const streamResponseAfterToolCall = createAsyncThunk<
   void,
   { toolCallId: string; depth?: number; skipToolMessage?: boolean },
   ThunkApiType
 >(
   "chat/streamAfterToolCall",
-  async ({ toolCallId, depth = 0, skipToolMessage = false }, { dispatch, getState }) => {
+  async (
+    { toolCallId, depth = 0, skipToolMessage = false },
+    { dispatch, extra, getState },
+  ) => {
     await dispatch(
       streamThunkWrapper(async () => {
         const state = getState();
@@ -62,17 +92,10 @@ export const streamResponseAfterToolCall = createAsyncThunk<
           );
         }
 
-        const history = getState().session.history;
-        const assistantMessage = history.findLast(
-          (item) =>
-            item.message.role === "assistant" &&
-            item.toolCallStates?.some((tc) => tc.toolCallId === toolCallId),
-        );
-
         if (
-          !assistantMessage ||
-          !areAllToolsDoneStreaming(
-            assistantMessage,
+          !canResumeAfterToolCall(
+            getState().session.history,
+            toolCallId,
             getState().config.config.ui?.resumeAfterToolRejection,
           )
         ) {
@@ -83,7 +106,15 @@ export const streamResponseAfterToolCall = createAsyncThunk<
           dispatch(setActive());
         }
 
-        unwrapResult(await dispatch(streamNormalInput({ depth: depth + 1 })));
+        // The driver serializes each LLM stream through the stream lock itself.
+        // Do not wrap the driver in the lock here: the lock is not reentrant and
+        // the driver would wait on the lock this call already holds.
+        await runAgentDriver({
+          depth: depth + 1,
+          dispatch,
+          extra,
+          getState,
+        });
       }),
     );
   },

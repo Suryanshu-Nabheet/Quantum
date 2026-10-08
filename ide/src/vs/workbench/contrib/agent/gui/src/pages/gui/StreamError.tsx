@@ -17,6 +17,7 @@ import { selectSelectedChatModel } from "../../redux/slices/configSlice";
 import { selectSelectedProfile } from "../../redux/slices/profilesSlice";
 import { setDialogMessage, setShowDialog } from "../../redux/slices/uiSlice";
 import { streamResponseThunk } from "../../redux/thunks/streamResponse";
+import { isOverloadedErrorMessage } from "../../redux/util/overloadRetry";
 import { analyzeError } from "../../util/errorAnalysis";
 
 interface StreamErrorProps {
@@ -216,11 +217,7 @@ const StreamErrorDialog = ({ error }: StreamErrorProps) => {
     );
   }
 
-  if (
-    message &&
-    (message.toLowerCase().includes("overloaded") ||
-      message.toLowerCase().includes("malformed json"))
-  ) {
+  if (isOverloadedErrorMessage(message)) {
     errorContent = (
       <div className="flex flex-col gap-2">
         <span>{`Most likely, the provider's server(s) are overloaded and streaming was interrupted. Try again later`}</span>

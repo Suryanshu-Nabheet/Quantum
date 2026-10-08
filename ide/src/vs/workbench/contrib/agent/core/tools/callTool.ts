@@ -17,6 +17,7 @@ import { readFileImpl } from "./implementations/readFile";
 import { readFileRangeImpl } from "./implementations/readFileRange";
 import { readSkillImpl } from "./implementations/readSkill";
 import { requestRuleImpl } from "./implementations/requestRule";
+import { writeTodosImpl } from "./implementations/writeTodos";
 import { runTerminalCommandImpl } from "./implementations/runTerminalCommand";
 import { viewDiffImpl } from "./implementations/viewDiff";
 import { viewSubdirectoryImpl } from "./implementations/viewSubdirectory";
@@ -218,6 +219,8 @@ export async function callBuiltInTool(
       return await requestRuleImpl(args, extras);
     case BuiltInToolNames.ReadSkill:
       return await readSkillImpl(args, extras);
+    case BuiltInToolNames.WriteTodos:
+      return await writeTodosImpl(args, extras);
     case BuiltInToolNames.ViewSubdirectory:
       return await viewSubdirectoryImpl(args, extras);
     default:

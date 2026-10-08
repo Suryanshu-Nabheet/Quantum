@@ -9,15 +9,12 @@ import {
   flushDebouncedSessionSave,
   scheduleDebouncedSessionSave,
 } from "../util/debouncedSessionSave";
-
-const OVERLOADED_RETRIES = 3;
-const OVERLOADED_DELAY_MS = 1000;
-
-function isOverloadedErrorMessage(message?: string | null): boolean {
-  if (!message) return false;
-  const lower = message.toLowerCase();
-  return lower.includes("overloaded") || lower.includes("malformed json");
-}
+import {
+  isOverloadedErrorMessage,
+  OVERLOADED_RETRIES,
+  overloadRetriesWereExhausted,
+  overloadRetryDelayMs,
+} from "../util/overloadRetry";
 
 export const streamThunkWrapper = createAsyncThunk<
   void,
@@ -42,12 +39,16 @@ export const streamThunkWrapper = createAsyncThunk<
       const selectedModel = selectSelectedChatModel(state);
       const { message } = analyzeError(e, selectedModel);
 
+      // A turn-level overload retry already ran in the agent driver. Re-running
+      // the whole driver here would repeat completed turns, so surface it.
       const shouldRetry =
-        isOverloadedErrorMessage(message) && attempt < OVERLOADED_RETRIES;
+        isOverloadedErrorMessage(message) &&
+        attempt < OVERLOADED_RETRIES &&
+        !overloadRetriesWereExhausted(e);
 
       if (shouldRetry) {
         await dispatch(cancelStream());
-        const delayMs = OVERLOADED_DELAY_MS * 2 ** attempt;
+        const delayMs = overloadRetryDelayMs(attempt);
         await new Promise((resolve) => setTimeout(resolve, delayMs));
       } else {
         await dispatch(cancelStream());

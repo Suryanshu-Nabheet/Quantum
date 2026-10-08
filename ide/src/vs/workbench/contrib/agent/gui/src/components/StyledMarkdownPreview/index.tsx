@@ -16,7 +16,7 @@ import {
 import useUpdatingRef from "../../hooks/useUpdatingRef";
 import { useAppSelector } from "../../redux/hooks";
 import { selectUIConfig } from "../../redux/slices/configSlice";
-import { getContextItemsFromHistory } from "../../redux/thunks/updateFileSymbols";
+import { makeSelectPastContextItems } from "../../redux/selectors/selectPastContextItems";
 import { getFontSize } from "../../util";
 import { ToolTip } from "../gui/Tooltip";
 import FilenameLink from "./FilenameLink";
@@ -210,17 +210,21 @@ function extractMermaidSource(preProps: any): string | null {
 const StyledMarkdownPreview = memo(function StyledMarkdownPreview(
   props: StyledMarkdownPreviewProps,
 ) {
-  const history = useAppSelector((state) => state.session.history);
+  const selectPastContextItems = useMemo(
+    () => makeSelectPastContextItems(props.itemIndex),
+    [props.itemIndex],
+  );
+  // Subscribes to this row's prior context items only, not the whole history,
+  // so streaming the tail does not re-render every markdown preview.
+  const pastContextItems = useAppSelector(selectPastContextItems);
   const allSymbols = useAppSelector((state) => state.session.symbols);
   const pastFileInfo = useMemo(() => {
-    const index = props.itemIndex;
-    if (index === undefined) {
+    if (props.itemIndex === undefined) {
       return {
         symbols: [],
         rifs: [],
       };
     }
-    const pastContextItems = getContextItemsFromHistory(history, index);
     const rifs = pastContextItems.map((item) =>
       ctxItemToRifWithContents(item, true),
     );
@@ -233,7 +237,7 @@ const StyledMarkdownPreview = memo(function StyledMarkdownPreview(
       symbols,
       rifs,
     };
-  }, [props.itemIndex, history, allSymbols]);
+  }, [props.itemIndex, pastContextItems, allSymbols]);
   const pastFileInfoRef = useUpdatingRef(pastFileInfo);
   const itemIndexRef = useUpdatingRef(props.itemIndex);
 

@@ -22,6 +22,7 @@ import {
   Session,
   ThinkingChatMessage,
   Tool,
+  TodoItem,
   ToolCallDelta,
   ToolCallState,
 } from "core";
@@ -32,7 +33,6 @@ import {
   renderChatMessage,
   renderContextItems,
 } from "core/util/messageContent";
-import { findUriInDirs, getUriPathBasename } from "core/util/uri";
 import { findLastIndex } from "lodash";
 import { v4 as uuidv4 } from "uuid";
 import { type InlineErrorMessageType } from "../../components/mainInput/InlineErrorMessage";
@@ -226,6 +226,8 @@ type SessionState = {
   compactionLoading: Record<number, boolean>; // Track compaction loading by message index
   /** Tool/LLM rounds in the current user turn (for step limits + manual tool approval). */
   agentStepDepth: number;
+  /** Task list the agent maintains for this session. */
+  todos: TodoItem[];
 };
 
 export const INITIAL_SESSION_STATE: SessionState = {
@@ -247,6 +249,7 @@ export const INITIAL_SESSION_STATE: SessionState = {
   newestToolbarPreviewForInput: {},
   compactionLoading: {},
   agentStepDepth: 0,
+  todos: [],
 };
 
 export const sessionSlice = createSlice({
@@ -344,19 +347,6 @@ export const sessionSlice = createSlice({
         ...state.symbols,
         ...action.payload,
       };
-    },
-    setContextItemsAtIndex: (
-      state,
-      {
-        payload: { index, contextItems },
-      }: PayloadAction<{
-        index: number;
-        contextItems: ChatHistoryItem["contextItems"];
-      }>,
-    ) => {
-      if (state.history[index]) {
-        state.history[index].contextItems = contextItems;
-      }
     },
     submitEditorAndInitAtIndex: (
       state,
@@ -713,14 +703,17 @@ export const sessionSlice = createSlice({
         if (payload.mode) {
           state.mode = payload.mode;
         }
+        state.todos = payload.todos ?? [];
       } else {
         state.history = [];
         state.title = NEW_SESSION_TITLE;
         state.id = uuidv4();
+        state.todos = [];
       }
     },
-    updateSessionTitle: (state, { payload }: PayloadAction<string>) => {
-      state.title = payload;
+    /** Replace the session's task list (agent update or user edit). */
+    setTodos: (state, { payload }: PayloadAction<TodoItem[]>) => {
+      state.todos = payload;
     },
     setIsSessionMetadataLoading: (
       state,
@@ -738,12 +731,6 @@ export const sessionSlice = createSlice({
     },
     //////////////////////////////////////////////////////////////////////////////////
     // These are for optimistic session metadata updates, especially for History page
-    addSessionMetadata: (
-      state,
-      { payload }: PayloadAction<BaseSessionMetadata>,
-    ) => {
-      state.allSessionMetadata = [...state.allSessionMetadata, payload];
-    },
     updateSessionMetadata: (
       state,
       {
@@ -773,49 +760,6 @@ export const sessionSlice = createSlice({
       );
     },
     //////////////////////////////////////////////////////////////////////////////////
-    addHighlightedCode: (
-      state,
-      {
-        payload,
-      }: PayloadAction<{ rangeInFileWithContents: any; edit: boolean }>,
-    ) => {
-      let contextItems =
-        state.history[state.history.length - 1].contextItems ?? [];
-
-      contextItems = contextItems.map((item) => {
-        return { ...item, editing: false };
-      });
-
-      const { relativePathOrBasename } = findUriInDirs(
-        payload.rangeInFileWithContents.filepath,
-        window.workspacePaths ?? [],
-      );
-      const fileName = getUriPathBasename(
-        payload.rangeInFileWithContents.filepath,
-      );
-
-      const lineNums = `(${
-        payload.rangeInFileWithContents.range.start.line + 1
-      }-${payload.rangeInFileWithContents.range.end.line + 1})`;
-
-      contextItems.push({
-        name: `${fileName} ${lineNums}`,
-        description: relativePathOrBasename,
-        id: {
-          providerTitle: "code",
-          itemId: uuidv4(),
-        },
-        content: payload.rangeInFileWithContents.contents,
-        editing: true,
-        editable: true,
-        uri: {
-          type: "file",
-          value: payload.rangeInFileWithContents.filepath,
-        },
-      });
-
-      state.history[state.history.length - 1].contextItems = contextItems;
-    },
     updateApplyState: (state, { payload }: PayloadAction<ApplyState>) => {
       const applyState = state.codeBlockApplyStates.states.find(
         (state) => state.streamId === payload.streamId,
@@ -955,6 +899,19 @@ export const sessionSlice = createSlice({
         toolCallState.status = "done";
       }
     },
+    /** Records the task list as it stood after a write_todos call. */
+    setTodosSnapshot: (
+      state,
+      action: PayloadAction<{ toolCallId: string; todos: TodoItem[] }>,
+    ) => {
+      const toolCallState = findToolCallById(
+        state.history,
+        action.payload.toolCallId,
+      );
+      if (toolCallState) {
+        toolCallState.todosSnapshot = action.payload.todos;
+      }
+    },
     setToolCallCalling: (
       state,
       action: PayloadAction<{
@@ -1067,14 +1024,13 @@ export const selectApplyStateByToolCallId = createSelector(
 
 export const {
   updateFileSymbols,
-  setContextItemsAtIndex,
   addContextItemsAtIndex,
   setAppliedRulesAtIndex,
   setInactive,
   streamUpdate,
   newSession,
-  updateSessionTitle,
-  addHighlightedCode,
+  setTodos,
+  setTodosSnapshot,
   addPromptCompletionPair,
   setActive,
   setAgentStepDepth,
@@ -1099,7 +1055,6 @@ export const {
   setMode,
   setIsSessionMetadataLoading,
   setAllSessionMetadata,
-  addSessionMetadata,
   updateSessionMetadata,
   deleteSessionMetadata,
   setNewestToolbarPreviewForInput,

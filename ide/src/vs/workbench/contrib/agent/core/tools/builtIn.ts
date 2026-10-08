@@ -16,6 +16,8 @@ export enum BuiltInToolNames {
 
   ReadSkill = "read_skill",
 
+  WriteTodos = "write_todos",
+
   // excluded from allTools for now
   ViewSubdirectory = "view_subdirectory",
 }

@@ -11,11 +11,6 @@ export interface EditOperation {
   replace_all?: boolean;
 }
 
-export interface MultiEditArgs {
-  filepath: string;
-  edits: EditOperation[];
-}
-
 export const multiEditTool: Tool = {
   type: "function",
   displayTitle: "Multi Edit",

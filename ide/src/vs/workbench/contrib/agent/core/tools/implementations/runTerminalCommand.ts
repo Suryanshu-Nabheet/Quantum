@@ -113,6 +113,9 @@ function resolveWorkingDirectory(workspaceDirs: string[]): string {
 }
 
 // Add color-supporting environment variables
+/** Foreground commands stop being awaited after this long (the process is not killed). */
+const FOREGROUND_TIMEOUT_MS = 120_000;
+
 const getColorEnv = () => ({
   ...process.env,
   FORCE_COLOR: "1",
@@ -383,7 +386,23 @@ export const runTerminalCommandImpl: ToolImpl = async (args, extras) => {
                 stderr += getDecodedOutput(data);
               });
 
+              // Bound foreground waits so a hung command cannot hold the agent's
+              // stream lock indefinitely. The process is not killed: the model is
+              // told it may still be running.
+              const timer = setTimeout(() => {
+                if (toolCallId) {
+                  removeRunningProcess(toolCallId);
+                }
+                reject(
+                  new AgentError(
+                    AgentErrorReason.CommandExecutionFailed,
+                    `Command timed out after ${FOREGROUND_TIMEOUT_MS / 1000}s and may still be running. Check the terminal output or run a shorter command.`,
+                  ),
+                );
+              }, FOREGROUND_TIMEOUT_MS);
+
               childProc.on("close", (code) => {
+                clearTimeout(timer);
                 // Clean up process tracking
                 if (toolCallId) {
                   removeRunningProcess(toolCallId);
@@ -402,6 +421,7 @@ export const runTerminalCommandImpl: ToolImpl = async (args, extras) => {
               });
 
               childProc.on("error", (error) => {
+                clearTimeout(timer);
                 // Clean up process tracking
                 if (toolCallId) {
                   removeRunningProcess(toolCallId);

@@ -1,10 +1,6 @@
 import { ConfigDependentToolParams, GetTool } from "../..";
 import { BUILT_IN_GROUP_NAME, BuiltInToolNames } from "../builtIn";
 
-export interface RequestRuleArgs {
-  name: string;
-}
-
 function getAvailableRules(rules: ConfigDependentToolParams["rules"]) {
   // Must be explicitly false and no globs
   const agentRequestedRules = rules.filter(

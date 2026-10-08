@@ -117,16 +117,11 @@ export const profilesSlice = createSlice({
         null
       );
     },
-    selectProfiles: (state) => state.profiles,
-    selectSelectedProfileId: (state) => state.selectedProfileId,
-
     selectBookmarkedSlashCommands: (state) => {
       if (!state.selectedProfileId) return [];
       const preferences = state.preferencesByProfileId[state.selectedProfileId];
       return preferences?.bookmarkedSlashCommands || [];
     },
-
-    selectPreferencesByProfileId: (state) => state.preferencesByProfileId,
   },
 });
 
@@ -140,10 +135,7 @@ export const {
 
 export const {
   selectSelectedProfile,
-  selectProfiles,
-  selectSelectedProfileId,
   selectBookmarkedSlashCommands,
-  selectPreferencesByProfileId,
 } = profilesSlice.selectors;
 
 export const { reducer: profilesReducer } = profilesSlice;

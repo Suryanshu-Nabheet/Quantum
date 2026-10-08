@@ -298,15 +298,6 @@ export const defaultSecurityIgnoreDir = ignore().add(
 export const defaultIgnoreFile = ignore().add(DEFAULT_IGNORE_FILETYPES);
 export const defaultIgnoreDir = ignore().add(DEFAULT_IGNORE_DIRS);
 
-// String representations
-export const DEFAULT_SECURITY_IGNORE =
-  DEFAULT_SECURITY_IGNORE_FILETYPES.join("\n") +
-  "\n" +
-  DEFAULT_SECURITY_IGNORE_DIRS.join("\n");
-
-export const DEFAULT_IGNORE =
-  DEFAULT_IGNORE_FILETYPES.join("\n") + "\n" + DEFAULT_IGNORE_DIRS.join("\n");
-
 // Combined ignore instances
 export const defaultFileAndFolderSecurityIgnores = ignore()
   .add(defaultSecurityIgnoreFile)

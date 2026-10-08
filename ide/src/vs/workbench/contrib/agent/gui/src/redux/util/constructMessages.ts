@@ -212,7 +212,7 @@ export function constructMessages(
     .map((item) => item.ctxItems)
     .flat();
 
-  const { systemMessage, appliedRules } = getSystemMessageWithRules({
+  const { rulesText, appliedRules } = getSystemMessageWithRules({
     baseSystemMessage,
     availableRules,
     userMessage: lastUserOrToolMsg,
@@ -220,12 +220,33 @@ export function constructMessages(
     rulePolicies,
   });
 
-  // Append conversation summary to system message if it exists
-  let finalSystemMessage = systemMessage;
+  // Keep the system message to the stable base (plus summary) so the
+  // provider prompt-cache prefix does not change when the matched rule set
+  // changes. Applied rules are injected into the latest user message instead.
+  let finalSystemMessage = baseSystemMessage ?? "";
   if (summaryContent) {
-    finalSystemMessage = systemMessage
-      ? `${systemMessage}\n\nPrevious conversation summary:\n\n ${summaryContent}`
+    finalSystemMessage = finalSystemMessage
+      ? `${finalSystemMessage}\n\nPrevious conversation summary:\n\n ${summaryContent}`
       : `Previous conversation summary:\n\n ${summaryContent}`;
+  }
+
+  if (rulesText) {
+    const latestUserIndex = findLastIndex(
+      msgs,
+      (item) => item.message.role === "user",
+    );
+    if (latestUserIndex !== -1) {
+      const target = msgs[latestUserIndex];
+      const rulesPart = {
+        type: "text" as const,
+        text: `Applicable rules:\n\n${rulesText}\n\n`,
+      };
+      const existing = normalizeToMessageParts(target.message);
+      target.message = {
+        ...target.message,
+        content: [rulesPart, ...existing],
+      } as ChatMessage;
+    }
   }
 
   if (finalSystemMessage.trim()) {

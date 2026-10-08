@@ -76,7 +76,7 @@ export function ModeSelect() {
     <>
       <ToolTip
         style={{
-          zIndex: 200001, // in front of listbox
+          zIndex: 200002, // above the listbox panel (200000), which is portaled to root
         }}
         className="flex items-center gap-1"
         content={`${mode} might not work well with this model.`}

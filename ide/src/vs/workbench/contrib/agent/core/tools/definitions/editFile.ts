@@ -2,11 +2,6 @@ import { Tool } from "../..";
 import { EDIT_CODE_INSTRUCTIONS } from "../../llm/defaultSystemMessages";
 import { BUILT_IN_GROUP_NAME, BuiltInToolNames } from "../builtIn";
 
-export interface EditToolArgs {
-  filepath: string;
-  changes: string;
-}
-
 export const NO_PARALLEL_TOOL_CALLING_INSTRUCTION =
   "This tool CANNOT be called in parallel with any other tools, including itself";
 

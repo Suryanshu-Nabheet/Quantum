@@ -13,6 +13,7 @@ import {
 } from "../slices/sessionSlice";
 import { ThunkApiType } from "../store";
 import { findToolCallById, logToolUsage } from "../util";
+import { syncTodosFromToolCall } from "../util/syncTodos";
 import { appendToolResultMessage } from "../util/toolResultMessages";
 import { streamResponseAfterToolCall } from "./streamResponseAfterToolCall";
 
@@ -129,6 +130,14 @@ export const callToolById = createAsyncThunk<
         contextItems: output,
         mcpUiState,
       }),
+    );
+  }
+
+  if (!error && toolCallState.toolCall.function.name === "write_todos") {
+    syncTodosFromToolCall(
+      toolCallId,
+      toolCallState.toolCall.function.arguments,
+      dispatch,
     );
   }
 

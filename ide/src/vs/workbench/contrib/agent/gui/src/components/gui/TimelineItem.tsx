@@ -1,5 +1,6 @@
 import { ChatBubbleOvalLeftIcon } from "@heroicons/react/24/outline";
 import { ChatHistoryItem } from "core";
+import { memo } from "react";
 import styled from "styled-components";
 import { lightGray, vscBackground } from "..";
 import { getFontSize } from "../../util";
@@ -56,4 +57,4 @@ function TimelineItem(props: TimelineItemProps) {
   );
 }
 
-export default TimelineItem;
+export default memo(TimelineItem);

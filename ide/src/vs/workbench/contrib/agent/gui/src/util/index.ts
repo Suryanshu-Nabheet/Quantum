@@ -66,17 +66,3 @@ export function isWebEnvironment(): boolean {
   );
 }
 
-export function isPrerelease() {
-  const extensionVersion = getLocalStorage("extensionVersion");
-  if (!extensionVersion) {
-    console.warn(
-      `Could not find extension version in local storage, assuming it's a prerelease`,
-    );
-    return true;
-  }
-  const minor = parseInt(extensionVersion.split(".")[1], 10);
-  if (minor % 2 !== 0) {
-    return true;
-  }
-  return false;
-}

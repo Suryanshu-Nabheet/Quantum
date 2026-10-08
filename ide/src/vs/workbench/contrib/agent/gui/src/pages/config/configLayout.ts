@@ -34,8 +34,6 @@ export const CONFIG_PANEL_ROWS = [
 
 export const CONFIG_PANEL_PADDED = "px-3 py-3 sm:px-4 sm:py-3";
 
-export const CONFIG_CARD_STACK = "flex flex-col";
-
 /** Compact numeric field in settings rows. */
 export const CONFIG_NUMBER_INPUT =
   "border-[color:var(--vscode-editorWidget-border,var(--vscode-sideBar-border,rgba(128,128,128,0.45)))] bg-vsc-input-background focus-within:border-border-focus focus-within:ring-border-focus flex w-[4.25rem] shrink-0 items-center rounded-md border border-solid focus-within:ring-1";

@@ -93,9 +93,42 @@ export function getAnthropicHeaders(
   return headers;
 }
 
-export function addCacheControlToLastTwoUserMessages(messages: MessageParam[]) {
+/** Counts `cache_control` breakpoints already present on a request body. */
+export function countCacheBreakpoints(body: {
+  system?: unknown;
+  tools?: unknown;
+  messages?: MessageParam[];
+}): number {
+  let count = 0;
+  const system = Array.isArray(body.system) ? body.system : [];
+  for (const block of system) {
+    if ((block as { cache_control?: unknown }).cache_control) count++;
+  }
+  const tools = Array.isArray(body.tools) ? body.tools : [];
+  for (const tool of tools) {
+    if ((tool as { cache_control?: unknown }).cache_control) count++;
+  }
+  for (const msg of body.messages ?? []) {
+    if (!Array.isArray(msg.content)) continue;
+    for (const part of msg.content) {
+      if ((part as { cache_control?: unknown }).cache_control) count++;
+    }
+  }
+  return count;
+}
+
+/**
+ * Marks the last text part of the last two user messages for turn-level
+ * caching. `budget` caps how many breakpoints this may add so the total
+ * request stays within Anthropic's per-request cache-breakpoint limit.
+ */
+export function addCacheControlToLastTwoUserMessages(
+  messages: MessageParam[],
+  budget: number = 2,
+): number {
+  let remaining = Math.max(0, budget);
   let userMessages = 0;
-  for (let i = messages.length - 1; i >= 0; i--) {
+  for (let i = messages.length - 1; i >= 0 && remaining > 0; i--) {
     const msg = messages[i];
     if (msg.role === "user") {
       userMessages++;
@@ -106,6 +139,7 @@ export function addCacheControlToLastTwoUserMessages(messages: MessageParam[]) {
         const part = msg.content[j];
         if (part.type === "text") {
           part.cache_control = { type: "ephemeral" };
+          remaining -= 1;
           break;
         }
       }
@@ -114,6 +148,7 @@ export function addCacheControlToLastTwoUserMessages(messages: MessageParam[]) {
       }
     }
   }
+  return remaining;
 }
 
 export function openAiToolChoiceToAnthropicToolChoice(

@@ -224,6 +224,16 @@ export interface Session {
   chatModelTitle?: string | null;
   /** Optional: cumulative usage and cost for all LLM API calls in this session */
   usage?: SessionUsage;
+  /** Optional: task list the agent tracks across a long-running session */
+  todos?: TodoItem[];
+}
+
+export type TodoStatus = "pending" | "in_progress" | "done";
+
+export interface TodoItem {
+  id: string;
+  text: string;
+  status: TodoStatus;
 }
 
 export interface BaseSessionMetadata {
@@ -456,6 +466,8 @@ interface ToolCallState {
   parsedArgs: any;
   processedArgs?: Record<string, any>; // Added in preprocesing step
   output?: ContextItem[];
+  /** Set on write_todos calls: the task list as it stood after this call. */
+  todosSnapshot?: TodoItem[];
   tool?: Tool;
   mcpUiState?: McpUiState;
 }

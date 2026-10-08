@@ -1,6 +1,6 @@
 import { ToolPolicy } from "terminal-security";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { RuleWithSource, Tool } from "core";
+import { Tool } from "core";
 import { BUILT_IN_GROUP_NAME } from "core/tools/builtIn";
 import type {
   AgentAccessMode,
@@ -100,9 +100,6 @@ export const uiSlice = createSlice({
       }
     },
     // Rules
-    addRule: (state, action: PayloadAction<RuleWithSource>) => {
-      state.ruleSettings[action.payload.name!] = DEFAULT_RULE_SETTING;
-    },
     toggleRuleSetting: (state, action: PayloadAction<string>) => {
       const setting = state.ruleSettings[action.payload];
 
@@ -156,7 +153,6 @@ export const {
   clearToolPolicy,
   toggleToolGroupSetting,
   addTool,
-  addRule,
   toggleRuleSetting,
   setTTSActive,
   setReasoningSetting,

@@ -24,18 +24,6 @@ export function isOllamaCloudModelName(modelName: string): boolean {
   return modelTag === "cloud" || modelTag.endsWith("-cloud");
 }
 
-/** Ollama FIM uses /api/generate with suffix (insert mode). Many chat models reject it. */
-export function isOllamaInsertUnsupportedError(error: unknown): boolean {
-  if (!(error instanceof Error)) {
-    return false;
-  }
-  const message = error.message.toLowerCase();
-  return (
-    message.includes("does not support insert") ||
-    message.includes("not support insert")
-  );
-}
-
 /**
  * Models that are very unlikely to support Ollama insert/FIM even before /api/show returns.
  * Used to avoid noisy 400s from general chat models (e.g. qwen3.5:4b).
@@ -76,12 +64,6 @@ export function sortOllamaModelTagsLocalFirst(
     const bCloud = isOllamaCloudModelTag(b) ? 1 : 0;
     return aCloud - bCloud;
   });
-}
-
-export interface ModelInfo {
-  id: string;
-  size: number;
-  digest: string;
 }
 
 export async function isOllamaInstalled(): Promise<boolean> {

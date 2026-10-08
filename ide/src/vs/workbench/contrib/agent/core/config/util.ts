@@ -456,23 +456,6 @@ export async function migrateLegacyGuiConfigIfNeeded(ide: IDE): Promise<void> {
   }
 }
 
-export function getModelByRole<T extends keyof ExperimentalModelRoles>(
-  config: AgentConfig,
-  role: T,
-): ILLM | undefined {
-  const roleTitle = config.experimental?.modelRoles?.[role];
-
-  if (!roleTitle) {
-    return undefined;
-  }
-
-  const matchingModel = config.modelsByRole.chat.find(
-    (model) => model.title === roleTitle,
-  );
-
-  return matchingModel;
-}
-
 export function serializePromptTemplates(
   templates: Record<string, PromptTemplate> | undefined,
 ): Record<string, string> | undefined {

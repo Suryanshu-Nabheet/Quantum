@@ -17,3 +17,4 @@ export { runTerminalCommandTool } from "./runTerminalCommand";
 export { singleFindAndReplaceTool } from "./singleFindAndReplace";
 export { viewDiffTool } from "./viewDiff";
 export { viewSubdirectoryTool } from "./viewSubdirectory";
+export { writeTodosTool } from "./writeTodos";

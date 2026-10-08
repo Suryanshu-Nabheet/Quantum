@@ -41,6 +41,7 @@ import {
 } from "./AnthropicCachingStrategies.js";
 import {
   addCacheControlToLastTwoUserMessages,
+  countCacheBreakpoints,
   getAnthropicHeaders,
   getAnthropicMediaTypeFromDataUrl,
   openAiToolChoiceToAnthropicToolChoice,
@@ -76,10 +77,13 @@ export class AnthropicApi implements BaseLlmApi {
       CACHING_STRATEGIES[this.config.cachingStrategy ?? "systemAndTools"];
     const result = cachingStrategy(cleanBody);
 
-    // Step 3: Cache last two user messages for conversation turn caching
-    // Skip when caching is disabled
+    // Step 3: Cache last two user messages for conversation turn caching,
+    // spending only the breakpoints the strategy left unused (Anthropic caps
+    // cache breakpoints per request at 4). Skip when caching is disabled.
     if ((this.config.cachingStrategy ?? "systemAndTools") !== "none") {
-      addCacheControlToLastTwoUserMessages(result.messages);
+      const used = countCacheBreakpoints(result);
+      const remaining = Math.max(0, 4 - used);
+      addCacheControlToLastTwoUserMessages(result.messages, remaining);
     }
 
     return result;

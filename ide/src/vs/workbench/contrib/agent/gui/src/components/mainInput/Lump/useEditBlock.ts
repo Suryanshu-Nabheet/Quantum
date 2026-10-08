@@ -13,17 +13,8 @@ function useOpenConfigTab(tab: ConfigTab) {
   return () => navigate(buildConfigRoute(tab));
 }
 
-/** Opens the in-app Settings UI (never raw config YAML). */
-export function useEditBlock(tab: ConfigTab = "models") {
-  return useOpenConfigTab(tab);
-}
-
 /** Navigate to Models settings (e.g. from chat error UI). */
 export function useEditModel() {
-  return useOpenConfigTab("models");
-}
-
-export function useEditDoc() {
   return useOpenConfigTab("models");
 }
 

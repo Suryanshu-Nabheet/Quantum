@@ -54,8 +54,16 @@ export function addToolCallDeltaToState(
 
   const [_, parsedArgs] = incrementalParseJson(mergedArgs || "{}");
 
+  // A late streamed chunk must not reset a call that has already settled
+  // (e.g. errored by a policy evaluation). Only in-flight calls stay generating.
+  const status =
+    currentState && currentState.status !== "generating"
+      ? currentState.status
+      : "generating";
+
   return {
-    status: "generating",
+    status,
+    output: currentState?.output,
     toolCall: {
       id: callId,
       type: callType,

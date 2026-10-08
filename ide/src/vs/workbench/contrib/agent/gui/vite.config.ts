@@ -25,6 +25,8 @@ export default defineConfig({
   resolve: {
     alias: {
       yaml: require.resolve("yaml"),
+      // uri-js is CJS-only (no module/exports entry); core imports it directly.
+      "uri-js": require.resolve("uri-js"),
     },
   },
   build: {

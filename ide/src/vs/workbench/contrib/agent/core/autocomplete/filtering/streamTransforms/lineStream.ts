@@ -4,7 +4,6 @@ import { DiffLine } from "../../..";
 import { LineStream } from "../../../diff/util";
 
 import { headerIsMarkdown, isMarkdownFile } from "../../../utils/markdownUtils";
-import { processBlockNesting as processBlockNestingUtil } from "../../../utils/streamMarkdownUtils";
 
 export { filterCodeBlockLines } from "./filterCodeBlock";
 
@@ -46,13 +45,6 @@ function isEnglishFirstLine(line: string) {
 function isEnglishPostExplanation(line: string): boolean {
   const lower = line.toLowerCase();
   return ENGLISH_POST_PHRASES.some((phrase) => lower.startsWith(phrase));
-}
-
-function shouldRemoveLineBeforeStart(line: string): boolean {
-  return (
-    line.trimStart().startsWith("```") ||
-    LINES_TO_REMOVE_BEFORE_START.some((l) => line.trim() === l)
-  );
 }
 
 /**
@@ -149,23 +141,10 @@ export function hasNestedMarkdownBlocks(
   );
 }
 
-// Wrapper for processBlockNesting with local shouldRemoveLineBeforeStart function
-export function processBlockNesting(
-  line: string,
-  seenFirstFence: boolean,
-): { newSeenFirstFence: boolean; shouldSkip: boolean } {
-  return processBlockNestingUtil(
-    line,
-    seenFirstFence,
-    shouldRemoveLineBeforeStart,
-  );
-}
-
 export const USELESS_LINES = [""];
 export const CODE_KEYWORDS_ENDING_IN_SEMICOLON = ["def"];
 export const CODE_STOP_BLOCK = "[/CODE]";
 export const BRACKET_ENDING_CHARS = [")", "]", "}", ";"];
-export const PREFIXES_TO_SKIP = ["<COMPLETION>"];
 export const LINES_TO_STOP_AT = [
   "# End of file.",
   "<STOP EDITING HERE",
@@ -173,13 +152,6 @@ export const LINES_TO_STOP_AT = [
   "```",
 ];
 export const LINES_TO_SKIP = ["</START EDITING HERE>", "<|updated_code|>"];
-export const LINES_TO_REMOVE_BEFORE_START = [
-  "<COMPLETION>",
-  "[CODE]",
-  "<START EDITING HERE>",
-  "{{FILL_HERE}}",
-];
-
 export const ENGLISH_START_PHRASES = [
   "here is",
   "here's",
@@ -198,81 +170,6 @@ export const ENGLISH_POST_PHRASES = [
   "here's how",
   "the above",
 ];
-
-export async function* noTopLevelKeywordsMidline(
-  lines: LineStream,
-  topLevelKeywords: string[],
-  fullStop: () => void,
-): LineStream {
-  for await (const line of lines) {
-    for (const keyword of topLevelKeywords) {
-      const indexOf = line.indexOf(`${keyword} `);
-      if (indexOf >= 0 && line.slice(indexOf - 1, indexOf).trim() !== "") {
-        yield line.slice(0, indexOf);
-        fullStop();
-        break;
-      }
-    }
-    yield line;
-  }
-}
-
-/**
- * Filters out lines starting with '// Path: <PATH>' from a LineStream.
- *
- * @param {LineStream} stream - The input stream of lines to filter.
- * @param {string} comment - The comment syntax to filter (e.g., '//' for JavaScript-style comments).
- * @yields {string} The filtered lines, excluding unwanted path lines.
- */
-export async function* avoidPathLine(
-  stream: LineStream,
-  comment?: string,
-): LineStream {
-  // Snippets are inserted as comments with a line at the start '// Path: <PATH>'.
-  // Sometimes the model with copy this pattern, which is unwanted
-  for await (const line of stream) {
-    if (line.startsWith(`${comment} Path: `)) {
-      continue;
-    }
-    yield line;
-  }
-}
-
-/**
- * Filters out empty comment lines from a LineStream.
- *
- * @param {LineStream} stream - The input stream of lines to filter.
- * @param {string} comment - The comment syntax to filter (e.g., '//' for JavaScript-style comments).
- * @yields {string} The filtered lines, excluding empty comments.
- */
-export async function* avoidEmptyComments(
-  stream: LineStream,
-  comment?: string,
-): LineStream {
-  // Filter lines that are empty comments
-  for await (const line of stream) {
-    if (!comment || line.trim() !== comment) {
-      yield line;
-    }
-  }
-}
-
-/**
- * Transforms a LineStream by adding newline characters between lines.
- *
- * @param {LineStream} stream - The input stream of lines.
- * @yields {string} The lines from the input stream with newline characters added between them.
- */
-export async function* streamWithNewLines(stream: LineStream): LineStream {
-  let firstLine = true;
-  for await (const nextLine of stream) {
-    if (!firstLine) {
-      yield "\n";
-    }
-    firstLine = false;
-    yield nextLine;
-  }
-}
 
 /**
  * Determines if two lines of text are considered repeated or very similar.
@@ -293,54 +190,6 @@ export function lineIsRepeated(a: string, b: string): boolean {
   const aTrim = a.trim();
   const bTrim = b.trim();
   return distance(aTrim, bTrim) / bTrim.length < 0.1;
-}
-
-/**
- * Filters a LineStream, stopping when a line similar to the provided one is encountered.
- *
- * @param {LineStream} stream - The input stream of lines to filter.
- * @param {string} line - The line to compare against for similarity.
- * @param {() => void} fullStop - Function to call when stopping the stream.
- * @yields {string} Filtered lines until a similar line is encountered.
- *
- * @description
- * This generator function processes the input stream, yielding lines until it encounters:
- * 1. An exact match to the provided line.
- * 2. A line that is considered repeated or very similar to the provided line.
- * 3. For lines ending with brackets, it allows exact matches of trimmed content.
- * When any of these conditions are met, it calls the fullStop function and stops yielding.
- */
-export async function* stopAtSimilarLine(
-  stream: LineStream,
-  line: string,
-  fullStop: () => void,
-): AsyncGenerator<string> {
-  const trimmedLine = line.trim();
-  const lineIsBracketEnding = isBracketEnding(trimmedLine);
-
-  for await (const nextLine of stream) {
-    if (trimmedLine === "") {
-      yield nextLine;
-      continue;
-    }
-
-    if (lineIsBracketEnding && trimmedLine.trim() === nextLine.trim()) {
-      yield nextLine;
-      continue;
-    }
-
-    if (nextLine === line) {
-      fullStop();
-      break;
-    }
-
-    if (lineIsRepeated(nextLine, trimmedLine)) {
-      fullStop();
-      break;
-    }
-
-    yield nextLine;
-  }
 }
 
 /**
@@ -391,40 +240,6 @@ export async function* stopAtLines(
     if (shouldStop) {
       fullStop();
       break;
-    }
-    yield line;
-  }
-}
-
-export async function* stopAtLinesExact(
-  stream: LineStream,
-  fullStop: () => void,
-  linesToStopAt: string[],
-): LineStream {
-  for await (const line of stream) {
-    if (linesToStopAt.some((stopAt) => line === stopAt)) {
-      fullStop();
-      break;
-    }
-    yield line;
-  }
-}
-
-/**
- * Filters a LineStream, skipping specified prefixes on the first line.
- * @param {LineStream} lines - The input stream of lines.
- * @yields {string} Filtered lines with prefixes removed from the first line if applicable.
- */
-export async function* skipPrefixes(lines: LineStream): LineStream {
-  let isFirstLine = true;
-  for await (const line of lines) {
-    if (isFirstLine) {
-      const match = PREFIXES_TO_SKIP.find((prefix) => line.startsWith(prefix));
-      if (match) {
-        yield line.slice(match.length);
-        continue;
-      }
-      isFirstLine = false;
     }
     yield line;
   }
@@ -527,19 +342,6 @@ export async function* filterLeadingNewline(lines: LineStream): LineStream {
  * @param {LineStream} lines - The input stream of lines.
  * @yields {string} Lines with the first line's indentation fixed if necessary.
  */
-export async function* fixCodeLlamaFirstLineIndentation(lines: LineStream) {
-  let isFirstLine = true;
-
-  for await (const line of lines) {
-    if (isFirstLine && line.startsWith("  ")) {
-      yield line.slice(2);
-      isFirstLine = false;
-    } else {
-      yield line;
-    }
-  }
-}
-
 /**
  * Filters leading and trailing blank line insertions from a stream of diff lines.
  *
@@ -588,88 +390,6 @@ export async function* filterLeadingAndTrailingNewLineInsertion(
 }
 
 /**
- * Filters a LineStream, stopping when a line repeats more than a specified number of times.
- *
- * @param {LineStream} lines - The input stream of lines to filter.
- * @param {() => void} fullStop - Function to call when stopping the stream.
- * @yields {string} Filtered lines until excessive repetition is detected.
- *
- * @description
- * This function yields lines from the input stream until a line is repeated
- * for a maximum of 3 consecutive times. When this limit is reached, it calls
- * the fullStop function and stops yielding. Only the first of the repeating
- * lines is yieled.
- */
-export async function* stopAtRepeatingLines(
-  lines: LineStream,
-  fullStop: () => void,
-): LineStream {
-  let previousLine: string | undefined;
-  let repeatCount = 0;
-  const MAX_REPEATS = 3;
-
-  for await (const line of lines) {
-    if (line === previousLine) {
-      repeatCount++;
-      if (repeatCount === MAX_REPEATS) {
-        fullStop();
-        return;
-      }
-    } else {
-      yield line;
-      repeatCount = 1;
-    }
-    previousLine = line;
-  }
-}
-
-/**
  * Pass-through, except logs the total output at the end
  * @param lines a `LineStream`
  */
-export async function* logLines(
-  lines: LineStream,
-  prefix: string = "STREAMED LINES",
-): LineStream {
-  let linesToLog = [];
-  for await (const line of lines) {
-    yield line;
-    linesToLog.push(line);
-  }
-  console.log(`${prefix}:\n${linesToLog.join("\n")}\n\n`);
-}
-
-export async function* showWhateverWeHaveAtXMs(
-  lines: LineStream,
-  ms: number,
-): LineStream {
-  const startTime = Date.now();
-  let yieldedContent = false;
-
-  for await (const line of lines) {
-    yield line;
-
-    if (line.length > 0) {
-      yieldedContent = true;
-    }
-
-    const isTakingTooLong = Date.now() - startTime > ms;
-    if (isTakingTooLong && yieldedContent) {
-      break;
-    }
-  }
-}
-
-export async function* noDoubleNewLine(lines: LineStream): LineStream {
-  let isFirstLine = true;
-
-  for await (const line of lines) {
-    if (line.trim() === "" && !isFirstLine) {
-      return;
-    }
-
-    isFirstLine = false;
-
-    yield line;
-  }
-}

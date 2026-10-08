@@ -1,11 +1,17 @@
 import { createAsyncThunk, unwrapResult } from "@reduxjs/toolkit";
-import { ChatMessage, LLMFullCompletionOptions, ModelDescription } from "core";
+import {
+  ChatMessage,
+  LLMFullCompletionOptions,
+  ModelDescription,
+  Tool,
+} from "core";
 import { ToCoreProtocol } from "core/protocol";
 import { selectActiveTools } from "../selectors/selectActiveTools";
 import { selectSelectedChatModel } from "../slices/configSlice";
 import {
   addPromptCompletionPair,
   errorToolCall,
+  resetNextCodeBlockToApplyIndex,
   setActive,
   setAgentStepDepth,
   setAppliedRulesAtIndex,
@@ -30,7 +36,7 @@ import {
 import { getBaseSystemMessage } from "../util/getBaseSystemMessage";
 import { evaluateToolPolicies } from "./evaluateToolPolicies";
 import { preprocessToolCalls } from "./preprocessToolCallArgs";
-import { streamResponseAfterToolCall } from "./streamResponseAfterToolCall";
+import { canResumeAfterToolCall } from "./streamResponseAfterToolCall";
 import {
   agentStepLimitMessage,
   isAgentStepLimitReached,
@@ -38,6 +44,14 @@ import {
 } from "../../util/agentLoopLimits";
 import { createStreamRenderBatcher } from "../util/streamRenderBatch";
 import { withAgentStreamLock } from "../util/agentStreamLock";
+import {
+  isOverloadedErrorMessage,
+  markOverloadRetriesExhausted,
+  OVERLOADED_RETRIES,
+  overloadRetryDelayMs,
+} from "../util/overloadRetry";
+import { analyzeError } from "../../util/errorAnalysis";
+import { nextWithIdleTimeout } from "../util/streamIdleTimeout";
 import { runParallelToolCalls } from "../util/agentToolPipeline";
 
 /**
@@ -85,37 +99,121 @@ export const streamNormalInput = createAsyncThunk<
     { legacySlashCommandData, depth = 0 },
     { dispatch, extra, getState },
   ) => {
-    const state = getState();
-    if (isAgentStepLimitReached(depth, state.config.config.ui)) {
-      const maxSteps = resolveMaxAgentSteps(state.config.config.ui);
-      const message = agentStepLimitMessage(maxSteps);
-      if (process.env.NODE_ENV === "test") {
-        console.error(message, JSON.stringify(getState(), null, 2));
-        throw new Error(message);
+    await runAgentDriver({
+      legacySlashCommandData,
+      depth,
+      dispatch,
+      extra,
+      getState,
+    });
+  },
+);
+
+/**
+ * Retries one LLM turn on transient overload errors. The unit of retry is the
+ * turn, so completed earlier turns are never re-run.
+ */
+async function runTurnWithOverloadRetry<T>(
+  selectedChatModel: Parameters<typeof analyzeError>[1],
+  runTurn: () => Promise<T>,
+): Promise<T> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await runTurn();
+    } catch (e) {
+      const { message } = analyzeError(e, selectedChatModel);
+      if (!isOverloadedErrorMessage(message)) {
+        throw e;
       }
-      dispatch(setInlineErrorMessage("max-agent-steps"));
-      dispatch(setInactive());
-      return;
+      if (attempt >= OVERLOADED_RETRIES) {
+        markOverloadRetriesExhausted(e);
+        throw e;
+      }
+      await new Promise((resolve) =>
+        setTimeout(resolve, overloadRetryDelayMs(attempt)),
+      );
     }
-    dispatch(setAgentStepDepth(depth));
-    const selectedChatModel = selectSelectedChatModel(state);
+  }
+}
+
+/**
+ * Iterative agent driver: runs LLM turns in a loop until a turn ends with no
+ * tool work to resume. Callers (the thunk and resumed tool completions) share
+ * this single driver instead of nesting one thunk inside another.
+ */
+export async function runAgentDriver({
+  legacySlashCommandData,
+  depth,
+  dispatch,
+  extra,
+  getState,
+}: {
+  legacySlashCommandData?: ToCoreProtocol["llm/streamChat"][0]["legacySlashCommandData"];
+  depth: number;
+  dispatch: AppDispatch;
+  extra: ThunkApiType["extra"];
+  getState: () => RootState;
+}): Promise<void> {
+    const selectedChatModel = selectSelectedChatModel(getState());
 
     if (!selectedChatModel) {
       throw new Error("No chat model selected");
     }
 
-    await withAgentStreamLock(async () => {
-      await runStreamNormalInputLocked({
-        legacySlashCommandData,
-        depth,
+    // Stream one LLM turn under the stream lock, then run tool execution
+    // after release. Follow-up turns iterate in this loop; the stream lock is
+    // never held across post-stream tool work, so nested resumes cannot deadlock.
+    let currentDepth = depth;
+    for (;;) {
+      // A continuation must not start after the user cancelled. cancelStream
+      // clears isStreaming; the first turn sets it itself, so only continuations
+      // are checked.
+      if (currentDepth > depth && !getState().session.isStreaming) {
+        return;
+      }
+      if (isAgentStepLimitReached(currentDepth, getState().config.config.ui)) {
+        const maxSteps = resolveMaxAgentSteps(getState().config.config.ui);
+        const message = agentStepLimitMessage(maxSteps);
+        if (process.env.NODE_ENV === "test") {
+          console.error(message, JSON.stringify(getState(), null, 2));
+          throw new Error(message);
+        }
+        dispatch(setInlineErrorMessage("max-agent-steps"));
+        dispatch(setInactive());
+        return;
+      }
+      dispatch(setAgentStepDepth(currentDepth));
+
+      const streamOutcome = await runTurnWithOverloadRetry(selectedChatModel, () =>
+        withAgentStreamLock(async () =>
+          runStreamNormalInputLocked({
+            legacySlashCommandData,
+            depth: currentDepth,
+            dispatch,
+            extra,
+            getState,
+            selectedChatModel,
+          }),
+        ),
+      );
+      if (!streamOutcome) {
+        return;
+      }
+
+      const next = await runPostStreamToolPhase({
+        depth: currentDepth,
         dispatch,
         extra,
         getState,
-        selectedChatModel,
+        streamAborter: streamOutcome.streamAborter,
+        activeTools: streamOutcome.activeTools,
       });
-    });
-  },
-);
+      if (next !== "continue") {
+        return;
+      }
+      currentDepth += 1;
+    }
+}
 
 async function runStreamNormalInputLocked({
   legacySlashCommandData,
@@ -251,7 +349,7 @@ async function runStreamNormalInputLocked({
     }
 
     const renderBatch = createStreamRenderBatcher(dispatch);
-    let next = await gen.next();
+    let next = await nextWithIdleTimeout(gen.next());
     while (!next.done) {
       if (streamAborter.signal.aborted) {
         break;
@@ -261,7 +359,7 @@ async function runStreamNormalInputLocked({
       if (chunk?.length) {
         renderBatch.push(chunk);
       }
-      next = await gen.next();
+      next = await nextWithIdleTimeout(gen.next());
     }
     renderBatch.flushNow();
 
@@ -301,10 +399,48 @@ async function runStreamNormalInputLocked({
     }
   }
 
+  return { streamAborter, activeTools };
+}
+
+async function runPostStreamToolPhase({
+  depth,
+  dispatch,
+  extra,
+  getState,
+  streamAborter,
+  activeTools,
+}: {
+  depth: number;
+  dispatch: AppDispatch;
+  extra: ThunkApiType["extra"];
+  getState: () => RootState;
+  streamAborter: AbortController;
+  activeTools: Tool[];
+}) {
   // Tool call sequence:
   // 1. Mark generating tool calls as generated
   const state1 = getState();
   if (streamAborter.signal.aborted) {
+    // An interrupted stream leaves calls in "generating", which the resume gate
+    // never treats as settled. Settle them as errored so the next turn is not wedged.
+    for (const tc of selectCurrentToolCalls(state1)) {
+      if (tc.status === "generating") {
+        dispatch(
+          errorToolCall({
+            toolCallId: tc.toolCallId,
+            output: [
+              {
+                name: "Tool Call Interrupted",
+                description: "Stream interrupted",
+                content:
+                  "This tool call was interrupted before its arguments finished streaming. Re-issue it if it is still needed.",
+                icon: "problems",
+              },
+            ],
+          }),
+        );
+      }
+    }
     return;
   }
   const originalToolCalls = selectCurrentToolCalls(state1);
@@ -383,28 +519,55 @@ async function runStreamNormalInputLocked({
       return;
     }
     if (generatedCalls4.length > 0) {
-      await runParallelToolCalls(
-        dispatch,
-        generatedCalls4.map(({ toolCallId }) => toolCallId),
-        {
-          depth: depth + 1,
-          isAutoApproved: true,
-          deferToolResults: true,
-          resumeAgent: true,
-        },
-      );
+      const pendingIds = generatedCalls4.map(({ toolCallId }) => toolCallId);
+      await runParallelToolCalls(dispatch, pendingIds, {
+        depth: depth + 1,
+        isAutoApproved: true,
+        deferToolResults: true,
+        resumeAgent: false,
+      });
+      const anchorId = pendingIds[pendingIds.length - 1];
+      dispatch(resetNextCodeBlockToApplyIndex());
+      if (
+        !canResumeAfterToolCall(
+          getState().session.history,
+          anchorId,
+          getState().config.config.ui?.resumeAfterToolRejection,
+        )
+      ) {
+        return "done";
+      }
+      if (!getState().session.isStreaming) {
+        dispatch(setActive());
+      }
+      return "continue";
     } else {
       const lastToolCallId =
         originalToolCalls[originalToolCalls.length - 1]?.toolCallId;
-      if (lastToolCallId) {
-        unwrapResult(
-          await dispatch(
-            streamResponseAfterToolCall({
-              toolCallId: lastToolCallId,
-              depth: depth + 1,
-            }),
-          ),
-        );
+      // Only resume when this turn itself generated tool calls. A call that
+      // settled in an earlier turn must not re-trigger another LLM turn.
+      if (lastToolCallId && generatingCalls.length > 0) {
+        // An aborted stream must not start another turn (HEAD guarded this
+        // dispatch with the same check).
+        if (streamAborter.signal.aborted) {
+          return;
+        }
+        // Finalize exactly as the resume thunk did, then let the loop take
+        // the next turn instead of re-entering streamNormalInput recursively.
+        dispatch(resetNextCodeBlockToApplyIndex());
+        if (
+          !canResumeAfterToolCall(
+            getState().session.history,
+            lastToolCallId,
+            getState().config.config.ui?.resumeAfterToolRejection,
+          )
+        ) {
+          return "done";
+        }
+        if (!getState().session.isStreaming) {
+          dispatch(setActive());
+        }
+        return "continue";
       }
     }
   }

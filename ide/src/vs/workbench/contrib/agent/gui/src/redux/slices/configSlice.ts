@@ -1,8 +1,6 @@
 import { ConfigResult, ConfigValidationError } from "agent-config";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { BrowserSerializedAgentConfig } from "core";
-import { DEFAULT_MAX_TOKENS } from "core/llm/constants";
-
 export type ConfigState = {
   configError: ConfigValidationError[] | undefined;
   config: BrowserSerializedAgentConfig;
@@ -80,12 +78,6 @@ export const configSlice = createSlice({
     },
   },
   selectors: {
-    selectSelectedChatModelContextLength: (state): number => {
-      return (
-        state.config.selectedModelByRole.chat?.contextLength ||
-        DEFAULT_MAX_TOKENS
-      );
-    },
     selectSelectedChatModel: (state) => {
       return state.config.selectedModelByRole.chat;
     },
@@ -98,10 +90,7 @@ export const configSlice = createSlice({
 export const { updateConfig, setConfigResult, setConfigLoading } =
   configSlice.actions;
 
-export const {
-  selectSelectedChatModelContextLength,
-  selectUIConfig,
-  selectSelectedChatModel,
-} = configSlice.selectors;
+export const { selectUIConfig, selectSelectedChatModel } =
+  configSlice.selectors;
 
 export default configSlice.reducer;

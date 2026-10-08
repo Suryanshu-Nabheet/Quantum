@@ -5,13 +5,6 @@ import { validateSearchAndReplaceFilepath } from "../../edit/searchAndReplace/va
 import { BUILT_IN_GROUP_NAME, BuiltInToolNames } from "../builtIn";
 import { NO_PARALLEL_TOOL_CALLING_INSTRUCTION } from "./editFile";
 
-export interface SingleFindAndReplaceArgs {
-  filepath: string;
-  old_string: string;
-  new_string: string;
-  replace_all?: boolean;
-}
-
 export const singleFindAndReplaceTool: Tool = {
   type: "function",
   displayTitle: "Find and Replace",

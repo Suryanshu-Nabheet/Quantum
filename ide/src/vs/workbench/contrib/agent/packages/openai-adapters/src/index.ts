@@ -233,5 +233,7 @@ export {
   getAnthropicMediaTypeFromDataUrl,
 } from "./apis/AnthropicUtils.js";
 
+export { applyAnthropicCachingToOpenRouterBody } from "./apis/OpenRouterCaching.js";
+
 export { isResponsesModel } from "./apis/openaiResponses.js";
 export { extractBase64FromDataUrl, parseDataUrl } from "./util/url.js";
