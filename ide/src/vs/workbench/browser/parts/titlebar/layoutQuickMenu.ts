@@ -375,13 +375,6 @@ export class LayoutQuickMenuWidget extends Disposable {
 		}));
 	}
 
-	private _renderPartToggle(section: HTMLElement, label: string, isOn: () => boolean, run: () => Promise<void> | void): void {
-		const row = append(section, $('.layout-quick-menu__row.layout-quick-menu__row--toggle'));
-		append(append(row, $('.layout-quick-menu__row-left')), $('span.layout-quick-menu__label')).textContent = label;
-		const switchEl = this._createSwitch(append(row, $('.layout-quick-menu__row-right')), isOn(), label);
-		this._wireToggle(row, switchEl, label, isOn, run);
-	}
-
 	private _wireToggle(row: HTMLElement, switchEl: HTMLElement, label: string, isOn: () => boolean, run: () => Promise<void> | void): void {
 		this._switchBindings.push({ switchEl, label, isOn });
 		this._disposables.add(addDisposableListener(row, EventType.CLICK, e => {

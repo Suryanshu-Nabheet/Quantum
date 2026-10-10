@@ -1,12 +1,10 @@
 import { describe, expect, it } from "vitest";
-import {
-  isAutocompleteDisabledInFile,
-  normalizeAutocompleteDisablePattern,
-} from "./disableInFiles.js";
+import { normalizePathPattern } from "../../util/pathPatternMatch.js";
+import { isAutocompleteDisabledInFile } from "./disableInFiles.js";
 
 describe("disableInFiles", () => {
   it("normalizes bare dotfiles to match in any directory", () => {
-    expect(normalizeAutocompleteDisablePattern(".env")).toBe("**/.env");
+    expect(normalizePathPattern(".env")).toBe("**/.env");
   });
 
   it("matches .env at repo root and nested paths", () => {

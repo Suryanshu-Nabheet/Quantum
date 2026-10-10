@@ -11,15 +11,15 @@ src/vs/workbench/contrib/agent/   # source (this directory)
 ├── src/            # extension host
 ├── core/           # LLM, tools, context providers, config
 ├── gui/            # React sidebar (Vite)
-├── workbench/      # Quantum workbench integration (layout, hovers)
+├── workbench/      # Quantum workbench integration (layout, hovers, browser)
 ├── shared/         # extension + view IDs (workbench + host)
 ├── packages/       # shared libraries
 └── scripts/        # build helpers for the generated Agent runtime
 ```
 
-Quantum builds this source into `out/agent` and loads that generated folder as a built-in system extension (no `extensions/agent` symlink).
+Quantum builds this source into `ide/out/agent` and loads that folder as a built-in system extension (`quantum.agent`). There is no `extensions/agent` symlink.
 
-## Build (from Quantum repo root)
+## Build (from `ide/` repo root)
 
 ```bash
 npm run compile    # includes agent via gulp compile-agent
@@ -27,24 +27,40 @@ npm run watch      # includes agent esbuild watch
 ./scripts/setup.sh --setup-only
 ```
 
+### Build scripts (this directory)
+
+| Script | Purpose |
+|--------|---------|
+| `build-packages.js` | Build `packages/*` in dependency order → `out/agent-packages` |
+| `ensure-webview.js` | Build/copy GUI into `out/agent/webview/` |
+| `watch-gui.js` | Watch GUI; refresh `out/agent/webview/` (gulp `watch-agent`) |
+| `watch-packages.js` | Watch local packages (gulp `watch-agent`) |
+| `esbuild.js` | Bundle `src/` + `core/` → `out/agent/out/extension.js` |
+| `copy-native-assets.js` | Copy onnxruntime/tokenizers/workers into `out/agent` |
+| `clean-artifacts.js` | `npm run clean` — local caches + `out/agent*` |
+
+Production agent build from here: `npm run build:agent`.
+
 ## GUI live reload
 
-Default: `npm run watch` at repo root rebuilds the GUI into `out/agent/webview/` (no second terminal).
+Default: `npm run watch` at the `ide/` root rebuilds the GUI into `out/agent/webview/` (no second terminal).
 
-Optional Vite HMR: set **Agent: Use Vite Gui Dev Server** to `true`, then:
+Optional Vite HMR: set **Agent: Use Vite Gui Dev Server** to `true`, then from this directory:
 
 ```bash
 npm run dev --prefix gui
 ```
 
+GUI production build: `npm run build --prefix gui` → `out/agent-gui/`, copied by `ensure-webview.js` during `compile-agent`.
+
 ## Configuration
 
-Open **Settings** with **⌘,** / **Ctrl+,** (title-bar layout menu → Settings, or command **Open Settings**). Workbench preferences are **VS Code Settings** (**⌘⇧,** / **Ctrl+Shift+,**). Agent config lives in `~/.agent/index/globalContext.json` — models, rules, prompts, and MCP servers. There is no `config.yaml` or user `config.json`.
+Open **Settings** with **⌘,** / **Ctrl+,**. Workbench preferences: **VS Code Settings** (**⌘⇧,** / **Ctrl+Shift+,**). Agent config lives in `~/.agent/index/globalContext.json` — models, rules, prompts, and MCP servers.
 
-- **Models** — add / configure / remove providers (one card per provider; removing deletes that credential and its models everywhere)
+- **Models** — add / configure / remove providers (one card per provider)
 - **Agent** — model, permissions, protected paths, loop limits; optional embed/rerank
 - **Tab** — Tab model and ignored paths for inline completions
-- **Browser** — Agent tools drive the integrated browser (list/open/close tabs, navigate, click, type, screenshot, Playwright)
+- **Browser** — integrated browser tools (tabs, navigate, click, type, screenshot, Playwright)
 - **Rules** and **MCP**
 - Secrets: `~/.agent/.env` or workspace `.env`
 - **Project rules** — `AGENTS.md` / `AGENT.md` / `CLAUDE.md` in the workspace root
@@ -52,8 +68,6 @@ Open **Settings** with **⌘,** / **Ctrl+,** (title-bar layout menu → Settings
 User data: `~/.agent/` (settings, sessions, index, embedding models cache).
 
 ### Local storage (no cloud database)
-
-Agent does **not** use a remote database or account. All persistence is on disk:
 
 | Path | Purpose |
 |------|---------|
@@ -65,54 +79,87 @@ Agent does **not** use a remote database or account. All persistence is on disk:
 ## Design
 
 - **Quantum-only host** — built into the workbench, no multi-IDE adapters
-- **BYOK** — you bring API keys / local models; no Quantum cloud account or product telemetry
-- Optional cloud LLM providers (OpenAI, Anthropic, OpenRouter, etc.) when you configure them
-- Embedding models cache under `~/.agent/models` (transformers.js may download once on first use)
+- **BYOK** — API keys / local models; no Quantum cloud account or product telemetry
 - GUI-first setup + MCP for tools / external docs
 
-## Quantum IDE integration
+## Quantum workbench integration
 
-Agent source already lives in the Quantum monorepo. Build and launch from the repo root:
+Host hooks **outside** this folder (edit only when changing how Agent is loaded or laid out):
+
+| Host file | Purpose |
+|-----------|---------|
+| `src/vs/platform/environment/common/environment.ts` | `builtinAgentExtensionPath` on `INativeEnvironmentService` |
+| `src/vs/platform/environment/common/environmentService.ts` | Resolves path → `{appRoot}/out/agent` |
+| `src/vs/platform/extensionManagement/common/extensionsScannerService.ts` | `scanBuiltinContribAgentExtension()` |
+| `src/vs/workbench/workbench.common.main.ts` | Layout, webview hover, browser bridge contributions |
+| `build/gulpfile.agent.ts` | `compile-agent` / `watch-agent` |
+| `build/gulpfile.ts` | Wires agent into `compile` / `watch` |
+| `build/lib/preLaunch.ts` | Ensures `out/agent` exists before launch |
+| `src/tsconfig.json` | Excludes Agent runtime from workbench transpile |
+
+Integrate from the shell via **commands**, not deep imports into `core/` or `gui/`:
+
+- `agent.openPanel`, `agent.focusAgentInput` (**Cmd/Ctrl+L**)
+- `agent.browser.*` — workbench browser bridge
+- Browser tools (core): `open_browser_page`, `list_open_pages`, `close_browser_page`, `read_page`, `screenshot_page`, `navigate_page`, click/type/hover/drag, `run_playwright_code`, `handle_dialog`
+
+Launch from `ide/`:
 
 ```bash
 npm run compile
 VSCODE_SKIP_PRELAUNCH=1 ./scripts/code.sh
 ```
 
-**Generated runtime** (created at build time — not committed):
+**Generated runtime** (not committed):
 
 | Path | Role |
 |------|------|
-| `out/agent/out/extension.js` | Bundled extension entry (`package.json` → `main`) |
-| `out/agent/webview/` | Production sidebar UI (from `out/agent-gui`) |
+| `out/agent/out/extension.js` | Bundled extension entry |
+| `out/agent/webview/` | Production sidebar UI |
 
-**Not shipped** (source / cache only): `src/`, `core/`, `gui/`, `packages/`, `scripts/`, `tmp/`, `.npm-cache/`.
-
-Remove local build artifacts before copying source:
-
-```bash
-npm run clean
-```
-
-Agent UI is lazy. Lightweight tab autocomplete is registered on startup and enabled by default so editor suggestions work without opening the sidebar.
+Tab autocomplete registers on startup (default on) without opening the sidebar.
 
 ### Manual acceptance
 
-After `npm run compile`, open Quantum with `./scripts/code.sh` from the repo root and confirm:
+After `npm run compile`, confirm:
 
-1. `@file`, `@folder`, `@search`, `@rules`, `@commit`, and `@branch` return sensible results
-2. Chat, edit, and tab autocomplete work after an extension reload
-3. Agent terminal tool captures `echo hello` output
+1. `@file`, `@folder`, `@search`, `@rules`, `@commit`, `@branch` work
+2. Chat, edit, and tab autocomplete after extension reload
+3. Terminal tool captures `echo hello`
 4. Settings toggles persist after reload
 
-## Quality checks (from Quantum repo root)
+## Agent harness (maintainers)
+
+Chat/tool turns: `streamNormalInput` → tool policy → parallel tools → `streamResponseAfterToolCall` → next turn.
+
+- One LLM stream: `withAgentStreamLock` on `streamNormalInput`
+- Step depth resets per user message; tools at `depth + 1`
+- Mixed approval: auto tools do not auto-resume the LLM
+- IPC: long timeouts for `tools/call` and `llm/compileChat`
+
+**Reliability invariants:** one terminal outcome per stream; abortable streams; bounded errors instead of spinners; no replay of partially executed turns without deduplicating side effects. Prefer deleting eager imports and duplicate listeners over new orchestration layers.
+
+Full workflow rules: `ide/AGENTS.md`.
+
+## Quality checks
+
+From `ide/` root:
 
 ```bash
-npm run compile-agent   # packages + webview + esbuild → out/agent
-npm run compile         # full workbench + extensions + agent
+npm run compile-agent
+npm run compile
 ```
 
-From this directory (optional): `npm run tsc:check`, `npm test`, `npm run build:agent`.
+From this directory:
+
+```bash
+npm run tsc:check
+npm test
+npm run build:agent
+npm run verify   # full matrix (core, gui, packages)
+```
+
+Known test baselines (do not increase failure count): core — 1 failure in `runTerminalCommand.vitest.ts`; gui — 14 failures in `streamResponse*.test.ts`.
 
 ## License
 

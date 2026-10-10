@@ -1,12 +1,4 @@
-import {
-  normalizePathPattern,
-  pathMatchesPatternList,
-} from "../../util/pathPatternMatch";
-
-/** @deprecated Use normalizePathPattern */
-export function normalizeAutocompleteDisablePattern(pattern: string): string {
-  return normalizePathPattern(pattern);
-}
+import { pathMatchesPatternList } from "../../util/pathPatternMatch";
 
 export function isAutocompleteDisabledInFile(
   filepath: string,
