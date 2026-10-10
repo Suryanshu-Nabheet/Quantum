@@ -4,6 +4,7 @@ import {
   buildStreamContinuationMessages,
   isTruncatedFinishReason,
   looksLikeDeferredAgentAction,
+  looksLikePassiveAgentHandoff,
   mergeAssistantStreamChunk,
   shouldAutoContinueAgentDriverTurn,
   shouldContinueLlmStream,
@@ -120,6 +121,7 @@ describe("streamContinuation", () => {
         hasActiveTools: true,
         lastAssistantText:
           "Let me explore the agent directory and the main VS source structure.",
+        lastUserText: "analyze the codebase",
         streamAborted: false,
         hasUnsettledToolWork: false,
       }),
@@ -129,10 +131,43 @@ describe("streamContinuation", () => {
         mode: "chat",
         hasActiveTools: true,
         lastAssistantText: "Let me explore the repo.",
+        lastUserText: "analyze the codebase",
         streamAborted: false,
         hasUnsettledToolWork: false,
       }),
     ).toBe(false);
+  });
+
+  it("continues when the model coaches the user to use tools", () => {
+    const text =
+      "To analyze the codebase, I'll need you to specify the directory. You can use the ls tool to list files and read_file to view them. For example...";
+    expect(looksLikePassiveAgentHandoff(text)).toBe(true);
+    expect(
+      shouldContinueLlmStream(
+        {
+          modelTitle: "m",
+          modelProvider: "p",
+          prompt: "",
+          completion: text,
+          finishReason: "stop",
+        },
+        { role: "assistant", content: text },
+      ),
+    ).toBe(true);
+  });
+
+  it("continues stalled codebase analysis with no tool calls", () => {
+    expect(
+      shouldAutoContinueAgentDriverTurn({
+        mode: "agent",
+        hasActiveTools: true,
+        lastUserText: "analise the codebase",
+        lastAssistantText:
+          "To analyze the codebase, I'll need you to specify the directory.",
+        streamAborted: false,
+        hasUnsettledToolWork: false,
+      }),
+    ).toBe(true);
   });
 
   it("shouldContinueLlmStream on length finish", () => {

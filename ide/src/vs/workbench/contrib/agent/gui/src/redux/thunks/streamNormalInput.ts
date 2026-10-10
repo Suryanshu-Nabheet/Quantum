@@ -59,12 +59,22 @@ import {
   PostStreamPhaseResult,
 } from "../util/agentStreamContinuation";
 import {
+  resolveAgentContinuationNudge,
   shouldAutoContinueAgentDriverTurn,
-  STREAM_CHAT_CONTINUATION_NUDGE,
 } from "core/llm/streamContinuation";
 import { renderChatMessage } from "core/util/messageContent";
 
-const MAX_INCOMPLETE_AGENT_DRIVER_RETRIES = 2;
+const MAX_INCOMPLETE_AGENT_DRIVER_RETRIES = 3;
+
+function getLastUserMessageText(getState: () => RootState): string {
+  for (let i = getState().session.history.length - 1; i >= 0; i--) {
+    const msg = getState().session.history[i].message;
+    if (msg.role === "user") {
+      return renderChatMessage(msg);
+    }
+  }
+  return "";
+}
 
 /**
  * Builds completion options with reasoning configuration based on session state and model capabilities.
@@ -238,11 +248,13 @@ export async function runAgentDriver({
           selectCurrentToolCalls(getState()).some(
             (tc) => tc.status === "generating" || tc.status === "generated",
           );
+        const lastUserText = getLastUserMessageText(getState);
         if (
           !shouldAutoContinueAgentDriverTurn({
             mode: getState().session.mode,
             hasActiveTools: streamOutcome.activeTools.length > 0,
             lastAssistantText: lastText,
+            lastUserText,
             streamAborted: streamOutcome.streamAborter.signal.aborted,
             hasUnsettledToolWork,
           })
@@ -250,6 +262,10 @@ export async function runAgentDriver({
           break;
         }
         incompleteDriverRetries++;
+        const continuationNudge = resolveAgentContinuationNudge(
+          lastText,
+          lastUserText,
+        );
         const retried = await runTurnWithOverloadRetry(selectedChatModel, () =>
           withAgentStreamLock(async () =>
             runStreamNormalInputLocked({
@@ -260,7 +276,7 @@ export async function runAgentDriver({
               getState,
               selectedChatModel,
               ephemeralMessages: [
-                { role: "user", content: STREAM_CHAT_CONTINUATION_NUDGE },
+                { role: "user", content: continuationNudge },
               ],
             }),
           ),

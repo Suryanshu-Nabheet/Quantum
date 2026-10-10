@@ -6,6 +6,9 @@ export const MAX_STREAM_CHAT_CONTINUATIONS = 8;
 export const STREAM_CHAT_CONTINUATION_NUDGE =
   "Your previous response stopped before you finished. Continue exactly where you left off. If you said you would explore, read files, or use tools, do that now (call tools or write the analysis). Do not repeat work you already completed. If a tool call was incomplete, finish its JSON arguments and proceed.";
 
+export const AGENT_AUTONOMY_CONTINUATION_NUDGE =
+  "You are in agent mode with tools. Do not tell the user which tools to run or ask them to specify paths. Call tools yourself now (list the workspace, read/search files) and continue the task. Deliver findings or edits, not instructions.";
+
 export function isTruncatedFinishReason(reason?: string | null): boolean {
   if (!reason) {
     return false;
@@ -118,6 +121,81 @@ export function resolveAssistantStreamText(
   return fromPartial.length >= fromLog.length ? fromPartial : fromLog;
 }
 
+export function userRequestedAutonomousCodebaseWork(userText: string): boolean {
+  const u = userText.trim();
+  if (!u) {
+    return false;
+  }
+  return (
+    /\b(analy[sz]e|audit|explore|review|scan|understand|map)\b.*\b(code\s*base|codebase|project|repo|repository)\b/i.test(
+      u,
+    ) ||
+    /\b(code\s*base|codebase|project|repo)\b.*\b(analy[sz]e|audit|explore|review|scan)\b/i.test(
+      u,
+    )
+  );
+}
+
+/** Model told the user to run tools instead of calling them (common on small local models). */
+export function looksLikePassiveAgentHandoff(text: string): boolean {
+  const t = text.trim();
+  if (!t || t.length > 1500) {
+    return false;
+  }
+  if (/\bfor example\s*\.{0,3}\s*$/i.test(t)) {
+    return true;
+  }
+  const coachesUser =
+    /\b(you can use|you'll need to|you need to specify|please specify|you should use|feel free to use)\b/i.test(
+      t,
+    );
+  const mentionsTools =
+    /\b(tool|tools|`ls`|ls tool|read_file|list_dir|grep|search)\b/i.test(t);
+  return coachesUser && mentionsTools;
+}
+
+export function looksLikeStalledAutonomousTask(args: {
+  lastUserText: string;
+  lastAssistantText: string;
+}): boolean {
+  if (!userRequestedAutonomousCodebaseWork(args.lastUserText)) {
+    return false;
+  }
+  const a = args.lastAssistantText.trim();
+  if (!a || a.length > 600) {
+    return false;
+  }
+  const hasDeliverable =
+    /^#{1,3}\s/m.test(a) || /\n\n.{120,}/.test(a) || a.length > 400;
+  return !hasDeliverable;
+}
+
+function lastUserMessageText(messages: ChatMessage[]): string {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const msg = messages[i];
+    if (msg.role === "user") {
+      return renderChatMessage(msg);
+    }
+  }
+  return "";
+}
+
+export function resolveAgentContinuationNudge(
+  lastAssistantText: string,
+  lastUserText: string,
+): string {
+  if (
+    looksLikePassiveAgentHandoff(lastAssistantText) ||
+    looksLikeStalledAutonomousTask({
+      lastUserText,
+      lastAssistantText,
+    })
+  ) {
+    return AGENT_AUTONOMY_CONTINUATION_NUDGE;
+  }
+  return STREAM_CHAT_CONTINUATION_NUDGE;
+}
+
 /** Short preamble that promises action but never calls tools or delivers content. */
 export function looksLikeDeferredAgentAction(text: string): boolean {
   const t = text.trim();
@@ -159,6 +237,9 @@ export function looksLikeIncompleteAssistantOutput(text: string): boolean {
   if (looksLikeDeferredAgentAction(t)) {
     return true;
   }
+  if (looksLikePassiveAgentHandoff(t)) {
+    return true;
+  }
   const fences = t.match(/```/g);
   if (fences && fences.length % 2 === 1) {
     return true;
@@ -173,6 +254,7 @@ export function shouldAutoContinueAgentDriverTurn(args: {
   mode: string;
   hasActiveTools: boolean;
   lastAssistantText: string;
+  lastUserText: string;
   streamAborted: boolean;
   hasUnsettledToolWork: boolean;
 }): boolean {
@@ -182,7 +264,16 @@ export function shouldAutoContinueAgentDriverTurn(args: {
   if (args.mode !== "agent" || !args.hasActiveTools) {
     return false;
   }
-  return looksLikeIncompleteAssistantOutput(args.lastAssistantText);
+  if (looksLikeIncompleteAssistantOutput(args.lastAssistantText)) {
+    return true;
+  }
+  if (looksLikePassiveAgentHandoff(args.lastAssistantText)) {
+    return true;
+  }
+  return looksLikeStalledAutonomousTask({
+    lastUserText: args.lastUserText,
+    lastAssistantText: args.lastAssistantText,
+  });
 }
 
 export function assistantMessageHasIncompleteToolCalls(
@@ -242,12 +333,21 @@ export function buildStreamContinuationMessages(
       content: promptLog.completion,
     } as ChatMessage);
 
+  const assistantText = resolveAssistantStreamText(
+    promptLog,
+    partialAssistant,
+  );
+  const nudge = resolveAgentContinuationNudge(
+    assistantText,
+    lastUserMessageText(baseMessages),
+  );
+
   return [
     ...baseMessages,
     assistantMessage,
     {
       role: "user",
-      content: STREAM_CHAT_CONTINUATION_NUDGE,
+      content: nudge,
     },
   ];
 }

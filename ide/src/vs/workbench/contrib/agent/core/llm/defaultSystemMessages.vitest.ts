@@ -31,5 +31,6 @@ describe("buildAssistantIdentityBlock", () => {
 
   it("does not alter mode-specific default messages", () => {
     expect(DEFAULT_AGENT_SYSTEM_MESSAGE).toContain("You are in agent mode");
+    expect(DEFAULT_AGENT_SYSTEM_MESSAGE).toContain("call tools yourself");
   });
 });
