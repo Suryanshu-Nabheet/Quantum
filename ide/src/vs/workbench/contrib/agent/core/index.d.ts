@@ -436,6 +436,8 @@ export interface PromptLog {
   modelProvider: string;
   prompt: string;
   completion: string;
+  /** Provider stop reason when available (e.g. length, stop, tool_calls). */
+  finishReason?: string | null;
 }
 
 export type MessageModes = "chat" | "agent" | "plan";

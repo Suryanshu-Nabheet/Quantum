@@ -1,5 +1,5 @@
 /** Max silence from the model stream before the turn is treated as stalled. */
-export const STREAM_IDLE_TIMEOUT_MS = 90_000;
+export const STREAM_IDLE_TIMEOUT_MS = 120_000;
 
 /**
  * Awaits the next chunk from a stream, rejecting if the stream stays silent

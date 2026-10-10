@@ -195,6 +195,8 @@ export abstract class BaseLLM implements ILLM {
   toolOverrides?: ToolOverride[];
 
   lastRequestId: string | undefined;
+  /** Set during the most recent streamChat (OpenAI-compatible chunks). */
+  lastStreamFinishReason: string | null | undefined;
 
   private _llmOptions: LLMOptions;
 
@@ -203,6 +205,7 @@ export abstract class BaseLLM implements ILLM {
   constructor(_options: LLMOptions) {
     this._llmOptions = _options;
     this.lastRequestId = undefined;
+    this.lastStreamFinishReason = undefined;
 
     // Set default options
     const options = {
@@ -1033,6 +1036,10 @@ export abstract class BaseLLM implements ILLM {
       if (!this.lastRequestId && typeof (chunk as any).id === "string") {
         this.lastRequestId = (chunk as any).id;
       }
+      const finishReason = (chunk as any).choices?.[0]?.finish_reason;
+      if (finishReason) {
+        this.lastStreamFinishReason = finishReason;
+      }
       const chatChunk = fromChatCompletionChunk(chunk as any);
       if (chatChunk) {
         yield chatChunk;
@@ -1090,6 +1097,7 @@ export abstract class BaseLLM implements ILLM {
     messageOptions?: MessageOption,
   ): AsyncGenerator<ChatMessage, PromptLog> {
     this.lastRequestId = undefined;
+    this.lastStreamFinishReason = undefined;
 
     // Apply per-model tool overrides if configured
     let effectiveTools = options.tools;
@@ -1324,6 +1332,7 @@ export abstract class BaseLLM implements ILLM {
       modelProvider: this.underlyingProviderName,
       prompt,
       completion: completion.join(""),
+      finishReason: this.lastStreamFinishReason ?? null,
     };
   }
 

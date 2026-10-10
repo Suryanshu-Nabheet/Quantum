@@ -11,6 +11,7 @@ import { selectSelectedChatModel } from "../slices/configSlice";
 import {
   addPromptCompletionPair,
   errorToolCall,
+  updateToolCallOutput,
   resetNextCodeBlockToApplyIndex,
   setActive,
   setAgentStepDepth,
@@ -53,6 +54,17 @@ import {
 import { analyzeError } from "../../util/errorAnalysis";
 import { nextWithIdleTimeout } from "../util/streamIdleTimeout";
 import { runParallelToolCalls } from "../util/agentToolPipeline";
+import {
+  ensureAgentTurnInactive,
+  PostStreamPhaseResult,
+} from "../util/agentStreamContinuation";
+import {
+  shouldAutoContinueAgentDriverTurn,
+  STREAM_CHAT_CONTINUATION_NUDGE,
+} from "core/llm/streamContinuation";
+import { renderChatMessage } from "core/util/messageContent";
+
+const MAX_INCOMPLETE_AGENT_DRIVER_RETRIES = 2;
 
 /**
  * Builds completion options with reasoning configuration based on session state and model capabilities.
@@ -164,11 +176,13 @@ export async function runAgentDriver({
     // after release. Follow-up turns iterate in this loop; the stream lock is
     // never held across post-stream tool work, so nested resumes cannot deadlock.
     let currentDepth = depth;
+    let incompleteDriverRetries = 0;
     for (;;) {
       // A continuation must not start after the user cancelled. cancelStream
       // clears isStreaming; the first turn sets it itself, so only continuations
       // are checked.
       if (currentDepth > depth && !getState().session.isStreaming) {
+        ensureAgentTurnInactive(dispatch, getState);
         return;
       }
       if (isAgentStepLimitReached(currentDepth, getState().config.config.ui)) {
@@ -184,7 +198,7 @@ export async function runAgentDriver({
       }
       dispatch(setAgentStepDepth(currentDepth));
 
-      const streamOutcome = await runTurnWithOverloadRetry(selectedChatModel, () =>
+      let streamOutcome = await runTurnWithOverloadRetry(selectedChatModel, () =>
         withAgentStreamLock(async () =>
           runStreamNormalInputLocked({
             legacySlashCommandData,
@@ -197,10 +211,11 @@ export async function runAgentDriver({
         ),
       );
       if (!streamOutcome) {
+        ensureAgentTurnInactive(dispatch, getState);
         return;
       }
 
-      const next = await runPostStreamToolPhase({
+      let next = await runPostStreamToolPhase({
         depth: currentDepth,
         dispatch,
         extra,
@@ -208,7 +223,64 @@ export async function runAgentDriver({
         streamAborter: streamOutcome.streamAborter,
         activeTools: streamOutcome.activeTools,
       });
+
+      while (
+        next === "stop" &&
+        incompleteDriverRetries < MAX_INCOMPLETE_AGENT_DRIVER_RETRIES
+      ) {
+        const last = getState().session.history.at(-1);
+        const lastText =
+          last?.message.role === "assistant"
+            ? renderChatMessage(last.message)
+            : "";
+        const hasUnsettledToolWork =
+          selectPendingToolCalls(getState()).length > 0 ||
+          selectCurrentToolCalls(getState()).some(
+            (tc) => tc.status === "generating" || tc.status === "generated",
+          );
+        if (
+          !shouldAutoContinueAgentDriverTurn({
+            mode: getState().session.mode,
+            hasActiveTools: streamOutcome.activeTools.length > 0,
+            lastAssistantText: lastText,
+            streamAborted: streamOutcome.streamAborter.signal.aborted,
+            hasUnsettledToolWork,
+          })
+        ) {
+          break;
+        }
+        incompleteDriverRetries++;
+        const retried = await runTurnWithOverloadRetry(selectedChatModel, () =>
+          withAgentStreamLock(async () =>
+            runStreamNormalInputLocked({
+              legacySlashCommandData,
+              depth: currentDepth,
+              dispatch,
+              extra,
+              getState,
+              selectedChatModel,
+              ephemeralMessages: [
+                { role: "user", content: STREAM_CHAT_CONTINUATION_NUDGE },
+              ],
+            }),
+          ),
+        );
+        if (!retried) {
+          break;
+        }
+        streamOutcome = retried;
+        next = await runPostStreamToolPhase({
+          depth: currentDepth,
+          dispatch,
+          extra,
+          getState,
+          streamAborter: streamOutcome.streamAborter,
+          activeTools: streamOutcome.activeTools,
+        });
+      }
+
       if (next !== "continue") {
+        ensureAgentTurnInactive(dispatch, getState);
         return;
       }
       currentDepth += 1;
@@ -222,6 +294,7 @@ async function runStreamNormalInputLocked({
   extra,
   getState,
   selectedChatModel,
+  ephemeralMessages,
 }: {
   legacySlashCommandData?: ToCoreProtocol["llm/streamChat"][0]["legacySlashCommandData"];
   depth: number;
@@ -229,6 +302,8 @@ async function runStreamNormalInputLocked({
   extra: ThunkApiType["extra"];
   getState: () => RootState;
   selectedChatModel: ModelDescription;
+  /** Appended only for this request; not written to session history. */
+  ephemeralMessages?: ChatMessage[];
 }) {
   const state = getState();
   let activeTools = selectActiveTools(state);
@@ -322,8 +397,11 @@ async function runStreamNormalInputLocked({
     }
   }
 
-  const { compiledChatMessages, didPrune, contextPercentage } =
+  let { compiledChatMessages, didPrune, contextPercentage } =
     precompiledRes.content;
+  if (ephemeralMessages?.length) {
+    compiledChatMessages = [...compiledChatMessages, ...ephemeralMessages];
+  }
 
   dispatch(setIsPruned(didPrune));
   dispatch(setContextPercentage(contextPercentage));
@@ -416,7 +494,7 @@ async function runPostStreamToolPhase({
   getState: () => RootState;
   streamAborter: AbortController;
   activeTools: Tool[];
-}) {
+}): Promise<PostStreamPhaseResult> {
   // Tool call sequence:
   // 1. Mark generating tool calls as generated
   const state1 = getState();
@@ -441,16 +519,41 @@ async function runPostStreamToolPhase({
         );
       }
     }
-    return;
+    return "stop";
   }
   const originalToolCalls = selectCurrentToolCalls(state1);
   const generatingCalls = originalToolCalls.filter(
     (tc) => tc.status === "generating",
   );
-  for (const { toolCallId } of generatingCalls) {
+  for (const tc of generatingCalls) {
+    const name = tc.toolCall.function.name?.trim() ?? "";
+    const args = tc.toolCall.function.arguments ?? "";
+    if (name && args.trim()) {
+      try {
+        JSON.parse(args);
+      } catch {
+        dispatch(errorToolCall({ toolCallId: tc.toolCallId }));
+        dispatch(
+          updateToolCallOutput({
+            toolCallId: tc.toolCallId,
+            contextItems: [
+              {
+                icon: "problems",
+                name: "Incomplete Tool Call",
+                description: "",
+                content:
+                  "The model did not finish streaming valid tool arguments. The agent attempted to auto-continue but the call is still invalid. Try again or use a stronger model for tool use.",
+                hidden: false,
+              },
+            ],
+          }),
+        );
+        continue;
+      }
+    }
     dispatch(
       setToolGenerated({
-        toolCallId,
+        toolCallId: tc.toolCallId,
         tools: state1.config.config.tools,
       }),
     );
@@ -459,7 +562,7 @@ async function runPostStreamToolPhase({
   // 2. Pre-process args to catch invalid args before checking policies
   const state2 = getState();
   if (streamAborter.signal.aborted) {
-    return;
+    return "stop";
   }
   const generatedCalls2 = selectPendingToolCalls(state2);
   await preprocessToolCalls(dispatch, extra.ideMessenger, generatedCalls2);
@@ -467,7 +570,7 @@ async function runPostStreamToolPhase({
   // 3. Security check: evaluate updated policies based on args
   const state3 = getState();
   if (streamAborter.signal.aborted) {
-    return;
+    return "stop";
   }
   const generatedCalls3 = selectPendingToolCalls(state3);
   const toolPolicies = state3.ui.toolSettings;
@@ -494,11 +597,11 @@ async function runPostStreamToolPhase({
 
   // 4. Execute remaining tool calls
   if (originalToolCalls.length === 0) {
-    dispatch(setInactive());
+    return "stop";
   } else if (needsApprovalPolicies.length > 0) {
     if (autoApprovedPolicies.length > 0) {
       if (streamAborter.signal.aborted) {
-        return;
+        return "stop";
       }
       await runParallelToolCalls(
         dispatch,
@@ -513,10 +616,11 @@ async function runPostStreamToolPhase({
     }
 
     dispatch(setInactive());
+    return "stop";
   } else {
     const generatedCalls4 = selectPendingToolCalls(getState());
     if (streamAborter.signal.aborted) {
-      return;
+      return "stop";
     }
     if (generatedCalls4.length > 0) {
       const pendingIds = generatedCalls4.map(({ toolCallId }) => toolCallId);
@@ -535,7 +639,7 @@ async function runPostStreamToolPhase({
           getState().config.config.ui?.resumeAfterToolRejection,
         )
       ) {
-        return "done";
+        return "stop";
       }
       if (!getState().session.isStreaming) {
         dispatch(setActive());
@@ -550,7 +654,7 @@ async function runPostStreamToolPhase({
         // An aborted stream must not start another turn (HEAD guarded this
         // dispatch with the same check).
         if (streamAborter.signal.aborted) {
-          return;
+          return "stop";
         }
         // Finalize exactly as the resume thunk did, then let the loop take
         // the next turn instead of re-entering streamNormalInput recursively.
@@ -562,7 +666,7 @@ async function runPostStreamToolPhase({
             getState().config.config.ui?.resumeAfterToolRejection,
           )
         ) {
-          return "done";
+          return "stop";
         }
         if (!getState().session.isStreaming) {
           dispatch(setActive());
@@ -571,4 +675,5 @@ async function runPostStreamToolPhase({
       }
     }
   }
+  return "stop";
 }

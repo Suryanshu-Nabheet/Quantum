@@ -6,7 +6,12 @@ import { FromCoreProtocol, ToCoreProtocol } from "../protocol";
 import { IMessenger, Message } from "../protocol/messenger";
 
 import { TTS } from "../util/tts";
-
+import {
+  buildStreamContinuationMessages,
+  MAX_STREAM_CHAT_CONTINUATIONS,
+  mergeAssistantStreamChunk,
+  shouldContinueLlmStream,
+} from "./streamContinuation.js";
 
 export async function* llmStreamChat(
   configHandler: ConfigHandler,
@@ -39,7 +44,7 @@ export async function* llmStreamChat(
   }
 
   // Log to return in case of error
-  const errorPromptLog = {
+  const errorPromptLog: PromptLog = {
     modelTitle: model?.title ?? model?.model,
     modelProvider: model?.underlyingProviderName ?? "unknown",
     completion: "",
@@ -113,9 +118,19 @@ export async function* llmStreamChat(
       }
 
       return next.value;
-    } else {
+    }
+
+    let chatMessages = messages;
+    let combinedPromptLog: PromptLog | undefined;
+
+    for (
+      let continuation = 0;
+      continuation <= MAX_STREAM_CHAT_CONTINUATIONS;
+      continuation++
+    ) {
+      let partialAssistant: ChatMessage | undefined;
       const gen = model.streamChat(
-        messages,
+        chatMessages,
         abortController.signal,
         completionOptions,
         messageOptions,
@@ -128,24 +143,48 @@ export async function* llmStreamChat(
         }
 
         const chunk = next.value;
-
+        if (chunk.role === "assistant") {
+          partialAssistant = mergeAssistantStreamChunk(partialAssistant, chunk);
+        }
         yield chunk;
         next = await gen.next();
       }
-      if (getReadResponseTTS(config) && "completion" in next.value) {
-        void TTS.read(next.value?.completion);
-      }
-
 
       if (!next.done) {
         throw new Error("Will never happen");
       }
 
-      return next.value;
+      const segmentLog = next.value;
+      combinedPromptLog = combinedPromptLog
+        ? {
+            ...segmentLog,
+            completion: combinedPromptLog.completion + segmentLog.completion,
+          }
+        : segmentLog;
+
+      if (abortController.signal.aborted) {
+        return combinedPromptLog;
+      }
+
+      if (
+        continuation >= MAX_STREAM_CHAT_CONTINUATIONS ||
+        !shouldContinueLlmStream(segmentLog, partialAssistant)
+      ) {
+        if (getReadResponseTTS(config) && combinedPromptLog.completion) {
+          void TTS.read(combinedPromptLog.completion);
+        }
+        return combinedPromptLog;
+      }
+
+      chatMessages = buildStreamContinuationMessages(
+        chatMessages,
+        partialAssistant,
+        segmentLog,
+      );
     }
+
+    return combinedPromptLog ?? errorPromptLog;
   } catch (error) {
-    // Moved error handling that was here to GUI, keeping try/catch for clean diff
     throw error;
   }
 }
-
