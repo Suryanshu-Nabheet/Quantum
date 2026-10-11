@@ -87,10 +87,11 @@ const StyledTerminalContainer = styled.div<{
 
 const TerminalContent = styled.div`
   pre {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
     white-space: pre-wrap;
-    max-width: calc(100vw - 24px);
-    overflow-x: scroll;
-    overflow-y: hidden;
+    overflow-x: auto;
     padding: 8px;
     margin: 0;
   }
@@ -298,29 +299,18 @@ interface CollapsibleOutputContainerProps {
   limitedContent: string;
   fullContent: string;
   isExpanded: boolean;
-  onToggle: () => void;
 }
 
 function CollapsibleOutputContainer({
   limitedContent,
   fullContent,
   isExpanded,
-  onToggle,
 }: CollapsibleOutputContainerProps) {
   return (
-    <div className="relative">
-      {/* Gradient overlay when collapsed */}
-      {!isExpanded && (
-        <div className="from-editor pointer-events-none absolute left-0 right-0 top-0 z-[5] h-[100px] rounded-t-md bg-gradient-to-b to-transparent" />
-      )}
-
-      <div onClick={onToggle} className="cursor-pointer">
-        <div>
-          <AnsiRenderer linkify>
-            {isExpanded ? fullContent : limitedContent}
-          </AnsiRenderer>
-        </div>
-      </div>
+    <div>
+      <AnsiRenderer linkify>
+        {isExpanded ? fullContent : limitedContent}
+      </AnsiRenderer>
     </div>
   );
 }
@@ -346,7 +336,7 @@ export function UnifiedTerminalCommand({
 }: UnifiedTerminalCommandProps) {
   const dispatch = useAppDispatch();
   const [isExpanded, setIsExpanded] = useState(true);
-  const [outputExpanded, setOutputExpanded] = useState(false);
+  const [outputExpanded, setOutputExpanded] = useState(true);
 
   // Determine running state
   const isRunning = toolCallState?.status === "calling" || status === "running";
@@ -489,7 +479,6 @@ export function UnifiedTerminalCommand({
                           }
                           fullContent={processedTerminalContent.fullContent}
                           isExpanded={outputExpanded}
-                          onToggle={() => setOutputExpanded(!outputExpanded)}
                         />
                       ) : (
                         <div>

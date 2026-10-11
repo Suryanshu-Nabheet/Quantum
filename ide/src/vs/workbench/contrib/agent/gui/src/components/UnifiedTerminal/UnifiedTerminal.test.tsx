@@ -145,23 +145,16 @@ describe("UnifiedTerminalCommand", () => {
       />,
     );
 
-    // Should show the "+X more lines" indicator
-    expect(screen.getByText(/\+\d+ more lines/)).toBeInTheDocument();
-
-    // Should initially show only some of the last lines
+    expect(screen.getByText(/Collapse/)).toBeInTheDocument();
+    expect(container.textContent).toMatch(/Line 1/);
     expect(container.textContent).toMatch(/Line 25/);
 
-    // Click to expand using the "+X more lines" button
-    const expandButton = screen.getByText(/\+\d+ more lines/);
-    await user.click(expandButton);
+    const collapseButton = screen.getByText(/Collapse/);
+    await user.click(collapseButton);
 
-    // Should now show all lines
     await waitFor(() => {
-      expect(container.textContent).toMatch(/Line 1/);
+      expect(screen.getByText(/\+\d+ more lines/)).toBeInTheDocument();
     });
-
-    // Should show collapse option
-    expect(screen.getByText(/Collapse/)).toBeInTheDocument();
   });
 
   test("renders ANSI colors and formatting", async () => {
@@ -327,15 +320,9 @@ describe("UnifiedTerminalCommand", () => {
       />,
     );
 
-    // Should show correct number of hidden lines
-    expect(screen.getByText(/\+15 more lines/)).toBeInTheDocument();
-
-    // Should show the last lines
+    expect(screen.getByText(/Collapse/)).toBeInTheDocument();
+    expect(container.textContent).toMatch(/Line 1/);
     expect(container.textContent).toMatch(/Line 25/);
-
-    // Should not initially show the first lines (Line 1-15 should be hidden)
-    // The component shows last 10 lines (16-25) with a +15 more lines indicator
-    expect(container.textContent).toMatch(/Line 16/);
   });
 
   test("clicking on collapsible output toggles expansion", async () => {
@@ -348,11 +335,17 @@ describe("UnifiedTerminalCommand", () => {
       />,
     );
 
-    // Click on the "+15 more lines" button to expand
-    const expandButton = screen.getByText(/\+15 more lines/);
-    await user.click(expandButton);
+    expect(container.textContent).toMatch(/Line 1/);
 
-    // Should expand and show all content
+    const collapseButton = screen.getByText(/Collapse/);
+    await user.click(collapseButton);
+
+    await waitFor(() => {
+      expect(screen.getByText(/\+15 more lines/)).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText(/\+15 more lines/));
+
     await waitFor(() => {
       expect(container.textContent).toMatch(/Line 1/);
     });

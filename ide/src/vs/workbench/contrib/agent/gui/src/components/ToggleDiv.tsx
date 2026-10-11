@@ -58,9 +58,11 @@ function ToggleDiv({
       </div>
 
       <div
-        className={`mt-2 overflow-y-auto transition-all duration-300 ease-in-out ${
-          open ? "max-h-[50vh] opacity-100" : "max-h-0 opacity-0"
-        }`}
+        className={
+          open
+            ? "mt-2 min-w-0 opacity-100"
+            : "mt-2 max-h-0 overflow-hidden opacity-0"
+        }
       >
         {children}
       </div>

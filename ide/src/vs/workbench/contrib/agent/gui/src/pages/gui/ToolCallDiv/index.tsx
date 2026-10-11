@@ -143,9 +143,11 @@ export function ToolCallDiv({
           onToggle={() => setOpen(!open)}
         />
         <div
-          className={`overflow-hidden transition-[max-height,opacity] duration-200 ease-out ${
-            open ? "max-h-[50vh] opacity-100" : "max-h-0 opacity-0"
-          }`}
+          className={
+            open
+              ? "min-w-0 opacity-100"
+              : "max-h-0 overflow-hidden opacity-0"
+          }
         >
           {open
             ? otherCalls.map((toolCallState) => (

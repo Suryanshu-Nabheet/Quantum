@@ -70,9 +70,11 @@ export function SimpleToolCallUI({
 
       {isToggleable && (
         <div
-          className={`mt-2 overflow-y-auto transition-all duration-300 ease-in-out ${
-            shouldShowContent ? "max-h-[50vh] opacity-100" : "max-h-0 opacity-0"
-          }`}
+          className={
+            shouldShowContent
+              ? "mt-2 min-w-0 opacity-100"
+              : "mt-2 max-h-0 overflow-hidden opacity-0"
+          }
         >
           {shownContextItems.length > 0 ? (
             shownContextItems.map((contextItem, idx) => (
