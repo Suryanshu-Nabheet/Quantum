@@ -269,7 +269,7 @@ function TipTapEditorInner(props: TipTapEditorProps) {
         className={`flex flex-grow flex-col px-2 pb-1 pt-1 ${props.isMainInput && historyLength === 0 ? "min-h-[140px]" : ""}`}
       >
         <EditorContent
-          className={`scroll-container flex-grow ${props.isMainInput ? "max-h-[70vh] overflow-y-auto" : "overflow-hidden"}`}
+          className={`scroll-container min-w-0 max-w-full flex-grow overflow-x-hidden ${props.isMainInput ? "max-h-[70vh] overflow-y-auto" : "overflow-y-hidden"}`}
           spellCheck={false}
           editor={editor}
         />

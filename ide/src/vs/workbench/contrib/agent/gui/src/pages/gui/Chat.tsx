@@ -70,6 +70,9 @@ const StepsDiv = styled.div`
   position: relative;
   background-color: transparent;
 
+  min-width: 0;
+  overflow-x: hidden;
+
   /* Only a real thread needs room under the last line. An empty chat stays flush. */
   &.has-thread {
     padding-bottom: 96px;
@@ -456,7 +459,7 @@ export function Chat() {
 
       <StepsDiv
         ref={stepsDivRef}
-        className={`${history.length > 0 ? `has-thread flex-1 overflow-y-scroll ${showScrollbar ? "thin-scrollbar" : "no-scrollbar"}` : ""}`}
+        className={`${history.length > 0 ? `has-thread min-w-0 max-w-full flex-1 overflow-x-hidden overflow-y-scroll ${showScrollbar ? "thin-scrollbar" : "no-scrollbar"}` : "min-w-0 max-w-full"}`}
       >
         {highlights}
         <div className={CHAT_HISTORY_STACK_CLASS}>
@@ -474,7 +477,7 @@ export function Chat() {
             }
 
             return (
-              <div key={item.message.id}>
+              <div key={item.message.id} className="min-w-0 max-w-full">
                 <ErrorBoundary
                   FallbackComponent={fallbackRender}
                   onReset={() => {
@@ -498,7 +501,7 @@ export function Chat() {
           {showLiveTodos ? <TodoBlock todos={todos} /> : null}
         </div>
       </StepsDiv>
-      <div className="relative shrink-0">
+      <div className="relative min-w-0 max-w-full shrink-0">
         <AgentInputBox
           isMainInput
           isLastUserInput={false}

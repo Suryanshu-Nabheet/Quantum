@@ -108,10 +108,10 @@ function AgentInputBox(props: AgentInputBoxProps) {
 
   return (
     <div
-      className={`${props.hidden ? "hidden" : ""}`}
+      className={`min-w-0 max-w-full ${props.hidden ? "hidden" : ""}`}
       data-testid={`agent-input-box-${props.inputId}`}
     >
-      <div className="relative flex w-full flex-col">
+      <div className="relative flex w-full min-w-0 max-w-full flex-col">
         {props.isMainInput && <Lump />}
         <GradientBorder
           loading={isStreaming && (props.isLastUserInput || isInEdit) ? 1 : 0}
