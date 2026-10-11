@@ -53,6 +53,13 @@ export function normalizeTodos(raw: unknown): TodoItem[] {
   return items;
 }
 
+export function todosSystemBlock(items: TodoItem[]): string {
+  if (!items.length) {
+    return "";
+  }
+  return `\n\n<todos>\n${summarizeTodos(items)}\nWork the in-progress item with tools. When its status changes, call write_todos with the complete list. Keep exactly one item in_progress.\n</todos>`;
+}
+
 /** Compact, model-readable summary of the list so the agent sees its plan. */
 export function summarizeTodos(items: TodoItem[]): string {
   const done = items.filter((i) => i.status === "done").length;

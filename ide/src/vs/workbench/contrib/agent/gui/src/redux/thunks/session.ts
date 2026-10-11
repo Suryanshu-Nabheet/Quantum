@@ -258,6 +258,7 @@ export const saveCurrentSession = createAsyncThunk<
       mode: session.mode,
       chatModelTitle: selectedChatModel?.title ?? null,
       todos: session.todos,
+      planBrief: session.planBrief,
     };
 
     const result = await dispatch(updateSession(updatedSession));

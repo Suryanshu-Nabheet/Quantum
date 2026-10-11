@@ -37,6 +37,8 @@ import {
   selectPendingToolCalls,
 } from "../selectors/selectToolCalls";
 import { getBaseSystemMessage } from "../util/getBaseSystemMessage";
+import { historyHasResearch, planBriefBlock } from "core/tools/implementations/createPlan";
+import { todosSystemBlock } from "core/tools/implementations/writeTodos";
 import { evaluateToolPolicies } from "./evaluateToolPolicies";
 import { preprocessToolCalls } from "./preprocessToolCallArgs";
 import { canResumeAfterToolCall } from "./streamResponseAfterToolCall";
@@ -61,6 +63,7 @@ import {
   PostStreamPhaseResult,
 } from "../util/agentStreamContinuation";
 import { renderChatMessage } from "core/util/messageContent";
+import { BuiltInToolNames } from "core/tools/builtIn";
 
 /**
  * Builds completion options with reasoning configuration based on session state and model capabilities.
@@ -286,13 +289,19 @@ async function runStreamNormalInputLocked({
     activeTools,
   );
 
-  const systemMessage = systemToolsFramework
-    ? addSystemMessageToolsToSystemMessage(
-        systemToolsFramework,
-        baseSystemMessage,
-        activeTools,
-      )
-    : baseSystemMessage;
+  const systemMessage = `${
+    systemToolsFramework
+      ? addSystemMessageToolsToSystemMessage(
+          systemToolsFramework,
+          baseSystemMessage,
+          activeTools,
+        )
+      : baseSystemMessage
+  }${
+    state.session.mode === "agent"
+      ? `${planBriefBlock(state.session.planBrief)}${todosSystemBlock(state.session.todos)}`
+      : ""
+  }`;
 
   const withoutMessageIds = state.session.history.map((item) => {
     const { id, ...messageWithoutId } = item.message;
@@ -571,6 +580,67 @@ async function runPostStreamToolPhase({
       return "stop";
     }
     if (generatedCalls4.length > 0) {
+      const planCalls = generatedCalls4.filter(
+        (call) => call.toolCall.function?.name === BuiltInToolNames.CreatePlan,
+      );
+      const otherIds = generatedCalls4
+        .filter((call) => call.toolCall.function?.name !== BuiltInToolNames.CreatePlan)
+        .map(({ toolCallId }) => toolCallId);
+      const planBeforeResearch =
+        planCalls.length > 0 &&
+        (otherIds.length > 0 ||
+          !historyHasResearch(
+            getState().session.history.flatMap((item) =>
+              (item.toolCallStates ?? []).map((call) => ({
+                name: call.toolCall.function?.name,
+                status: call.status,
+              })),
+            ),
+          ));
+      if (planBeforeResearch) {
+        if (otherIds.length > 0) {
+          await runParallelToolCalls(dispatch, otherIds, {
+            depth: depth + 1,
+            isAutoApproved: true,
+            deferToolResults: true,
+            resumeAgent: false,
+          });
+        }
+        for (const planCall of planCalls) {
+          dispatch(
+            errorToolCall({
+              toolCallId: planCall.toolCallId,
+              output: [
+                {
+                  name: "Plan",
+                  description: "Research first",
+                  content:
+                    "Do not call create_plan yet. Finish searching and reading the relevant files. Then call create_plan once, by itself, as the last action.",
+                  hidden: true,
+                },
+              ],
+            }),
+          );
+        }
+        const anchorId = otherIds.at(-1) ?? planCalls.at(-1)?.toolCallId;
+        if (!anchorId || streamAborter.signal.aborted) {
+          return "stop";
+        }
+        dispatch(resetNextCodeBlockToApplyIndex());
+        if (
+          !canResumeAfterToolCall(
+            getState().session.history,
+            anchorId,
+            getState().config.config.ui?.resumeAfterToolRejection,
+          )
+        ) {
+          return "stop";
+        }
+        if (!getState().session.isStreaming) {
+          dispatch(setActive());
+        }
+        return "continue";
+      }
       const pendingIds = generatedCalls4.map(({ toolCallId }) => toolCallId);
       await runParallelToolCalls(dispatch, pendingIds, {
         depth: depth + 1,
@@ -578,6 +648,9 @@ async function runPostStreamToolPhase({
         deferToolResults: true,
         resumeAgent: false,
       });
+      if (planCalls.length > 0) {
+        return "stop";
+      }
       const anchorId = pendingIds[pendingIds.length - 1];
       dispatch(resetNextCodeBlockToApplyIndex());
       if (

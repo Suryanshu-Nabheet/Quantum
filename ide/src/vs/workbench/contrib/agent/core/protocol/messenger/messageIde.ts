@@ -161,8 +161,16 @@ export class MessageIde implements IDE {
     await this.request("removeFile", { path: fileUri });
   }
 
-  async showVirtualFile(title: string, contents: string): Promise<void> {
-    await this.request("showVirtualFile", { name: title, content: contents });
+  async showVirtualFile(
+    title: string,
+    contents: string,
+    preview?: boolean,
+  ): Promise<void> {
+    await this.request("showVirtualFile", {
+      name: title,
+      content: contents,
+      preview,
+    });
   }
 
   async openFile(fileUri: string): Promise<void> {

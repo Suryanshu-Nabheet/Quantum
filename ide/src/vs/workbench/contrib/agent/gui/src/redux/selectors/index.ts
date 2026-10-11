@@ -51,11 +51,18 @@ export const selectStreamingStatus = createSelector(
       return "Gathering relevant context...";
     }
 
-    const activeTool = lastItem.toolCallStates?.find(
-      (t) => t.status === "generating" || t.status === "calling",
+    const activeTools =
+      lastItem.toolCallStates?.filter(
+        (t) => t.status === "generating" || t.status === "calling",
+      ) ?? [];
+    const researchTool = activeTools.find(
+      (t) => t.toolCall.function?.name !== "create_plan",
     );
-    if (activeTool) {
-      return `Executing ${activeTool.toolCall.function?.name || "action"}...`;
+    if (researchTool) {
+      return `Executing ${researchTool.toolCall.function?.name || "action"}...`;
+    }
+    if (activeTools.length > 0) {
+      return "Writing plan...";
     }
 
     if (

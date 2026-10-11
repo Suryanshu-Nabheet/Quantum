@@ -21,7 +21,7 @@ export type ToIdeFromWebviewOrCoreProtocol = {
   getWorkspaceDirs: [undefined, string[]];
   writeFile: [{ path: string; contents: string }, void];
   removeFile: [{ path: string }, void];
-  showVirtualFile: [{ name: string; content: string }, void];
+  showVirtualFile: [{ name: string; content: string; preview?: boolean }, void];
   openFile: [{ path: string }, void];
   openUrl: [string, void];
   runCommand: [{ command: string; options?: TerminalOptions }, void];

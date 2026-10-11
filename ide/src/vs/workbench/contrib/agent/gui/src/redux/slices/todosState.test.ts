@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import sessionReducer, {
   INITIAL_SESSION_STATE,
   newSession,
+  clearTodos,
   setTodos,
 } from "./sessionSlice";
 
@@ -23,6 +24,32 @@ describe("session todos state", () => {
     );
     state = sessionReducer(state, setTodos([todo("b", "done")]));
     expect(state.todos).toEqual([todo("b", "done")]);
+  });
+
+  it("clearTodos drops the live list and on-screen snapshots", () => {
+    let state = sessionReducer(
+      INITIAL_SESSION_STATE,
+      setTodos([todo("a", "in_progress")]),
+    );
+    state = {
+      ...state,
+      history: [
+        {
+          message: { role: "assistant", content: "" },
+          toolCallStates: [
+            {
+              toolCallId: "call-1",
+              status: "done",
+              todosSnapshot: [todo("a", "in_progress")],
+              toolCall: { id: "call-1", type: "function", function: { name: "write_todos", arguments: "{}" } },
+            },
+          ],
+        },
+      ] as any,
+    };
+    state = sessionReducer(state, clearTodos());
+    expect(state.todos).toEqual([]);
+    expect(state.history[0].toolCallStates?.[0].todosSnapshot).toBeUndefined();
   });
 
   it("a fresh session does not inherit the previous plan", () => {

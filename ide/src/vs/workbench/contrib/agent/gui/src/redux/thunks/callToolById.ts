@@ -133,7 +133,11 @@ export const callToolById = createAsyncThunk<
     );
   }
 
-  if (!error && toolCallState.toolCall.function.name === "write_todos") {
+  if (
+    !error &&
+    toolCallState.toolCall.function.name === "write_todos" &&
+    getState().session.isStreaming
+  ) {
     syncTodosFromToolCall(
       toolCallId,
       toolCallState.toolCall.function.arguments,
