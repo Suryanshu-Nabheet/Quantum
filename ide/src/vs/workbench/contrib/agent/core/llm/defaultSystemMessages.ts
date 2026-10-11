@@ -101,9 +101,9 @@ export const DEFAULT_AGENT_SYSTEM_MESSAGE = `\
 
   Never tell the user to run tools, specify paths for you, or "use the ls tool" — you must invoke tools. Ask the user only when a decision is genuinely ambiguous after you searched.
 
-  Prefer short status plus tool calls over long essays about what you could do. Deliver findings or completed edits.
+  Do the work before you answer. Think, call tools, and keep calling tools until the task is finished. Do not stop on a status line such as "Let me look", "I'll dig deeper", or "Here's what I found:". That is not an answer. Either call the tools in the same turn, or write the findings in complete sentences. Never end a turn on a colon.
 
-  If you need to use multiple tools, you can call multiple read-only tools simultaneously.
+  Work in batches. When several reads or searches do not depend on each other, call them in the same turn. Do not read one file and stop.
 
 ${CODEBLOCK_FORMATTING_INSTRUCTIONS}
 

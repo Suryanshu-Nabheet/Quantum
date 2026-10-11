@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
+  appendStreamedAssistantText,
   assistantMessageHasIncompleteToolCalls,
+  assistantReplyIsUnfinished,
   buildStreamContinuationMessages,
   isTruncatedFinishReason,
   mergeAssistantStreamChunk,
   shouldContinueLlmStream,
+  shouldResumeAgentAfterIdleReply,
+  withAgentIdleResumeNudge,
 } from "./streamContinuation.js";
 
 describe("streamContinuation", () => {
@@ -14,6 +18,25 @@ describe("streamContinuation", () => {
       { role: "assistant", content: "world" },
     );
     expect(render(merged)).toBe("Hello world");
+  });
+
+  it("breaks a new sentence that was glued onto punctuation", () => {
+    expect(
+      appendStreamedAssistantText(
+        "Let me read the key files:",
+        "I'll analyze the project.",
+      ),
+    ).toBe("Let me read the key files:\n\nI'll analyze the project.");
+  });
+
+  it("treats a lead-in at the end of a long reply as unfinished", () => {
+    const text = `${"The project has many files. ".repeat(30)}Let me read the key source files.`;
+    expect(assistantReplyIsUnfinished(text)).toBe(true);
+    expect(
+      assistantReplyIsUnfinished(
+        "Based on my analysis, here's what I found about this Next.js project:",
+      ),
+    ).toBe(true);
   });
 
   it("detects incomplete tool arguments", () => {
@@ -67,7 +90,7 @@ describe("streamContinuation", () => {
     ).toBe(true);
   });
 
-  it("does not continue a normal complete sentence", () => {
+  it("continues when the model only promised to keep looking", () => {
     const text =
       "Let me explore the agent directory and the main VS source structure.";
     expect(
@@ -81,7 +104,7 @@ describe("streamContinuation", () => {
         },
         { role: "assistant", content: text },
       ),
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it("does not continue when the assistant gave a complete answer", () => {
@@ -101,6 +124,71 @@ describe("streamContinuation", () => {
         },
       ),
     ).toBe(false);
+  });
+
+  it("resumes an agent turn that stopped after tools", () => {
+    expect(
+      shouldResumeAgentAfterIdleReply({
+        text: "Let me dig deeper into the chat loop.",
+        turnAlreadyUsedTools: true,
+        hasOpenTodos: false,
+      }),
+    ).toBe(true);
+    expect(
+      shouldResumeAgentAfterIdleReply({
+        text: "",
+        turnAlreadyUsedTools: true,
+        hasOpenTodos: false,
+      }),
+    ).toBe(true);
+    expect(
+      shouldResumeAgentAfterIdleReply({
+        text: "x".repeat(600),
+        turnAlreadyUsedTools: true,
+        hasOpenTodos: false,
+      }),
+    ).toBe(false);
+  });
+
+  it("does not resume a first reply that never used tools", () => {
+    expect(
+      shouldResumeAgentAfterIdleReply({
+        text: "Let me dig deeper into the chat loop.",
+        turnAlreadyUsedTools: false,
+        hasOpenTodos: false,
+      }),
+    ).toBe(false);
+  });
+
+  it("resumes while todos are still open", () => {
+    expect(
+      shouldResumeAgentAfterIdleReply({
+        text: "x".repeat(600),
+        turnAlreadyUsedTools: false,
+        hasOpenTodos: true,
+      }),
+    ).toBe(true);
+  });
+
+  it("appends the idle nudge only after a tool-free assistant message", () => {
+    const nudged = withAgentIdleResumeNudge([
+      { role: "user", content: "analyse the codebase" },
+      { role: "assistant", content: "Let me dig deeper." },
+    ]);
+    expect(nudged.at(-1)?.role).toBe("user");
+    expect(withAgentIdleResumeNudge([
+      {
+        role: "assistant",
+        content: "",
+        toolCalls: [
+          {
+            id: "1",
+            type: "function",
+            function: { name: "read_file", arguments: "{}" },
+          },
+        ],
+      },
+    ])).toHaveLength(1);
   });
 
   it("shouldContinueLlmStream on length finish", () => {

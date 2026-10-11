@@ -21,7 +21,7 @@ Not a plugin bolted on later: the agent lives in [`src/vs/workbench/contrib/agen
 
 ## Product shots
 
-### Agent working in the codebase
+### 1. Agent working in the codebase
 
 Ask the Agent to inspect, explain, and modify your project with the active workspace and relevant files in context.
 
@@ -29,7 +29,7 @@ Ask the Agent to inspect, explain, and modify your project with the active works
   <img alt="Agent working in the open codebase" src="./assets/screenshots/agent-working-in-codebase.png" width="100%" />
 </p>
 
-### Agent working through the browser
+### 2. Agent working through the browser
 
 Use the integrated browser and element picker to give the Agent direct page context for debugging and implementation.
 
@@ -37,20 +37,20 @@ Use the integrated browser and element picker to give the Agent direct page cont
   <img alt="Agent working through the integrated browser with an attached page element" src="./assets/screenshots/agent-browser-integration.png" width="100%" />
 </p>
 
-### Rich `@` context menu
-
-Attach the context your task needs, including code, files, images, videos, PDFs, Git changes, terminal output, browser content, and more.
-
-<p align="center">
-  <img alt="Context menu showing the types of content users can attach to the Agent" src="./assets/screenshots/@-attach.png" width="100%" />
-</p>
-
-### Plan Mode (new!)
+### 3. Plan Mode (new!)
 
 Plan Mode helps you organize and break down complex tasks with the Agent. It allows the Agent to generate step-by-step plans for your goals, making it easier to tackle large code changes or debugging sessions by providing a clear summary and actionable checklist.
 
 <p align="center">
   <img alt="Plan mode summary card in Quantum" src="./assets/screenshots/plan-mode.png" width="100%" />
+</p>
+
+### 4. Rich `@` context menu
+
+Attach the context your task needs, including code, files, images, videos, PDFs, Git changes, terminal output, browser content, and more.
+
+<p align="center">
+  <img alt="Context menu showing the types of content users can attach to the Agent" src="./assets/screenshots/@-attach.png" width="100%" />
 </p>
 
 ---

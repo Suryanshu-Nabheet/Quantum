@@ -64,6 +64,16 @@ import {
 } from "../util/agentStreamContinuation";
 import { renderChatMessage } from "core/util/messageContent";
 import { BuiltInToolNames } from "core/tools/builtIn";
+import {
+  assistantReplyIsUnfinished,
+  shouldResumeAgentAfterIdleReply,
+  withAgentIdleResumeNudge,
+} from "core/llm/streamContinuation";
+
+/** A finished-looking short note may restart twice. A lead-in may restart more. */
+const MAX_IDLE_RESUMES = 2;
+const MAX_UNFINISHED_RESUMES = 6;
+const MAX_FAILURE_RESUMES = 2;
 
 /**
  * Builds completion options with reasoning configuration based on session state and model capabilities.
@@ -147,10 +157,76 @@ async function runTurnWithOverloadRetry<T>(
   }
 }
 
+function userTurnAlreadyUsedTools(
+  history: RootState["session"]["history"],
+): boolean {
+  for (let i = history.length - 1; i >= 0; i--) {
+    const item = history[i];
+    if (item.message.role === "user") {
+      return false;
+    }
+    const calls = item.toolCallStates ?? [];
+    if (
+      calls.some((call) => {
+        const name = call.toolCall.function?.name;
+        return !!name && name !== BuiltInToolNames.CreatePlan;
+      })
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function lastAssistantToolsAllErrored(
+  history: RootState["session"]["history"],
+): boolean {
+  for (let i = history.length - 1; i >= 0; i--) {
+    const item = history[i];
+    if (item.message.role === "user") {
+      return false;
+    }
+    if (item.message.role !== "assistant") {
+      continue;
+    }
+    const calls = item.toolCallStates ?? [];
+    if (calls.length === 0) {
+      return false;
+    }
+    return calls.every((call) => call.status === "errored");
+  }
+  return false;
+}
+
+function lastAssistantText(history: RootState["session"]["history"]): string {
+  for (let i = history.length - 1; i >= 0; i--) {
+    if (history[i].message.role === "assistant") {
+      return renderChatMessage(history[i].message);
+    }
+    if (history[i].message.role === "user") {
+      break;
+    }
+  }
+  return "";
+}
+
+function agentStoppedBeforeFinishing(state: RootState): boolean {
+  if (state.session.mode !== "agent") {
+    return false;
+  }
+  const history = state.session.history;
+  const todos = state.session.todos ?? [];
+  return shouldResumeAgentAfterIdleReply({
+    text: lastAssistantText(history),
+    turnAlreadyUsedTools: userTurnAlreadyUsedTools(history),
+    hasOpenTodos: todos.some((todo) => todo.status !== "done"),
+  });
+}
+
 /**
  * Iterative agent driver: runs LLM turns in a loop until a turn ends with no
- * tool work to resume. Callers (the thunk and resumed tool completions) share
- * this single driver instead of nesting one thunk inside another.
+ * tool work to resume. A prose stop or a failed tool batch in agent mode
+ * restarts the turn, up to a small cap, so the task is not abandoned mid-way.
  */
 export async function runAgentDriver({
   legacySlashCommandData,
@@ -175,6 +251,10 @@ export async function runAgentDriver({
     // after release. Follow-up turns iterate in this loop; the stream lock is
     // never held across post-stream tool work, so nested resumes cannot deadlock.
     let currentDepth = depth;
+    let resumeAfterIdle = false;
+    let idleResumes = 0;
+    let unfinishedResumes = 0;
+    let failureResumes = 0;
     for (;;) {
       // A continuation must not start after the user cancelled. cancelStream
       // clears isStreaming; the first turn sets it itself, so only continuations
@@ -205,6 +285,7 @@ export async function runAgentDriver({
             extra,
             getState,
             selectedChatModel,
+            resumeAfterIdle,
           }),
         ),
       );
@@ -222,11 +303,49 @@ export async function runAgentDriver({
         activeTools: streamOutcome.activeTools,
       });
 
-      if (next !== "continue") {
-        ensureAgentTurnInactive(dispatch, getState);
-        return;
+      if (next === "continue") {
+        resumeAfterIdle = false;
+        idleResumes = 0;
+        unfinishedResumes = 0;
+        failureResumes = 0;
+        currentDepth += 1;
+        continue;
       }
-      currentDepth += 1;
+
+      const state = getState();
+      if (state.session.isStreaming && state.session.mode === "agent") {
+        if (
+          lastAssistantToolsAllErrored(state.session.history) &&
+          failureResumes < MAX_FAILURE_RESUMES
+        ) {
+          failureResumes += 1;
+          resumeAfterIdle = false;
+          currentDepth += 1;
+          continue;
+        }
+        if (
+          !lastAssistantToolsAllErrored(state.session.history) &&
+          agentStoppedBeforeFinishing(state)
+        ) {
+          const text = lastAssistantText(state.session.history);
+          const unfinished = assistantReplyIsUnfinished(text);
+          if (unfinished && unfinishedResumes < MAX_UNFINISHED_RESUMES) {
+            unfinishedResumes += 1;
+            resumeAfterIdle = true;
+            currentDepth += 1;
+            continue;
+          }
+          if (!unfinished && idleResumes < MAX_IDLE_RESUMES) {
+            idleResumes += 1;
+            resumeAfterIdle = true;
+            currentDepth += 1;
+            continue;
+          }
+        }
+      }
+
+      ensureAgentTurnInactive(dispatch, getState);
+      return;
     }
 }
 
@@ -237,6 +356,7 @@ async function runStreamNormalInputLocked({
   extra,
   getState,
   selectedChatModel,
+  resumeAfterIdle,
 }: {
   legacySlashCommandData?: ToCoreProtocol["llm/streamChat"][0]["legacySlashCommandData"];
   depth: number;
@@ -244,6 +364,7 @@ async function runStreamNormalInputLocked({
   extra: ThunkApiType["extra"];
   getState: () => RootState;
   selectedChatModel: ModelDescription;
+  resumeAfterIdle: boolean;
 }) {
   const state = getState();
   let activeTools = selectActiveTools(state);
@@ -308,13 +429,17 @@ async function runStreamNormalInputLocked({
     return { ...item, message: messageWithoutId };
   });
 
-  const { messages, appliedRules, appliedRuleIndex } = constructMessages(
+  const constructed = constructMessages(
     withoutMessageIds,
     systemMessage,
     state.config.config.rules,
     state.ui.ruleSettings,
     systemToolsFramework,
   );
+  const { appliedRules, appliedRuleIndex } = constructed;
+  const messages = resumeAfterIdle
+    ? withAgentIdleResumeNudge(constructed.messages)
+    : constructed.messages;
 
   // parallel tool calls will cause issues with this
   // because there will be multiple tool messages, so which one should have applied rules?
@@ -388,34 +513,39 @@ async function runStreamNormalInputLocked({
       dispatch(addPromptCompletionPair([next.value]));
     }
   } catch (e) {
-    const toolCallsToCancel = selectCurrentToolCalls(getState());
-    if (
-      toolCallsToCancel.length > 0 &&
-      e instanceof Error &&
-      e.message.toLowerCase().includes("premature close")
-    ) {
-      for (const tc of toolCallsToCancel) {
-        dispatch(
-          errorToolCall({
-            toolCallId: tc.toolCallId,
-            output: [
-              {
-                name: "Tool Call Error",
-                description: "Premature Close",
-                content: `"Premature Close" error: this tool call was aborted mid-stream because the arguments took too long to stream or there were network issues. Please re-attempt by breaking the operation into smaller chunks or trying something else`,
-                icon: "problems",
-              },
-            ],
-          }),
-        );
-      }
-      // Do not continue into tool execution with incomplete arguments. The
-      // previous behavior swallowed the transport failure and attempted to
-      // execute the partially streamed call, which could strand the agent
-      // or run a malformed command. Let the wrapper surface the failure so
-      // the user can retry safely.
+    const message = e instanceof Error ? e.message.toLowerCase() : "";
+    const dropped =
+      message.includes("premature close") ||
+      message.includes("stopped responding");
+    if (!dropped) {
       throw e;
-    } else {
+    }
+    const toolCallsToCancel = selectCurrentToolCalls(getState());
+    for (const tc of toolCallsToCancel) {
+      if (tc.status !== "generating" && tc.status !== "generated") {
+        continue;
+      }
+      dispatch(
+        errorToolCall({
+          toolCallId: tc.toolCallId,
+          output: [
+            {
+              name: "Tool Call Error",
+              description: "Stream dropped",
+              content:
+                "The stream dropped before this tool call finished. The arguments were not executed. Re-issue the call in smaller pieces.",
+              icon: "problems",
+            },
+          ],
+        }),
+      );
+    }
+    const last = getState().session.history.at(-1);
+    const hasPartial =
+      toolCallsToCancel.length > 0 ||
+      (last?.message.role === "assistant" &&
+        renderChatMessage(last.message).trim().length > 0);
+    if (!hasPartial) {
       throw e;
     }
   }

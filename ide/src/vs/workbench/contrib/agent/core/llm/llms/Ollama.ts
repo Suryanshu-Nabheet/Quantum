@@ -473,12 +473,11 @@ class Ollama extends BaseLLM implements ModelInstaller {
           ? { role: "thinking", content: thinking }
           : null;
 
-        if (thinkingMessage && !content) {
-          // When Streaming you can't have both thinking and content
+        if (thinkingMessage && !content && !toolCalls?.length) {
           return [thinkingMessage];
         }
-        // Either not thinking, or not streaming
-        const chatMessage: ChatMessage = { role: "assistant", content };
+
+        const chatMessage: ChatMessage = { role: "assistant", content: content ?? "" };
 
         if (toolCalls?.length) {
           // Agent handles the response as a tool call delta but

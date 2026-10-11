@@ -28,6 +28,7 @@ import {
   ToolCallState,
 } from "core";
 
+import { appendStreamedAssistantText } from "core/llm/streamContinuation";
 import { mergeReasoningDetails } from "core/llm/openaiTypeConverters";
 import { stripMarkdownJsonToolCallFromAssistantText } from "core/tools/markdownJsonToolCall";
 import { NEW_SESSION_TITLE } from "core/util/constants";
@@ -644,7 +645,10 @@ export const sessionSlice = createSlice({
               lastItem.reasoning.text += reasoningEnd.trimEnd();
               lastItem.reasoning.active = false;
               lastItem.reasoning.endAt = Date.now();
-              lastMessage.content += answerStart.trimStart();
+              lastMessage.content = appendStreamedAssistantText(
+                typeof lastMessage.content === "string" ? lastMessage.content : "",
+                answerStart.trimStart(),
+              );
             } else if (lastItem.reasoning?.active) {
               if (
                 lastItem.reasoning.text.length > 0 ||
@@ -659,14 +663,21 @@ export const sessionSlice = createSlice({
                 lastMessage.content.length > 0 ||
                 messageContent.trim().length > 0
               ) {
-                lastMessage.content += messageContent;
+                lastMessage.content = appendStreamedAssistantText(
+                  typeof lastMessage.content === "string"
+                    ? lastMessage.content
+                    : "",
+                  messageContent,
+                );
               }
             }
           } else if (message.role === "thinking" && message.signature) {
             if (lastMessage.role === "thinking") {
               lastMessage.signature = message.signature;
             }
-          } else if (
+          }
+
+          if (
             message.role === "assistant" &&
             message.toolCalls?.length &&
             lastMessage.role === "assistant"

@@ -14,9 +14,9 @@ function browserTool(
   return {
     type: "function",
     displayTitle,
-    wouldLikeTo: `use ${displayTitle}:`,
-    isCurrently: `using ${displayTitle}:`,
-    hasAlready: `used ${displayTitle}:`,
+    wouldLikeTo: `use ${displayTitle}`,
+    isCurrently: `using ${displayTitle}`,
+    hasAlready: `used ${displayTitle}`,
     readonly: false,
     group: BROWSER_TOOL_GROUP,
     function: {
