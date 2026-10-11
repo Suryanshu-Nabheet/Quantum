@@ -19,14 +19,11 @@ import { getIconByName, getStatusIcon } from "./utils";
 interface ToolCallDivProps {
   toolCallStates: ToolCallState[];
   historyIndex: number;
-  /** Rows only. The turn header owns the collapse. */
-  flat?: boolean;
 }
 
 export function ToolCallDiv({
   toolCallStates,
   historyIndex,
-  flat = false,
 }: ToolCallDivProps) {
   const [open, setOpen] = useState(true);
   const availableTools = useAppSelector(
@@ -117,21 +114,6 @@ export function ToolCallDiv({
       </ToolCallDisplay>
     );
   };
-
-  if (flat) {
-    if (otherCalls.length === 0) {
-      return null;
-    }
-    return (
-      <div className="flex min-w-0 flex-col">
-        {otherCalls.map((toolCallState) => (
-          <div className="min-w-0" key={toolCallState.toolCallId}>
-            {renderToolCall(toolCallState)}
-          </div>
-        ))}
-      </div>
-    );
-  }
 
   const planCards = planCalls.map((toolCallState) => (
     <PlanCard

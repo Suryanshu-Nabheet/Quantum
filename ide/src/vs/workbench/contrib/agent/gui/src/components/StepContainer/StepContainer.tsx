@@ -18,8 +18,6 @@ interface StepContainerProps {
   isLast: boolean;
   inProgress?: boolean;
   latestSummaryIndex?: number;
-  /** Thinking for this reply is shown in the work section. */
-  hideReasoning?: boolean;
 }
 
 function StepContainer(props: StepContainerProps) {
@@ -113,7 +111,7 @@ function StepContainer(props: StepContainerProps) {
             </pre>
           ) : (
             <>
-              {hasReasoning && !props.hideReasoning && (
+              {hasReasoning && (
                 <ThinkingBlockPeek
                   content={props.item.reasoning!.text}
                   index={props.index}
