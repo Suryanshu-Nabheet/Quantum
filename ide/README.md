@@ -13,8 +13,6 @@
 
 **Quantum** is an MIT-licensed, AI-native code editor — a fork of [Visual Studio Code](https://github.com/microsoft/vscode) with a **first-party agent** built into the workbench, plus an embedded browser that can attach live page context to chat.
 
-
-
 Not a plugin bolted on later: the agent lives in [`src/vs/workbench/contrib/agent`](src/vs/workbench/contrib/agent) and ships as part of the IDE.
 
 <p align="center">
@@ -46,6 +44,16 @@ Attach the context your task needs, including code, files, images, videos, PDFs,
 <p align="center">
   <img alt="Context menu showing the types of content users can attach to the Agent" src="./assets/screenshots/@-attach.png" width="100%" />
 </p>
+
+### Plan Mode (new!)
+
+Plan Mode helps you organize and break down complex tasks with the Agent. It allows the Agent to generate step-by-step plans for your goals, making it easier to tackle large code changes or debugging sessions by providing a clear summary and actionable checklist.
+
+<p align="center">
+  <img alt="Plan mode summary card in Quantum" src="./assets/screenshots/plan-mode.png" width="100%" />
+</p>
+
+---
 
 ## What’s inside
 
