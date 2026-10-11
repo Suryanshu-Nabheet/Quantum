@@ -13,6 +13,7 @@ import { GroupedToolCallHeader } from "./GroupedToolCallHeader";
 import { McpAppRenderer } from "./MCPAppRenderer";
 import { SimpleToolCallUI } from "./SimpleToolCallUI";
 import { ToolCallDisplay } from "./ToolCallDisplay";
+import { PlanCard } from "./PlanCard";
 import { getIconByName, getStatusIcon } from "./utils";
 
 interface ToolCallDivProps {
@@ -31,15 +32,20 @@ export function ToolCallDiv({
 
   if (!toolCallStates?.length) return null;
 
-  const isStreamingComplete = toolCallStates.every(
+  const planCalls = toolCallStates.filter(
+    (call) => call.toolCall.function?.name === BuiltInToolNames.CreatePlan,
+  );
+  const otherCalls = toolCallStates.filter(
+    (call) => call.toolCall.function?.name !== BuiltInToolNames.CreatePlan,
+  );
+
+  const isStreamingComplete = otherCalls.every(
     (toolCall) => toolCall.status !== "generating",
   );
 
-  const shouldShowGroupedUI = toolCallStates.length > 1 && isStreamingComplete;
-  const activeCalls = toolCallStates.filter(
-    (call) => call.status !== "canceled",
-  );
-  const pendingCalls = toolCallStates.filter((call) => call.status !== "done");
+  const shouldShowGroupedUI = otherCalls.length > 1 && isStreamingComplete;
+  const activeCalls = otherCalls.filter((call) => call.status !== "canceled");
+  const pendingCalls = otherCalls.filter((call) => call.status !== "done");
 
   const renderToolCall = (toolCallState: ToolCallState) => {
     const tool = availableTools.find(
@@ -109,11 +115,29 @@ export function ToolCallDiv({
     );
   };
 
+  const planCards = planCalls.map((toolCallState) => (
+    <PlanCard
+      key={toolCallState.toolCallId}
+      toolCallState={toolCallState}
+      historyIndex={historyIndex}
+      alongsideResearch={otherCalls.length > 0}
+    />
+  ));
+
+  if (otherCalls.length === 0) {
+    return (
+      <div className={`${CHAT_TOOL_STACK_CLASS} ${CHAT_TOOL_ROW_CLASS}`}>
+        {planCards}
+      </div>
+    );
+  }
+
   if (shouldShowGroupedUI) {
     return (
       <div className={`${CHAT_TOOL_STACK_CLASS} ${CHAT_TOOL_ROW_CLASS}`}>
+        {planCards}
         <GroupedToolCallHeader
-          toolCallStates={toolCallStates}
+          toolCallStates={otherCalls}
           activeCalls={pendingCalls.length > 0 ? pendingCalls : activeCalls}
           open={open}
           onToggle={() => setOpen(!open)}
@@ -124,7 +148,7 @@ export function ToolCallDiv({
           }`}
         >
           {open
-            ? toolCallStates.map((toolCallState) => (
+            ? otherCalls.map((toolCallState) => (
                 <div className="py-0.5 pl-5" key={toolCallState.toolCallId}>
                   {renderToolCall(toolCallState)}
                 </div>
@@ -137,7 +161,8 @@ export function ToolCallDiv({
 
   return (
     <div className={CHAT_TOOL_STACK_CLASS}>
-      {toolCallStates.map((toolCallState) => (
+      <div className={CHAT_TOOL_ROW_CLASS}>{planCards}</div>
+      {otherCalls.map((toolCallState) => (
         <div className={CHAT_TOOL_ROW_CLASS} key={toolCallState.toolCallId}>
           {renderToolCall(toolCallState)}
         </div>

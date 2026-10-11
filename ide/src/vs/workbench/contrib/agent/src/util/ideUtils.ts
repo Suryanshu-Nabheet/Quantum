@@ -211,18 +211,22 @@ export class VsCodeIdeUtils {
     }
   }
 
-  showVirtualFile(name: string, contents: string) {
-    vscode.workspace
-      .openTextDocument(
-        vscode.Uri.parse(
-          `${
-            VsCodeExtension.agentVirtualDocumentScheme
-          }:${encodeURIComponent(name)}?${encodeURIComponent(contents)}`,
-        ),
-      )
-      .then((doc) => {
-        vscode.window.showTextDocument(doc, { preview: false });
-      });
+  async showVirtualFile(name: string, contents: string, preview = false) {
+    const uri = vscode.Uri.parse(
+      `${
+        VsCodeExtension.agentVirtualDocumentScheme
+      }:${encodeURIComponent(name)}?${encodeURIComponent(contents)}`,
+    );
+    const doc = await vscode.workspace.openTextDocument(uri);
+    const markdown = name.toLowerCase().endsWith(".md");
+    const document = markdown
+      ? await vscode.languages.setTextDocumentLanguage(doc, "markdown")
+      : doc;
+    if (preview && markdown) {
+      await vscode.commands.executeCommand("markdown.showPreview", document.uri);
+      return;
+    }
+    await vscode.window.showTextDocument(document, { preview: false });
   }
 
   // ------------------------------------ //

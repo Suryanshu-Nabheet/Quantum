@@ -1,6 +1,6 @@
 import { createSelector } from "@reduxjs/toolkit";
 import { Tool } from "core";
-import { BUILT_IN_GROUP_NAME } from "core/tools/builtIn";
+import { BUILT_IN_GROUP_NAME, BuiltInToolNames } from "core/tools/builtIn";
 import { DEFAULT_TOOL_SETTING } from "../slices/uiSlice";
 import { RootState } from "../store";
 
@@ -26,10 +26,15 @@ export const selectActiveTools = createSelector(
       });
       if (mode === "plan") {
         return enabledTools.filter(
-          (t) => t.group !== BUILT_IN_GROUP_NAME || t.readonly,
+          (t) =>
+            t.function.name === BuiltInToolNames.WriteTodos ||
+            t.group !== BUILT_IN_GROUP_NAME ||
+            t.readonly,
         );
       }
-      return enabledTools;
+      return enabledTools.filter(
+        (t) => t.function.name !== BuiltInToolNames.CreatePlan,
+      );
     }
   },
 );

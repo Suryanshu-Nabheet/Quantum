@@ -3,7 +3,7 @@ import {
   ChatBubbleOvalLeftIcon,
 } from "@heroicons/react/24/outline";
 import { Editor, JSONContent } from "@tiptap/react";
-import { ChatHistoryItem, InputModifiers } from "core";
+import { ChatHistoryItem, InputModifiers, TodoItem } from "core";
 import { renderChatMessage } from "core/util/messageContent";
 import {
   memo,
@@ -142,6 +142,35 @@ function fallbackRender({ error, resetErrorBoundary }: any) {
   );
 }
 
+function sameTodoList(current: TodoItem[], snapshot: TodoItem[] | undefined): boolean {
+  if (!snapshot || current.length !== snapshot.length) {
+    return false;
+  }
+  return current.every(
+    (item, index) =>
+      item.id === snapshot[index].id &&
+      item.text === snapshot[index].text &&
+      item.status === snapshot[index].status,
+  );
+}
+
+function latestTodoSnapshot(
+  history: ChatHistoryItem[],
+): TodoItem[] | undefined {
+  for (let i = history.length - 1; i >= 0; i--) {
+    const states = history[i].toolCallStates;
+    if (!states) {
+      continue;
+    }
+    for (let j = states.length - 1; j >= 0; j--) {
+      if (states[j].todosSnapshot) {
+        return states[j].todosSnapshot;
+      }
+    }
+  }
+  return undefined;
+}
+
 export function Chat() {
   const dispatch = useAppDispatch();
   const ideMessenger = useContext(IdeMessengerContext);
@@ -155,6 +184,8 @@ export function Chat() {
   const stepsDivRef = useRef<HTMLDivElement>(null);
   const tabsRef = useRef<HTMLDivElement>(null);
   const history = useAppSelector((state) => state.session.history);
+  const todos = useAppSelector((state) => state.session.todos);
+  const showLiveTodos = todos.length > 0 && !sameTodoList(todos, latestTodoSnapshot(history));
   const showChatScrollbar = useAppSelector(
     (state) => state.config.config.ui?.showChatScrollbar,
   );
@@ -459,6 +490,7 @@ export function Chat() {
               </div>
             );
           })}
+          {showLiveTodos ? <TodoBlock todos={todos} /> : null}
         </div>
       </StepsDiv>
       <div className="relative shrink-0">

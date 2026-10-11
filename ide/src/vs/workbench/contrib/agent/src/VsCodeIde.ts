@@ -307,8 +307,12 @@ class VsCodeIde implements IDE {
     await vscode.workspace.fs.delete(this.parseUri(fileUri));
   }
 
-  async showVirtualFile(title: string, contents: string): Promise<void> {
-    this.ideUtils.showVirtualFile(title, contents);
+  async showVirtualFile(
+    title: string,
+    contents: string,
+    preview?: boolean,
+  ): Promise<void> {
+    await this.ideUtils.showVirtualFile(title, contents, preview);
   }
 
   async openFile(fileUri: string): Promise<void> {

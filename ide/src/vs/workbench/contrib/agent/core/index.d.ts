@@ -226,6 +226,14 @@ export interface Session {
   usage?: SessionUsage;
   /** Optional: task list the agent tracks across a long-running session */
   todos?: TodoItem[];
+  /** Optional: detailed plan the user approved for the current build */
+  planBrief?: PlanBrief;
+}
+
+export interface PlanBrief {
+  title: string;
+  overview: string;
+  approach: string;
 }
 
 export type TodoStatus = "pending" | "in_progress" | "done";
@@ -790,7 +798,7 @@ export interface IDE {
 
   removeFile(path: string): Promise<void>;
 
-  showVirtualFile(title: string, contents: string): Promise<void>;
+  showVirtualFile(title: string, contents: string, preview?: boolean): Promise<void>;
 
   openFile(path: string): Promise<void>;
 

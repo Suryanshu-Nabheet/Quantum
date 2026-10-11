@@ -22,6 +22,7 @@ import {
   Session,
   ThinkingChatMessage,
   Tool,
+  PlanBrief,
   TodoItem,
   ToolCallDelta,
   ToolCallState,
@@ -229,6 +230,8 @@ type SessionState = {
   agentStepDepth: number;
   /** Task list the agent maintains for this session. */
   todos: TodoItem[];
+  /** Detailed plan attached when the user presses Build. */
+  planBrief?: PlanBrief;
 };
 
 export const INITIAL_SESSION_STATE: SessionState = {
@@ -726,16 +729,31 @@ export const sessionSlice = createSlice({
           state.mode = payload.mode;
         }
         state.todos = payload.todos ?? [];
+        state.planBrief = payload.planBrief;
       } else {
         state.history = [];
         state.title = NEW_SESSION_TITLE;
         state.id = uuidv4();
         state.todos = [];
+        state.planBrief = undefined;
       }
     },
     /** Replace the session's task list (agent update or user edit). */
     setTodos: (state, { payload }: PayloadAction<TodoItem[]>) => {
       state.todos = payload;
+    },
+    setPlanBrief: (state, { payload }: PayloadAction<PlanBrief | undefined>) => {
+      state.planBrief = payload;
+    },
+    /** Drop the live list and every on-screen snapshot. Used when the user stops. */
+    clearTodos: (state) => {
+      state.todos = [];
+      state.planBrief = undefined;
+      for (const item of state.history) {
+        for (const toolCallState of item.toolCallStates ?? []) {
+          toolCallState.todosSnapshot = undefined;
+        }
+      }
     },
     setIsSessionMetadataLoading: (
       state,
@@ -1053,6 +1071,8 @@ export const {
   streamUpdate,
   newSession,
   setTodos,
+  setPlanBrief,
+  clearTodos,
   setTodosSnapshot,
   addPromptCompletionPair,
   setActive,

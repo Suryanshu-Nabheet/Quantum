@@ -362,7 +362,11 @@ export class VsCodeMessenger {
       return this.ide.writeFile(msg.data.path, msg.data.contents);
     });
     this.onWebviewOrCore("showVirtualFile", async (msg) => {
-      return this.ide.showVirtualFile(msg.data.name, msg.data.content);
+      return this.ide.showVirtualFile(
+        msg.data.name,
+        msg.data.content,
+        msg.data.preview,
+      );
     });
     this.onWebviewOrCore("openFile", async (msg) => {
       return this.ide.openFile(msg.data.path);

@@ -18,3 +18,4 @@ export { singleFindAndReplaceTool } from "./singleFindAndReplace";
 export { viewDiffTool } from "./viewDiff";
 export { viewSubdirectoryTool } from "./viewSubdirectory";
 export { writeTodosTool } from "./writeTodos";
+export { createPlanTool } from "./createPlan";
