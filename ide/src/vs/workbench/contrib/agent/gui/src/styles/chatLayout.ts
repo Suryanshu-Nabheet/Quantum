@@ -1,7 +1,7 @@
 /**
  * Shared Agent chat column spacing.
  * One scale: 12px between turns, 8px inside a turn, 4px between tool rows.
- * The history stack keeps bottom padding so the last line never sits on the composer.
+ * Clearance under the last line lives on the scroll container, not this stack.
  */
 
 /** Outer chat column (messages + composer). */
@@ -13,8 +13,8 @@ export const CHAT_SURFACE_CLASS = [
 /** Shared content inset inside the chat column. */
 const CHAT_MESSAGE_INSET_CLASS = "px-1 sm:px-1.5";
 
-/** Vertical gap between history turns, with room under the last line. */
-export const CHAT_HISTORY_STACK_CLASS = "flex flex-col gap-3 pt-3 pb-10";
+/** Vertical gap between history turns. */
+export const CHAT_HISTORY_STACK_CLASS = "flex flex-col gap-3 pt-3";
 
 /** Spacing inside a single assistant turn (message + tools). */
 export const CHAT_TURN_GAP_CLASS = "flex flex-col gap-2";

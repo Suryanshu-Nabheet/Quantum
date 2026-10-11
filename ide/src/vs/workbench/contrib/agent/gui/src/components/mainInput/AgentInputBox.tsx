@@ -136,7 +136,7 @@ function AgentInputBox(props: AgentInputBoxProps) {
         </GradientBorder>
 
         {showPeeks && (
-          <div className="mt-1 flex flex-col gap-0.5">
+          <div className="mt-3 flex flex-col gap-1">
             <RulesPeek appliedRules={props.appliedRules} />
             <ContextItemsPeek
               contextItems={props.contextItems}

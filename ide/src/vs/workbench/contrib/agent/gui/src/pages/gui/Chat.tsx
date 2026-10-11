@@ -70,6 +70,11 @@ const StepsDiv = styled.div`
   position: relative;
   background-color: transparent;
 
+  /* Only a real thread needs room under the last line. An empty chat stays flush. */
+  &.has-thread {
+    padding-bottom: 96px;
+  }
+
   & > * {
     position: relative;
   }
@@ -451,7 +456,7 @@ export function Chat() {
 
       <StepsDiv
         ref={stepsDivRef}
-        className={`${history.length > 0 ? `flex-1 overflow-y-scroll ${showScrollbar ? "thin-scrollbar" : "no-scrollbar"}` : ""}`}
+        className={`${history.length > 0 ? `has-thread flex-1 overflow-y-scroll ${showScrollbar ? "thin-scrollbar" : "no-scrollbar"}` : ""}`}
       >
         {highlights}
         <div className={CHAT_HISTORY_STACK_CLASS}>
