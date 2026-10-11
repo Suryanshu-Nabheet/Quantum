@@ -28,6 +28,7 @@ import {
 } from "core";
 
 import { mergeReasoningDetails } from "core/llm/openaiTypeConverters";
+import { stripMarkdownJsonToolCallFromAssistantText } from "core/tools/markdownJsonToolCall";
 import { NEW_SESSION_TITLE } from "core/util/constants";
 import {
   renderChatMessage,
@@ -506,6 +507,27 @@ export const sessionSlice = createSlice({
     },
     setAgentStepDepth: (state, { payload }: PayloadAction<number>) => {
       state.agentStepDepth = Math.max(0, Math.floor(payload));
+    },
+    recoverMarkdownJsonToolCallOnLastAssistant: (
+      state,
+      { payload }: PayloadAction<ToolCallDelta>,
+    ) => {
+      const lastItem = state.history.at(-1);
+      if (!lastItem || lastItem.message.role !== "assistant") {
+        return;
+      }
+      const assistant = lastItem.message as AssistantChatMessage;
+      assistant.content = stripMarkdownJsonToolCallFromAssistantText(
+        renderChatMessage(assistant),
+      );
+      handleToolCallsInMessage(
+        {
+          role: "assistant",
+          content: assistant.content,
+          toolCalls: [payload],
+        },
+        lastItem,
+      );
     },
     setInactive: (state) => {
       const curMessage = state.history.at(-1);
@@ -1026,6 +1048,7 @@ export const {
   updateFileSymbols,
   addContextItemsAtIndex,
   setAppliedRulesAtIndex,
+  recoverMarkdownJsonToolCallOnLastAssistant,
   setInactive,
   streamUpdate,
   newSession,

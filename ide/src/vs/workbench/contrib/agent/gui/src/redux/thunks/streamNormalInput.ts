@@ -21,7 +21,9 @@ import {
   setInlineErrorMessage,
   setIsPruned,
   setToolGenerated,
+  recoverMarkdownJsonToolCallOnLastAssistant,
 } from "../slices/sessionSlice";
+import { tryParseMarkdownJsonToolCall } from "core/tools/markdownJsonToolCall";
 import { ThunkApiType, AppDispatch, RootState } from "../store";
 import { constructMessages } from "../util/constructMessages";
 
@@ -537,7 +539,23 @@ async function runPostStreamToolPhase({
     }
     return "stop";
   }
-  const originalToolCalls = selectCurrentToolCalls(state1);
+
+  const lastHistoryItem = state1.session.history.at(-1);
+  if (
+    lastHistoryItem?.message.role === "assistant" &&
+    selectCurrentToolCalls(state1).length === 0
+  ) {
+    const recovered = tryParseMarkdownJsonToolCall(
+      renderChatMessage(lastHistoryItem.message),
+      activeTools,
+    );
+    if (recovered) {
+      dispatch(recoverMarkdownJsonToolCallOnLastAssistant(recovered));
+    }
+  }
+
+  const stateAfterRecover = getState();
+  const originalToolCalls = selectCurrentToolCalls(stateAfterRecover);
   const generatingCalls = originalToolCalls.filter(
     (tc) => tc.status === "generating",
   );
@@ -576,7 +594,7 @@ async function runPostStreamToolPhase({
   }
 
   // 2. Pre-process args to catch invalid args before checking policies
-  const state2 = getState();
+  const state2 = getState(); // after recovery
   if (streamAborter.signal.aborted) {
     return "stop";
   }
