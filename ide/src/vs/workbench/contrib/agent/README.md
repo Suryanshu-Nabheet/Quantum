@@ -133,12 +133,14 @@ After `npm run compile`, confirm:
 Chat/tool turns: `runAgentDriver` in `streamNormalInput` → `withAgentStreamLock` → tool policy → parallel tools → next driver iteration.
 
 - One LLM stream at a time: `withAgentStreamLock` on `runStreamNormalInputLocked`
-- **Stream continuation:** `core/llm/streamChat.ts` + `streamContinuation.ts` auto-resume truncated or cliffhanger replies (up to 8 segments); agent driver may add up to 2 ephemeral nudge retries when a weak model stops without tools
+- **Stream continuation:** only inside `core/llm/streamChat.ts` (up to 3 segments when truncated or clearly cut off — no extra GUI re-stream loops)
 - Step depth resets per user message; tools at `depth + 1`
 - Mixed approval: auto tools do not auto-resume the LLM
 - IPC: long timeouts for `tools/call` and `llm/compileChat`
 
 **Reliability invariants:** one terminal outcome per stream; abortable streams; bounded errors instead of spinners; `ensureAgentTurnInactive` when the driver exits; invalid tool JSON surfaces as errors, not execution. Prefer deleting eager imports and duplicate listeners over new orchestration layers.
+
+**Local Ollama `*coder*` models:** use ` ```tool ` system-message tools (not native `tool_calls`). If the model still prints ` ```json ` tool JSON, post-stream recovery in `markdownJsonToolCall.ts` turns it into a real tool call once.
 
 Full workflow rules: `ide/AGENTS.md`.
 

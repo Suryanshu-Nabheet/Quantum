@@ -9,6 +9,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useRef,
   useState,
 } from "react";
@@ -23,6 +24,18 @@ const MINISEARCH_OPTIONS = {
 };
 
 const MAX_LENGTH = 70;
+const PREFETCH_TITLES = new Set(["file", "folder", "commit", "branch"]);
+
+function matchesQuery(
+  item: { title: string; description: string },
+  query: string,
+): boolean {
+  const needle = query.toLowerCase();
+  return (
+    item.title.toLowerCase().includes(needle) ||
+    item.description.toLowerCase().includes(needle)
+  );
+}
 
 type SubmenuProviderRefreshTarget = "all" | ContextProviderName[];
 
@@ -60,8 +73,8 @@ export const SubmenuContextProvidersProvider = ({
     [id: string]: ContextSubmenuItemWithProvider[];
   }>({}).current;
   const providersLoading = useRef(new Set<ContextProviderName>()).current;
-  const abortControllers = useRef(
-    new Map<ContextProviderName, AbortController>(),
+  const inflightLoads = useRef(
+    new Map<ContextProviderName, Promise<void>>(),
   ).current;
   const providerLoadVersions = useRef(
     new Map<ContextProviderName, number>(),
@@ -84,6 +97,13 @@ export const SubmenuContextProvidersProvider = ({
           if (fallbackItems.length > 0) {
             return fallbackItems;
           }
+        }
+
+        if (providerTitle && query.trim() && !minisearches[providerTitle]) {
+          return (fallbackResults[providerTitle] ?? [])
+            .filter((item) => matchesQuery(item, query))
+            .slice(0, limit)
+            .map((result) => ({ ...result, providerTitle }));
         }
 
         // 1. Search using minisearch
@@ -124,16 +144,18 @@ export const SubmenuContextProvidersProvider = ({
 
         // 3. Add fallback results if no search results
         if (searchResults.length === 0) {
-          const fallbackItems = (
-            providerTitle ? (fallbackResults[providerTitle] ?? []) : []
-          )
-            .slice(0, limit)
-            .map((result) => {
-              return {
-                ...result,
-                providerTitle: providerTitle || "unknown",
-              };
-            });
+          const source = providerTitle
+            ? (fallbackResults[providerTitle] ?? [])
+            : [];
+          const filtered = query.trim()
+            ? source.filter((item) => matchesQuery(item, query))
+            : source;
+          const fallbackItems = filtered.slice(0, limit).map((result) => {
+            return {
+              ...result,
+              providerTitle: providerTitle || "unknown",
+            };
+          });
 
           if (fallbackItems.length === 0 && providerTitle) {
             if (providersLoading.has(providerTitle)) {
@@ -172,87 +194,89 @@ export const SubmenuContextProvidersProvider = ({
       await Promise.allSettled(
         submenuContextProviders.map(
           async (description: ContextProviderDescription) => {
-            const controller = new AbortController();
-            try {
-              const refreshProvider =
-                providers === "all" || providers.includes(description.title);
+            const refreshProvider =
+              providers === "all" || providers.includes(description.title);
+            if (!refreshProvider) {
+              return;
+            }
 
-              if (!refreshProvider) {
-                return;
-              }
+            const title = description.title;
+            const running = inflightLoads.get(title);
+            if (running) {
+              await running;
+              return;
+            }
 
-              // Submenu loading requests cancel existing requests
-              abortControllers.get(description.title)?.abort();
-              abortControllers.set(description.title, controller);
-              providersLoading.add(description.title);
-              const loadVersion =
-                (providerLoadVersions.get(description.title) ?? 0) + 1;
-              providerLoadVersions.set(description.title, loadVersion);
-
-              const result: any = await ideMessenger.request(
-                "context/loadSubmenuItems",
-                {
-                  title: description.title,
-                },
-              );
-
-              if (
-                controller.signal.aborted ||
-                providerLoadVersions.get(description.title) !== loadVersion
-              ) {
-                return;
-              }
-
-              if (result.status === "error") {
-                throw new Error(result.error);
-              }
-              const submenuItems: any[] = result.content ?? [];
-              const providerTitle = description.title;
-              const renderInlineAs = description.renderInlineAs;
-
-              const itemsWithProvider = submenuItems.map((item: any) => ({
-                ...item,
-                providerTitle,
-                renderInlineAs,
-              }));
-
-              const minisearch = new MiniSearch<ContextSubmenuItemWithProvider>(
-                {
-                  fields: ["title", "description"],
-                  storeFields: ["id", "title", "description", "providerTitle"],
-                  tokenize: (text) =>
-                    deduplicateArray(
-                      MiniSearch.getDefault("tokenize")(text).concat(
-                        splitCamelCaseAndNonAlphaNumeric(text),
-                      ),
-                      (a: string, b: string) => a === b,
-                    ),
-                },
-              );
-
-              const deduplicatedItems: any[] = deduplicateArray(
-                submenuItems.map((item: any) => ({ ...item, providerTitle })),
-                (a: any, b: any) => a.id === b.id,
-              );
-              minisearch.addAll(deduplicatedItems);
-
-              minisearches[providerTitle] = minisearch;
-              fallbackResults[providerTitle] = itemsWithProvider;
-              setCacheVersion((version) => version + 1);
-            } catch (error) {
-              console.error(
-                `Error loading items for ${description.title}:`,
-                error,
-              );
-              console.error(
-                "Error details:",
-                JSON.stringify(error, Object.getOwnPropertyNames(error)),
-              );
-            } finally {
-              if (!controller.signal.aborted) {
-                providersLoading.delete(description.title);
+            const job = (async () => {
+              providersLoading.add(title);
+              const loadVersion = (providerLoadVersions.get(title) ?? 0) + 1;
+              providerLoadVersions.set(title, loadVersion);
+              try {
+                const result: any = await ideMessenger.request(
+                  "context/loadSubmenuItems",
+                  { title },
+                );
+                if (providerLoadVersions.get(title) !== loadVersion) {
+                  return;
+                }
+                if (result.status === "error") {
+                  throw new Error(result.error);
+                }
+                const submenuItems: any[] = result.content ?? [];
+                const itemsWithProvider = submenuItems.map((item: any) => ({
+                  ...item,
+                  providerTitle: title,
+                  renderInlineAs: description.renderInlineAs,
+                }));
+                fallbackResults[title] = itemsWithProvider;
                 setCacheVersion((version) => version + 1);
+
+                const indexItems = () => {
+                  if (providerLoadVersions.get(title) !== loadVersion) {
+                    return;
+                  }
+                  const minisearch =
+                    new MiniSearch<ContextSubmenuItemWithProvider>({
+                      fields: ["title", "description"],
+                      storeFields: ["id", "title", "description", "providerTitle"],
+                      tokenize: (text) =>
+                        deduplicateArray(
+                          MiniSearch.getDefault("tokenize")(text).concat(
+                            splitCamelCaseAndNonAlphaNumeric(text),
+                          ),
+                          (a: string, b: string) => a === b,
+                        ),
+                    });
+                  const seenIds = new Set<string>();
+                  const uniqueItems = [];
+                  for (const item of itemsWithProvider) {
+                    if (seenIds.has(item.id)) {
+                      continue;
+                    }
+                    seenIds.add(item.id);
+                    uniqueItems.push(item);
+                  }
+                  minisearch.addAll(uniqueItems);
+                  minisearches[title] = minisearch;
+                  setCacheVersion((version) => version + 1);
+                };
+                if (typeof requestIdleCallback === "function") {
+                  requestIdleCallback(indexItems, { timeout: 400 });
+                } else {
+                  setTimeout(indexItems, 0);
+                }
+              } catch (error) {
+                console.error(`Error loading items for ${title}:`, error);
+              } finally {
+                providersLoading.delete(title);
               }
+            })();
+
+            inflightLoads.set(title, job);
+            try {
+              await job;
+            } finally {
+              inflightLoads.delete(title);
             }
           },
         ),
@@ -264,10 +288,20 @@ export const SubmenuContextProvidersProvider = ({
       fallbackResults,
       minisearches,
       providersLoading,
-      abortControllers,
+      inflightLoads,
       providerLoadVersions,
     ],
   );
+
+  useEffect(() => {
+    const titles = submenuContextProviders
+      .map((provider) => provider.title)
+      .filter((title) => PREFETCH_TITLES.has(title));
+    if (titles.length === 0) {
+      return;
+    }
+    void loadSubmenuItems(titles);
+  }, [submenuContextProviders, loadSubmenuItems]);
 
   useWebviewListener(
     "refreshSubmenuItems",

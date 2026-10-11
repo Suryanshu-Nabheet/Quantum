@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { setInlineErrorMessage } from "../../redux/slices/sessionSlice";
-import { continueTodos } from "../../redux/thunks/continueTodos";
+import { resumeOpenTodos } from "../../redux/thunks/resumeOpenTodos";
 import { CONFIG_ROUTES } from "../../util/navigation";
 
 export type InlineErrorMessageType = "out-of-context" | "max-agent-steps";
@@ -31,9 +31,9 @@ export default function InlineErrorMessage() {
             <>
               <span
                 className="cursor-pointer text-xs hover:underline"
-                onClick={() => void dispatch(continueTodos())}
+                onClick={() => void dispatch(resumeOpenTodos())}
               >
-                Continue remaining todos
+                Resume open todos
               </span>
               <span>|</span>
             </>

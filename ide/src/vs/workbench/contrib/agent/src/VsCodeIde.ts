@@ -45,6 +45,14 @@ import type {
 class VsCodeIde implements IDE {
   ideUtils: VsCodeIdeUtils;
   secretStorage: SecretStorage;
+  private attachFileCache: { at: number; files: string[] } | undefined;
+  private attachFileInflight: Promise<string[]> | undefined;
+  private ignoreGlobsCache:
+    | { at: number; includeMedia: boolean; globs: string[] }
+    | undefined;
+  private static readonly ATTACH_FILE_TTL_MS = 20_000;
+  private static readonly ATTACH_FILE_CAP = 2000;
+  private static readonly IGNORE_GLOBS_TTL_MS = 30_000;
 
   constructor(
     private readonly vscodeWebviewProtocolPromise: Promise<VsCodeWebviewProtocol>,
@@ -52,6 +60,14 @@ class VsCodeIde implements IDE {
   ) {
     this.ideUtils = new VsCodeIdeUtils();
     this.secretStorage = new SecretStorage(context);
+    const dropAttachCache = () => {
+      this.attachFileCache = undefined;
+    };
+    context.subscriptions.push(
+      vscode.workspace.onDidCreateFiles(dropAttachCache),
+      vscode.workspace.onDidDeleteFiles(dropAttachCache),
+      vscode.workspace.onDidRenameFiles(dropAttachCache),
+    );
   }
 
   async readSecrets(keys: string[]): Promise<Record<string, string>> {
@@ -462,6 +478,16 @@ class VsCodeIde implements IDE {
   private async buildWorkspaceIgnoreGlobs(options?: {
     includeMedia?: boolean;
   }): Promise<string[]> {
+    const includeMedia = !!options?.includeMedia;
+    const cached = this.ignoreGlobsCache;
+    if (
+      cached &&
+      cached.includeMedia === includeMedia &&
+      Date.now() - cached.at < VsCodeIde.IGNORE_GLOBS_TTL_MS
+    ) {
+      return cached.globs;
+    }
+
     const ignoreFiles = await vscode.workspace.findFiles(
       "**/.agentignore",
       null,
@@ -523,7 +549,126 @@ class VsCodeIde implements IDE {
         });
     }
 
-    return Array.from(ignoreGlobs);
+    const globs = Array.from(ignoreGlobs);
+    this.ignoreGlobsCache = { at: Date.now(), includeMedia, globs };
+    return globs;
+  }
+
+  /** Ripgrep file list, stopped at the cap. Falls back to an empty array. */
+  private listAttachableFiles(maxResults: number): Promise<string[]> {
+    const now = Date.now();
+    if (
+      this.attachFileCache &&
+      now - this.attachFileCache.at < VsCodeIde.ATTACH_FILE_TTL_MS
+    ) {
+      return Promise.resolve(this.attachFileCache.files.slice(0, maxResults));
+    }
+    if (!this.attachFileInflight) {
+      this.attachFileInflight = this.collectAttachableFiles(
+        VsCodeIde.ATTACH_FILE_CAP,
+      )
+        .then((files) => {
+          if (files.length > 0) {
+            this.attachFileCache = { at: Date.now(), files };
+          }
+          return files;
+        })
+        .finally(() => {
+          this.attachFileInflight = undefined;
+        });
+    }
+    return this.attachFileInflight.then((files) => files.slice(0, maxResults));
+  }
+
+  private collectAttachableFiles(maxFiles: number): Promise<string[]> {
+    const folders = vscode.workspace.workspaceFolders;
+    if (!folders?.length) {
+      return Promise.resolve([]);
+    }
+    const ripGrepPath = vscode.Uri.joinPath(
+      getExtensionUri(),
+      "out/node_modules/@vscode/ripgrep/bin/rg",
+    ).fsPath;
+    const collected: string[] = [];
+
+    const scanFolder = (folder: vscode.WorkspaceFolder) =>
+      new Promise<void>((done) => {
+        if (collected.length >= maxFiles) {
+          done();
+          return;
+        }
+        let child: child_process.ChildProcess;
+        try {
+          child = child_process.spawn(
+            ripGrepPath,
+            [
+              "--files",
+              "--hidden",
+              "--glob",
+              "!.git/**",
+              "--glob",
+              "!**/.git/**",
+              "--glob",
+              "!**/node_modules/**",
+              "--glob",
+              "!**/out/**",
+              "--glob",
+              "!**/dist/**",
+              "--glob",
+              "!**/*.lock",
+              "--glob",
+              "!**/*-lock.json",
+            ],
+            { cwd: folder.uri.fsPath },
+          );
+        } catch {
+          done();
+          return;
+        }
+        let pending = "";
+        const takeLine = (line: string) => {
+          const trimmed = line.trim();
+          if (!trimmed || collected.length >= maxFiles) {
+            return;
+          }
+          collected.push(
+            vscode.workspace.asRelativePath(
+              vscode.Uri.joinPath(folder.uri, trimmed),
+            ),
+          );
+        };
+        child.stdout?.setEncoding("utf8");
+        child.stdout?.on("data", (chunk: string) => {
+          pending += chunk;
+          let nl = pending.indexOf("\n");
+          while (nl >= 0) {
+            takeLine(pending.slice(0, nl));
+            pending = pending.slice(nl + 1);
+            if (collected.length >= maxFiles) {
+              child.kill();
+              return;
+            }
+            nl = pending.indexOf("\n");
+          }
+        });
+        child.on("error", () => done());
+        child.on("close", () => {
+          if (pending.trim()) {
+            takeLine(pending);
+          }
+          done();
+        });
+      });
+
+    return (async () => {
+      for (const folder of folders) {
+        await scanFolder(folder);
+        if (collected.length >= maxFiles) {
+          break;
+        }
+      }
+      return collected;
+    })();
   }
 
   private async getRemoteWorkspaceSearchResults(
@@ -602,6 +747,16 @@ class VsCodeIde implements IDE {
     maxResults?: number,
     options?: { includeMedia?: boolean },
   ): Promise<string[]> {
+    if (
+      (pattern === "**/*" || pattern === "**") &&
+      options?.includeMedia
+    ) {
+      const fast = await this.listAttachableFiles(maxResults ?? VsCodeIde.ATTACH_FILE_CAP);
+      if (fast.length > 0) {
+        return fast;
+      }
+    }
+
     const ignoreGlobsArray = await this.buildWorkspaceIgnoreGlobs(options);
     const results = await vscode.workspace.findFiles(
       pattern,

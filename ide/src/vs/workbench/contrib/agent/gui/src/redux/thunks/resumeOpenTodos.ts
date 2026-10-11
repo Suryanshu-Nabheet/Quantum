@@ -10,10 +10,10 @@ import { streamThunkWrapper } from "./streamThunkWrapper";
 /**
  * Resumes a paused long-running task. Only runs when the session still has
  * open todos, so it never starts an unrequested turn. Restarts the step budget
- * and continues from the existing history without adding a user message.
+ * and resumes from the existing history without adding a user message.
  */
-export const continueTodos = createAsyncThunk<void, void, ThunkApiType>(
-  "chat/continueTodos",
+export const resumeOpenTodos = createAsyncThunk<void, void, ThunkApiType>(
+  "chat/resumeOpenTodos",
   async (_, { dispatch, getState }) => {
     const open = getState().session.todos.some((t) => t.status !== "done");
     if (!open) return;

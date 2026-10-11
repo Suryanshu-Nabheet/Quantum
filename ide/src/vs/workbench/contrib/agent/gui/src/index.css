@@ -87,6 +87,23 @@ body {
   animation: fadeIn 0.3s ease-in-out;
 }
 
+@keyframes todo-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.todo-spin {
+  animation: todo-spin 700ms linear infinite;
+  transform-origin: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .todo-spin {
+    animation: none;
+  }
+}
+
 .thin-scrollbar {
   scrollbar-width: thin;
 }

@@ -3,10 +3,7 @@ import {
   assistantMessageHasIncompleteToolCalls,
   buildStreamContinuationMessages,
   isTruncatedFinishReason,
-  looksLikeDeferredAgentAction,
-  looksLikePassiveAgentHandoff,
   mergeAssistantStreamChunk,
-  shouldAutoContinueAgentDriverTurn,
   shouldContinueLlmStream,
 } from "./streamContinuation.js";
 
@@ -50,23 +47,6 @@ describe("streamContinuation", () => {
     expect(msgs[2].role).toBe("user");
   });
 
-  it("continues when the model stops after promising to explore", () => {
-    const text =
-      "Let me explore the agent directory and the main VS source structure.";
-    expect(
-      shouldContinueLlmStream(
-        {
-          modelTitle: "m",
-          modelProvider: "p",
-          prompt: "",
-          completion: text,
-          finishReason: "stop",
-        },
-        { role: "assistant", content: text },
-      ),
-    ).toBe(true);
-  });
-
   it("continues when the model stops at a dangling lead-in", () => {
     expect(
       shouldContinueLlmStream(
@@ -87,6 +67,23 @@ describe("streamContinuation", () => {
     ).toBe(true);
   });
 
+  it("does not continue a normal complete sentence", () => {
+    const text =
+      "Let me explore the agent directory and the main VS source structure.";
+    expect(
+      shouldContinueLlmStream(
+        {
+          modelTitle: "m",
+          modelProvider: "p",
+          prompt: "",
+          completion: text,
+          finishReason: "stop",
+        },
+        { role: "assistant", content: text },
+      ),
+    ).toBe(false);
+  });
+
   it("does not continue when the assistant gave a complete answer", () => {
     expect(
       shouldContinueLlmStream(
@@ -104,70 +101,6 @@ describe("streamContinuation", () => {
         },
       ),
     ).toBe(false);
-  });
-
-  it("detects deferred agent action phrasing", () => {
-    expect(
-      looksLikeDeferredAgentAction(
-        "Let me explore the agent directory and the main VS source structure.",
-      ),
-    ).toBe(true);
-  });
-
-  it("shouldAutoContinueAgentDriverTurn in agent mode with tools", () => {
-    expect(
-      shouldAutoContinueAgentDriverTurn({
-        mode: "agent",
-        hasActiveTools: true,
-        lastAssistantText:
-          "Let me explore the agent directory and the main VS source structure.",
-        lastUserText: "analyze the codebase",
-        streamAborted: false,
-        hasUnsettledToolWork: false,
-      }),
-    ).toBe(true);
-    expect(
-      shouldAutoContinueAgentDriverTurn({
-        mode: "chat",
-        hasActiveTools: true,
-        lastAssistantText: "Let me explore the repo.",
-        lastUserText: "analyze the codebase",
-        streamAborted: false,
-        hasUnsettledToolWork: false,
-      }),
-    ).toBe(false);
-  });
-
-  it("continues when the model coaches the user to use tools", () => {
-    const text =
-      "To analyze the codebase, I'll need you to specify the directory. You can use the ls tool to list files and read_file to view them. For example...";
-    expect(looksLikePassiveAgentHandoff(text)).toBe(true);
-    expect(
-      shouldContinueLlmStream(
-        {
-          modelTitle: "m",
-          modelProvider: "p",
-          prompt: "",
-          completion: text,
-          finishReason: "stop",
-        },
-        { role: "assistant", content: text },
-      ),
-    ).toBe(true);
-  });
-
-  it("continues stalled codebase analysis with no tool calls", () => {
-    expect(
-      shouldAutoContinueAgentDriverTurn({
-        mode: "agent",
-        hasActiveTools: true,
-        lastUserText: "analise the codebase",
-        lastAssistantText:
-          "To analyze the codebase, I'll need you to specify the directory.",
-        streamAborted: false,
-        hasUnsettledToolWork: false,
-      }),
-    ).toBe(true);
   });
 
   it("shouldContinueLlmStream on length finish", () => {

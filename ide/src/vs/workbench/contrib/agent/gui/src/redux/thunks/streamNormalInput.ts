@@ -60,23 +60,7 @@ import {
   ensureAgentTurnInactive,
   PostStreamPhaseResult,
 } from "../util/agentStreamContinuation";
-import {
-  resolveAgentContinuationNudge,
-  shouldAutoContinueAgentDriverTurn,
-} from "core/llm/streamContinuation";
 import { renderChatMessage } from "core/util/messageContent";
-
-const MAX_INCOMPLETE_AGENT_DRIVER_RETRIES = 3;
-
-function getLastUserMessageText(getState: () => RootState): string {
-  for (let i = getState().session.history.length - 1; i >= 0; i--) {
-    const msg = getState().session.history[i].message;
-    if (msg.role === "user") {
-      return renderChatMessage(msg);
-    }
-  }
-  return "";
-}
 
 /**
  * Builds completion options with reasoning configuration based on session state and model capabilities.
@@ -188,7 +172,6 @@ export async function runAgentDriver({
     // after release. Follow-up turns iterate in this loop; the stream lock is
     // never held across post-stream tool work, so nested resumes cannot deadlock.
     let currentDepth = depth;
-    let incompleteDriverRetries = 0;
     for (;;) {
       // A continuation must not start after the user cancelled. cancelStream
       // clears isStreaming; the first turn sets it itself, so only continuations
@@ -227,7 +210,7 @@ export async function runAgentDriver({
         return;
       }
 
-      let next = await runPostStreamToolPhase({
+      const next = await runPostStreamToolPhase({
         depth: currentDepth,
         dispatch,
         extra,
@@ -235,67 +218,6 @@ export async function runAgentDriver({
         streamAborter: streamOutcome.streamAborter,
         activeTools: streamOutcome.activeTools,
       });
-
-      while (
-        next === "stop" &&
-        incompleteDriverRetries < MAX_INCOMPLETE_AGENT_DRIVER_RETRIES
-      ) {
-        const last = getState().session.history.at(-1);
-        const lastText =
-          last?.message.role === "assistant"
-            ? renderChatMessage(last.message)
-            : "";
-        const hasUnsettledToolWork =
-          selectPendingToolCalls(getState()).length > 0 ||
-          selectCurrentToolCalls(getState()).some(
-            (tc) => tc.status === "generating" || tc.status === "generated",
-          );
-        const lastUserText = getLastUserMessageText(getState);
-        if (
-          !shouldAutoContinueAgentDriverTurn({
-            mode: getState().session.mode,
-            hasActiveTools: streamOutcome.activeTools.length > 0,
-            lastAssistantText: lastText,
-            lastUserText,
-            streamAborted: streamOutcome.streamAborter.signal.aborted,
-            hasUnsettledToolWork,
-          })
-        ) {
-          break;
-        }
-        incompleteDriverRetries++;
-        const continuationNudge = resolveAgentContinuationNudge(
-          lastText,
-          lastUserText,
-        );
-        const retried = await runTurnWithOverloadRetry(selectedChatModel, () =>
-          withAgentStreamLock(async () =>
-            runStreamNormalInputLocked({
-              legacySlashCommandData,
-              depth: currentDepth,
-              dispatch,
-              extra,
-              getState,
-              selectedChatModel,
-              ephemeralMessages: [
-                { role: "user", content: continuationNudge },
-              ],
-            }),
-          ),
-        );
-        if (!retried) {
-          break;
-        }
-        streamOutcome = retried;
-        next = await runPostStreamToolPhase({
-          depth: currentDepth,
-          dispatch,
-          extra,
-          getState,
-          streamAborter: streamOutcome.streamAborter,
-          activeTools: streamOutcome.activeTools,
-        });
-      }
 
       if (next !== "continue") {
         ensureAgentTurnInactive(dispatch, getState);
@@ -312,7 +234,6 @@ async function runStreamNormalInputLocked({
   extra,
   getState,
   selectedChatModel,
-  ephemeralMessages,
 }: {
   legacySlashCommandData?: ToCoreProtocol["llm/streamChat"][0]["legacySlashCommandData"];
   depth: number;
@@ -320,8 +241,6 @@ async function runStreamNormalInputLocked({
   extra: ThunkApiType["extra"];
   getState: () => RootState;
   selectedChatModel: ModelDescription;
-  /** Appended only for this request; not written to session history. */
-  ephemeralMessages?: ChatMessage[];
 }) {
   const state = getState();
   let activeTools = selectActiveTools(state);
@@ -415,11 +334,8 @@ async function runStreamNormalInputLocked({
     }
   }
 
-  let { compiledChatMessages, didPrune, contextPercentage } =
+  const { compiledChatMessages, didPrune, contextPercentage } =
     precompiledRes.content;
-  if (ephemeralMessages?.length) {
-    compiledChatMessages = [...compiledChatMessages, ...ephemeralMessages];
-  }
 
   dispatch(setIsPruned(didPrune));
   dispatch(setContextPercentage(contextPercentage));
@@ -540,22 +456,20 @@ async function runPostStreamToolPhase({
     return "stop";
   }
 
-  const lastHistoryItem = state1.session.history.at(-1);
-  if (
-    lastHistoryItem?.message.role === "assistant" &&
-    selectCurrentToolCalls(state1).length === 0
-  ) {
-    const recovered = tryParseMarkdownJsonToolCall(
-      renderChatMessage(lastHistoryItem.message),
-      activeTools,
-    );
-    if (recovered) {
-      dispatch(recoverMarkdownJsonToolCallOnLastAssistant(recovered));
+  if (selectCurrentToolCalls(getState()).length === 0) {
+    const last = getState().session.history.at(-1);
+    if (last?.message.role === "assistant") {
+      const recovered = tryParseMarkdownJsonToolCall(
+        renderChatMessage(last.message),
+        activeTools,
+      );
+      if (recovered) {
+        dispatch(recoverMarkdownJsonToolCallOnLastAssistant(recovered));
+      }
     }
   }
 
-  const stateAfterRecover = getState();
-  const originalToolCalls = selectCurrentToolCalls(stateAfterRecover);
+  const originalToolCalls = selectCurrentToolCalls(getState());
   const generatingCalls = originalToolCalls.filter(
     (tc) => tc.status === "generating",
   );

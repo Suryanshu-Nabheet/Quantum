@@ -8,7 +8,6 @@ import {
 } from "../../";
 import {
   INLINE_IMAGE_MIME_BY_EXT,
-  MEDIA_ATTACH_FIND_GLOB,
   PATH_ONLY_ATTACH_EXTS,
 } from "../../indexing/ignore.js";
 import {
@@ -18,9 +17,7 @@ import {
   joinPathsToUri,
 } from "../../util/uri.js";
 
-const MAX_GENERAL_SUBMENU_ITEMS = 800;
-const MAX_MEDIA_SUBMENU_ITEMS = 400;
-const MAX_SUBMENU_ITEMS = 1200;
+const MAX_SUBMENU_ITEMS = 2000;
 const MAX_FILE_CONTEXT_LINES = 800;
 const MAX_INLINE_IMAGE_BYTES = 5 * 1024 * 1024;
 
@@ -168,26 +165,21 @@ class FileContextProvider extends BaseContextProvider {
   async loadSubmenuItems(
     args: LoadSubmenuItemsArgs,
   ): Promise<ContextSubmenuItem[]> {
-    const workspaceDirs = await args.ide.getWorkspaceDirs();
+    const [workspaceDirs, openFiles, indexed] = await Promise.all([
+      args.ide.getWorkspaceDirs(),
+      args.ide.getOpenFiles(),
+      args.ide.getFileResults("**/*", MAX_SUBMENU_ITEMS, {
+        includeMedia: true,
+      }),
+    ]);
     if (!workspaceDirs || workspaceDirs.length === 0) {
       return [];
     }
 
-    // Two passes: general workspace files + an explicit media glob so images /
-    // videos / PDFs are not drowned by the first N source files in a large repo.
-    const [generalResults, mediaResults] = await Promise.all([
-      args.ide.getFileResults("**/*", MAX_GENERAL_SUBMENU_ITEMS, {
-        includeMedia: true,
-      }),
-      args.ide.getFileResults(MEDIA_ATTACH_FIND_GLOB, MAX_MEDIA_SUBMENU_ITEMS, {
-        includeMedia: true,
-      }),
-    ]);
-
-    const workspaceFiles = resolveWorkspaceFileUris(
-      [...generalResults, ...mediaResults],
-      workspaceDirs,
-    );
+    const workspaceFiles = [
+      ...openFiles,
+      ...resolveWorkspaceFileUris(indexed, workspaceDirs),
+    ];
 
     const seen = new Set<string>();
     const merged: ContextSubmenuItem[] = [];

@@ -441,9 +441,32 @@ export function isRecommendedAgentModel(modelName: string): boolean {
   }
   return false;
 }
+/** Local coder models often ignore native tool_calls and print JSON in chat instead. */
+export function prefersSystemMessageTools(
+  modelDescription: ModelDescription,
+): boolean {
+  const provider = modelDescription.provider?.toLowerCase() ?? "";
+  const underlying =
+    modelDescription.underlyingProviderName?.toLowerCase() ?? "";
+  const model = modelDescription.model.toLowerCase();
+  const isLocal =
+    provider === "ollama" ||
+    underlying === "ollama" ||
+    provider === "lmstudio" ||
+    underlying === "lmstudio";
+  if (!isLocal) {
+    return false;
+  }
+  return model.includes("coder") || model.includes(":code");
+}
+
 export function modelSupportsNativeTools(modelDescription: ModelDescription) {
   if (modelDescription.capabilities?.tools !== undefined) {
     return modelDescription.capabilities.tools;
+  }
+
+  if (prefersSystemMessageTools(modelDescription)) {
+    return false;
   }
 
   const providerSupport = PROVIDER_TOOL_SUPPORT[modelDescription.provider];

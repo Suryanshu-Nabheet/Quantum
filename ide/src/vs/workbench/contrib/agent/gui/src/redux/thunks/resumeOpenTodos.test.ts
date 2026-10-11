@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { ModelDescription } from "core";
 import { getEmptyRootState, createMockStore } from "../../util/test/mockStore";
 import { RootState } from "../store";
-import { continueTodos } from "./continueTodos";
+import { resumeOpenTodos } from "./resumeOpenTodos";
 
 const claude: ModelDescription = {
   title: "Claude 3.5 Sonnet",
@@ -32,7 +32,7 @@ function stateWithOpenTodo(): RootState {
   };
 }
 
-describe("continueTodos error policy", () => {
+describe("resumeOpenTodos error policy", () => {
   it("cancels the stream and surfaces an error when a continuation turn fails", async () => {
     const mockStore = createMockStore(stateWithOpenTodo());
     const messenger = mockStore.mockIdeMessenger;
@@ -41,12 +41,11 @@ describe("continueTodos error policy", () => {
       didPrune: false,
       contextPercentage: 0.5,
     };
-    // A non-retryable failure in the very first continuation turn.
     messenger.llmStreamChat = vi.fn().mockImplementation(() => {
       throw new Error("invalid api key");
     });
 
-    await mockStore.dispatch(continueTodos() as any);
+    await mockStore.dispatch(resumeOpenTodos() as any);
 
     const state = mockStore.getState() as RootState;
     expect(state.session.isStreaming).toBe(false);

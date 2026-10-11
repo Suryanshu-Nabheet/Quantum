@@ -1,5 +1,9 @@
 // core/llm/toolSupport.test.ts
-import { PROVIDER_TOOL_SUPPORT, isRecommendedAgentModel } from "./toolSupport";
+import {
+  PROVIDER_TOOL_SUPPORT,
+  isRecommendedAgentModel,
+  modelSupportsNativeTools,
+} from "./toolSupport";
 
 describe("PROVIDER_TOOL_SUPPORT", () => {
   describe("anthropic", () => {
@@ -326,6 +330,20 @@ describe("PROVIDER_TOOL_SUPPORT", () => {
     it("should return false for moonshotai/kimi-k2:free model", () => {
       // This fixes issue #6619
       expect(supportsFn("moonshotai/kimi-k2:free")).toBe(false);
+    });
+  });
+
+  describe("modelSupportsNativeTools", () => {
+    it("disables native tools for local coder models", () => {
+      expect(
+        modelSupportsNativeTools({
+          title: "qwen2.5-coder",
+          model: "qwen2.5-coder:7b",
+          provider: "ollama",
+          underlyingProviderName: "ollama",
+          completionOptions: {},
+        }),
+      ).toBe(false);
     });
   });
 

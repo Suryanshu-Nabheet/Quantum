@@ -413,12 +413,6 @@ export function Chat() {
 
   const showScrollbar = showChatScrollbar ?? window.innerHeight > 5000;
 
-  // Only the most recent todo block is editable; earlier blocks are snapshots.
-  const lastTodoToolCallId = history
-    .flatMap((item) => item.toolCallStates ?? [])
-    .filter((state) => state.todosSnapshot)
-    .at(-1)?.toolCallId;
-
   return (
     <div className={`${CHAT_SURFACE_CLASS} flex min-h-0 flex-1 flex-col`}>
       {!!showSessionTabs && !isInEdit && <TabBar ref={tabsRef} />}
@@ -458,7 +452,6 @@ export function Chat() {
                     <TodoBlock
                       key={state.toolCallId}
                       todos={state.todosSnapshot}
-                      editable={state.toolCallId === lastTodoToolCallId}
                     />
                   ) : null,
                 )}

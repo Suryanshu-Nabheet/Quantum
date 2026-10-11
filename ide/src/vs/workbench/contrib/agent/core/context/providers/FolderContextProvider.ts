@@ -14,7 +14,7 @@ import { BaseContextProvider } from "../index.js";
 
 const MAX_FOLDER_CONTEXT_ITEMS = 300;
 const MAX_FOLDER_SUBMENU_ITEMS = 500;
-const MAX_FOLDER_SCAN_DIRS = 750;
+const MAX_FOLDER_SOURCE_FILES = 2000;
 
 class FolderContextProvider extends BaseContextProvider {
   static description: ContextProviderDescription = {
@@ -52,39 +52,42 @@ class FolderContextProvider extends BaseContextProvider {
   async loadSubmenuItems(
     args: LoadSubmenuItemsArgs,
   ): Promise<ContextSubmenuItem[]> {
-    const workspaceDirs = await args.ide.getWorkspaceDirs();
+    const [workspaceDirs, files] = await Promise.all([
+      args.ide.getWorkspaceDirs(),
+      args.ide.getFileResults("**/*", MAX_FOLDER_SOURCE_FILES, {
+        includeMedia: true,
+      }),
+    ]);
+    if (!workspaceDirs.length) {
+      return [];
+    }
+
     const seen = new Set<string>();
-    const queue = [...workspaceDirs];
     const folderUris: string[] = [];
-
-    while (
-      queue.length > 0 &&
-      folderUris.length < MAX_FOLDER_SUBMENU_ITEMS &&
-      seen.size < MAX_FOLDER_SCAN_DIRS
-    ) {
-      const folderUri = queue.shift();
-      if (!folderUri || seen.has(folderUri)) {
+    for (const root of workspaceDirs) {
+      if (seen.has(root) || folderUris.length >= MAX_FOLDER_SUBMENU_ITEMS) {
         continue;
       }
+      seen.add(root);
+      folderUris.push(root);
+    }
 
-      seen.add(folderUri);
-      folderUris.push(folderUri);
-
-      let entries: [string, number][] = [];
-      try {
-        entries = await args.ide.listDir(folderUri);
-      } catch {
-        continue;
-      }
-
-      for (const [name, type] of entries) {
-        if (
-          (type & 2) === 0 ||
-          queue.length + seen.size >= MAX_FOLDER_SCAN_DIRS
-        ) {
+    for (const file of files) {
+      const parts = file.replace(/\\/g, "/").split("/");
+      let acc = "";
+      for (let i = 0; i < parts.length - 1; i++) {
+        acc = acc ? `${acc}/${parts[i]}` : parts[i];
+        if (seen.has(acc)) {
           continue;
         }
-        queue.push(joinPathsToUri(folderUri, name));
+        seen.add(acc);
+        folderUris.push(joinPathsToUri(workspaceDirs[0], acc));
+        if (folderUris.length >= MAX_FOLDER_SUBMENU_ITEMS) {
+          break;
+        }
+      }
+      if (folderUris.length >= MAX_FOLDER_SUBMENU_ITEMS) {
+        break;
       }
     }
 
