@@ -13,8 +13,8 @@ export const CHAT_SURFACE_CLASS = [
 /** Shared content inset inside the chat column. */
 const CHAT_MESSAGE_INSET_CLASS = "px-1 sm:px-1.5";
 
-/** Vertical gap between history turns. Never wider than the column. */
-export const CHAT_HISTORY_STACK_CLASS = "flex w-full min-w-0 max-w-full flex-col gap-3 pt-3";
+/** Vertical gap between history turns. No top padding — the first line stays flush. */
+export const CHAT_HISTORY_STACK_CLASS = "flex w-full min-w-0 max-w-full flex-col gap-3";
 
 /** Spacing inside a single assistant turn (message + tools). */
 export const CHAT_TURN_GAP_CLASS = "flex w-full min-w-0 max-w-full flex-col gap-2";
