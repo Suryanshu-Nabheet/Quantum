@@ -54,6 +54,8 @@ import {
   CHAT_TURN_GAP_CLASS,
 } from "../../styles/chatLayout";
 import { EmptyChatBody } from "./EmptyChatBody";
+import { groupHistoryTurns } from "./groupHistoryTurns";
+import { WorkedTurn } from "./WorkedTurn";
 import { useAutoScroll } from "./useAutoScroll";
 
 // Helper function to find the index of the latest conversation summary
@@ -96,6 +98,7 @@ const AssistantMessageRow = memo(function AssistantMessageRow({
   inProgress,
   latestSummaryIndex,
   open,
+  hideReasoning,
 }: {
   index: number;
   item: ChatHistoryItemWithMessageId;
@@ -103,6 +106,7 @@ const AssistantMessageRow = memo(function AssistantMessageRow({
   inProgress: boolean;
   latestSummaryIndex: number;
   open: boolean;
+  hideReasoning?: boolean;
 }) {
   return (
     <TimelineItem
@@ -117,6 +121,7 @@ const AssistantMessageRow = memo(function AssistantMessageRow({
         inProgress={inProgress}
         item={item}
         latestSummaryIndex={latestSummaryIndex}
+        hideReasoning={hideReasoning}
       />
     </TimelineItem>
   );
@@ -320,7 +325,11 @@ export function Chat() {
   }, []);
 
   const renderChatHistoryItem = useCallback(
-    (item: ChatHistoryItemWithMessageId, index: number) => {
+    (
+      item: ChatHistoryItemWithMessageId,
+      index: number,
+      options?: { hideReasoning?: boolean; suppressTools?: boolean },
+    ) => {
       const {
         message,
         editorState,
@@ -375,6 +384,7 @@ export function Chat() {
                   isLast={isLast}
                   inProgress={isLast && isStreaming}
                   latestSummaryIndex={latestSummaryIndex}
+                  hideReasoning={options?.hideReasoning}
                   open={
                     typeof stepsOpen[index] === "undefined"
                       ? true
@@ -384,7 +394,7 @@ export function Chat() {
               </div>
             ) : null}
 
-            {hasTools ? (
+            {hasTools && !options?.suppressTools ? (
               <ToolCallDiv
                 toolCallStates={toolCallStates}
                 historyIndex={index}
@@ -455,38 +465,80 @@ export function Chat() {
       >
         {highlights}
         <div className={CHAT_HISTORY_STACK_CLASS}>
-          {history.map((item, index: number) => {
-            if (
-              item.message.role === "system" ||
-              item.message.role === "tool"
-            ) {
-              return null;
+          {groupHistoryTurns(history).map((turn) => {
+            if (turn.kind === "user" || turn.kind === "plain") {
+              const indexes = turn.kind === "user" ? [turn.index] : turn.indexes;
+              return indexes.map((index) => {
+                const item = history[index];
+                const rendered = renderChatHistoryItem(item, index);
+                if (rendered == null) {
+                  return null;
+                }
+                return (
+                  <div key={item.message.id}>
+                    <ErrorBoundary
+                      FallbackComponent={fallbackRender}
+                      onReset={() => {
+                        dispatch(newSession());
+                      }}
+                    >
+                      {rendered}
+                    </ErrorBoundary>
+                    {item.toolCallStates?.map((state) =>
+                      state.todosSnapshot ? (
+                        <TodoBlock
+                          key={state.toolCallId}
+                          todos={state.todosSnapshot}
+                        />
+                      ) : null,
+                    )}
+                    {index === history.length - 1 && <InlineErrorMessage />}
+                  </div>
+                );
+              });
             }
 
-            const rendered = renderChatHistoryItem(item, index);
-            if (rendered == null) {
-              return null;
-            }
-
+            const answerItem =
+              turn.answerIndex == null ? undefined : history[turn.answerIndex];
+            const answer = answerItem
+              ? renderChatHistoryItem(answerItem, turn.answerIndex!, {
+                  hideReasoning: turn.reasoningOnAnswer,
+                  suppressTools: true,
+                })
+              : null;
+            const todoIndexes =
+              turn.answerIndex == null
+                ? turn.workIndexes
+                : [...turn.workIndexes, turn.answerIndex];
+            const lastIndex = todoIndexes[todoIndexes.length - 1];
             return (
-              <div key={item.message.id}>
+              <div key={`worked-${turn.workIndexes[0] ?? turn.answerIndex}`}>
                 <ErrorBoundary
                   FallbackComponent={fallbackRender}
                   onReset={() => {
                     dispatch(newSession());
                   }}
                 >
-                  {rendered}
+                  <WorkedTurn
+                    history={history}
+                    workIndexes={turn.workIndexes}
+                    answerIndex={turn.answerIndex}
+                    reasoningOnAnswer={turn.reasoningOnAnswer}
+                    isStreaming={isStreaming}
+                  />
+                  {answer ? <div className="mt-2">{answer}</div> : null}
                 </ErrorBoundary>
-                {item.toolCallStates?.map((state) =>
-                  state.todosSnapshot ? (
-                    <TodoBlock
-                      key={state.toolCallId}
-                      todos={state.todosSnapshot}
-                    />
-                  ) : null,
+                {todoIndexes.flatMap((index) =>
+                  (history[index].toolCallStates ?? []).map((state) =>
+                    state.todosSnapshot ? (
+                      <TodoBlock
+                        key={state.toolCallId}
+                        todos={state.todosSnapshot}
+                      />
+                    ) : null,
+                  ),
                 )}
-                {index === history.length - 1 && <InlineErrorMessage />}
+                {lastIndex === history.length - 1 && <InlineErrorMessage />}
               </div>
             );
           })}
