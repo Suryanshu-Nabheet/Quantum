@@ -90,6 +90,22 @@ describe("streamContinuation", () => {
     ).toBe(true);
   });
 
+  it("continues when the model only promised to examine the files", () => {
+    const text = "Let me examine the key files to understand how this application works:";
+    expect(
+      shouldContinueLlmStream(
+        {
+          modelTitle: "m",
+          modelProvider: "p",
+          prompt: "",
+          completion: text,
+          finishReason: "stop",
+        },
+        { role: "assistant", content: text },
+      ),
+    ).toBe(true);
+  });
+
   it("continues when the model only promised to keep looking", () => {
     const text =
       "Let me explore the agent directory and the main VS source structure.";
@@ -150,10 +166,55 @@ describe("streamContinuation", () => {
     ).toBe(false);
   });
 
-  it("does not resume a first reply that never used tools", () => {
+  it("resumes a first reply that only promised to look", () => {
     expect(
       shouldResumeAgentAfterIdleReply({
         text: "Let me dig deeper into the chat loop.",
+        lastUserText: "analyse the codebase",
+        turnAlreadyUsedTools: false,
+        hasOpenTodos: false,
+      }),
+    ).toBe(true);
+  });
+
+  it("resumes when the model tells the user to run a tool", () => {
+    expect(
+      shouldResumeAgentAfterIdleReply({
+        text: "You can use the ls tool to list the project.",
+        lastUserText: "what is in this repo",
+        turnAlreadyUsedTools: false,
+        hasOpenTodos: false,
+      }),
+    ).toBe(true);
+  });
+
+  it("resumes a short stall on a codebase request", () => {
+    expect(
+      shouldResumeAgentAfterIdleReply({
+        text: "This looks like a Next.js app.",
+        lastUserText: "analyze the codebase",
+        turnAlreadyUsedTools: false,
+        hasOpenTodos: false,
+      }),
+    ).toBe(true);
+  });
+
+  it("resumes an autonomous request that answered without tools", () => {
+    expect(
+      shouldResumeAgentAfterIdleReply({
+        text: "x".repeat(700),
+        lastUserText: "analyze the codebase",
+        turnAlreadyUsedTools: false,
+        hasOpenTodos: false,
+      }),
+    ).toBe(true);
+  });
+
+  it("does not resume a finished answer to an ordinary question", () => {
+    expect(
+      shouldResumeAgentAfterIdleReply({
+        text: "The entry file is src/index.ts and it exports the app.",
+        lastUserText: "where is the entry file",
         turnAlreadyUsedTools: false,
         hasOpenTodos: false,
       }),

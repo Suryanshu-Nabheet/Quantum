@@ -24,6 +24,11 @@ test("resolveLsToolDirPath handles dot", () => {
   expect(resolveLsToolDirPath(".")).toBe(".");
 });
 
+test("resolveLsToolDirPath maps the words workspace_root to the project root", () => {
+  expect(resolveLsToolDirPath("workspace_root")).toBe(".");
+  expect(resolveLsToolDirPath("workspace root")).toBe(".");
+});
+
 test("resolveLsToolDirPath handles dot relative", () => {
   expect(resolveLsToolDirPath("./hi")).toBe("./hi");
 });

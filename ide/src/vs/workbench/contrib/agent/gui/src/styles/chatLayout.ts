@@ -1,7 +1,7 @@
 /**
  * Shared Agent chat column spacing.
- * Keep status / message / tools on one inset — gaps stay tight so tool batches
- * don't leave empty bands between turns.
+ * One scale: 12px between turns, 8px inside a turn, 4px between tool rows.
+ * The history stack keeps bottom padding so the last line never sits on the composer.
  */
 
 /** Outer chat column (messages + composer). */
@@ -13,11 +13,11 @@ export const CHAT_SURFACE_CLASS = [
 /** Shared content inset inside the chat column. */
 const CHAT_MESSAGE_INSET_CLASS = "px-1 sm:px-1.5";
 
-/** Vertical gap between history turns. */
-export const CHAT_HISTORY_STACK_CLASS = "flex flex-col gap-1";
+/** Vertical gap between history turns, with room under the last line. */
+export const CHAT_HISTORY_STACK_CLASS = "flex flex-col gap-3 pt-3 pb-10";
 
 /** Spacing inside a single assistant turn (message + tools). */
-export const CHAT_TURN_GAP_CLASS = "flex flex-col gap-0.5";
+export const CHAT_TURN_GAP_CLASS = "flex flex-col gap-2";
 
 /** Streaming / tool status line under the last user bubble. */
 export const CHAT_STATUS_LINE_CLASS = [
@@ -35,7 +35,7 @@ export const CHAT_ASSISTANT_BODY_CLASS = [
 ].join(" ");
 
 /** Tool-call stack under an assistant turn. */
-export const CHAT_TOOL_STACK_CLASS = "flex flex-col gap-0.5";
+export const CHAT_TOOL_STACK_CLASS = "flex flex-col gap-1";
 
 /** Single tool-call row. */
 export const CHAT_TOOL_ROW_CLASS = ["min-w-0", CHAT_MESSAGE_INSET_CLASS].join(

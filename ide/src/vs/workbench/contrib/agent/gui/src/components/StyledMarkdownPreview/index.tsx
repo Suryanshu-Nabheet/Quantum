@@ -64,7 +64,34 @@ const StyledMarkdown = styled.div<{
     font-size: ${(props) => (props.isThinking ? "0.8em" : "0.9em")};
   }
 
+  p {
+    margin: 0.5em 0;
+  }
+
+  p:first-child {
+    margin-top: 0;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    margin: 0.65em 0 0.3em;
+  }
+
+  h1:first-child,
+  h2:first-child,
+  h3:first-child,
+  h4:first-child,
+  h5:first-child,
+  h6:first-child {
+    margin-top: 0;
+  }
+
   pre {
+    margin: 0.5em 0;
     white-space: ${(props) => props.whiteSpace};
     background-color: ${vscEditorBackground};
     border-radius: ${defaultBorderRadius};
@@ -92,11 +119,11 @@ const StyledMarkdown = styled.div<{
   ol ul,
   ol ol {
     padding-left: 1.5em;
-    margin-top: 1em;
+    margin-top: 0.25em;
   }
 
   li {
-    margin-bottom: ${(props) => (props.isThinking ? "0.5em" : "0.8em")};
+    margin-bottom: ${(props) => (props.isThinking ? "0.2em" : "0.3em")};
   }
   li:last-child {
     margin-bottom: 0;

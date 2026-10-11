@@ -30,18 +30,15 @@ export const getConfigDependentToolDefinitions = async (
   if (modelName && isRecommendedAgentModel(modelName)) {
     tools.push(toolDefinitions.multiEditTool);
   } else {
-    tools.push(toolDefinitions.editFileTool);
     tools.push(toolDefinitions.singleFindAndReplaceTool);
   }
 
-  // Browser tools always load — Agent drives the integrated browser end-to-end.
+  // Browser tools stay in config. A codebase turn drops them before the model call.
   tools.push(...toolDefinitions.browserToolDefinitions);
 
+  tools.push(toolDefinitions.grepSearchTool);
   if (enableHeavyTools) {
-    tools.push(
-      toolDefinitions.viewSubdirectoryTool,
-      toolDefinitions.grepSearchTool,
-    );
+    tools.push(toolDefinitions.viewSubdirectoryTool);
   }
 
   return tools;

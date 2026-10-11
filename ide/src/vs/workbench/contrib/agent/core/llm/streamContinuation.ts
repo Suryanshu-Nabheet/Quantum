@@ -1,7 +1,7 @@
 import { ChatMessage, PromptLog, ToolCall, ToolCallDelta } from "..";
 import { renderChatMessage } from "../util/messageContent";
 
-export const MAX_STREAM_CHAT_CONTINUATIONS = 6;
+export const MAX_STREAM_CHAT_CONTINUATIONS = 8;
 
 export const STREAM_CHAT_CONTINUATION_NUDGE =
   "Your previous response stopped before you finished. Continue in a new paragraph. If you said you would explore, read files, or use tools, do that now. If you already have the files, write the findings in complete sentences. Do not repeat the lead-in, and do not end with a colon.";
@@ -150,13 +150,60 @@ export function appendStreamedAssistantText(prior: string, next: string): string
   return prior + next;
 }
 
+export function userRequestedAutonomousCodebaseWork(userText: string): boolean {
+  const u = userText.trim();
+  if (!u) {
+    return false;
+  }
+  return (
+    /\b(analy[sz]e|audit|explore|review|scan|understand|map|fix|change|implement)\b.*\b(code\s*base|codebase|project|repo|repository|app)\b/i.test(
+      u,
+    ) ||
+    /\b(code\s*base|codebase|project|repo|app)\b.*\b(analy[sz]e|audit|explore|review|scan|fix|change)\b/i.test(
+      u,
+    )
+  );
+}
+
+/** Model told the user to run tools instead of calling them. */
+export function looksLikePassiveAgentHandoff(text: string): boolean {
+  const t = text.trim();
+  if (!t || t.length > 1500) {
+    return false;
+  }
+  const coachesUser =
+    /\b(you can use|you'll need to|you need to specify|please specify|you should use|feel free to use)\b/i.test(
+      t,
+    );
+  const mentionsTools =
+    /\b(tool|tools|`ls`|ls tool|read_file|list_dir|grep|search)\b/i.test(t);
+  return coachesUser && mentionsTools;
+}
+
+/** Codebase request answered with a short note and no findings. */
+export function looksLikeStalledAutonomousTask(args: {
+  lastUserText: string;
+  lastAssistantText: string;
+}): boolean {
+  if (!userRequestedAutonomousCodebaseWork(args.lastUserText)) {
+    return false;
+  }
+  const a = args.lastAssistantText.trim();
+  if (!a || a.length > 600) {
+    return false;
+  }
+  const hasDeliverable =
+    /^#{1,3}\s/m.test(a) || /\n\n.{120,}/.test(a) || a.length > 400;
+  return !hasDeliverable;
+}
+
 /** A finished sentence that only promises more work, with no tool call yet. */
 export function looksLikeDeferredWork(text: string): boolean {
   const sentence = lastSentence(text);
   if (!sentence || sentence.length > 400 || sentence.includes("```")) {
     return false;
   }
-  return /\b(let me|i'll|i will|i'm going to|im going to|next,? i|now i)\b[\s\S]{0,160}\b(dig|look|read|check|explore|scan|analy[sz]e|inspect|search|list|gather|continue|investigate|open|find)\b/i.test(
+  return /\b(let me|i'll|i will|i'm going to|im going to|next,? i|now i)\b[\s\S]{0,160}\b(dig|look|read|check|explore|scan|analy[sz]e|inspect|search|list|gather|continue|investigate|open|find|examine|understand)\b/i.test(
     sentence,
   );
 }
@@ -226,20 +273,45 @@ export function assistantReplyIsUnfinished(text: string): boolean {
 }
 
 export const AGENT_IDLE_RESUME_NUDGE =
-  "You stopped before the task was finished. Do not repeat the status line and do not end with a colon. If files still need reading, call the tools now. If you already have them, write the findings in complete sentences.";
+  "You stopped before using a tool. Call a tool in this turn. Do not write a status line and do not end with a colon.";
+
+export const AGENT_FINISH_RESUME_NUDGE =
+  "You stopped before the task was finished. Do not repeat the status line. If a file is still unread, call the tool now. If the tool results are already above, write the complete findings in full sentences and end the task.";
 
 /**
- * Agent mode stopped on prose. Resume when todos are still open, or this user
- * turn already used tools and the reply is unfinished or only a short note.
- * A first reply with no tools and no todos is a real answer and must not resume.
+ * Agent mode stopped on prose. Resume when the model handed the work back,
+ * stalled a codebase request, promised more work, left todos open, or stopped
+ * short after tools already ran. A finished answer to an ordinary question
+ * does not resume.
  */
 export function shouldResumeAgentAfterIdleReply(input: {
   text: string;
+  lastUserText?: string;
   turnAlreadyUsedTools: boolean;
   hasOpenTodos: boolean;
 }): boolean {
+  if (
+    userRequestedAutonomousCodebaseWork(input.lastUserText ?? "") &&
+    !input.turnAlreadyUsedTools
+  ) {
+    return true;
+  }
+  if (looksLikePassiveAgentHandoff(input.text)) {
+    return true;
+  }
+  if (
+    looksLikeStalledAutonomousTask({
+      lastUserText: input.lastUserText ?? "",
+      lastAssistantText: input.text,
+    })
+  ) {
+    return true;
+  }
   if (!input.turnAlreadyUsedTools && !input.hasOpenTodos) {
-    return false;
+    return (
+      looksLikeDeferredWork(input.text) ||
+      looksLikeIncompleteAssistantOutput(input.text)
+    );
   }
   if (input.hasOpenTodos) {
     return true;
@@ -265,9 +337,15 @@ export function withAgentIdleResumeNudge(
   if (!last || last.role !== "assistant" || last.toolCalls?.length) {
     return messages;
   }
+  const toolsAlreadyRan = messages.some((message) => message.role === "tool");
   return [
     ...messages,
-    { role: "user", content: AGENT_IDLE_RESUME_NUDGE },
+    {
+      role: "user",
+      content: toolsAlreadyRan
+        ? AGENT_FINISH_RESUME_NUDGE
+        : AGENT_IDLE_RESUME_NUDGE,
+    },
   ];
 }
 
@@ -307,12 +385,17 @@ export function buildStreamContinuationMessages(
       content: promptLog.completion,
     } as ChatMessage);
 
+  const text = resolveAssistantStreamText(promptLog, partialAssistant);
+  const content =
+    looksLikeDeferredWork(text) || looksLikeIncompleteAssistantOutput(text)
+      ? AGENT_IDLE_RESUME_NUDGE
+      : STREAM_CHAT_CONTINUATION_NUDGE;
   return [
     ...baseMessages,
     assistantMessage,
     {
       role: "user",
-      content: STREAM_CHAT_CONTINUATION_NUDGE,
+      content,
     },
   ];
 }

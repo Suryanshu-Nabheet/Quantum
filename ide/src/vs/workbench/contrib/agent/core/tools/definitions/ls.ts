@@ -3,6 +3,7 @@ import { Tool } from "../..";
 import { ToolPolicy } from "terminal-security";
 import { ResolvedPath, resolveInputPath } from "../../util/pathResolver";
 import { BUILT_IN_GROUP_NAME, BuiltInToolNames } from "../builtIn";
+import { resolveLsToolDirPath } from "../implementations/lsTool";
 import { evaluateFileAccessPolicy } from "../policies/fileAccess";
 
 export const lsTool: Tool = {
@@ -23,7 +24,7 @@ export const lsTool: Tool = {
         dirPath: {
           type: "string",
           description:
-            "The directory path. Can be relative to project root, absolute path, tilde path (~/...), or file:// URI. Use forward slash paths",
+            "Directory to list, relative to the project. Use \".\" for the project root.",
         },
         recursive: {
           type: "boolean",
@@ -43,10 +44,7 @@ export const lsTool: Tool = {
   },
   toolCallIcon: "FolderIcon",
   preprocessArgs: async (args, { ide }) => {
-    const dirPath = args.dirPath as string;
-
-    // Default to current directory if no path provided
-    const pathToResolve = dirPath || ".";
+    const pathToResolve = resolveLsToolDirPath(args.dirPath as string | undefined);
     const resolvedPath = await resolveInputPath(ide, pathToResolve);
 
     return {

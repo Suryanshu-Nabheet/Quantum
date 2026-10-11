@@ -6,10 +6,16 @@ import { AgentError, AgentErrorReason } from "../../util/errors";
 import { resolveInputPath } from "../../util/pathResolver";
 
 export function resolveLsToolDirPath(dirPath: string | undefined) {
-  if (!dirPath || dirPath === ".") {
+  const normalized = dirPath?.trim().replace(/\\/g, "/").replace(/^\.?\//, "") ?? "";
+  if (
+    !normalized ||
+    normalized === "." ||
+    normalized === "workspace_root" ||
+    normalized === "workspace root"
+  ) {
     return ".";
   }
-  return dirPath.replace(/\\/g, "/");
+  return dirPath!.replace(/\\/g, "/");
 }
 
 const MAX_LS_TOOL_LINES = 200;

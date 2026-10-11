@@ -125,7 +125,6 @@ function StepContainer(props: StepContainerProps) {
                   isRenderingInStepContainer
                   source={stripImages(props.item.message.content)}
                   itemIndex={props.index}
-                  className="[&>*:last-child]:!mb-0 [&_p:last-child]:!mb-0"
                 />
               )}
             </>
@@ -138,7 +137,7 @@ function StepContainer(props: StepContainerProps) {
 
       {showResponseActions && (
         <div
-          className={`mt-1 h-7 transition-opacity duration-300 ease-in-out ${isBeforeLatestSummary || inProgress ? "opacity-35" : ""} ${inProgress && "pointer-events-none cursor-not-allowed"}`}
+          className={`mt-2 flex items-center transition-opacity duration-200 ease-out ${isBeforeLatestSummary || inProgress ? "opacity-35" : ""} ${inProgress && "pointer-events-none cursor-not-allowed"}`}
         >
           <ResponseActions
             isTruncated={isTruncated}

@@ -64,16 +64,20 @@ import {
 } from "../util/agentStreamContinuation";
 import { renderChatMessage } from "core/util/messageContent";
 import { BuiltInToolNames } from "core/tools/builtIn";
+import { BROWSER_TOOL_GROUP } from "core/tools/definitions/browserTools";
 import {
   assistantReplyIsUnfinished,
   shouldResumeAgentAfterIdleReply,
+  userRequestedAutonomousCodebaseWork,
   withAgentIdleResumeNudge,
 } from "core/llm/streamContinuation";
 
-/** A finished-looking short note may restart twice. A lead-in may restart more. */
-const MAX_IDLE_RESUMES = 2;
-const MAX_UNFINISHED_RESUMES = 6;
-const MAX_FAILURE_RESUMES = 2;
+/** A finished-looking short note may restart a few times. A lead-in may restart more. */
+const MAX_IDLE_RESUMES = 4;
+const MAX_UNFINISHED_RESUMES = 8;
+const MAX_FAILURE_RESUMES = 4;
+/** Autonomous request that has not completed a tool yet. */
+const MAX_UNSTARTED_RESUMES = 8;
 
 /**
  * Builds completion options with reasoning configuration based on session state and model capabilities.
@@ -157,6 +161,27 @@ async function runTurnWithOverloadRetry<T>(
   }
 }
 
+function userTurnHasSuccessfulTool(
+  history: RootState["session"]["history"],
+): boolean {
+  for (let i = history.length - 1; i >= 0; i--) {
+    const item = history[i];
+    if (item.message.role === "user") {
+      return false;
+    }
+    if (
+      (item.toolCallStates ?? []).some(
+        (call) =>
+          call.status === "done" &&
+          call.toolCall.function?.name !== BuiltInToolNames.CreatePlan,
+      )
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function userTurnAlreadyUsedTools(
   history: RootState["session"]["history"],
 ): boolean {
@@ -210,6 +235,31 @@ function lastAssistantText(history: RootState["session"]["history"]): string {
   return "";
 }
 
+function turnWantsBrowser(history: RootState["session"]["history"]): boolean {
+  for (let i = history.length - 1; i >= 0; i--) {
+    const item = history[i];
+    if (item.message.role !== "user") {
+      continue;
+    }
+    if (/\b(browser|webpage|localhost|https?:\/\/)\b/i.test(renderChatMessage(item.message))) {
+      return true;
+    }
+    return (item.contextItems ?? []).some((entry) =>
+      /browser/i.test(entry.id.providerTitle),
+    );
+  }
+  return false;
+}
+
+function lastUserText(history: RootState["session"]["history"]): string {
+  for (let i = history.length - 1; i >= 0; i--) {
+    if (history[i].message.role === "user") {
+      return renderChatMessage(history[i].message);
+    }
+  }
+  return "";
+}
+
 function agentStoppedBeforeFinishing(state: RootState): boolean {
   if (state.session.mode !== "agent") {
     return false;
@@ -218,6 +268,7 @@ function agentStoppedBeforeFinishing(state: RootState): boolean {
   const todos = state.session.todos ?? [];
   return shouldResumeAgentAfterIdleReply({
     text: lastAssistantText(history),
+    lastUserText: lastUserText(history),
     turnAlreadyUsedTools: userTurnAlreadyUsedTools(history),
     hasOpenTodos: todos.some((todo) => todo.status !== "done"),
   });
@@ -255,6 +306,7 @@ export async function runAgentDriver({
     let idleResumes = 0;
     let unfinishedResumes = 0;
     let failureResumes = 0;
+    let unstartedResumes = 0;
     for (;;) {
       // A continuation must not start after the user cancelled. cancelStream
       // clears isStreaming; the first turn sets it itself, so only continuations
@@ -308,23 +360,35 @@ export async function runAgentDriver({
         idleResumes = 0;
         unfinishedResumes = 0;
         failureResumes = 0;
+        unstartedResumes = 0;
         currentDepth += 1;
         continue;
       }
 
       const state = getState();
       if (state.session.isStreaming && state.session.mode === "agent") {
+        const history = state.session.history;
         if (
-          lastAssistantToolsAllErrored(state.session.history) &&
+          lastAssistantToolsAllErrored(history) &&
           failureResumes < MAX_FAILURE_RESUMES
         ) {
           failureResumes += 1;
-          resumeAfterIdle = false;
+          resumeAfterIdle = true;
           currentDepth += 1;
           continue;
         }
         if (
-          !lastAssistantToolsAllErrored(state.session.history) &&
+          !userTurnHasSuccessfulTool(history) &&
+          userRequestedAutonomousCodebaseWork(lastUserText(history)) &&
+          unstartedResumes < MAX_UNSTARTED_RESUMES
+        ) {
+          unstartedResumes += 1;
+          resumeAfterIdle = true;
+          currentDepth += 1;
+          continue;
+        }
+        if (
+          !lastAssistantToolsAllErrored(history) &&
           agentStoppedBeforeFinishing(state)
         ) {
           const text = lastAssistantText(state.session.history);
@@ -379,6 +443,9 @@ async function runStreamNormalInputLocked({
         console.warn(`Tool override warning: ${error.message}`);
       }
     }
+  }
+  if (!turnWantsBrowser(state.session.history)) {
+    activeTools = activeTools.filter((tool) => tool.group !== BROWSER_TOOL_GROUP);
   }
 
   const useNativeTools = state.config.config.experimental

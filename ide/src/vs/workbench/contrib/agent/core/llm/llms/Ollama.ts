@@ -26,6 +26,7 @@ type OllamaChatMessage = {
   content: string;
   images?: string[] | null;
   thinking?: string;
+  tool_name?: string;
   tool_calls?: {
     function: {
       name: string;
@@ -90,10 +91,8 @@ interface OllamaRawOptions extends OllamaBaseOptions {
 
 interface OllamaChatOptions extends OllamaBaseOptions {
   messages: OllamaChatMessage[]; // the messages of the chat, this can be used to keep a chat memory
-  tools?: OllamaTool[]; // the tools of the chat, this can be used to keep a tool memory
-  // Not supported yet - tools: tools for the model to use if supported. Requires stream to be set to false
-  // And correspondingly, tool calls in OllamaChatMessage
-  think?: boolean; // if true the model will be prompted to think about the response before generating it
+  tools?: OllamaTool[];
+  think?: boolean;
 }
 
 type OllamaBaseResponse = {
@@ -152,6 +151,115 @@ interface OllamaTool {
     description?: string;
     parameters?: JSONSchema7;
   };
+}
+
+function parseOllamaToolArguments(raw: string | undefined): JSONSchema7Object {
+  if (!raw?.trim()) {
+    return {};
+  }
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return parsed as JSONSchema7Object;
+    }
+  } catch {
+    // Ollama requires an object. A broken argument string cannot be replayed.
+  }
+  return {};
+}
+
+function resolveOllamaToolName(
+  messages: ChatMessage[],
+  index: number,
+): string | undefined {
+  const current = messages[index];
+  if (current.role !== "tool") {
+    return undefined;
+  }
+  for (let i = index - 1; i >= 0; i--) {
+    const previous = messages[i];
+    if (previous.role !== "assistant" || !previous.toolCalls?.length) {
+      if (previous.role === "user" || previous.role === "system") {
+        break;
+      }
+      continue;
+    }
+    const byId = previous.toolCalls.find(
+      (call) => call.id && call.id === current.toolCallId,
+    );
+    if (byId?.function?.name) {
+      return byId.function.name;
+    }
+    const slot = messages
+      .slice(i + 1, index + 1)
+      .filter((message) => message.role === "tool")
+      .indexOf(current);
+    return previous.toolCalls[slot]?.function?.name;
+  }
+  return undefined;
+}
+
+function toOllamaChatMessage(message: ChatMessage): OllamaChatMessage {
+  const ollamaMessage: OllamaChatMessage = {
+    role: message.role,
+    content: renderChatMessage(message),
+  };
+  if (Array.isArray(message.content)) {
+    const images: string[] = [];
+    message.content.forEach((part) => {
+      if (part.type === "imageUrl" && part.imageUrl) {
+        const image = part.imageUrl?.url
+          ? extractBase64FromDataUrl(part.imageUrl.url)
+          : undefined;
+        if (image) {
+          images.push(image);
+        }
+      }
+    });
+    if (images.length > 0) {
+      ollamaMessage.images = images;
+    }
+  }
+  return ollamaMessage;
+}
+
+/** Ollama only accepts system, user, assistant, and tool. Thinking is not a role. */
+export function convertToOllamaMessages(
+  messages: ChatMessage[],
+): OllamaChatMessage[] {
+  const converted: OllamaChatMessage[] = [];
+  for (let i = 0; i < messages.length; i++) {
+    const message = messages[i];
+    if (message.role === "thinking") {
+      continue;
+    }
+    if (message.role === "tool") {
+      const toolName = resolveOllamaToolName(messages, i);
+      converted.push({
+        role: "tool",
+        content: message.content,
+        ...(toolName ? { tool_name: toolName } : {}),
+      });
+      continue;
+    }
+    if (message.role === "assistant") {
+      const ollamaMessage = toOllamaChatMessage(message);
+      const calls =
+        message.toolCalls?.filter((call) => call.function?.name) ?? [];
+      if (calls.length) {
+        ollamaMessage.tool_calls = calls.map((call) => ({
+          function: {
+            name: call.function!.name!,
+            arguments: parseOllamaToolArguments(call.function?.arguments),
+          },
+        }));
+      }
+      converted.push(ollamaMessage);
+      continue;
+    }
+    converted.push(toOllamaChatMessage(message));
+  }
+  return converted;
 }
 
 class Ollama extends BaseLLM implements ModelInstaller {
@@ -276,38 +384,6 @@ class Ollama extends BaseLLM implements ModelInstaller {
     };
   }
 
-  private _convertToOllamaMessage(message: ChatMessage): OllamaChatMessage {
-    const ollamaMessage: OllamaChatMessage = {
-      role: message.role,
-      content: "",
-    };
-
-    ollamaMessage.content = renderChatMessage(message);
-    if (Array.isArray(message.content)) {
-      const images: string[] = [];
-      message.content.forEach((part) => {
-        if (part.type === "imageUrl" && part.imageUrl) {
-          const image = part.imageUrl?.url
-            ? extractBase64FromDataUrl(part.imageUrl.url)
-            : undefined;
-          if (image) {
-            images.push(image);
-          } else if (part.imageUrl?.url) {
-            console.warn(
-              "Ollama: skipping image with invalid data URL format",
-              part.imageUrl.url,
-            );
-          }
-        }
-      });
-      if (images.length > 0) {
-        ollamaMessage.images = images;
-      }
-    }
-
-    return ollamaMessage;
-  }
-
   private _getGenerateOptions(
     options: CompletionOptions,
     prompt: string,
@@ -386,18 +462,18 @@ class Ollama extends BaseLLM implements ModelInstaller {
     signal: AbortSignal,
     options: CompletionOptions,
   ): AsyncGenerator<ChatMessage> {
-    const ollamaMessages = messages.map(this._convertToOllamaMessage);
+    const ollamaMessages = convertToOllamaMessages(messages);
     const chatOptions: OllamaChatOptions = {
       model: this._getModel(),
       messages: ollamaMessages,
       options: this._getModelFileParams(options),
-      think: options.reasoning,
+      // Thinking models spend the turn in thought and never emit tool calls.
+      // Keep thinking only when the user turned it on and this request has no tools.
+      think: options.tools?.length ? false : options.reasoning,
       keep_alive: options.keepAlive ?? 60 * 30, // 30 minutes
       stream: options.stream,
-      // format: options.format, // Not currently in base completion options
     };
-    // This logic is because tools can ONLY be included with user message for ollama
-    if (options.tools?.length && ollamaMessages.at(-1)?.role === "user") {
+    if (options.tools?.length) {
       chatOptions.tools = options.tools.map((tool) => ({
         type: "function",
         function: {
