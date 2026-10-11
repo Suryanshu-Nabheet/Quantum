@@ -17,6 +17,7 @@ import { RulesPeek } from "./belowMainInput/RulesPeek";
 import { GradientBorder } from "./GradientBorder";
 import { ShinyLoading } from "./ShinyLoading";
 import { ToolbarOptions } from "./InputToolbar";
+import { ContextNotice } from "./ContextStatus";
 import { Lump } from "./Lump";
 import { TipTapEditor } from "./TipTapEditor";
 
@@ -113,6 +114,7 @@ function AgentInputBox(props: AgentInputBoxProps) {
     >
       <div className="relative flex w-full min-w-0 max-w-full flex-col">
         {props.isMainInput && <Lump />}
+        {props.isMainInput && <ContextNotice />}
         <GradientBorder
           loading={isStreaming && (props.isLastUserInput || isInEdit) ? 1 : 0}
           borderColor={
