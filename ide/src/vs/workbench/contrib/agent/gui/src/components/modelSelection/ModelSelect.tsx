@@ -21,6 +21,7 @@ import {
   getRawModelSlug,
 } from "../../util/modelDisplay";
 import { CONFIG_ROUTES } from "../../util/navigation";
+import { ToolTip } from "../gui/Tooltip";
 import {
   Button,
   Listbox,
@@ -514,22 +515,26 @@ function ModelSelect() {
             onOpen={handlePickerOpen}
             onClose={handlePickerClose}
           />
-          <ListboxButton
-            data-testid="model-select-button"
-            ref={buttonRef}
-            className="text-description h-[18px] gap-1 border-none"
-          >
-            <span className="line-clamp-1 break-all hover:brightness-110">
-              {selectedModel
-                ? getModelDisplayId(selectedModel) ||
-                  formatModelLabel(selectedModel)
-                : "Select model"}
+          <ToolTip place="top" content="Select Model">
+            <span className="inline-flex min-w-0">
+              <ListboxButton
+                data-testid="model-select-button"
+                ref={buttonRef}
+                className="text-description h-[18px] gap-1 border-none"
+              >
+                <span className="line-clamp-1 break-all hover:brightness-110">
+                  {selectedModel
+                    ? getModelDisplayId(selectedModel) ||
+                      formatModelLabel(selectedModel)
+                    : "Select model"}
+                </span>
+                <ChevronDownIcon
+                  className="hidden h-2 w-2 flex-shrink-0 hover:brightness-110 min-[200px]:flex"
+                  aria-hidden="true"
+                />
+              </ListboxButton>
             </span>
-            <ChevronDownIcon
-              className="hidden h-2 w-2 flex-shrink-0 hover:brightness-110 min-[200px]:flex"
-              aria-hidden="true"
-            />
-          </ListboxButton>
+          </ToolTip>
           <ListboxOptions className="min-w-[220px] max-w-[320px]">
             <div
               className={`border-0 border-b border-solid ${HAIRLINE_BORDER_B} px-2 py-1.5`}

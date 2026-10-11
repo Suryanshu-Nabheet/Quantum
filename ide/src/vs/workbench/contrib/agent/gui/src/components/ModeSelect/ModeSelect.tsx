@@ -73,35 +73,39 @@ export function ModeSelect() {
   }, [cycleMode]);
 
   const notGreatAtAgent = (mode: string) => (
-    <>
-      <ToolTip
-        style={{
-          zIndex: 200002, // above the listbox panel (200000), which is portaled to root
-        }}
-        className="flex items-center gap-1"
-        content={`${mode} might not work well with this model.`}
+    <ToolTip
+      place="top"
+      content={`${mode} might not work well with this model.`}
+    >
+      <span
+        className="inline-flex items-center p-0.5"
+        aria-label={`${mode} might not work well with this model.`}
       >
         <ExclamationTriangleIcon className="text-warning h-2.5 w-2.5" />
-      </ToolTip>
-    </>
+      </span>
+    </ToolTip>
   );
 
   return (
     <Listbox value={mode} onChange={selectMode}>
       <div className="relative">
-        <ListboxButton
-          data-testid="mode-select-button"
-          className="xs:px-2 text-description bg-lightgray/20 gap-1 rounded-full border-none px-1.5 py-0.5 transition-colors duration-200 hover:brightness-110"
-        >
-          <ModeIcon mode={mode} />
-          <span className="hidden sm:block">
-            {mode === "chat" ? "Chat" : mode === "agent" ? "Agent" : "Plan"}
+        <ToolTip place="top" content="Select Mode">
+          <span className="inline-flex">
+            <ListboxButton
+              data-testid="mode-select-button"
+              className="xs:px-2 text-description bg-lightgray/20 gap-1 rounded-full border-none px-1.5 py-0.5 transition-colors duration-200 hover:brightness-110"
+            >
+              <ModeIcon mode={mode} />
+              <span className="hidden sm:block">
+                {mode === "chat" ? "Chat" : mode === "agent" ? "Agent" : "Plan"}
+              </span>
+              <ChevronDownIcon
+                className="h-2 w-2 flex-shrink-0"
+                aria-hidden="true"
+              />
+            </ListboxButton>
           </span>
-          <ChevronDownIcon
-            className="h-2 w-2 flex-shrink-0"
-            aria-hidden="true"
-          />
-        </ListboxButton>
+        </ToolTip>
         <ListboxOptions className="min-w-32 max-w-48">
           <ListboxOption value="chat">
             <div className="flex flex-row items-center gap-1.5">

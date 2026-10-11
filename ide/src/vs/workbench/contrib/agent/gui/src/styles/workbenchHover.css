@@ -4,7 +4,7 @@
 	position: relative;
 	font-size: 13px;
 	line-height: 19px;
-	z-index: 100000;
+	z-index: 210000;
 	overflow: visible;
 	width: max-content;
 	max-width: min(280px, calc(100vw - 16px));
@@ -25,9 +25,10 @@
 
 .monaco-hover.workbench-hover.compact .hover-contents {
 	padding: 2px 8px;
-	/* Short action labels (Delete, Edit) must stay on one line — corner
-	   anchors previously shrink-to-fit and overflow-wrap made "Delete" → "Dele/te". */
-	white-space: nowrap;
+	/* Wrap long sentences inside the panel. Short labels stay one line
+	   because the box is only as wide as its text, up to max-width. */
+	white-space: normal;
+	overflow-wrap: anywhere;
 }
 
 .workbench-hover-pointer {
@@ -76,7 +77,8 @@
 	position: fixed;
 	inset: 0;
 	pointer-events: none;
-	z-index: 100000;
+	/* Above listbox menus (200000) so a tooltip is not covered or shoved off the side. */
+	z-index: 210000;
 }
 
 .agent-workbench-hover-anchor {

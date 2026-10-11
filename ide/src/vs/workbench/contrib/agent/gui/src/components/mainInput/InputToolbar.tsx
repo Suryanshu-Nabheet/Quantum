@@ -129,17 +129,13 @@ function InputToolbar(props: InputToolbarProps) {
       >
         <div className="xs:gap-1.5 flex min-w-0 flex-1 flex-row items-center gap-1 overflow-hidden">
           {!isInEdit && (
-            <ToolTip place="top" content="Select Mode">
-              <HoverItem className="!p-0">
-                <ModeSelect />
-              </HoverItem>
-            </ToolTip>
-          )}
-          <ToolTip place="top" content="Select Model">
             <HoverItem className="!p-0">
-              <ModelSelect />
+              <ModeSelect />
             </HoverItem>
-          </ToolTip>
+          )}
+          <HoverItem className="!p-0">
+            <ModelSelect />
+          </HoverItem>
           <div className="xs:flex text-description -mb-1 hidden items-center transition-colors duration-200">
             {!props.toolbarOptions?.hideImageUpload && supportsImages && (
                 <>

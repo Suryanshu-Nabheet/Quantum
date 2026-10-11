@@ -3,6 +3,7 @@ import React, {
   isValidElement,
   ReactElement,
   ReactNode,
+  useEffect,
   useRef,
 } from "react";
 import {
@@ -12,6 +13,8 @@ import {
 
 /** Fallback when workbench.hover.delay is not injected yet. */
 const DEFAULT_TOOLTIP_DELAY_MS = 500;
+
+let nextHoverId = 1;
 
 export type TooltipPlacement =
   | WorkbenchHoverPlacement
@@ -93,6 +96,20 @@ export function ToolTip({
 }) {
   const showTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>();
   const isHoveringRef = useRef(false);
+  const hoverIdRef = useRef(0);
+  if (hoverIdRef.current === 0) {
+    hoverIdRef.current = nextHoverId++;
+  }
+
+  useEffect(() => {
+    const hoverId = hoverIdRef.current;
+    return () => {
+      if (showTimeoutRef.current !== undefined) {
+        clearTimeout(showTimeoutRef.current);
+      }
+      workbenchHoverManager.hide(hoverId);
+    };
+  }, []);
 
   if (isEmptyContent(content)) {
     return children;
@@ -117,8 +134,15 @@ export function ToolTip({
 
   const scheduleShow = (target: HTMLElement) => {
     clearShowTimeout();
+    const hoverId = hoverIdRef.current;
     showTimeoutRef.current = setTimeout(() => {
+      // A portaled menu is not a DOM child, so a parent tip can outlive the
+      // pointer. Only open if the pointer is still on this anchor.
+      if (!isHoveringRef.current || !target.isConnected || !target.matches(":hover")) {
+        return;
+      }
       workbenchHoverManager.show(
+        hoverId,
         tooltipText,
         target.getBoundingClientRect(),
         normalizePlacement(place),
@@ -126,7 +150,9 @@ export function ToolTip({
     }, delay);
   };
 
-  const handleMouseOverCapture = (event: React.MouseEvent<HTMLElement>) => {
+  const handleMouseEnter = (event: React.MouseEvent<HTMLElement>) => {
+    // A nested tip (warning icon inside a labeled control) owns this hover.
+    event.stopPropagation();
     if (isHoveringRef.current) {
       return;
     }
@@ -134,14 +160,14 @@ export function ToolTip({
     scheduleShow(event.currentTarget);
   };
 
-  const handleMouseOutCapture = (event: React.MouseEvent<HTMLElement>) => {
+  const handleMouseLeave = (event: React.MouseEvent<HTMLElement>) => {
     const related = event.relatedTarget as Node | null;
     if (related && event.currentTarget.contains(related)) {
       return;
     }
     isHoveringRef.current = false;
     clearShowTimeout();
-    workbenchHoverManager.hide();
+    workbenchHoverManager.hide(hoverIdRef.current);
   };
 
   if (!isValidElement(children)) {
@@ -149,18 +175,12 @@ export function ToolTip({
   }
 
   const childProps = children.props as {
-    onMouseOverCapture?: (event: React.MouseEvent<HTMLElement>) => void;
-    onMouseOutCapture?: (event: React.MouseEvent<HTMLElement>) => void;
+    onMouseEnter?: (event: React.MouseEvent<HTMLElement>) => void;
+    onMouseLeave?: (event: React.MouseEvent<HTMLElement>) => void;
   };
 
   return cloneElement(children, {
-    onMouseOverCapture: mergeHandlers(
-      childProps.onMouseOverCapture,
-      handleMouseOverCapture,
-    ),
-    onMouseOutCapture: mergeHandlers(
-      childProps.onMouseOutCapture,
-      handleMouseOutCapture,
-    ),
+    onMouseEnter: mergeHandlers(childProps.onMouseEnter, handleMouseEnter),
+    onMouseLeave: mergeHandlers(childProps.onMouseLeave, handleMouseLeave),
   } as React.HTMLAttributes<HTMLElement>);
 }

@@ -5,6 +5,7 @@ import { useSyncExternalStore } from "react";
 export type WorkbenchHoverPlacement = "top" | "bottom" | "left" | "right";
 
 type HoverState = {
+  id: number;
   content: string;
   anchor: DOMRect;
   placement: WorkbenchHoverPlacement;
@@ -26,13 +27,19 @@ class WorkbenchHoverManager {
 
   getSnapshot = (): HoverState => this.state;
 
-  show(content: string, anchor: DOMRect, placement: WorkbenchHoverPlacement) {
-    this.state = { content, anchor, placement };
+  show(
+    id: number,
+    content: string,
+    anchor: DOMRect,
+    placement: WorkbenchHoverPlacement,
+  ) {
+    this.state = { id, content, anchor, placement };
     this.emit();
   }
 
-  hide() {
-    if (!this.state) {
+  /** Only the tooltip that opened the hover can close it. */
+  hide(id: number) {
+    if (!this.state || this.state.id !== id) {
       return;
     }
     this.state = null;
@@ -181,6 +188,7 @@ function MeasuredHover({
         ref={hoverRef}
         className="monaco-hover workbench-hover compact with-pointer fade-in"
         role="tooltip"
+        style={{ maxWidth: Math.max(120, window.innerWidth - VIEWPORT_PAD * 2) }}
       >
         <div className="hover-row markdown-hover">
           <div className="hover-contents">{content}</div>
