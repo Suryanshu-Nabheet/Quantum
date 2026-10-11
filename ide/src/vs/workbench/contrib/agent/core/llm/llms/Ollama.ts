@@ -262,6 +262,15 @@ export function convertToOllamaMessages(
   return converted;
 }
 
+export function ollamaNdjsonLines(buffer: string): { lines: string[]; rest: string } {
+  const parts = buffer.split("\n");
+  const rest = parts.pop() ?? "";
+  return {
+    lines: parts.map((line) => line.trim()).filter((line) => line.length > 0),
+    rest,
+  };
+}
+
 class Ollama extends BaseLLM implements ModelInstaller {
   static providerName = "ollama";
   static defaultOptions: Partial<LLMOptions> = {
@@ -362,7 +371,9 @@ class Ollama extends BaseLLM implements ModelInstaller {
   }
 
   get contextLength() {
-    const DEFAULT_OLLAMA_CONTEXT_LENGTH = 8192; // twice of https://github.com/ollama/ollama/blob/29ddfc2cab7f5a83a96c3133094f67b22e4f27d1/envconfig/config.go#L185
+    // qwen3.5 is a 256k model. An 8k window fills on a tool turn and the
+    // reply stops as soon as the context is full.
+    const DEFAULT_OLLAMA_CONTEXT_LENGTH = 32_768;
     return this._contextLength ?? DEFAULT_OLLAMA_CONTEXT_LENGTH;
   }
 
@@ -581,30 +592,40 @@ class Ollama extends BaseLLM implements ModelInstaller {
         return; // Aborted by user
       }
       const json = (await response.json()) as OllamaChatResponse;
+      if ("done" in json && json.done && "done_reason" in json && json.done_reason) {
+        this.lastStreamFinishReason = json.done_reason;
+      }
       for (const msg of convertChatMessage(json)) {
         yield msg;
       }
     } else {
       let buffer = "";
+      const yieldChatChunk = (chunk: string) => {
+        const parsed = JSON.parse(chunk) as OllamaChatResponse;
+        if ("done" in parsed && parsed.done && "done_reason" in parsed && parsed.done_reason) {
+          this.lastStreamFinishReason = parsed.done_reason;
+        }
+        return convertChatMessage(parsed);
+      };
       for await (const value of streamResponse(response)) {
-        // Append the received chunk to the buffer
         buffer += value;
-        // Split the buffer into individual JSON chunks
-        const chunks = buffer.split("\n");
-        buffer = chunks.pop() ?? "";
+        const split = ollamaNdjsonLines(buffer);
+        buffer = split.rest;
 
-        for (let i = 0; i < chunks.length; i++) {
-          const chunk = chunks[i];
-          if (chunk.trim() !== "") {
-            try {
-              const j = JSON.parse(chunk) as OllamaChatResponse;
-              for (const msg of convertChatMessage(j)) {
-                yield msg;
-              }
-            } catch (e) {
-              throw new Error(`Error parsing Ollama response: ${e} ${chunk}`);
+        for (const chunk of split.lines) {
+          try {
+            for (const msg of yieldChatChunk(chunk)) {
+              yield msg;
             }
+          } catch (e) {
+            throw new Error(`Error parsing Ollama response: ${e} ${chunk}`);
           }
+        }
+      }
+      const tail = buffer.trim();
+      if (tail) {
+        for (const msg of yieldChatChunk(tail)) {
+          yield msg;
         }
       }
     }

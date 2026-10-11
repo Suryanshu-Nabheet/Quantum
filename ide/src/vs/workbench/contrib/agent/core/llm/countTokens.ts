@@ -469,7 +469,12 @@ function compileChatMessages({
 
   const contextLength = knownContextLength ?? DEFAULT_PRUNING_LENGTH;
   const countingSafetyBuffer = getTokenCountingBufferSafety(contextLength);
-  const minOutputTokens = Math.min(MIN_RESPONSE_TOKENS, maxTokens);
+  // Reserve the output budget the request will actually use, not a flat 1k.
+  // A flat reserve lets the prompt fill the window and the reply dies mid-sentence.
+  const minOutputTokens = Math.min(
+    maxTokens,
+    Math.max(MIN_RESPONSE_TOKENS, Math.floor(contextLength / 4)),
+  );
 
   let inputTokensAvailable = contextLength;
 

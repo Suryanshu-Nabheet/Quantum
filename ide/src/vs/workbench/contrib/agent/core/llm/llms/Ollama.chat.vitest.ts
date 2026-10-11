@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { convertToOllamaMessages } from "./Ollama";
+import { convertToOllamaMessages, ollamaNdjsonLines } from "./Ollama";
 
 test("replays a tool call and its result in Ollama's shape", () => {
   const messages = convertToOllamaMessages([
@@ -30,4 +30,13 @@ test("replays a tool call and its result in Ollama's shape", () => {
   });
   expect(messages[2].tool_name).toBe("ls");
   expect(messages[2].content).toBe("package.json\nsrc");
+});
+
+test("keeps a final Ollama chunk that has no trailing newline", () => {
+  const split = ollamaNdjsonLines(
+    '{"message":{"role":"assistant","content":"Hello"},"done":false}\n{"message":{"role":"assistant","content":" world"},"done":true,"done_reason":"stop"}',
+  );
+  expect(split.lines).toHaveLength(1);
+  expect(split.rest).toContain('"done":true');
+  expect(split.rest).toContain("world");
 });
