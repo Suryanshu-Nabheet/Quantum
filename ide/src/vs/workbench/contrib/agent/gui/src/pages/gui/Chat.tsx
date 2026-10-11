@@ -234,7 +234,9 @@ export function Chat() {
 
       // Reject all pending apply states
       latestPendingApplyStates.forEach((applyState) => {
-        if (applyState.status !== "closed") {
+        // Saved reviews stay on disk. Only an open diff is dropped when a new
+        // message starts, because that diff has not been written yet.
+        if (applyState.status === "done") {
           ideMessenger.post("rejectDiff", applyState);
         }
       });

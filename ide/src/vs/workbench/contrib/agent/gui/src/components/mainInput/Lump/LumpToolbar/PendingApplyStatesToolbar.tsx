@@ -23,8 +23,18 @@ export function PendingApplyStatesToolbar({
     {} as Record<string, ApplyState[]>,
   );
 
+  const fileCount = Object.keys(applyStatesByFilepath).length;
+
   return (
     <div className="flex flex-col gap-2">
+      {fileCount > 1 && (
+        <div className="flex justify-end">
+          <AcceptRejectDiffButtons
+            applyStates={pendingApplyStates}
+            onAcceptOrReject={async () => {}}
+          />
+        </div>
+      )}
       {Object.entries(applyStatesByFilepath).map(([filepath, states]) => (
         <div key={filepath} className="flex justify-between gap-3">
           {filepath && (

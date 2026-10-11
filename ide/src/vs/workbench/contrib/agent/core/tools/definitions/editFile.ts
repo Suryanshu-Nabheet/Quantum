@@ -2,7 +2,7 @@ import { Tool } from "../..";
 import { BUILT_IN_GROUP_NAME, BuiltInToolNames } from "../builtIn";
 
 export const NO_PARALLEL_TOOL_CALLING_INSTRUCTION =
-  "This tool CANNOT be called in parallel with any other tools, including itself";
+  "You can edit several files in one turn, one call per file. The calls run one after another, so a later call sees earlier writes. Do not send two calls for the same file in one turn.";
 
 const CHANGES_DESCRIPTION =
   "Any modifications to the file, showing only needed changes. Do NOT wrap this in a codeblock or write anything besides the code changes. In larger files, use brief language-appropriate placeholders for large unmodified sections, e.g. '// ... existing code ...'";

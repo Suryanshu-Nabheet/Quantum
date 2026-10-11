@@ -58,5 +58,9 @@ export const selectPendingToolCalls = createSelector(
 
 export const selectDoneApplyStates = createSelector(
   (store: RootState) => store.session.codeBlockApplyStates.states,
-  (states) => states.filter((applyState) => applyState.status === "done"),
+  (states) =>
+    states.filter(
+      (applyState) =>
+        applyState.status === "done" || applyState.status === "review",
+    ),
 );

@@ -13,7 +13,8 @@ import {
   updateToolCallOutput,
 } from "../slices/sessionSlice";
 import { ThunkApiType } from "../store";
-import { findToolCallById, logToolUsage } from "../util";
+import { driverOwnsToolBatch, findToolCallById, logToolUsage } from "../util";
+import { appendToolResultMessage } from "../util/toolResultMessages";
 import { exitEdit } from "./edit";
 import { streamResponseAfterToolCall } from "./streamResponseAfterToolCall";
 
@@ -48,12 +49,9 @@ export const handleApplyStateUpdate = createAsyncThunk<
           applyState.toolCallId,
         );
 
-        if (
-          applyState.status === "done" &&
-          toolCallState?.toolCall.function.name &&
-          getState().ui.toolSettings[toolCallState.toolCall.function.name] ===
-            "allowedWithoutPermission"
-        ) {
+        // Write the edit and continue. The user reviews the saved files after
+        // the turn, instead of accepting each file before the next one starts.
+        if (applyState.status === "done" && toolCallState) {
           extra.ideMessenger.post("acceptDiff", {
             streamId: applyState.streamId,
             filepath: applyState.filepath,
@@ -62,6 +60,12 @@ export const handleApplyStateUpdate = createAsyncThunk<
 
         if (applyState.status === "closed") {
           if (toolCallState) {
+            // Accepting the diff already continued this tool. A later review
+            // click must not start another turn.
+            if (toolCallState.status === "done") {
+              return;
+            }
+
             const accepted = toolCallState.status !== "canceled";
 
             logToolUsage(toolCallState, accepted, true, extra.ideMessenger);
@@ -121,11 +125,50 @@ export const handleApplyStateUpdate = createAsyncThunk<
                 );
               }
 
-              void dispatch(
-                streamResponseAfterToolCall({
-                  toolCallId: applyState.toolCallId,
-                }),
+              if (driverOwnsToolBatch()) {
+                appendToolResultMessage(
+                  dispatch,
+                  getState().session.history,
+                  applyState.toolCallId,
+                );
+              } else {
+                void dispatch(
+                  streamResponseAfterToolCall({
+                    toolCallId: applyState.toolCallId,
+                  }),
+                );
+              }
+
+              const stored = getState().session.codeBlockApplyStates.states.find(
+                (state) => state.streamId === applyState.streamId,
               );
+              const original = stored?.originalFileContent;
+              if (original !== undefined && applyState.filepath) {
+                for (const prior of getState().session.codeBlockApplyStates
+                  .states) {
+                  if (
+                    prior.filepath === applyState.filepath &&
+                    prior.streamId !== applyState.streamId &&
+                    prior.status === "review"
+                  ) {
+                    dispatch(
+                      updateApplyState({
+                        streamId: prior.streamId,
+                        status: "closed",
+                      }),
+                    );
+                  }
+                }
+                dispatch(
+                  updateApplyState({
+                    streamId: applyState.streamId,
+                    status: "review",
+                    filepath: applyState.filepath,
+                    originalFileContent: original,
+                    fileContent: applyState.fileContent ?? stored?.fileContent,
+                  }),
+                );
+              }
             }
           }
         }

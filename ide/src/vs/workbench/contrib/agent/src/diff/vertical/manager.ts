@@ -48,7 +48,8 @@ export class VerticalDiffManager {
     options: VerticalDiffHandlerOptions,
   ): VerticalDiffHandler | undefined {
     if (this.fileUriToHandler.has(fileUri)) {
-      this.fileUriToHandler.get(fileUri)?.clear(false);
+      // Keep the previous edit. Rejecting it here drops work the agent already wrote.
+      this.fileUriToHandler.get(fileUri)?.clear(true);
       this.fileUriToHandler.delete(fileUri);
     }
     const editor = vscode.window.activeTextEditor;
@@ -223,7 +224,7 @@ export class VerticalDiffManager {
     // Check for existing handlers in the same file the new one will be created in
     const existingHandler = this.getHandlerForFile(fileUri);
     if (existingHandler) {
-      existingHandler.clear(false);
+      existingHandler.clear(true);
     }
 
     await new Promise((resolve) => {
@@ -429,7 +430,7 @@ export class VerticalDiffManager {
       // startLine += effectiveLineDelta;
       // endLine += effectiveLineDelta;
 
-      await existingHandler.clear(false);
+      await existingHandler.clear(true);
     }
 
     await new Promise((resolve) => {

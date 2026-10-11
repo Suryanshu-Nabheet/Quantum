@@ -94,3 +94,65 @@ export function logToolUsage(
   messenger: IIdeMessenger,
   finalOutput?: ContextItem[],
 ) {}
+
+const SERIAL_AGENT_TOOLS = new Set([
+  "single_find_and_replace",
+  "multi_edit",
+  "edit_existing_file",
+  "create_new_file",
+  "run_terminal_command",
+]);
+
+let fileEditQueue: Promise<void> = Promise.resolve();
+let deferredToolBatches = 0;
+
+export function isSerialAgentTool(name: string | undefined): boolean {
+  return !!name && SERIAL_AGENT_TOOLS.has(name);
+}
+
+export function beginDeferredToolBatch(): void {
+  deferredToolBatches += 1;
+}
+
+export function endDeferredToolBatch(): void {
+  deferredToolBatches = Math.max(0, deferredToolBatches - 1);
+}
+
+/** True while the agent driver is still inside a tool batch and will take the next turn itself. */
+export function driverOwnsToolBatch(): boolean {
+  return deferredToolBatches > 0;
+}
+
+export function enqueueFileEdit<T>(task: () => Promise<T>): Promise<T> {
+  const run = fileEditQueue.then(task, task);
+  fileEditQueue = run.then(
+    () => undefined,
+    () => undefined,
+  );
+  return run;
+}
+
+const FILE_EDIT_SETTLE_MS = 120_000;
+
+export async function waitForFileEditToSettle(
+  getState: () => RootState,
+  toolCallId: string,
+): Promise<void> {
+  if (!getState().session?.history) {
+    return;
+  }
+  const started = Date.now();
+  while (Date.now() - started < FILE_EDIT_SETTLE_MS) {
+    const tool = findToolCallById(getState().session.history, toolCallId);
+    if (
+      !tool ||
+      tool.status === "done" ||
+      tool.status === "errored" ||
+      tool.status === "canceled"
+    ) {
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 40));
+  }
+  throw new Error("Timed out waiting for the file edit to finish.");
+}

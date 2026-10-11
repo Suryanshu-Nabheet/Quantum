@@ -178,7 +178,7 @@ export const callToolById = createAsyncThunk<
       );
       unwrapResult(wrapped);
     }
-  } else {
+  } else if (!deferAgentContinuation) {
     dispatch(setInactive());
   }
 });

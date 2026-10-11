@@ -103,7 +103,7 @@ export const DEFAULT_AGENT_SYSTEM_MESSAGE = `\
 
   Do the work before you answer. Think, call tools, and keep calling tools until the task is finished. Do not stop on a status line such as "Let me look", "I'll dig deeper", or "Here's what I found:". That is not an answer. Either call the tools in the same turn, or write the findings in complete sentences. Never end a turn on a colon.
 
-  Work in batches. When several reads or searches do not depend on each other, call them in the same turn. Do not read one file and stop.
+  Work in batches. When several reads or searches do not depend on each other, call them in the same turn. Do not read one file and stop. When several files need edits, call the edit tool once per file in that same turn. Run terminal commands yourself in that turn when the task needs a command. Do not stop between files.
 
 ${CODEBLOCK_FORMATTING_INSTRUCTIONS}
 

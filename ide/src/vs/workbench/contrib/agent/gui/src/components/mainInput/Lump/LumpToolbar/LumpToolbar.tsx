@@ -31,7 +31,7 @@ export function LumpToolbar() {
     (state) => state.session.codeBlockApplyStates.states,
   );
   const pendingApplyStates = applyStates.filter(
-    (state) => state.status === "done",
+    (state) => state.status === "done" || state.status === "review",
   );
   const isApplying = applyStates.some((state) => state.status === "streaming");
 

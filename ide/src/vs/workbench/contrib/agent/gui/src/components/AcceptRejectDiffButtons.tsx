@@ -1,11 +1,32 @@
 import { CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { ApplyState } from "core";
 import { useContext } from "react";
-import { IdeMessengerContext } from "../context/IdeMessenger";
+import { IdeMessengerContext, IIdeMessenger } from "../context/IdeMessenger";
 import { useAppDispatch } from "../redux/hooks";
-import { cancelToolCall } from "../redux/slices/sessionSlice";
+import type { AppDispatch } from "../redux/store";
+import { cancelToolCall, updateApplyState } from "../redux/slices/sessionSlice";
 import { getMetaKeyLabel } from "../util";
 import { ToolTip } from "./gui/Tooltip";
+
+export async function revertReviewedEdit(
+  ideMessenger: IIdeMessenger,
+  dispatch: AppDispatch,
+  applyState: ApplyState,
+) {
+  if (applyState.filepath && applyState.originalFileContent !== undefined) {
+    await ideMessenger.request("overwriteFile", {
+      filepath: applyState.filepath,
+      prevFileContent: applyState.originalFileContent,
+    });
+    await ideMessenger.request("saveFile", { filepath: applyState.filepath });
+  }
+  dispatch(
+    updateApplyState({
+      streamId: applyState.streamId,
+      status: "closed",
+    }),
+  );
+}
 
 export interface AcceptRejectAllButtonsProps {
   applyStates: ApplyState[];
@@ -19,29 +40,37 @@ export default function AcceptRejectAllButtons({
   onAcceptOrReject,
 }: AcceptRejectAllButtonsProps) {
   const pendingApplyStates = applyStates.filter(
-    (state) => state.status === "done",
+    (state) => state.status === "done" || state.status === "review",
   );
   const ideMessenger = useContext(IdeMessengerContext);
   const dispatch = useAppDispatch();
   async function handleAcceptOrReject(status: AcceptOrRejectOutcome) {
-    // For reject operations, cancel all tool calls associated with pending apply states
-    if (status === "rejectDiff") {
-      for (const applyState of pendingApplyStates) {
-        if (applyState.toolCallId && applyState.status === "done") {
+    for (const applyState of pendingApplyStates) {
+      if (applyState.status === "review") {
+        if (status === "rejectDiff") {
+          await revertReviewedEdit(ideMessenger, dispatch, applyState);
+        } else {
           dispatch(
-            cancelToolCall({
-              toolCallId: applyState.toolCallId,
+            updateApplyState({
+              streamId: applyState.streamId,
+              status: "closed",
             }),
           );
         }
+        continue;
       }
-    }
 
-    // Process all pending apply states
-    for (const { filepath = "", streamId } of pendingApplyStates) {
+      if (status === "rejectDiff" && applyState.toolCallId) {
+        dispatch(
+          cancelToolCall({
+            toolCallId: applyState.toolCallId,
+          }),
+        );
+      }
+
       ideMessenger.post(status, {
-        filepath,
-        streamId,
+        filepath: applyState.filepath ?? "",
+        streamId: applyState.streamId,
       });
     }
 

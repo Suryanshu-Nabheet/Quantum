@@ -3,6 +3,11 @@ import { executeMultiFindAndReplace } from "core/edit/searchAndReplace/performRe
 import { validateSearchAndReplaceFilepath } from "core/edit/searchAndReplace/validateArgs";
 import { v4 as uuid } from "uuid";
 import { applyForEditTool } from "../../redux/thunks/handleApplyStateUpdate";
+import {
+  driverOwnsToolBatch,
+  enqueueFileEdit,
+  waitForFileEditToSettle,
+} from "../../redux/util";
 import { ClientToolImpl } from "./callClientTool";
 
 export const multiEditImpl: ClientToolImpl = async (
@@ -10,34 +15,36 @@ export const multiEditImpl: ClientToolImpl = async (
   toolCallId,
   extras,
 ) => {
-  // Note that this is fully duplicate of what occurs in args preprocessing
-  // This is to handle cases where file changes while tool call is pending
   const { edits } = validateMultiEdit(args);
-  const fileUri = await validateSearchAndReplaceFilepath(
-    args.filepath,
-    extras.ideMessenger.ide,
-  );
 
-  const editingFileContents = await extras.ideMessenger.ide.readFile(fileUri);
-  const newFileContents = executeMultiFindAndReplace(
-    editingFileContents,
-    edits,
-  );
+  return enqueueFileEdit(async () => {
+    const fileUri = await validateSearchAndReplaceFilepath(
+      args.filepath,
+      extras.ideMessenger.ide,
+    );
+    const editingFileContents = await extras.ideMessenger.ide.readFile(fileUri);
+    const newFileContents = executeMultiFindAndReplace(
+      editingFileContents,
+      edits,
+    );
 
-  const streamId = uuid();
-  void extras.dispatch(
-    applyForEditTool({
-      streamId,
-      toolCallId,
-      text: newFileContents,
-      filepath: fileUri,
-      isSearchAndReplace: true,
-    }),
-  );
+    const streamId = uuid();
+    void extras.dispatch(
+      applyForEditTool({
+        streamId,
+        toolCallId,
+        text: newFileContents,
+        filepath: fileUri,
+        isSearchAndReplace: true,
+      }),
+    );
+    if (driverOwnsToolBatch()) {
+      await waitForFileEditToSettle(extras.getState, toolCallId);
+    }
 
-  // Return success - applyToFile will handle the completion state
-  return {
-    respondImmediately: false, // Let apply state handle completion
-    output: undefined,
-  };
+    return {
+      respondImmediately: false,
+      output: undefined,
+    };
+  });
 };

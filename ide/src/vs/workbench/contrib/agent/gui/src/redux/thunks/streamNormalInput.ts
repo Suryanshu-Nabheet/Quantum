@@ -57,7 +57,10 @@ import {
 } from "../util/overloadRetry";
 import { analyzeError } from "../../util/errorAnalysis";
 import { nextWithIdleTimeout } from "../util/streamIdleTimeout";
-import { runParallelToolCalls } from "../util/agentToolPipeline";
+import {
+  runParallelToolCalls,
+  toAgentToolCallRef,
+} from "../util/agentToolPipeline";
 import {
   ensureAgentTurnInactive,
   PostStreamPhaseResult,
@@ -759,7 +762,9 @@ async function runPostStreamToolPhase({
       }
       await runParallelToolCalls(
         dispatch,
-        autoApprovedPolicies.map(({ toolCallState }) => toolCallState.toolCallId),
+        autoApprovedPolicies.map(({ toolCallState }) =>
+          toAgentToolCallRef(toolCallState),
+        ),
         {
           depth: depth + 1,
           isAutoApproved: true,
@@ -780,9 +785,10 @@ async function runPostStreamToolPhase({
       const planCalls = generatedCalls4.filter(
         (call) => call.toolCall.function?.name === BuiltInToolNames.CreatePlan,
       );
-      const otherIds = generatedCalls4
+      const otherCalls = generatedCalls4
         .filter((call) => call.toolCall.function?.name !== BuiltInToolNames.CreatePlan)
-        .map(({ toolCallId }) => toolCallId);
+        .map((call) => toAgentToolCallRef(call));
+      const otherIds = otherCalls.map((call) => call.toolCallId);
       const planBeforeResearch =
         planCalls.length > 0 &&
         (otherIds.length > 0 ||
@@ -796,7 +802,7 @@ async function runPostStreamToolPhase({
           ));
       if (planBeforeResearch) {
         if (otherIds.length > 0) {
-          await runParallelToolCalls(dispatch, otherIds, {
+          await runParallelToolCalls(dispatch, otherCalls, {
             depth: depth + 1,
             isAutoApproved: true,
             deferToolResults: true,
@@ -838,8 +844,9 @@ async function runPostStreamToolPhase({
         }
         return "continue";
       }
-      const pendingIds = generatedCalls4.map(({ toolCallId }) => toolCallId);
-      await runParallelToolCalls(dispatch, pendingIds, {
+      const pendingCalls = generatedCalls4.map((call) => toAgentToolCallRef(call));
+      const pendingIds = pendingCalls.map((call) => call.toolCallId);
+      await runParallelToolCalls(dispatch, pendingCalls, {
         depth: depth + 1,
         isAutoApproved: true,
         deferToolResults: true,

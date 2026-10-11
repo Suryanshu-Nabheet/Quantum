@@ -1386,6 +1386,7 @@ export type ApplyStateStatus =
   | "not-started" // Apply state created but not necessarily streaming
   | "streaming" // Changes are being applied to the file
   | "done" // All changes have been applied, awaiting user to accept/reject
+  | "review" // Written to disk; the user can keep the file or restore the original
   | "closed"; // All changes have been applied. Note that for new files, we immediately set the status to "closed"
 
 export interface ApplyState {
