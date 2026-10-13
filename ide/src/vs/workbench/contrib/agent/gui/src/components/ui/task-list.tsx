@@ -22,6 +22,7 @@ const styles = {
   isCollapsed: "tdl-collapsed",
   todoInner: "tdl-inner",
   todoList: "tdl-list",
+  todoListOpen: "tdl-list-open",
   todoItem: "tdl-item",
   done: "tdl-done",
   active: "tdl-active",
@@ -148,7 +149,13 @@ function FilledCheckIcon() {
   );
 }
 
-export function TaskList({ todos }: { todos: TodoItem[] }) {
+export function TaskList({
+  todos,
+  scroll = true,
+}: {
+  todos: TodoItem[];
+  scroll?: boolean;
+}) {
   const [collapsed, setCollapsed] = useState(false);
   const listRef = useRef<HTMLUListElement>(null);
   const total = todos.length;
@@ -161,7 +168,7 @@ export function TaskList({ todos }: { todos: TodoItem[] }) {
 
   useEffect(() => {
     const list = listRef.current;
-    if (!list || !activeId || collapsed) {
+    if (!scroll || !list || !activeId || collapsed) {
       return;
     }
     const row = list.querySelector(`[data-todo-id="${CSS.escape(activeId)}"]`);
@@ -175,14 +182,20 @@ export function TaskList({ todos }: { todos: TodoItem[] }) {
     } else if (bottom > list.scrollTop + list.clientHeight) {
       list.scrollTop = bottom - list.clientHeight;
     }
-  }, [activeId, collapsed, todos]);
+  }, [activeId, collapsed, scroll, todos]);
 
   if (total === 0) {
     return null;
   }
 
   return (
-    <div className={styles.todo}>
+    <div
+      className={
+        scroll
+          ? styles.todo
+          : `${styles.todo} border-command-border bg-input mt-2 rounded-default border border-solid`
+      }
+    >
       <button
         type="button"
         className={styles.todoHead}
@@ -245,7 +258,10 @@ export function TaskList({ todos }: { todos: TodoItem[] }) {
 
       <div className={`${styles.todoCollapsible}${collapsed ? ` ${styles.isCollapsed}` : ""}`}>
         <div className={styles.todoInner}>
-          <ul ref={listRef} className={styles.todoList}>
+          <ul
+            ref={listRef}
+            className={scroll ? styles.todoList : `${styles.todoList} ${styles.todoListOpen}`}
+          >
             {todos.map((item) => {
               const done = item.status === "done";
               const active = item.status === "in_progress";

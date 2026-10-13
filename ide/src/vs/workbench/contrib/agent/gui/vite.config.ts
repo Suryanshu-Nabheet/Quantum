@@ -10,7 +10,7 @@ const watching = process.env.AGENT_COPY_WEBVIEW === "1";
 
 const quantumFileIconsRoot = resolve(
   __dirname,
-  "../../../../../../extensions/quantum-theme/file-icons/icons",
+  "../../../../../../extensions/quantum-theme/file-icons",
 );
 
 /** Dev server only. The built webview copies these icons next to the bundle. */
@@ -19,7 +19,10 @@ function quantumFileIconsPlugin(): Plugin {
     name: "quantum-file-icons",
     configureServer(server) {
       server.middlewares.use("/quantum-file-icons", (req, res, next) => {
-        const urlPath = decodeURIComponent((req.url ?? "/").split("?")[0]);
+        const urlPath = decodeURIComponent((req.url ?? "/").split("?")[0]).replace(
+          /^\/+/,
+          "",
+        );
         const file = normalize(join(quantumFileIconsRoot, urlPath));
         const rootWithSep = quantumFileIconsRoot.endsWith(sep)
           ? quantumFileIconsRoot

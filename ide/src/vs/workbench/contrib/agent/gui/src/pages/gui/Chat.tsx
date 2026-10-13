@@ -3,7 +3,7 @@ import {
   ChatBubbleOvalLeftIcon,
 } from "@heroicons/react/24/outline";
 import { Editor, JSONContent } from "@tiptap/react";
-import { ChatHistoryItem, InputModifiers } from "core";
+import { ChatHistoryItem, InputModifiers, TodoItem } from "core";
 import { renderChatMessage } from "core/util/messageContent";
 import {
   memo,
@@ -23,6 +23,7 @@ import ThinkingBlockPeek from "../../components/mainInput/belowMainInput/Thinkin
 import AgentInputBox from "../../components/mainInput/AgentInputBox";
 import StepContainer from "../../components/StepContainer";
 import { TabBar } from "../../components/TabBar/TabBar";
+import { TaskList } from "../../components/ui/task-list";
 import { IdeMessengerContext } from "../../context/IdeMessenger";
 import { useWebviewListener } from "../../hooks/useWebviewListener";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
@@ -134,6 +135,35 @@ const AssistantMessageRow = memo(function AssistantMessageRow({
     </TimelineItem>
   );
 });
+
+/** First todo list of one ask. Later edits stay on the composer list. */
+function frozenTurnTodos(
+  history: ChatHistoryItemWithMessageId[],
+  index: number,
+): TodoItem[] | undefined {
+  let start = 0;
+  for (let i = index; i >= 0; i--) {
+    if (history[i].message.role === "user") {
+      start = i;
+      break;
+    }
+  }
+  let end = history.length;
+  for (let i = start + 1; i < history.length; i++) {
+    if (history[i].message.role === "user") {
+      end = i;
+      break;
+    }
+  }
+  for (let i = start; i < end; i++) {
+    for (const state of history[i].toolCallStates ?? []) {
+      if (state.todosSnapshot?.length) {
+        return i === index ? state.todosSnapshot : undefined;
+      }
+    }
+  }
+  return undefined;
+}
 
 function fallbackRender({ error, resetErrorBoundary }: any) {
   // Call resetErrorBoundary() to reset the error boundary and retry the render.
@@ -497,7 +527,8 @@ export function Chat() {
             }
 
             const rendered = renderChatHistoryItem(item, index);
-            if (rendered == null) {
+            const turnTodos = frozenTurnTodos(history, index);
+            if (rendered == null && !turnTodos) {
               return null;
             }
 
@@ -511,6 +542,7 @@ export function Chat() {
                 >
                   {rendered}
                 </ErrorBoundary>
+                {turnTodos ? <TaskList todos={turnTodos} scroll={false} /> : null}
                 {index === history.length - 1 && <InlineErrorMessage />}
               </div>
             );

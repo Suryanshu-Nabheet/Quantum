@@ -6,6 +6,7 @@ import sessionReducer, {
   completeOpenTodos,
   resetTodosForNewRequest,
   setTodos,
+  setTodosSnapshot,
 } from "./sessionSlice";
 
 const todo = (id: string, status: "pending" | "in_progress" | "done") => ({
@@ -51,6 +52,40 @@ describe("session todos state", () => {
     };
     state = sessionReducer(state, resetTodosForNewRequest());
     expect(state.todos).toEqual([]);
+    expect(state.history[0].toolCallStates?.[0].todosSnapshot).toEqual([
+      todo("a", "in_progress"),
+    ]);
+  });
+
+  it("a history snapshot stays frozen when the live list changes", () => {
+    const source = [todo("a", "in_progress")];
+    let state = {
+      ...INITIAL_SESSION_STATE,
+      history: [
+        {
+          message: { role: "assistant", content: "" },
+          toolCallStates: [
+            {
+              toolCallId: "call-1",
+              status: "done",
+              toolCall: {
+                id: "call-1",
+                type: "function",
+                function: { name: "write_todos", arguments: "{}" },
+              },
+            },
+          ],
+        },
+      ],
+    } as any;
+    state = sessionReducer(state, setTodos([{ ...source[0] }]));
+    state = sessionReducer(
+      state,
+      setTodosSnapshot({ toolCallId: "call-1", todos: source }),
+    );
+    source[0].status = "done";
+    state = sessionReducer(state, completeOpenTodos());
+    expect(state.todos.map((item) => item.status)).toEqual(["done"]);
     expect(state.history[0].toolCallStates?.[0].todosSnapshot).toEqual([
       todo("a", "in_progress"),
     ]);

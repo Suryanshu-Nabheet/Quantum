@@ -529,6 +529,11 @@ body {
   scrollbar-width: thin;
 }
 
+.tdl-list-open {
+  max-height: none;
+  overflow: visible;
+}
+
 .tdl-item {
   display: flex;
   align-items: flex-start;

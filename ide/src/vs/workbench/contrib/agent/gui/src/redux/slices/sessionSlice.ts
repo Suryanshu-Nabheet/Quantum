@@ -1020,7 +1020,9 @@ export const sessionSlice = createSlice({
         action.payload.toolCallId,
       );
       if (toolCallState) {
-        toolCallState.todosSnapshot = action.payload.todos;
+        toolCallState.todosSnapshot = action.payload.todos.map((item) => ({
+          ...item,
+        }));
       }
     },
     setToolCallCalling: (
