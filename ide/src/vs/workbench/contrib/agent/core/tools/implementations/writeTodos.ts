@@ -54,7 +54,7 @@ export function normalizeTodos(raw: unknown): TodoItem[] {
 }
 
 export function todosSystemBlock(items: TodoItem[]): string {
-  if (!items.length) {
+  if (!items.length || items.every((item) => item.status === "done")) {
     return "";
   }
   return `\n\n<todos>\n${summarizeTodos(items)}\nWork the in-progress item with tools. When its status changes, call write_todos with the complete list. Keep exactly one item in_progress.\n</todos>`;

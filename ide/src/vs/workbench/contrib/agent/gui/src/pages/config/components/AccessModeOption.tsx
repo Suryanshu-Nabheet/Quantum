@@ -32,7 +32,7 @@ function AccessModeOption<T extends string>({
   return (
     <label
       className={cn(
-        "relative flex items-start gap-2.5 px-3 py-2.5 sm:px-4",
+        "relative flex items-start gap-2.5 px-3 py-2 sm:px-4",
         disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer",
       )}
     >
@@ -98,7 +98,7 @@ export function AccessModeGroup<T extends string>({
         ) : null}
       </div>
       <div
-        className={cn("flex flex-col", CONFIG_HAIRLINE_DIVIDE)}
+        className="flex flex-col"
         role="radiogroup"
         aria-label={title}
         aria-disabled={disabled || undefined}

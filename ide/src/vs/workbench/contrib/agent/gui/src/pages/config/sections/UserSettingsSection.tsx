@@ -32,7 +32,7 @@ export function UserSettingsSection() {
     config.ui?.resumeAfterToolRejection ?? false;
   const codeWrap = config.ui?.codeWrap ?? false;
   const showChatScrollbar = config.ui?.showChatScrollbar ?? false;
-  const queueMessages = config.ui?.queueMessages ?? "send";
+  const queueMessages = config.ui?.queueMessages === "stop" ? "stop" : "queue";
   const readResponseTTS = getReadResponseTTS(config);
   const displayRawMarkdown = config.ui?.displayRawMarkdown ?? false;
   const disableSessionTitles = config.disableSessionTitles ?? false;
@@ -61,16 +61,15 @@ export function UserSettingsSection() {
               <UserSetting
                 type="select"
                 title="Queue messages"
-                description="While the agent is working, Enter follows this. Option+Enter always waits until the turn finishes. Command+Enter or Ctrl+Enter always stops the turn and sends now."
+                description="While the agent is working, Enter follows this. Command+Enter or Ctrl+Enter always stops the turn and sends now."
                 value={queueMessages}
                 options={[
-                  { label: "Send at next break", value: "send" },
-                  { label: "Wait until the turn finishes", value: "queue" },
+                  { label: "Wait", value: "queue" },
                   { label: "Stop and send", value: "stop" },
                 ]}
                 onChange={(value) =>
                   handleUpdate({
-                    queueMessages: value as "send" | "queue" | "stop",
+                    queueMessages: value as "queue" | "stop",
                   })
                 }
               />

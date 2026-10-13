@@ -1,63 +1,33 @@
 #!/usr/bin/env node
 /**
- * Watch Agent GUI (Vite) and copy each build to out/agent/webview/.
+ * Serve the Agent GUI with Vite's dev server and mark out/agent so the
+ * running IDE loads it with hot reload. A production `vite build` still
+ * fills out/agent/webview for launches that are not watching.
+ *
  * Started by gulp watch-agent alongside esbuild --watch.
  */
-const { spawn, spawnSync } = require("child_process");
+const { spawn } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 
-const {
-  agentDistPath,
-  agentGuiDistDir,
-  copyGuiDistToWebview,
-} = require("./utils");
+const { agentDistPath } = require("./utils");
 
 const agentDir = path.join(__dirname, "..");
 const guiDir = path.join(agentDir, "gui");
 const viteBin = path.join(guiDir, "node_modules", "vite", "bin", "vite.js");
-const requiredAssets = [
-  "index.js",
-  "index.css",
-];
+const sentinel = agentDistPath("gui-dev-server");
 
-function assetPath(rootDir, asset) {
-  return path.join(rootDir, "assets", asset);
+function removeSentinel() {
+  try {
+    fs.rmSync(sentinel, { force: true });
+  } catch {
+    // The marker is only a hint that the dev server is up.
+  }
 }
 
-function assetsExist(rootDir) {
-  return requiredAssets.every((asset) => fs.existsSync(assetPath(rootDir, asset)));
-}
-
-function runInitialBuild() {
-  const distDir = agentGuiDistDir;
-  const webviewDir = agentDistPath("webview");
-  if (assetsExist(webviewDir) && assetsExist(distDir)) {
-    const needsCopy = requiredAssets.some((asset) => {
-      return (
-        fs.statSync(assetPath(distDir, asset)).mtimeMs >
-        fs.statSync(assetPath(webviewDir, asset)).mtimeMs
-      );
-    });
-    if (!needsCopy) {
-      console.log("[watch-gui] out/agent/webview/ is up to date");
-      return;
-    }
-    copyGuiDistToWebview();
-    console.log("[watch-gui] Refreshed out/agent/webview/ from out/agent-gui");
-    return;
-  }
-
-  console.log("[watch-gui] Initial GUI build...");
-  const result = spawnSync(process.execPath, [viteBin, "build"], {
-    cwd: guiDir,
-    stdio: "inherit",
-    env: { ...process.env, AGENT_COPY_WEBVIEW: "1" },
-  });
-  if (result.status !== 0) {
-    throw new Error("Initial GUI build failed");
-  }
-  copyGuiDistToWebview();
+function writeSentinel() {
+  fs.mkdirSync(path.dirname(sentinel), { recursive: true });
+  fs.writeFileSync(sentinel, "5173\n");
 }
 
 if (!fs.existsSync(viteBin)) {
@@ -67,16 +37,50 @@ if (!fs.existsSync(viteBin)) {
   process.exit(1);
 }
 
-runInitialBuild();
+removeSentinel();
 
-console.log("[watch-gui] Watching gui/ (vite build --watch)");
+console.log("[watch-gui] GUI dev server on http://localhost:5173");
 
-const child = spawn(process.execPath, [viteBin, "build", "--watch"], {
-  cwd: guiDir,
-  stdio: "inherit",
-  env: { ...process.env, AGENT_COPY_WEBVIEW: "1" },
-});
+const child = spawn(
+  process.execPath,
+  [viteBin, "--host", "localhost", "--port", "5173", "--strictPort"],
+  {
+    cwd: guiDir,
+    stdio: ["inherit", "pipe", "pipe"],
+    env: process.env,
+  },
+);
 
-child.on("exit", (code) => {
+let markedReady = false;
+
+function forward(stream, chunk) {
+  stream.write(chunk);
+  if (markedReady) {
+    return;
+  }
+  if (chunk.toString().includes("ready in")) {
+    markedReady = true;
+    writeSentinel();
+    console.log(
+      "[watch-gui] Hot reload is on. Reload the Quantum window once so the agent panel attaches.",
+    );
+  }
+}
+
+child.stdout.on("data", (chunk) => forward(process.stdout, chunk));
+child.stderr.on("data", (chunk) => forward(process.stderr, chunk));
+
+function stop(code) {
+  removeSentinel();
   process.exit(code ?? 1);
+}
+
+child.on("exit", (code) => stop(code));
+process.on("SIGINT", () => {
+  removeSentinel();
+  child.kill("SIGINT");
+});
+process.on("SIGTERM", () => {
+  removeSentinel();
+  child.kill("SIGTERM");
 });

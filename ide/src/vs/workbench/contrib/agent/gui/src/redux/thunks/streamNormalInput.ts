@@ -19,6 +19,7 @@ import {
   setContextPercentage,
   setInactive,
   setInlineErrorMessage,
+  completeOpenTodos,
   setIsPruned,
   setToolGenerated,
   recoverMarkdownJsonToolCallOnLastAssistant,
@@ -446,6 +447,14 @@ export async function runAgentDriver({
         continue;
       }
 
+      const finished = getState();
+      if (
+        (finished.session.streamEpoch ?? 0) === streamEpoch &&
+        selectPendingToolCalls(finished).length === 0 &&
+        !assistantReplyIsUnfinished(lastAssistantText(finished.session.history))
+      ) {
+        dispatch(completeOpenTodos());
+      }
       ensureAgentTurnInactive(dispatch, getState);
       return;
     }

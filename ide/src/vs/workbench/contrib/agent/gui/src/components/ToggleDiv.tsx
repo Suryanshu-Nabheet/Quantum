@@ -60,8 +60,8 @@ function ToggleDiv({
       <div
         className={
           open
-            ? "mt-2 min-w-0 opacity-100"
-            : "mt-2 max-h-0 overflow-hidden opacity-0"
+            ? "thin-scrollbar mt-2 max-h-40 min-w-0 overflow-y-auto overscroll-contain opacity-100"
+            : "mt-2 max-h-0 min-w-0 overflow-hidden opacity-0"
         }
       >
         {children}

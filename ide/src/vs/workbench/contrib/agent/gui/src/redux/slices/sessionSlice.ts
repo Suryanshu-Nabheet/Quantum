@@ -799,6 +799,20 @@ export const sessionSlice = createSlice({
     setTodos: (state, { payload }: PayloadAction<TodoItem[]>) => {
       state.todos = payload;
     },
+    /** A new user request starts a new list. Stop alone does not call this. */
+    resetTodosForNewRequest: (state) => {
+      state.todos = [];
+      state.planBrief = undefined;
+    },
+    /** The turn finished. Anything still open is done. */
+    completeOpenTodos: (state) => {
+      if (!state.todos.some((item) => item.status !== "done")) {
+        return;
+      }
+      state.todos = state.todos.map((item) =>
+        item.status === "done" ? item : { ...item, status: "done" },
+      );
+    },
     setPlanBrief: (state, { payload }: PayloadAction<PlanBrief | undefined>) => {
       state.planBrief = payload;
     },
@@ -1128,6 +1142,8 @@ export const {
   streamUpdate,
   newSession,
   setTodos,
+  resetTodosForNewRequest,
+  completeOpenTodos,
   setPlanBrief,
   clearTodos,
   setTodosSnapshot,

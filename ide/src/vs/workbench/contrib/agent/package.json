@@ -51,7 +51,7 @@
       "properties": {
         "agent.useViteGuiDevServer": {
           "type": "boolean",
-          "description": "Agent GUI development only. When true, load the GUI from Vite at http://localhost:5173 for live HMR. When false (default), use bundled out/agent/webview assets rebuilt automatically by `npm run watch` at the repo root \u2014 no separate Agent dev terminal required."
+          "description": "Agent GUI development only. When true, load the GUI from Vite at http://localhost:5173 for live HMR. When unset, `npm run watch` does the same while its dev server is running. Otherwise the panel uses the bundled out/agent/webview assets."
         },
         "agent.showInlineTip": {
           "type": "boolean",

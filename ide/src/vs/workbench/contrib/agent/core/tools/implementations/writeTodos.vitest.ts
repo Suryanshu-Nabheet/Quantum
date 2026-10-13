@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeTodos, summarizeTodos } from "./writeTodos";
+import { normalizeTodos, summarizeTodos, todosSystemBlock } from "./writeTodos";
 
 describe("normalizeTodos", () => {
   it("assigns stable ids and trims text", () => {
@@ -40,6 +40,20 @@ describe("normalizeTodos", () => {
 
   it("accepts an empty list (clears the plan)", () => {
     expect(normalizeTodos([])).toEqual([]);
+  });
+});
+
+describe("todosSystemBlock", () => {
+  it("omits a finished list so the next turn is not steered by it", () => {
+    expect(
+      todosSystemBlock([{ id: "1", text: "Read", status: "done" }]),
+    ).toBe("");
+  });
+
+  it("includes an open list", () => {
+    expect(
+      todosSystemBlock([{ id: "1", text: "Read", status: "in_progress" }]),
+    ).toContain("[~] Read");
   });
 });
 

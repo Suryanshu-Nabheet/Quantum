@@ -3,6 +3,8 @@ import sessionReducer, {
   INITIAL_SESSION_STATE,
   newSession,
   clearTodos,
+  completeOpenTodos,
+  resetTodosForNewRequest,
   setTodos,
 } from "./sessionSlice";
 
@@ -24,6 +26,47 @@ describe("session todos state", () => {
     );
     state = sessionReducer(state, setTodos([todo("b", "done")]));
     expect(state.todos).toEqual([todo("b", "done")]);
+  });
+
+  it("a new request drops the live list without erasing history snapshots", () => {
+    let state = sessionReducer(
+      INITIAL_SESSION_STATE,
+      setTodos([todo("a", "in_progress")]),
+    );
+    state = {
+      ...state,
+      history: [
+        {
+          message: { role: "assistant", content: "" },
+          toolCallStates: [
+            {
+              toolCallId: "call-1",
+              status: "done",
+              todosSnapshot: [todo("a", "in_progress")],
+              toolCall: { id: "call-1", type: "function", function: { name: "write_todos", arguments: "{}" } },
+            },
+          ],
+        },
+      ] as any,
+    };
+    state = sessionReducer(state, resetTodosForNewRequest());
+    expect(state.todos).toEqual([]);
+    expect(state.history[0].toolCallStates?.[0].todosSnapshot).toEqual([
+      todo("a", "in_progress"),
+    ]);
+  });
+
+  it("a finished turn checks every open item", () => {
+    const state = sessionReducer(
+      INITIAL_SESSION_STATE,
+      setTodos([todo("a", "done"), todo("b", "in_progress"), todo("c", "pending")]),
+    );
+    const done = sessionReducer(state, completeOpenTodos());
+    expect(done.todos.map((item) => item.status)).toEqual([
+      "done",
+      "done",
+      "done",
+    ]);
   });
 
   it("clearTodos drops the live list and on-screen snapshots", () => {

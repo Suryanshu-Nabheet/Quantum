@@ -1,11 +1,40 @@
 /// <reference types="vitest/config" />
 import react from "@vitejs/plugin-react-swc";
+import { createReadStream, existsSync } from "node:fs";
 import { createRequire } from "node:module";
-import { resolve } from "node:path";
+import { join, normalize, resolve, sep } from "node:path";
 import { defineConfig, type Plugin } from "vite";
 
 const require = createRequire(import.meta.url);
 const watching = process.env.AGENT_COPY_WEBVIEW === "1";
+
+const quantumFileIconsRoot = resolve(
+  __dirname,
+  "../../../../../../extensions/quantum-theme/file-icons/icons",
+);
+
+/** Dev server only. The built webview copies these icons next to the bundle. */
+function quantumFileIconsPlugin(): Plugin {
+  return {
+    name: "quantum-file-icons",
+    configureServer(server) {
+      server.middlewares.use("/quantum-file-icons", (req, res, next) => {
+        const urlPath = decodeURIComponent((req.url ?? "/").split("?")[0]);
+        const file = normalize(join(quantumFileIconsRoot, urlPath));
+        const rootWithSep = quantumFileIconsRoot.endsWith(sep)
+          ? quantumFileIconsRoot
+          : quantumFileIconsRoot + sep;
+        if (!file.startsWith(rootWithSep) || !existsSync(file)) {
+          next();
+          return;
+        }
+        res.setHeader("Content-Type", "image/svg+xml");
+        res.setHeader("Access-Control-Allow-Origin", "*");
+        createReadStream(file).pipe(res);
+      });
+    },
+  };
+}
 
 function agentCopyWebviewPlugin(): Plugin {
   return {
@@ -22,7 +51,7 @@ function agentCopyWebviewPlugin(): Plugin {
 
 export default defineConfig({
   base: "./",
-  plugins: [react(), agentCopyWebviewPlugin()],
+  plugins: [react(), quantumFileIconsPlugin(), agentCopyWebviewPlugin()],
   resolve: {
     alias: {
       yaml: require.resolve("yaml"),

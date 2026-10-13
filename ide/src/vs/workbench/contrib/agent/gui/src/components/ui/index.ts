@@ -9,5 +9,7 @@ export {
   ListboxOption,
   ListboxOptions,
 } from "./Listbox";
+export { TaskList } from "./task-list";
+export { ThinkingReasoning } from "./thinking-reasoning";
 export { Toggle } from "./Toggle";
 export { Transition } from "./Transition";

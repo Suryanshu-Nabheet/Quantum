@@ -65,7 +65,7 @@ const StyledMarkdown = styled.div<{
   }
 
   p {
-    margin: 0.5em 0;
+    margin: ${(props) => (props.isThinking ? "0.2em 0" : "0.5em 0")};
   }
 
   p:first-child {
@@ -131,7 +131,14 @@ const StyledMarkdown = styled.div<{
 
   ul,
   ol {
-    padding-left: 2em;
+    padding-left: ${(props) => (props.isThinking ? "1.25em" : "2em")};
+    margin: ${(props) => (props.isThinking ? "0.2em 0" : "0")};
+  }
+
+  strong {
+    font-weight: 600;
+    color: ${(props) =>
+      props.isThinking ? "var(--vscode-foreground)" : "inherit"};
   }
 
   code:not(pre > code) {

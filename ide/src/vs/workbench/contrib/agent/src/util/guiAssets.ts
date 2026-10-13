@@ -44,9 +44,24 @@ function isGuiDevelopmentContext(
   return !isInstalledExtension;
 }
 
+/** Written by watch-gui while `vite` is serving the GUI for this checkout. */
+function guiDevServerSentinelExists(
+  context: vscode.ExtensionContext | undefined,
+): boolean {
+  if (!context) {
+    return false;
+  }
+  return fs.existsSync(path.join(context.extensionPath, "gui-dev-server"));
+}
+
 function shouldUseViteGuiDevServer(
   context: vscode.ExtensionContext | undefined,
 ): boolean {
+  // `npm run watch` is serving the GUI. Hot reload, including the built-in agent.
+  if (guiDevServerSentinelExists(context)) {
+    return true;
+  }
+
   // Built into Quantum from generated out/agent — never load localhost UI.
   if (context && isBuiltinQuantumAgent(context)) {
     return false;

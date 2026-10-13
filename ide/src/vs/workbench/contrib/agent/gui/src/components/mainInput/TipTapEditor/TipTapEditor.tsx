@@ -16,6 +16,7 @@ import { selectSelectedChatModel } from "../../../redux/slices/configSlice";
 import InputToolbar, { ToolbarOptions } from "../InputToolbar";
 import { ComboBoxItem } from "../types";
 import { DragOverlay } from "./components/DragOverlay";
+import { ComposerTodos } from "../../TodoPanel/TodoPanel";
 import { MessageQueue } from "../MessageQueue";
 import { InputBoxDiv } from "./components/StyledComponents";
 import { useMainEditor } from "./MainEditorProvider";
@@ -266,12 +267,13 @@ function TipTapEditorInner(props: TipTapEditorProps) {
         event.preventDefault();
       }}
     >
+      {props.isMainInput && <ComposerTodos />}
       {props.isMainInput && <MessageQueue />}
       <div
         className={`flex flex-grow flex-col px-2 pb-1 pt-1 ${props.isMainInput && historyLength === 0 ? "min-h-[140px]" : ""}`}
       >
         <EditorContent
-          className={`scroll-container min-w-0 max-w-full flex-grow overflow-x-hidden ${props.isMainInput ? "max-h-[70vh] overflow-y-auto" : "overflow-y-hidden"}`}
+          className={`scroll-container min-w-0 max-w-full flex-grow overflow-x-hidden ${props.isMainInput ? "max-h-64 overflow-y-auto overscroll-contain" : "max-h-48 overflow-y-auto overscroll-contain"}`}
           spellCheck={false}
           editor={editor}
         />

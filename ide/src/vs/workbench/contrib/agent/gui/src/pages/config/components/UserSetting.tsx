@@ -103,6 +103,7 @@ export function UserSetting(props: UserSettingProps) {
             disabled={disabled}
             onToggle={() => props.onChange(!props.value)}
             text=""
+            size={18}
           />
         );
 

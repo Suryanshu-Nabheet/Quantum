@@ -29,7 +29,7 @@ export const CONFIG_PANEL_SURFACE = [
 export const CONFIG_PANEL_ROWS = [
   "flex flex-col",
   "divide-y divide-[color:var(--vscode-editorWidget-border,var(--vscode-sideBar-border,rgba(128,128,128,0.32)))]",
-  "[&>*]:px-3 [&>*]:py-2.5 sm:[&>*]:px-4",
+  "[&>*]:px-3 [&>*]:py-2 sm:[&>*]:px-4",
 ].join(" ");
 
 export const CONFIG_PANEL_PADDED = "px-3 py-3 sm:px-4 sm:py-3";

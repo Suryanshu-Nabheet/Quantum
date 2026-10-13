@@ -119,6 +119,9 @@ export class AgentGUIWebviewViewProvider
           webviewPort: 65433,
           extensionHostPort: 65433,
         },
+        ...(useViteDevServer
+          ? [{ webviewPort: 5173, extensionHostPort: 5173 }]
+          : []),
       ],
     };
 
