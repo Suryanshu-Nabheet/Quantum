@@ -1,5 +1,6 @@
 import { useMemo, useRef } from "react";
 import { useAppSelector } from "../../redux/hooks";
+import { ToolTip } from "../gui/Tooltip";
 
 type ContextStatusInfo = {
   percent: number;
@@ -47,28 +48,8 @@ function useContextStatus(): ContextStatusInfo | null {
 }
 
 /**
- * The full sentence sits above the composer. A tooltip on the toolbar chip
- * lands inside the box and runs off the side of the panel.
- */
-export function ContextNotice() {
-  const status = useContextStatus();
-  if (!status) {
-    return null;
-  }
-
-  return (
-    <p
-      className={`mb-1.5 min-w-0 max-w-full px-1 text-[11px] leading-snug ${status.warning ? "text-warning" : "text-description"}`}
-      style={{ overflowWrap: "anywhere" }}
-    >
-      {status.message}
-    </p>
-  );
-}
-
-/**
  * Compact context-usage chip for the composer toolbar.
- * Replaces the old 7×14px fill bar (read as a random red glitch when pruned).
+ * The sentence is the hover, not a line above the composer.
  */
 const ContextStatus = () => {
   const status = useContextStatus();
@@ -79,12 +60,14 @@ const ContextStatus = () => {
   const toneClass = status.warning ? "text-warning" : "text-description";
 
   return (
-    <div
-      className={`border-command-border inline-flex max-w-[4.5rem] shrink-0 items-center rounded border border-solid px-1 py-0.5 text-[10px] leading-none tabular-nums ${toneClass}`}
-      aria-label={status.message}
-    >
-      <span className="truncate">{status.percent}%</span>
-    </div>
+    <ToolTip place="top" content={status.message}>
+      <div
+        className={`border-command-border inline-flex max-w-[4.5rem] shrink-0 items-center rounded border border-solid px-1 py-0.5 text-[10px] leading-none tabular-nums ${toneClass}`}
+        aria-label={status.message}
+      >
+        <span className="truncate">{status.percent}%</span>
+      </div>
+    </ToolTip>
   );
 };
 

@@ -34,12 +34,15 @@ import {
 import {
   cancelToolCall,
   ChatHistoryItemWithMessageId,
+  enqueueMessage,
   newSession,
   updateToolCallOutput,
 } from "../../redux/slices/sessionSlice";
 import { streamEditThunk } from "../../redux/thunks/edit";
 
 import { streamResponseThunk } from "../../redux/thunks/streamResponse";
+import { waitForAgentDriver } from "../../redux/thunks/streamNormalInput";
+import { cancelStream } from "../../redux/thunks/cancelStream";
 import { ToolCallDiv } from "./ToolCallDiv";
 
 import { useStore } from "react-redux";
@@ -55,6 +58,8 @@ import {
 } from "../../styles/chatLayout";
 import { EmptyChatBody } from "./EmptyChatBody";
 import { useAutoScroll } from "./useAutoScroll";
+import { editorPreview } from "../../redux/util/messageQueue";
+import { v4 as uuidv4 } from "uuid";
 
 // Helper function to find the index of the latest conversation summary
 function findLatestSummaryIndex(history: ChatHistoryItem[]): number {
@@ -222,6 +227,57 @@ export function Chat() {
       const codeToEditSnapshot = stateSnapshot.editModeState.codeToEdit;
       const selectedModelByRole =
         stateSnapshot.config.config.selectedModelByRole;
+
+      if (
+        stateSnapshot.session.isStreaming &&
+        index === undefined &&
+        !isCurrentlyInEdit
+      ) {
+        const setting =
+          stateSnapshot.config.config.ui?.queueMessages ?? "send";
+        const mode = modifiers.sendMode ?? "default";
+        const model = selectedModelByRole.chat;
+        if (!model) {
+          return;
+        }
+        const stopNow =
+          mode === "stop" || (mode === "default" && setting === "stop");
+        if (editorToClearOnSend) {
+          editorToClearOnSend.commands.clearContent();
+        }
+        if (!stopNow) {
+          const when =
+            mode === "queue" || (mode === "default" && setting === "queue")
+              ? "after-turn"
+              : "next-break";
+          dispatch(
+            enqueueMessage({
+              id: uuidv4(),
+              editorState,
+              modifiers: { noContext: modifiers.noContext },
+              when,
+              preview: editorPreview(editorState) || "Follow-up",
+            }),
+          );
+          return;
+        }
+        latestPendingApplyStates.forEach((applyState) => {
+          if (applyState.status === "done") {
+            ideMessenger.post("rejectDiff", applyState);
+          }
+        });
+        void (async () => {
+          await dispatch(cancelStream());
+          await waitForAgentDriver();
+          await dispatch(
+            streamResponseThunk({
+              editorState,
+              modifiers: { noContext: modifiers.noContext },
+            }),
+          );
+        })();
+        return;
+      }
 
       // Cancel all pending tool calls
       latestPendingToolCalls.forEach((toolCallState) => {
@@ -406,7 +462,7 @@ export function Chat() {
 
       if (message.role === "thinking") {
         return (
-          <div className={isBeforeLatestSummary ? "opacity-50" : ""}>
+          <div className={`px-2 ${isBeforeLatestSummary ? "opacity-50" : ""}`}>
             <ThinkingBlockPeek
               content={renderChatMessage(message)}
               redactedThinking={message.redactedThinking}

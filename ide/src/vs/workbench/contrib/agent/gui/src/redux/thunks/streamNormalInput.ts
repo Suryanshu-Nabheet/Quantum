@@ -74,6 +74,14 @@ import {
   userRequestedAutonomousCodebaseWork,
   withAgentIdleResumeNudge,
 } from "core/llm/streamContinuation";
+import { injectQueuedMessageIfReady } from "./drainMessageQueue";
+
+let driverTail: Promise<void> = Promise.resolve();
+
+/** Resolves when the in-flight agent driver has returned. */
+export function waitForAgentDriver(): Promise<void> {
+  return driverTail;
+}
 
 /** A finished-looking short note may restart a few times. A lead-in may restart more. */
 const MAX_IDLE_RESUMES = 4;
@@ -295,6 +303,13 @@ export async function runAgentDriver({
   extra: ThunkApiType["extra"];
   getState: () => RootState;
 }): Promise<void> {
+  let releaseDriver = () => {};
+  const settled = new Promise<void>((resolve) => {
+    releaseDriver = resolve;
+  });
+  driverTail = driverTail.then(() => settled);
+  const streamEpoch = getState().session.streamEpoch ?? 0;
+  try {
     const selectedChatModel = selectSelectedChatModel(getState());
 
     if (!selectedChatModel) {
@@ -311,6 +326,9 @@ export async function runAgentDriver({
     let failureResumes = 0;
     let unstartedResumes = 0;
     for (;;) {
+      if ((getState().session.streamEpoch ?? 0) !== streamEpoch) {
+        return;
+      }
       // A continuation must not start after the user cancelled. cancelStream
       // clears isStreaming; the first turn sets it itself, so only continuations
       // are checked.
@@ -364,6 +382,9 @@ export async function runAgentDriver({
         unfinishedResumes = 0;
         failureResumes = 0;
         unstartedResumes = 0;
+        if ((getState().session.streamEpoch ?? 0) === streamEpoch) {
+          await injectQueuedMessageIfReady("break", dispatch, extra, getState);
+        }
         currentDepth += 1;
         continue;
       }
@@ -411,9 +432,26 @@ export async function runAgentDriver({
         }
       }
 
+      if (
+        (getState().session.streamEpoch ?? 0) === streamEpoch &&
+        getState().session.isStreaming &&
+        (await injectQueuedMessageIfReady("done", dispatch, extra, getState))
+      ) {
+        resumeAfterIdle = false;
+        idleResumes = 0;
+        unfinishedResumes = 0;
+        failureResumes = 0;
+        unstartedResumes = 0;
+        currentDepth += 1;
+        continue;
+      }
+
       ensureAgentTurnInactive(dispatch, getState);
       return;
     }
+  } finally {
+    releaseDriver();
+  }
 }
 
 async function runStreamNormalInputLocked({

@@ -3,7 +3,7 @@
  * Watch Agent GUI (Vite) and copy each build to out/agent/webview/.
  * Started by gulp watch-agent alongside esbuild --watch.
  */
-const { spawn } = require("child_process");
+const { spawn, spawnSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 
@@ -49,11 +49,11 @@ function runInitialBuild() {
   }
 
   console.log("[watch-gui] Initial GUI build...");
-  const result = require("child_process").spawnSync(
-    "npm",
-    ["run", "build", "--prefix", "gui"],
-    { cwd: agentDir, stdio: "inherit" },
-  );
+  const result = spawnSync(process.execPath, [viteBin, "build"], {
+    cwd: guiDir,
+    stdio: "inherit",
+    env: { ...process.env, AGENT_COPY_WEBVIEW: "1" },
+  });
   if (result.status !== 0) {
     throw new Error("Initial GUI build failed");
   }

@@ -427,8 +427,15 @@ export interface ContextItemWithId extends ContextItem {
   id: ContextItemId;
 }
 
+export type QueueMessagesMode = "send" | "queue" | "stop";
+
 export interface InputModifiers {
   noContext: boolean;
+  /**
+   * How to deliver this draft while a turn is already running.
+   * Omitted when the agent is idle — the draft is sent immediately.
+   */
+  sendMode?: "default" | "queue" | "stop";
 }
 
 export interface SymbolWithRange extends RangeInFile {
@@ -1360,6 +1367,11 @@ export interface AgentUIConfig {
   maxAgentSteps?: number;
   /** Read LLM chat responses aloud using system TTS */
   readResponseTTS?: boolean;
+  /**
+   * What Enter does while the agent is already working.
+   * send: at the next break. queue: after this turn. stop: stop and send now.
+   */
+  queueMessages?: QueueMessagesMode;
 }
 
 export interface ContextMenuConfig {

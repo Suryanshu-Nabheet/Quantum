@@ -3,6 +3,7 @@ import { ComponentType, useState } from "react";
 
 interface ToggleWithIconProps {
   icon?: ComponentType<React.SVGProps<SVGSVGElement>>;
+  iconNode?: React.ReactNode;
   isToggleable?: boolean;
   open?: boolean;
   onClick?: () => void;
@@ -12,6 +13,7 @@ interface ToggleWithIconProps {
 
 export function ToggleWithIcon({
   icon: Icon,
+  iconNode,
   isToggleable = false,
   open = false,
   onClick,
@@ -28,10 +30,6 @@ export function ToggleWithIcon({
   }
 
   function renderIcon() {
-    if (!Icon && !isToggleable) {
-      return null;
-    }
-
     if (showChevron) {
       return (
         <ChevronRightIcon
@@ -42,7 +40,15 @@ export function ToggleWithIcon({
       );
     }
 
-    return Icon ? <Icon className="text-description h-4 w-4" /> : null;
+    if (iconNode) {
+      return iconNode;
+    }
+
+    if (!Icon) {
+      return null;
+    }
+
+    return <Icon className="text-description h-4 w-4" />;
   }
 
   return (

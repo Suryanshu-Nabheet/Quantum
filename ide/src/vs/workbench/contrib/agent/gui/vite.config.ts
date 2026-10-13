@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 import { defineConfig, type Plugin } from "vite";
 
 const require = createRequire(import.meta.url);
+const watching = process.env.AGENT_COPY_WEBVIEW === "1";
 
 function agentCopyWebviewPlugin(): Plugin {
   return {
@@ -31,8 +32,10 @@ export default defineConfig({
   },
   build: {
     outDir: resolve(__dirname, "../../../../../../out/agent-gui"),
-    emptyOutDir: true,
-    sourcemap: true,
+    emptyOutDir: !watching,
+    sourcemap: !watching,
+    minify: watching ? false : "esbuild",
+    reportCompressedSize: !watching,
     rollupOptions: {
       input: {
         index: resolve(__dirname, "index.html"),
@@ -45,6 +48,9 @@ export default defineConfig({
     },
   },
   server: {
+    fs: {
+      allow: [resolve(__dirname, "../../../../../..")],
+    },
     cors: {
       origin: "*",
       methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],

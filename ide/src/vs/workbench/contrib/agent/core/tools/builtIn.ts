@@ -25,6 +25,18 @@ export enum BuiltInToolNames {
 
 export const BUILT_IN_GROUP_NAME = "Built-In";
 
+const TOOL_NAME_ALIASES: Record<string, BuiltInToolNames> = {
+  list: BuiltInToolNames.LSTool,
+  list_dir: BuiltInToolNames.LSTool,
+  list_directory: BuiltInToolNames.LSTool,
+  list_files: BuiltInToolNames.LSTool,
+};
+
+/** Map names small models invent (`list`) onto the real built-in (`ls`). */
+export function canonicalToolName(name: string): string {
+  return TOOL_NAME_ALIASES[name] ?? name;
+}
+
 export const CLIENT_TOOLS_IMPLS = [
   BuiltInToolNames.EditExistingFile,
   BuiltInToolNames.SingleFindAndReplace,

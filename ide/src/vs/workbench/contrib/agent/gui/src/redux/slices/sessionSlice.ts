@@ -16,6 +16,7 @@ import {
   ContextItemWithId,
   FileSymbolMap,
   McpUiState,
+  MessageContent,
   MessageModes,
   PromptLog,
   RuleMetadata,
@@ -38,6 +39,7 @@ import {
 } from "core/util/messageContent";
 import { findLastIndex } from "lodash";
 import { v4 as uuidv4 } from "uuid";
+import { QueuedMessage } from "../util/messageQueue";
 import { type InlineErrorMessageType } from "../../components/mainInput/InlineErrorMessage";
 import { toolCallCtxItemToCtxItemWithId } from "../../pages/gui/ToolCallDiv/utils";
 import { addToolCallDeltaToState, isEditTool } from "../../util/toolCallState";
@@ -233,6 +235,10 @@ type SessionState = {
   todos: TodoItem[];
   /** Detailed plan attached when the user presses Build. */
   planBrief?: PlanBrief;
+  /** Drafts waiting to be sent while this turn is still running. */
+  messageQueue: QueuedMessage[];
+  /** Bumped when the user stops, so an in-flight driver does not continue. */
+  streamEpoch: number;
 };
 
 export const INITIAL_SESSION_STATE: SessionState = {
@@ -255,6 +261,8 @@ export const INITIAL_SESSION_STATE: SessionState = {
   compactionLoading: {},
   agentStepDepth: 0,
   todos: [],
+  messageQueue: [],
+  streamEpoch: 0,
 };
 
 export const sessionSlice = createSlice({
@@ -545,6 +553,42 @@ export const sessionSlice = createSlice({
     abortStream: (state) => {
       state.streamAborter.abort();
       state.streamAborter = new AbortController();
+      state.streamEpoch = (state.streamEpoch ?? 0) + 1;
+    },
+    enqueueMessage: (state, { payload }: PayloadAction<QueuedMessage>) => {
+      if (!state.messageQueue) {
+        state.messageQueue = [];
+      }
+      state.messageQueue.push(payload);
+    },
+    removeQueuedMessage: (state, { payload }: PayloadAction<string>) => {
+      state.messageQueue = (state.messageQueue ?? []).filter(
+        (item) => item.id !== payload,
+      );
+    },
+    appendQueuedUserMessage: (
+      state,
+      {
+        payload,
+      }: PayloadAction<{
+        queueId: string;
+        editorState: JSONContent;
+        content: MessageContent;
+        contextItems: ContextItemWithId[];
+      }>,
+    ) => {
+      state.messageQueue = (state.messageQueue ?? []).filter(
+        (item) => item.id !== payload.queueId,
+      );
+      state.history.push({
+        message: {
+          role: "user",
+          content: payload.content,
+          id: uuidv4(),
+        },
+        editorState: payload.editorState,
+        contextItems: payload.contextItems,
+      });
     },
     streamUpdate: (state, action: PayloadAction<ChatMessage[]>) => {
       if (state.history.length) {
@@ -723,6 +767,8 @@ export const sessionSlice = createSlice({
 
       state.streamAborter.abort();
       state.streamAborter = new AbortController();
+      state.streamEpoch = (state.streamEpoch ?? 0) + 1;
+      state.messageQueue = [];
 
       state.isStreaming = false;
       state.symbols = {};
@@ -1099,6 +1145,9 @@ export const {
   resetNextCodeBlockToApplyIndex,
   updateApplyState,
   abortStream,
+  enqueueMessage,
+  removeQueuedMessage,
+  appendQueuedUserMessage,
   setToolCallCalling,
   cancelToolCall,
   errorToolCall,

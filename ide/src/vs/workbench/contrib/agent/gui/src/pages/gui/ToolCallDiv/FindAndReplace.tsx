@@ -6,7 +6,7 @@ import { EditOperation } from "core/tools/definitions/multiEdit";
 import { renderContextItems } from "core/util/messageContent";
 import { getLastNPathParts, getUriPathBasename } from "core/util/uri";
 import { diffLines } from "diff";
-import { useContext, useMemo, useState } from "react";
+import { useContext, useMemo, useState, type CSSProperties } from "react";
 import { ApplyActions } from "../../../components/StyledMarkdownPreview/StepContainerPreToolbar/ApplyActions";
 import { FileInfo } from "../../../components/StyledMarkdownPreview/StepContainerPreToolbar/FileInfo";
 import { IdeMessengerContext } from "../../../context/IdeMessenger";
@@ -16,6 +16,7 @@ import {
   selectToolCallById,
 } from "../../../redux/selectors/selectToolCalls";
 import { cn } from "../../../util/cn";
+import { highlightLines, languageFromPath, ThemedCode } from "../../../util/highlightCode";
 import { getStatusIcon } from "./utils";
 
 interface FindAndReplaceDisplayProps {
@@ -43,26 +44,48 @@ function DiffLines({
   className = "",
   diffChar = " ",
   diffCharClass = "text-description-muted",
+  lineStyle,
+  language,
 }: {
   lines: string[];
   diffChar?: string;
   diffCharClass?: string;
   className?: string;
+  lineStyle?: CSSProperties;
+  language?: string;
 }) {
+  const highlighted = useMemo(
+    () => highlightLines(lines.join("\n"), language),
+    [lines, language],
+  );
+
   return (
     <>
       {lines.map((line, lineIndex) => {
         const isLastPartLine = lineIndex === lines.length - 1;
         if (line === "" && isLastPartLine) return null;
+        const segments = highlighted[lineIndex] ?? [{ text: line }];
         return (
           <div
             key={lineIndex}
-            className={cn("text-foreground px-3 py-px font-mono", className)}
+            className={cn("text-foreground px-3 py-px", className)}
+            style={{
+              fontFamily: "var(--vscode-editor-font-family, ui-monospace, monospace)",
+              ...lineStyle,
+            }}
           >
             <span className={cn("mr-2 select-none", diffCharClass)}>
               {diffChar}
             </span>
-            {line}
+            {segments.map((segment, segmentIndex) =>
+              segment.className ? (
+                <span key={segmentIndex} className={segment.className}>
+                  {segment.text}
+                </span>
+              ) : (
+                <span key={segmentIndex}>{segment.text}</span>
+              ),
+            )}
           </div>
         );
       })}
@@ -103,6 +126,20 @@ export function FindAndReplaceDisplay({
   );
   const showContent = isExpanded ?? toolCallState?.status === "generated";
   const config = useAppSelector((state) => state.config.config);
+
+  const diffLanguage = languageFromPath(relativeFilePath || fileUri);
+  const removedLineStyle: CSSProperties = {
+    backgroundColor:
+      "var(--vscode-diffEditor-removedLineBackground, rgba(255, 0, 0, 0.16))",
+    boxShadow:
+      "inset 3px 0 0 var(--vscode-diffEditor-removedTextBackground, rgba(255, 0, 0, 0.4))",
+  };
+  const addedLineStyle: CSSProperties = {
+    backgroundColor:
+      "var(--vscode-diffEditor-insertedLineBackground, rgba(155, 185, 85, 0.16))",
+    boxShadow:
+      "inset 3px 0 0 var(--vscode-diffEditor-insertedTextBackground, rgba(155, 185, 85, 0.5))",
+  };
 
   const displayName = useMemo(() => {
     if (fileUri) {
@@ -206,7 +243,7 @@ export function FindAndReplaceDisplay({
 
   // Unified container component that always renders the same structure
   const renderContainer = (content: React.ReactNode) => (
-    <div className="outline-command-border -outline-offset-0.5 rounded-default bg-editor mx-2 my-1 flex min-w-0 flex-col outline outline-1">
+    <div className="outline-command-border -outline-offset-0.5 rounded-default bg-editor my-1 flex min-w-0 flex-col outline outline-1">
       <div
         className={`find-widget-skip bg-editor sticky -top-2 z-10 m-0 flex cursor-pointer items-center justify-between gap-3 px-1.5 py-1 ${showContent ? "rounded-t-default border-command-border border-b" : "rounded-default"}`}
         onClick={() => {
@@ -282,8 +319,10 @@ export function FindAndReplaceDisplay({
     <div
       className={`${config?.ui?.showChatScrollbar ? "thin-scrollbar" : "no-scrollbar"} max-h-72 overflow-auto`}
     >
+      <ThemedCode>
       <pre
         className={`bg-editor m-0 w-fit min-w-full text-xs leading-tight ${config?.ui?.codeWrap ? "whitespace-pre-wrap" : "whitespace-pre"}`}
+        style={{ fontFamily: "var(--vscode-editor-font-family, ui-monospace, monospace)" }}
       >
         {diffResult.diff?.map((part, index) => {
           if (part.removed) {
@@ -291,9 +330,10 @@ export function FindAndReplaceDisplay({
               <DiffLines
                 key={index}
                 lines={part.value.split("\n")}
-                className="border-l-4 border-red-900 bg-red-900/30"
-                diffCharClass="text-red-600"
+                diffCharClass="text-error"
                 diffChar="-"
+                lineStyle={removedLineStyle}
+                language={diffLanguage}
               />
             );
           } else if (part.added) {
@@ -301,9 +341,10 @@ export function FindAndReplaceDisplay({
               <DiffLines
                 key={index}
                 lines={part.value.split("\n")}
-                diffCharClass="text-green-600"
-                className="border-l-4 border-green-600 bg-green-600/20"
+                diffCharClass="text-success"
                 diffChar="+"
+                lineStyle={addedLineStyle}
+                language={diffLanguage}
               />
             );
           } else {
@@ -329,15 +370,16 @@ export function FindAndReplaceDisplay({
             return (
               <div key={index}>
                 {showStartEllipsis && <EllipsisLine />}
-                <DiffLines lines={startLines} />
+                <DiffLines lines={startLines} language={diffLanguage} />
                 {showMiddleEllipses && <EllipsisLine />}
-                <DiffLines lines={endLines} />
+                <DiffLines lines={endLines} language={diffLanguage} />
                 {showEndEllipsis && <EllipsisLine />}
               </div>
             );
           }
         })}
       </pre>
+      </ThemedCode>
     </div>,
   );
 }

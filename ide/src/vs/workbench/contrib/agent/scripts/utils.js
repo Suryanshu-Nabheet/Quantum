@@ -78,8 +78,18 @@ function copyGuiDistToWebview() {
   rimrafSync(webviewDir);
   fs.mkdirSync(webviewDir, { recursive: true });
   fs.cpSync(distDir, webviewDir, { recursive: true });
+  copyQuantumFileIcons(webviewDir);
   ensureGeneratedExtensionManifest();
   console.log("[info] Copied out/agent-gui to out/agent/webview/");
+}
+
+function copyQuantumFileIcons(webviewDir) {
+  const iconsDir = path.join(
+    repoRoot,
+    "extensions/quantum-theme/file-icons/icons",
+  );
+  const target = path.join(webviewDir, "quantum-file-icons", "icons");
+  fs.cpSync(iconsDir, target, { recursive: true });
 }
 
 async function copyOnnxRuntimeFromNodeModules(target) {

@@ -161,8 +161,8 @@ export function ToolTip({
   };
 
   const handleMouseLeave = (event: React.MouseEvent<HTMLElement>) => {
-    const related = event.relatedTarget as Node | null;
-    if (related && event.currentTarget.contains(related)) {
+    const related = event.relatedTarget;
+    if (related instanceof Node && event.currentTarget.contains(related)) {
       return;
     }
     isHoveringRef.current = false;

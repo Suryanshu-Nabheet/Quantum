@@ -1,4 +1,5 @@
 import { Tool, ToolCallDelta } from "..";
+import { canonicalToolName } from "./builtIn";
 import {
   createDelta,
   generateOpenAIToolCallId,
@@ -34,7 +35,7 @@ function resolveToolName(
   name: string,
   activeTools?: Tool[],
 ): string | null {
-  const trimmed = name.trim();
+  const trimmed = canonicalToolName(name.trim());
   if (!trimmed) {
     return null;
   }

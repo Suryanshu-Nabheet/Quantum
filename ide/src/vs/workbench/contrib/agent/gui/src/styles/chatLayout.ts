@@ -10,8 +10,8 @@ export const CHAT_SURFACE_CLASS = [
   "px-3 pb-3 sm:px-4",
 ].join(" ");
 
-/** Shared content inset inside the chat column. */
-const CHAT_MESSAGE_INSET_CLASS = "px-1 sm:px-1.5";
+/** Shared content inset. Matches the composer text (`px-2`). */
+const CHAT_MESSAGE_INSET_CLASS = "px-2";
 
 /** Vertical gap between history turns. No top padding — the first line stays flush. */
 export const CHAT_HISTORY_STACK_CLASS = "flex w-full min-w-0 max-w-full flex-col gap-3";

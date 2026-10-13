@@ -151,7 +151,7 @@ export function ToolCallDiv({
         >
           {open
             ? otherCalls.map((toolCallState) => (
-                <div className="py-0.5 pl-5" key={toolCallState.toolCallId}>
+                <div className="py-0.5" key={toolCallState.toolCallId}>
                   {renderToolCall(toolCallState)}
                 </div>
               ))

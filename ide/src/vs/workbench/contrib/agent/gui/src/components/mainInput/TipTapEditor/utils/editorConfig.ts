@@ -243,10 +243,10 @@ export function createEditorConfig(options: {
         },
       }),
       Placeholder.configure({
-        placeholder: getPlaceholderText(
-          props.placeholder,
-          historyLengthRef.current,
-        ),
+        placeholder: () =>
+          isStreamingRef.current && props.isMainInput
+            ? "Enter queues a follow-up"
+            : getPlaceholderText(props.placeholder, historyLengthRef.current),
       }),
       Paragraph.extend({
         addKeyboardShortcuts() {
@@ -258,6 +258,7 @@ export function createEditorConfig(options: {
 
               onEnter({
                 noContext: true,
+                sendMode: isStreamingRef.current ? "default" : undefined,
               });
               return true;
             },
@@ -265,6 +266,7 @@ export function createEditorConfig(options: {
             "Mod-Enter": () => {
               onEnter({
                 noContext: true,
+                sendMode: isStreamingRef.current ? "stop" : undefined,
               });
 
               return true;
@@ -272,6 +274,7 @@ export function createEditorConfig(options: {
             "Alt-Enter": () => {
               onEnter({
                 noContext: true,
+                sendMode: isStreamingRef.current ? "queue" : undefined,
               });
 
               return true;
@@ -394,7 +397,10 @@ export function createEditorConfig(options: {
     if (!editor) {
       return;
     }
-    if (isStreamingRef.current || (codeToEdit.length === 0 && isInEdit)) {
+    if (
+      (codeToEdit.length === 0 && isInEdit) ||
+      (isStreamingRef.current && (!props.isMainInput || isInEdit))
+    ) {
       return;
     }
 

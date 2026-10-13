@@ -28,6 +28,7 @@ import { countTokens } from "./llm/countTokens";
 import Lemonade from "./llm/llms/Lemonade";
 import Ollama from "./llm/llms/Ollama";
 import { callTool } from "./tools/callTool";
+import { canonicalToolName } from "./tools/builtIn";
 import { applyAgentAccessModes } from "./tools/policies/agentAccess";
 import {
   applyProtectedPathPolicy,
@@ -888,7 +889,8 @@ export class Core {
           throw new Error("Config not loaded");
         }
 
-        const tool = config.tools.find((t) => t.function.name === toolName);
+        const resolvedToolName = canonicalToolName(toolName);
+        const tool = config.tools.find((t) => t.function.name === resolvedToolName);
         if (!tool) {
           return {
             policy: applyAgentAccessModes(
@@ -953,7 +955,10 @@ export class Core {
         throw new Error("Config not loaded");
       }
 
-      const tool = config?.tools.find((t) => t.function.name === toolName);
+      const resolvedToolName = canonicalToolName(toolName);
+      const tool = config?.tools.find(
+        (t) => t.function.name === resolvedToolName,
+      );
       if (!tool) {
         throw new Error(`Tool ${toolName} not found`);
       }
@@ -1010,7 +1015,7 @@ export class Core {
     }
 
     const tool = config.tools.find(
-      (t) => t.function.name === toolCall.function.name,
+      (t) => t.function.name === canonicalToolName(toolCall.function.name),
     );
 
     if (!tool) {

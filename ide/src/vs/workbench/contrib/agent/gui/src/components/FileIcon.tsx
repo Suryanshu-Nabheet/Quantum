@@ -1,53 +1,92 @@
-// @ts-ignore
-import DOMPurify from "dompurify";
 import { useMemo } from "react";
-import { themeIcons } from "seti-file-icons";
+import theme from "../../../../../../../../extensions/quantum-theme/file-icons/quantum-icon-theme.json";
+import { staticAssetUrl } from "../util/mediaUrl";
 
 export interface FileIconProps {
   height: `${number}px`;
   width: `${number}px`;
   filename: string;
+  kind?: "file" | "folder";
 }
 
-export default function FileIcon({ filename, height, width }: FileIconProps) {
-  const file = useMemo(() => {
-    if (filename.includes(" (")) {
-      const path = filename.split(" ");
-      path.pop();
-      return path.join(" ");
-    } else {
-      return filename;
+type IconTheme = {
+  iconDefinitions: Record<string, { iconPath?: string }>;
+  fileExtensions: Record<string, string>;
+  fileNames: Record<string, string>;
+  folderNames: Record<string, string>;
+  file: string;
+  folder: string;
+};
+
+const iconTheme = theme as IconTheme;
+
+function indexLower(map: Record<string, string>): Record<string, string> {
+  const indexed: Record<string, string> = {};
+  for (const [key, value] of Object.entries(map)) {
+    indexed[key.toLowerCase()] = value;
+  }
+  return indexed;
+}
+
+const fileNames = indexLower(iconTheme.fileNames);
+const fileExtensions = indexLower(iconTheme.fileExtensions);
+const folderNames = indexLower(iconTheme.folderNames);
+
+function basename(filename: string): string {
+  const trimmed = filename.trim();
+  if (trimmed.includes(" (")) {
+    const parts = trimmed.split(" ");
+    parts.pop();
+    return basename(parts.join(" "));
+  }
+  const slash = Math.max(trimmed.lastIndexOf("/"), trimmed.lastIndexOf("\\"));
+  return (slash >= 0 ? trimmed.slice(slash + 1) : trimmed).toLowerCase();
+}
+
+function iconIdFor(filename: string, kind: "file" | "folder"): string {
+  const name = basename(filename);
+  if (kind === "folder") {
+    return folderNames[name] ?? iconTheme.folder;
+  }
+  if (fileNames[name]) {
+    return fileNames[name];
+  }
+  const segments = name.split(".");
+  for (let index = 1; index < segments.length; index++) {
+    const extension = segments.slice(index).join(".");
+    if (fileExtensions[extension]) {
+      return fileExtensions[extension];
     }
-  }, [filename]);
+  }
+  return iconTheme.file;
+}
 
-  const getIcon = themeIcons({
-    blue: "#268bd2",
-    grey: "#657b83",
-    "grey-light": "#839496",
-    green: "#859900",
-    orange: "#cb4b16",
-    pink: "#d33682",
-    purple: "#6c71c4",
-    red: "#dc322f",
-    white: "#fdf6e3",
-    yellow: "#b58900",
-    ignore: "#586e75",
-  });
+function iconUrl(filename: string, kind: "file" | "folder"): string | undefined {
+  const iconPath = iconTheme.iconDefinitions[iconIdFor(filename, kind)]?.iconPath;
+  if (!iconPath) {
+    return undefined;
+  }
+  return staticAssetUrl(`quantum-file-icons/${iconPath.replace(/^\.\//, "")}`);
+}
 
-  // Sanitize the SVG string before rendering it
-  const { svg, color } = getIcon(file);
-  const sanitizedSVG = DOMPurify.sanitize(svg);
+export default function FileIcon({
+  filename,
+  height,
+  width,
+  kind = "file",
+}: FileIconProps) {
+  const src = useMemo(() => iconUrl(filename, kind), [filename, kind]);
+  if (!src) {
+    return null;
+  }
 
   return (
-    <span
-      dangerouslySetInnerHTML={{ __html: sanitizedSVG }}
-      style={{
-        width: width,
-        height: height,
-        fill: color,
-        flexShrink: 0,
-        display: "flex",
-      }}
+    <img
+      src={src}
+      alt=""
+      width={width}
+      height={height}
+      style={{ width, height, flexShrink: 0, display: "block" }}
     />
   );
 }

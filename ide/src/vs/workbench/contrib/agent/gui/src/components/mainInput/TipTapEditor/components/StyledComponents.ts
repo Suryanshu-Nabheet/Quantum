@@ -43,6 +43,7 @@ export const InputBoxDiv = styled.div<{ bigger?: boolean }>`
 
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 `;
 
 export const HoverDiv = styled.div`

@@ -16,6 +16,7 @@ import { selectSelectedChatModel } from "../../../redux/slices/configSlice";
 import InputToolbar, { ToolbarOptions } from "../InputToolbar";
 import { ComboBoxItem } from "../types";
 import { DragOverlay } from "./components/DragOverlay";
+import { MessageQueue } from "../MessageQueue";
 import { InputBoxDiv } from "./components/StyledComponents";
 import { useMainEditor } from "./MainEditorProvider";
 import "./TipTapEditor.css";
@@ -265,6 +266,7 @@ function TipTapEditorInner(props: TipTapEditorProps) {
         event.preventDefault();
       }}
     >
+      {props.isMainInput && <MessageQueue />}
       <div
         className={`flex flex-grow flex-col px-2 pb-1 pt-1 ${props.isMainInput && historyLength === 0 ? "min-h-[140px]" : ""}`}
       >
@@ -303,7 +305,6 @@ function TipTapEditorInner(props: TipTapEditorProps) {
         ) && (
           <DragOverlay show={showDragOverMsg} setShow={setShowDragOverMsg} />
         )}
-      <div id={TIPPY_DIV_ID} className="fixed z-50" />
     </InputBoxDiv>
   );
 }
@@ -337,6 +338,7 @@ export function TipTapEditor(props: TipTapEditorProps) {
   return (
     <div className="relative w-full">
       <MemoInner {...props} />
+      <div id={TIPPY_DIV_ID} className="fixed z-50" />
     </div>
   );
 }

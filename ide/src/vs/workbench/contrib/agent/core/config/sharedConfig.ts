@@ -25,6 +25,7 @@ export const sharedConfigSchema = z
     displayRawMarkdown: z.boolean(),
     showChatScrollbar: z.boolean(),
     resumeAfterToolRejection: z.boolean(),
+    queueMessages: z.enum(["send", "queue", "stop"]),
 
     // `tabAutocompleteOptions` in `AgentConfig`
     useAutocompleteCache: z.boolean(),
@@ -140,6 +141,10 @@ export function modifyAnyConfigWithSharedConfig<
   if (sharedConfig.resumeAfterToolRejection !== undefined) {
     configCopy.ui.resumeAfterToolRejection =
       sharedConfig.resumeAfterToolRejection;
+  }
+
+  if (sharedConfig.queueMessages !== undefined) {
+    configCopy.ui.queueMessages = sharedConfig.queueMessages;
   }
 
   configCopy.experimental = {

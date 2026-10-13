@@ -1,5 +1,5 @@
 import { ToolCallDelta, ToolCallState } from "core";
-import { BuiltInToolNames } from "core/tools/builtIn";
+import { BuiltInToolNames, canonicalToolName } from "core/tools/builtIn";
 import { incrementalParseJson } from "core/util/incrementalParseJson";
 
 // Merge streamed tool calls
@@ -68,7 +68,7 @@ export function addToolCallDeltaToState(
       id: callId,
       type: callType,
       function: {
-        name: mergedName,
+        name: canonicalToolName(mergedName),
         arguments: mergedArgs,
       },
     },
