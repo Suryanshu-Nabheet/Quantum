@@ -45,7 +45,14 @@ Plan Mode helps you organize and break down complex tasks with the Agent. It all
   <img alt="Plan mode summary card in Quantum" src="./assets/screenshots/plan-mode.png" width="100%" />
 </p>
 
-### 4. Rich `@` context menu
+### 4. AI Agent To‑Do List (new!)
+
+Work through complex tasks with the built-in AI-powered to-do list. Track, edit, and collaborate on steps with the agent as you go.
+<p align="center">
+  <img alt="AI Agent To‑Do List in Quantum" src="./assets/screenshots/todo.png" width="100%" />
+</p>
+
+### 5. Rich `@` context menu
 
 Attach the context your task needs, including code, files, images, videos, PDFs, Git changes, terminal output, browser content, and more.
 
