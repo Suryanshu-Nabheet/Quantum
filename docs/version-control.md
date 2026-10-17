@@ -29,7 +29,7 @@ If something “won’t commit”, check `git check-ignore -v <path>`. A global 
 | [`.vscode/extensions.json`](../.vscode/extensions.json) | Recommended extensions |
 | [`.idea/`](../.idea/) (whitelisted files) | JetBrains modules, code style, run configs |
 | [`scripts/`](../scripts/) | Setup, verify, E2E |
-| [`agent/`](../agent/), [`ide/`](../ide/), [`build/`](../build/), [`extensions/`](../extensions/), [`docs/`](../docs/) | Product and release sources |
+| [`agent/`](../agent/), [`ide/`](../ide/), [`build/`](../build/), [`docs/`](../docs/) | Product and release sources |
 
 Run `./scripts/verify-repo-config.sh` to confirm required root config paths exist and are **not** gitignored.
 

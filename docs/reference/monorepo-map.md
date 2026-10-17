@@ -8,7 +8,6 @@ Quick reference for top-level directories in [Suryanshu-Nabheet/Quantum](https:/
 | [`ide/`](../../ide/) | Source yes | Quantum IDE — VS Code fork + workbench agent |
 | [`build/`](../../build/) | Source yes | Release packaging from upstream VS Code |
 | [`docs/`](../../docs/) | Yes | Documentation hub (this tree) |
-| [`extensions/`](../../extensions/) | Source yes | Built-in extensions for **release** build |
 | [`scripts/`](../../scripts/) | Yes | `setup.sh`, `verify.sh`, `e2e.sh`, `verify-repo-config.sh` |
 | [`web/`](../../web/) | Source yes | Public website (scaffold) |
 | [`.vscode/`](../../.vscode/) | Partial | Root workspace tasks/settings (whitelist) |
@@ -24,7 +23,7 @@ Quick reference for top-level directories in [Suryanshu-Nabheet/Quantum](https:/
 | `src/vs/workbench/contrib/browserView/` | Embedded browser UI |
 | `src/vs/platform/browserView/` | Browser platform services |
 | `src/vs/sessions/` | Agents / sessions window (separate workbench layer) |
-| `extensions/` | IDE dev built-in extensions |
+| `ide/extensions/` | Built-in extensions (including `quantum-*`) |
 | `build/gulpfile.agent.ts` | Agent compile pipeline |
 | `out/agent/` | **Generated** built-in agent extension |
 

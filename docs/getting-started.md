@@ -35,7 +35,7 @@ This installs and builds **Agent Manager**, then compiles **IDE** (longest step 
 
 ## Open the workspace
 
-In VS Code or Cursor, open **[`Quantum.code-workspace`](../Quantum.code-workspace)** (multi-root: root, `agent/`, `ide/`, `docs/`, `build/`, `extensions/`).
+In VS Code or Cursor, open **[`Quantum.code-workspace`](../Quantum.code-workspace)** (multi-root: root, `agent/`, `ide/`, `docs/`, `build/`).
 
 ## Run the products
 

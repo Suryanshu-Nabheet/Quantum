@@ -59,8 +59,6 @@ quantum/
 │
 ├── docs/                  # Documentation (Docusaurus)
 │
-├── extensions/            # Quantum built-in extensions (for release build)
-│
 ├── ide/                   # Quantum IDE codebase
 │   ├── src/               # Editor core and workbench agent implementation
 │   ├── extensions/        # Built-in developer extensions

@@ -10,9 +10,8 @@ graph TD
   Q --> IDE[Quantum IDE ide/]
   Q --> AM[Agent Manager agent/]
   Q --> REL[Release build build/]
-  Q --> EXT[extensions/ release builtins]
-
   IDE --> WB[VS Code workbench]
+  IDE --> EXT[ide/extensions builtins]
   IDE --> WA[contrib/agent Workbench Agent]
   IDE --> BR[browserView + platform browser]
 

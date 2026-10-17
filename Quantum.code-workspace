@@ -19,10 +19,6 @@
 		{
 			"name": "Release build",
 			"path": "build"
-		},
-		{
-			"name": "Extensions (release)",
-			"path": "extensions"
 		}
 	],
 	"settings": {

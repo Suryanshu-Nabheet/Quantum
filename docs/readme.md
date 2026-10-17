@@ -58,7 +58,6 @@ quantum/
 ├── ide/            # Quantum IDE (VS Code fork + contrib/agent)
 ├── build/          # Release packaging (upstream VS Code → Quantum binaries)
 ├── docs/           # This documentation hub
-├── extensions/     # Built-in extensions for release build
 ├── scripts/        # ./scripts/setup.sh, verify.sh, e2e.sh
 └── web/            # Public website (in progress)
 ```

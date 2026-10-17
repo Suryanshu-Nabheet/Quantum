@@ -27,7 +27,7 @@ Full documentation: **[docs/readme.md](docs/readme.md)** (getting started, IDE, 
 
 ## Editor and AI setup
 
-1. Open **[`Quantum.code-workspace`](Quantum.code-workspace)** in VS Code or Cursor (multi-root: root, agent, ide, docs, build, extensions).
+1. Open **[`Quantum.code-workspace`](Quantum.code-workspace)** in VS Code or Cursor (multi-root: root, agent, ide, docs, build).
 2. Install extension recommendations when prompted.
 3. **Tasks:** `Quantum: Setup`, `Quantum: Verify`, `Agent: dev stack`, `IDE: watch` — [`.vscode/tasks.json`](.vscode/tasks.json).
 4. **IDE F5 / debug:** configs live in [`ide/.vscode/`](ide/.vscode/), not at repo root.
