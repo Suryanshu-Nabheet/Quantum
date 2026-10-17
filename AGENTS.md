@@ -1,5 +1,7 @@
 # Quantum monorepo — agent instructions
 
+**Documentation hub:** [docs/readme.md](docs/readme.md) · [docs/for-agents.md](docs/for-agents.md)
+
 This repository contains two products. Use the product-specific guide for implementation work:
 
 | Product | Path | Agent guide |

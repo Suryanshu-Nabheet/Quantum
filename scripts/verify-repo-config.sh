@@ -24,6 +24,10 @@ REQUIRED_PATHS=(
 	.vscode/launch.json
 	.vscode/extensions.json
 	.vscode/README.md
+	docs/readme.md
+	docs/getting-started.md
+	docs/for-agents.md
+	docs/products/workbench-agent.md
 	docs/version-control.md
 	.idea/modules.xml
 	.idea/misc.xml

@@ -12,6 +12,8 @@ Two products share this repository:
 
 Root setup: `./scripts/setup.sh` and `./scripts/verify.sh` ([scripts/README.md](../../scripts/README.md)).
 
+Documentation hub: [docs/readme.md](../../docs/readme.md) · agent routing: [docs/for-agents.md](../../docs/for-agents.md).
+
 Git / editor policy: [docs/version-control.md](../../docs/version-control.md). Run `./scripts/verify-repo-config.sh` when changing root `.gitignore`, `.cursor/`, `.idea/`, or `.vscode/`.
 
 When editing:

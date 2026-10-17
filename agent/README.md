@@ -62,6 +62,12 @@ bun run build
 
 ---
 
+## Documentation
+
+Monorepo hub: [docs/readme.md](../docs/readme.md) · [Agent Manager](../docs/products/agent-manager.md) · [development guide](../docs/products/agent-manager-development.md).
+
+---
+
 ## License
 
 MIT License. Copyright (c) 2026 Suryanshu Nabheet. See [LICENSE](./LICENSE) for details.

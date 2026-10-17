@@ -117,7 +117,10 @@ See [scripts/README.md](scripts/README.md) for flags (`--skip-ide`, `--launch-id
 
 - [Quantum IDE Specification](ide/README.md)
 - [Quantum Agent Manager Specification](agent/README.md)
-- [Ecosystem Architecture Documentation](docs/readme.md)
+- **[Documentation hub](docs/readme.md)** — getting started, IDE, Agent Manager, workbench agent, architecture
+- [Getting started](docs/getting-started.md)
+- [For contributors](docs/for-contributors.md)
+- [For AI agents](docs/for-agents.md)
 - [Version control & what to commit](docs/version-control.md)
 - [Contributing & editor setup](CONTRIBUTING.md)
 

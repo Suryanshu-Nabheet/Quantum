@@ -23,6 +23,8 @@ From the monorepo root:
 
 Per-product setup: `agent/scripts/`, `ide/scripts/`. See [scripts/README.md](scripts/README.md).
 
+Full documentation: **[docs/readme.md](docs/readme.md)** (getting started, IDE, Agent Manager, workbench agent, architecture).
+
 ## Editor and AI setup
 
 1. Open **[`Quantum.code-workspace`](Quantum.code-workspace)** in VS Code or Cursor (multi-root: root, agent, ide, docs, build, extensions).

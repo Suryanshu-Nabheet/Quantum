@@ -40,7 +40,7 @@ Run `./scripts/verify-repo-config.sh` to confirm required root config paths exis
 | **Agent** (`agent/`) | Source, `package.json`, lockfiles, tests, [`agent/AGENTS.md`](../agent/AGENTS.md), [`.vscode/settings.json`](../agent/.vscode/settings.json) if present | `node_modules/`, `dist/`, `.env`, local `.quantum-*` dev homes |
 | **IDE** (`ide/`) | Source, extensions, [`ide/.vscode/`](../ide/.vscode/) (full debug toolchain), lockfiles | `node_modules/`, `out/`, `out-build/`, `.build/`, `.vscode-test/` |
 | **Web** (`web/`) | Site source when added | `node_modules/`, `.next/`, `dist/`, `.env` |
-| **Docs** (`docs/`) | Docusaurus / markdown sources | Generated `.astro/`, `.cache/` |
+| **Docs** (`docs/`) | Documentation hub ([readme.md](readme.md)) | Generated `.astro/`, `.cache/` when a site build is added |
 
 ## Never commit
 

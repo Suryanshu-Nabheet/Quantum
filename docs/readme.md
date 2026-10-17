@@ -1,73 +1,64 @@
-# Quantum Architecture & Ecosystem Documentation
+# Quantum documentation
 
-This document specifies the overarching design, component relationships, and integration protocols governing the **Quantum** software ecosystem.
+Central documentation for the **Quantum** monorepo: two products (IDE + Agent Manager), shared policies, and guides for humans and AI agents.
 
----
+## Start here
 
-## Architectural Topology
+| Audience | Document |
+| --- | --- |
+| New contributor | [Getting started](getting-started.md) |
+| Day-to-day development | [For contributors](for-contributors.md) |
+| AI agents (Cursor, IDE Agent, etc.) | [For agents](for-agents.md) |
+| Git / editor / what to commit | [Version control](version-control.md) |
 
-Quantum partitions developer workflows across two specialized runtimes:
+## Products
 
-```mermaid
-graph TD
-    Quantum["Quantum Ecosystem"]
-    
-    Quantum --> IDE["Quantum IDE<br/><code>ide/</code>"]
-    Quantum --> Agent["Quantum Agent Manager<br/><code>agent/</code>"]
-    
-    IDE --> IDE_Desc["In-Editor Workbench<br/>Embedded Agent, Monaco Engine, Live DOM Context"]
-    Agent --> Agent_Desc["Desktop Orchestration Workspace<br/>Parallel Git Worktrees, Multi-Model Sessions, MCP Dispatch"]
-```
+| Product | Overview | Development |
+| --- | --- | --- |
+| **Quantum IDE** | [Quantum IDE](products/quantum-ide.md) | [IDE development](products/quantum-ide-development.md) |
+| **Workbench Agent** (in-IDE AI) | [Workbench Agent](products/workbench-agent.md) | [Agent harness reference](reference/workbench-agent-harness.md) |
+| **Quantum Agent Manager** | [Agent Manager](products/agent-manager.md) | [Agent Manager development](products/agent-manager-development.md) |
 
----
+## Architecture
 
-## Subsystem Specifications
+| Topic | Document |
+| --- | --- |
+| Ecosystem topology | [Architecture overview](architecture/overview.md) |
+| Privacy & local data | [Privacy and data](architecture/privacy-and-data.md) |
+| Model Context Protocol | [MCP](architecture/mcp.md) |
 
-### 1. Quantum IDE (`ide/`)
-*Primary In-Editor Development Workbench*
-- **Scope**: Serves as the primary editing and interactive development interface.
-- **Implementation**: Built upon an extended Visual Studio Code foundation with custom workbench contributions (`src/vs/workbench/contrib/agent`).
-- **Capabilities**:
-  - Embedded AI assistant pane with workspace symbol indexing and semantic code context.
-  - Native browser view with element-level DOM inspectability for visual debugging.
-  - Multi-provider model configuration with customizable role assignments (chat, inline edit, autocomplete).
-  - Open VSX extension compatibility with telemetry subsystems disabled.
+## Reference
 
----
+| Topic | Document |
+| --- | --- |
+| Monorepo directory map | [Monorepo map](reference/monorepo-map.md) |
+| Agent turn / tool loop (maintainers) | [Workbench Agent harness](reference/workbench-agent-harness.md) |
 
-### 2. Quantum Agent Manager (`agent/`)
-*Autonomous Workspace and Multi-Agent Orchestrator*
-- **Scope**: Dedicated desktop application for background tasks, long-running agent workflows, and parallel branch implementations.
-- **Implementation**: Electron shell hosting a Vite/React interface coupled with an Effect-TS backend and WebSocket transport.
-- **Capabilities**:
-  - **Git Worktree Isolation**: Spawns isolated physical checkouts for concurrent task execution without workspace collision.
-  - **Multi-Provider Dispatch**: Interfaces directly with Claude, GPT, Gemini, DeepSeek, Grok, and local providers.
-  - **Agent State Handoff**: Transfers structured task context and message history across heterogeneous model engines.
-  - **Integrated Telemetry View**: Inspects raw diff streams, terminal standard streams, and browser execution sessions in real time.
+## Canonical sources (live in tree)
 
----
+These paths are the **source of truth** when docs and code diverge:
 
-## Core System Invariants
+| Path | Contents |
+| --- | --- |
+| [`ide/README.md`](../ide/README.md) | IDE features, setup, packaging |
+| [`ide/AGENTS.md`](../ide/AGENTS.md) | IDE + workbench agent workflow rules |
+| [`ide/src/vs/workbench/contrib/agent/README.md`](../ide/src/vs/workbench/contrib/agent/README.md) | Agent layout, build, config, host integration |
+| [`ide/.github/copilot-instructions.md`](../ide/.github/copilot-instructions.md) | VS Code layer rules, TypeScript validation |
+| [`agent/README.md`](../agent/README.md) | Agent Manager product overview |
+| [`agent/AGENTS.md`](../agent/AGENTS.md) | Agent Manager agent instructions |
+| [`scripts/README.md`](../scripts/README.md) | Monorepo setup & verify |
+| [`CONTRIBUTING.md`](../CONTRIBUTING.md) | Contribution policy |
+| [`AGENTS.md`](../AGENTS.md) | Monorepo AI entrypoint |
 
-1. **Client-Side Data Isolation**: All database state, indexed files, tokens, and model sessions reside exclusively within the host filesystem. Network communication is limited strictly to user-configured LLM API endpoints and MCP servers.
-2. **Model Context Protocol (MCP) Standard**: All dynamic tools, prompt templates, and system integrations adhere to standard MCP client-server schemas.
-3. **Decoupled Packaging**: Subsystems compile and package independently, preventing cross-dependency pollution between native C++ toolchains, Electron runtimes, and web bundlers.
-
----
-
-## Repository Structure
+## Repository layout (summary)
 
 ```
 quantum/
-├── agent/       # Quantum Agent Manager desktop app and orchestration server
-├── build/       # Quantum release build (VS Code upstream → branded binary)
-├── docs/        # Documentation (Docusaurus)
-├── extensions/  # Quantum built-in extensions (for release build)
-├── ide/         # Quantum IDE editor core and workbench extensions
-├── scripts/     # Monorepo setup (./scripts/setup.sh) and verification
-├── web/         # Public website (in progress)
-├── LICENCE      # MIT License
-├── CONTRIBUTING.md # Contribution policies
-├── docs/version-control.md # What to commit; editor / Cursor / JetBrains policy
-└── SECURITY.md  # Security vulnerability reporting standards
+├── agent/          # Agent Manager (Electron + Effect server + React web UI)
+├── ide/            # Quantum IDE (VS Code fork + contrib/agent)
+├── build/          # Release packaging (upstream VS Code → Quantum binaries)
+├── docs/           # This documentation hub
+├── extensions/     # Built-in extensions for release build
+├── scripts/        # ./scripts/setup.sh, verify.sh, e2e.sh
+└── web/            # Public website (in progress)
 ```

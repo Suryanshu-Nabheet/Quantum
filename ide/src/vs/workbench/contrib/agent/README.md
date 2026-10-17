@@ -4,6 +4,8 @@ Autonomous AI coding agent for **Quantum IDE** (VS Code–compatible editor). Ch
 
 **Part of:** [Quantum](https://github.com/Suryanshu-Nabheet/Quantum) · **Founder:** Suryanshu Nabheet
 
+**Docs (monorepo):** [docs/products/workbench-agent.md](../../../../../../docs/products/workbench-agent.md) · [docs/reference/workbench-agent-harness.md](../../../../../../docs/reference/workbench-agent-harness.md)
+
 ## Layout
 
 ```

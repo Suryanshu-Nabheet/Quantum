@@ -4,7 +4,9 @@ This repository is **Quantum**, an MIT-licensed fork of Visual Studio Code.
 
 For architecture, coding standards, validation, and layer rules, see [.github/copilot-instructions.md](.github/copilot-instructions.md).
 
-For human contributors, see [README.md](README.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
+For human contributors, see [README.md](README.md) and [CONTRIBUTING.md](../CONTRIBUTING.md).
+
+Monorepo documentation: [docs/for-agents.md](../docs/for-agents.md) · [Workbench Agent](../docs/products/workbench-agent.md) · [harness reference](../docs/reference/workbench-agent-harness.md).
 
 **First-time dev setup:** `./scripts/setup.sh` (macOS/Linux) or `scripts\setup.bat` (Windows). After a successful build, relaunch with `./scripts/setup.sh --launch-only` or `VSCODE_SKIP_PRELAUNCH=1 ./scripts/code.sh`. Details: [scripts/README.md](scripts/README.md).
 
