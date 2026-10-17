@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Agent: bun run dev" type="ShConfigurationType">
+    <option name="INDEPENDENT_SCRIPT_PATH" value="true" />
+    <option name="SCRIPT_PATH" value="/bin/bash" />
+    <option name="SCRIPT_OPTIONS" value="-lc &quot;cd &quot;$PROJECT_DIR$/agent&quot; &amp;&amp; bun run dev&quot;" />
+    <option name="INDEPENDENT_SCRIPT_WORKING_DIRECTORY" value="true" />
+    <option name="SCRIPT_WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+    <method v="2" />
+  </configuration>
+</component>

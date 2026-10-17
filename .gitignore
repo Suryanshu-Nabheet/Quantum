@@ -30,18 +30,42 @@ bun.lockb.tmp
 .env*.local
 !.env.example
 
-# IDE & Editor Local State
-.idea/
+# --- Shared team config at repo root (always commit) ---
+# Documented in docs/version-control.md — run ./scripts/verify-repo-config.sh
+# AGENTS.md, Quantum.code-workspace, .editorconfig, .gitattributes are not ignored.
+
+# Cursor — shared project config (must un-ignore dir first — overrides ~/.gitignore)
+!.cursor/
+.cursor/*
+!.cursor/rules/
+!.cursor/rules/**
+!.cursor/mcp.json
+!.cursorignore
+
+# JetBrains — shared team config only (must un-ignore dir first — overrides ~/.gitignore)
+!.idea/
+.idea/*
+!.idea/.gitignore
+!.idea/codeStyles/
+!.idea/codeStyles/**
+!.idea/runConfigurations/
+!.idea/runConfigurations/**
+!.idea/modules.xml
+!.idea/misc.xml
+!.idea/vcs.xml
+!.idea/*.iml
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+# VS Code / Cursor — root workspace (commit these; ignore other local .vscode noise)
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+!.vscode/README.md
 
 # Test & Coverage
 coverage/

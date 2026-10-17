@@ -1,0 +1,53 @@
+{
+	// Monorepo root — prefer opening Quantum.code-workspace for multi-root.
+	"files.exclude": {
+		"**/.DS_Store": true,
+		"**/node_modules": true,
+		"**/.turbo": true,
+		"**/.astro": true,
+		"**/out": true,
+		"**/out-build": true,
+		"**/out-vscode": true,
+		"**/*.tsbuildinfo": true
+	},
+	"search.exclude": {
+		"**/node_modules": true,
+		"ide/out/**": true,
+		"ide/out-build/**": true,
+		"ide/out-vscode/**": true,
+		"ide/.build/**": true,
+		"agent/**/dist/**": true,
+		"build/**/node_modules": true
+	},
+	"files.watcherExclude": {
+		"**/node_modules/**": true,
+		"ide/out/**": true,
+		"ide/out-build/**": true,
+		"agent/**/dist/**": true
+	},
+	"files.insertFinalNewline": true,
+	"files.trimTrailingWhitespace": true,
+	"editor.formatOnSave": true,
+	"editor.tabSize": 2,
+	"editor.insertSpaces": true,
+	"editor.rulers": [120],
+	"[typescript]": {
+		"editor.defaultFormatter": "vscode.typescript-language-features"
+	},
+	"[typescriptreact]": {
+		"editor.defaultFormatter": "vscode.typescript-language-features"
+	},
+	"[json]": {
+		"editor.defaultFormatter": "vscode.json-language-features"
+	},
+	"[jsonc]": {
+		"editor.defaultFormatter": "vscode.json-language-features"
+	},
+	"typescript.preferences.importModuleSpecifier": "relative",
+	"typescript.tsdk": "agent/node_modules/typescript/lib",
+	"eslint.workingDirectories": [
+		{ "directory": "agent", "changeProcessCWD": true },
+		{ "directory": "ide", "changeProcessCWD": true }
+	],
+	"terminal.integrated.cwd": "${workspaceFolder}"
+}

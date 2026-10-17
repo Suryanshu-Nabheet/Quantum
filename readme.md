@@ -118,6 +118,8 @@ See [scripts/README.md](scripts/README.md) for flags (`--skip-ide`, `--launch-id
 - [Quantum IDE Specification](ide/README.md)
 - [Quantum Agent Manager Specification](agent/README.md)
 - [Ecosystem Architecture Documentation](docs/readme.md)
+- [Version control & what to commit](docs/version-control.md)
+- [Contributing & editor setup](CONTRIBUTING.md)
 
 ---
 

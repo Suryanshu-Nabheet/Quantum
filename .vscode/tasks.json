@@ -1,0 +1,67 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Quantum: Setup (full monorepo)",
+			"type": "shell",
+			"command": "./scripts/setup.sh",
+			"options": { "cwd": "${workspaceFolder}" },
+			"group": { "kind": "build", "isDefault": true },
+			"problemMatcher": []
+		},
+		{
+			"label": "Quantum: Verify",
+			"type": "shell",
+			"command": "./scripts/verify.sh",
+			"options": { "cwd": "${workspaceFolder}" },
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "Quantum: E2E smoke",
+			"type": "shell",
+			"command": "./scripts/e2e.sh",
+			"options": { "cwd": "${workspaceFolder}" },
+			"problemMatcher": []
+		},
+		{
+			"label": "Agent: dev stack",
+			"type": "shell",
+			"command": "bun run dev",
+			"options": { "cwd": "${workspaceFolder}/agent" },
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Agent: typecheck",
+			"type": "shell",
+			"command": "bun run typecheck",
+			"options": { "cwd": "${workspaceFolder}/agent" },
+			"group": "test",
+			"problemMatcher": ["$tsc"]
+		},
+		{
+			"label": "IDE: watch (transpile)",
+			"type": "shell",
+			"command": "npm run watch",
+			"options": { "cwd": "${workspaceFolder}/ide" },
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "IDE: launch Code OSS",
+			"type": "shell",
+			"command": "./scripts/code.sh",
+			"options": { "cwd": "${workspaceFolder}/ide" },
+			"problemMatcher": []
+		},
+		{
+			"label": "IDE: compile",
+			"type": "shell",
+			"command": "npm run compile",
+			"options": { "cwd": "${workspaceFolder}/ide" },
+			"group": "build",
+			"problemMatcher": []
+		}
+	]
+}

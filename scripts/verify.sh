@@ -60,6 +60,17 @@ ensure_node_min "$QUANTUM_NODE_MIN_MAJOR"
 
 FAILED=0
 
+verify_repo_config() {
+	log_step "Verifying repository config (git / editor policy)"
+	if [[ -f "${ROOT}/scripts/verify-repo-config.sh" ]]; then
+		bash "${ROOT}/scripts/verify-repo-config.sh" && log_ok "Repository config verification passed" || FAILED=1
+	else
+		log_warn "scripts/verify-repo-config.sh not found — skipping"
+	fi
+}
+
+verify_repo_config
+
 verify_agent() {
 	log_step "Verifying Quantum Agent Manager"
 	if [[ -f "${ROOT}/agent/scripts/verify.sh" ]]; then

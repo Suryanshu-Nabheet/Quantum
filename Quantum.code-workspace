@@ -1,0 +1,58 @@
+{
+	"folders": [
+		{
+			"name": "Quantum (root)",
+			"path": "."
+		},
+		{
+			"name": "Agent Manager",
+			"path": "agent"
+		},
+		{
+			"name": "IDE",
+			"path": "ide"
+		},
+		{
+			"name": "Docs",
+			"path": "docs"
+		},
+		{
+			"name": "Release build",
+			"path": "build"
+		},
+		{
+			"name": "Extensions (release)",
+			"path": "extensions"
+		}
+	],
+	"settings": {
+		"files.exclude": {
+			"**/.DS_Store": true,
+			"**/node_modules": true
+		},
+		"search.exclude": {
+			"**/node_modules": true,
+			"ide/out/**": true,
+			"ide/out-build/**": true,
+			"agent/**/dist/**": true
+		},
+		"eslint.workingDirectories": [
+			{ "directory": "agent", "changeProcessCWD": true },
+			{ "directory": "ide", "changeProcessCWD": true }
+		]
+	},
+	"extensions": {
+		"recommendations": [
+			"dbaeumer.vscode-eslint",
+			"oxc.oxc-vscode",
+			"oven.bun-vscode",
+			"rust-lang.rust-analyzer",
+			"vadimcn.vscode-lldb"
+		]
+	},
+	"launch": {
+		"version": "0.2.0",
+		"configurations": [],
+		"compounds": []
+	}
+}

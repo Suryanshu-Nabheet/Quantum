@@ -1,0 +1,89 @@
+# .cursorignore — Cursor index & agent file access ONLY (not git).
+# Commits are controlled by .gitignore. Do not list team config here.
+#
+# Quantum monorepo: keep .vscode/, .cursor/, AGENTS.md, and build/ (release) visible.
+
+# --- Dependencies ---
+node_modules/
+.pnpm-store/
+.bun/
+
+# --- Secrets (never index) ---
+.env
+.env.*
+!.env.example
+
+# --- Logs & cache ---
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.cache/
+.eslintcache
+
+# --- Build & compile outputs (not source trees named "build") ---
+dist/
+out/
+out-build/
+out-vscode/
+.astro/
+.turbo/
+.next/
+*.tsbuildinfo
+*.egg-info/
+
+# IDE daily dev compile output
+ide/out/
+ide/out-build/
+ide/out-vscode/
+ide/.build/
+ide/.vscode-test/
+ide/cli/target/
+
+# Agent Manager outputs
+agent/**/dist/
+
+# Release build outputs (under build/ — do NOT ignore build/ itself)
+build/**/node_modules/
+build/**/out/
+build/**/dist/
+
+# Extensions compile output
+extensions/**/dist/
+extensions/**/out/
+
+# --- Test & coverage ---
+coverage/
+.nyc_output/
+htmlcov/
+.coverage
+
+# --- OS & editor swap ---
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# --- Python (docs / tooling) ---
+.venv/
+venv/
+env/
+ENV/
+__pycache__/
+*.pyc
+
+# --- Local JetBrains user state (shared .idea run configs stay visible) ---
+.idea/shelf/
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/usage.statistics.xml
+.idea/httpRequests/
+.idea/dataSources/
+.idea/dataSources.local.xml
+
+# --- Heavy generated / vendor blobs (IDE repo) ---
+ide/src/vs/base/test/common/filters.perf.data.js
+ide/src/vs/base/test/node/uri.perf.data.txt
+ide/src/vs/base/test/node/uri.test.data.txt
+ide/src/vs/editor/test/node/diffing/fixtures/**

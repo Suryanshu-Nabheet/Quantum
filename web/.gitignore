@@ -1,0 +1,10 @@
+# Future Quantum marketing site — keep artifacts local
+node_modules/
+dist/
+.next/
+.astro/
+.turbo/
+.cache/
+.env
+.env.*
+!.env.example

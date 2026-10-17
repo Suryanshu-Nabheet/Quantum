@@ -56,7 +56,8 @@ Recommended: install [nvm](https://github.com/nvm-sh/nvm) or [fnm](https://githu
 ## Verification
 
 ```bash
-./scripts/verify.sh              # Build artifacts present
+./scripts/verify.sh              # Repo config + build artifacts
+./scripts/verify-repo-config.sh  # Editor/git policy only (fast)
 ./scripts/e2e.sh                 # Full E2E smoke suite (recommended)
 ./scripts/e2e.sh --only agent
 ./scripts/verify.sh --skip-ide
@@ -64,6 +65,7 @@ Recommended: install [nvm](https://github.com/nvm-sh/nvm) or [fnm](https://githu
 
 Checks:
 
+- **Repository config** — required root paths exist and are committable ([`verify-repo-config.sh`](verify-repo-config.sh); see [docs/version-control.md](../docs/version-control.md))
 - **Agent** — workspace install, contracts/server/web/desktop build outputs (`agent/scripts/verify.sh`)
 - **IDE** — delegates to `ide/scripts/verify-dev.sh`
 

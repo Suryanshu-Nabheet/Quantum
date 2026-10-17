@@ -1,0 +1,17 @@
+{
+	"recommendations": [
+		"editorconfig.editorconfig",
+		"dbaeumer.vscode-eslint",
+		"oxc.oxc-vscode",
+		"oven.bun-vscode",
+		"rust-lang.rust-analyzer",
+		"vadimcn.vscode-lldb",
+		"github.vscode-pull-request-github",
+		"ms-vscode.extension-test-runner",
+		"connor4312.esbuild-problem-matchers",
+		"typescriptteam.native-preview"
+	],
+	"unwantedRecommendations": [
+		"ms-vscode.vscode-typescript-next"
+	]
+}

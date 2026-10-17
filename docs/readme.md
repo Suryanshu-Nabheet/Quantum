@@ -65,7 +65,9 @@ quantum/
 ├── extensions/  # Quantum built-in extensions (for release build)
 ├── ide/         # Quantum IDE editor core and workbench extensions
 ├── scripts/     # Monorepo setup (./scripts/setup.sh) and verification
+├── web/         # Public website (in progress)
 ├── LICENCE      # MIT License
 ├── CONTRIBUTING.md # Contribution policies
+├── docs/version-control.md # What to commit; editor / Cursor / JetBrains policy
 └── SECURITY.md  # Security vulnerability reporting standards
 ```

@@ -1,0 +1,22 @@
+# Quantum monorepo — line endings and binary detection
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.pdf binary
+*.zip binary
+*.gz binary
+
+*.sh text eol=lf
+*.bat text eol=crlf
+
+bun.lock text eol=lf
+package-lock.json text eol=lf
