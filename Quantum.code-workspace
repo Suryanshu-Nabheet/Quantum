@@ -26,6 +26,13 @@
 		}
 	],
 	"settings": {
+		"json.schemaDownload.enable": false,
+		"json.schemas": [
+			{
+				"fileMatch": ["**/tsconfig.json", "**/tsconfig.*.json"],
+				"url": "./ide/extensions/typescript-language-features/schemas/tsconfig.schema.json"
+			}
+		],
 		"files.exclude": {
 			"**/.DS_Store": true,
 			"**/node_modules": true

@@ -1,7 +1,12 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { AssistantChatMessage, ModelDescription, PromptLog } from "core";
-import { serializeTool, type Tool } from "core/tools";
+import type {
+	AssistantChatMessage,
+	ModelDescription,
+	PromptLog,
+	Tool,
+} from "core";
+import { serializeTool } from "core/tools";
 import { grepSearchTool } from "core/tools/definitions";
 import { vi } from "vitest";
 import type { RootState } from "../redux/store";
@@ -105,9 +110,9 @@ function turn(
 	})();
 }
 
-function countToolCalls(
-	requestSpy: ReturnType<typeof vi.spyOn>,
-): Record<string, number> {
+function countToolCalls(requestSpy: {
+	mock: { calls: ReadonlyArray<readonly unknown[]> };
+}): Record<string, number> {
 	const counts: Record<string, number> = {};
 	for (const call of requestSpy.mock.calls) {
 		if (call[0] !== "tools/call") {

@@ -3,7 +3,11 @@ import { renderChatMessage } from "core/util/messageContent";
 import { v4 as uuidv4 } from "uuid";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { addToolCallDeltaToState } from "../../util/toolCallState";
-import { ChatHistoryItemWithMessageId, sessionSlice } from "./sessionSlice";
+import {
+  ChatHistoryItemWithMessageId,
+  INITIAL_SESSION_STATE,
+  sessionSlice,
+} from "./sessionSlice";
 
 // Mock dependencies
 vi.mock("uuid");
@@ -50,8 +54,12 @@ describe("sessionSlice streamUpdate", () => {
   });
 
   const createInitialState = () => ({
-    lastSessionId: undefined,
-    allSessionMetadata: [],
+    ...INITIAL_SESSION_STATE,
+    isSessionMetadataLoading: false,
+    title: "Test Session",
+    id: "test-session-id",
+    mode: "chat" as const,
+    streamAborter: new AbortController(),
     history: [
       {
         message: {
@@ -62,21 +70,6 @@ describe("sessionSlice streamUpdate", () => {
         contextItems: [],
       },
     ] as ChatHistoryItemWithMessageId[],
-    isStreaming: false,
-    title: "Test Session",
-    id: "test-session-id",
-    streamAborter: new AbortController(),
-    symbols: {},
-    mode: "chat" as const,
-    isInEdit: false,
-    codeBlockApplyStates: {
-      states: [],
-      curIndex: 0,
-    },
-    newestToolbarPreviewForInput: {},
-    isSessionMetadataLoading: false,
-    compactionLoading: {},
-    agentStepDepth: 0,
   });
 
   describe("Basic Chat Message", () => {

@@ -60,6 +60,7 @@ const DEFAULT_MOCK_CORE_RESPONSES: MockResponses = {
     },
   },
   "chatDescriber/describe": "Session summary",
+  notifyAgentBrowserSubmit: undefined,
   applyToFile: undefined,
   acceptDiff: undefined,
   readFile: "File contents",

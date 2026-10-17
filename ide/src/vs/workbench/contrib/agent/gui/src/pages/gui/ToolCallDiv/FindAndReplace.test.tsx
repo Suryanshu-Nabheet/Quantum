@@ -74,6 +74,11 @@ describe("FindAndReplaceDisplay", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
+    mockExecuteFindAndReplace.mockImplementation(
+      (content: string, oldString: string, newString: string) =>
+        content.replace(oldString, newString),
+    );
+
     mockUseAppSelector.mockImplementation((selector: any) => {
       const mockState = {
         config: { config: mockConfig },
@@ -193,14 +198,10 @@ describe("FindAndReplaceDisplay", () => {
       const toggleButton = screen.getByTestId("toggle-find-and-replace-diff");
       fireEvent.click(toggleButton);
 
-      // Should show removed line
-      expect(screen.getByText("const old = 'value';")).toBeInTheDocument();
-
-      // Should show added line
-      expect(screen.getByText("const new = 'value';")).toBeInTheDocument();
-
-      // Should show unchanged line
-      expect(screen.getByText("const other = 'test';")).toBeInTheDocument();
+      const pre = document.querySelector("pre");
+      expect(pre?.textContent).toContain("const old = 'value';");
+      expect(pre?.textContent).toContain("const new = 'value';");
+      expect(pre?.textContent).toContain("const other = 'test';");
     });
 
     it("should handle multiple edits", () => {

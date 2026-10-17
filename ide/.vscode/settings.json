@@ -212,5 +212,14 @@
 		".github/skills/.local": true,
 		".agents/skills/.local": true,
 		".claude/skills/.local": true,
-	}
+	},
+	"typescript.tsdk": "src/vs/workbench/contrib/agent/gui/node_modules/typescript/lib",
+	"typescript.enablePromptUseWorkspaceTsdk": true,
+	"json.schemaDownload.enable": false,
+	"json.schemas": [
+		{
+			"fileMatch": ["**/tsconfig.json", "**/tsconfig.*.json"],
+			"url": "./extensions/typescript-language-features/schemas/tsconfig.schema.json"
+		}
+	]
 }

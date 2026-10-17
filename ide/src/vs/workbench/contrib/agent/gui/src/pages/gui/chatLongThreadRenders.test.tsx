@@ -73,9 +73,7 @@ describe("Chat long-thread render cost", () => {
     timelineRenders.count = 0;
     await act(async () => {
       store.dispatch(
-        streamUpdate([
-          { role: "assistant", content: "streamed chunk one", id: "a-tail" },
-        ]),
+        streamUpdate([{ role: "assistant", content: "streamed chunk one" }]),
       );
     });
     const perChunk = timelineRenders.count;

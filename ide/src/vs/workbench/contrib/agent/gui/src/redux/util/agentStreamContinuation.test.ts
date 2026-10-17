@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { AppDispatch } from "../store";
 import { ensureAgentTurnInactive } from "./agentStreamContinuation";
 
 describe("ensureAgentTurnInactive", () => {
@@ -7,7 +8,7 @@ describe("ensureAgentTurnInactive", () => {
     const dispatch = (action: { type: string }) => {
       calls.push(action.type);
     };
-    ensureAgentTurnInactive(dispatch, () => ({
+    ensureAgentTurnInactive(dispatch as AppDispatch, () => ({
       session: { isStreaming: true },
     } as any));
     expect(calls).toContain("session/setInactive");
@@ -15,7 +16,7 @@ describe("ensureAgentTurnInactive", () => {
 
   it("no-ops when already inactive", () => {
     const calls: string[] = [];
-    ensureAgentTurnInactive(() => {}, () => ({
+    ensureAgentTurnInactive((() => {}) as AppDispatch, () => ({
       session: { isStreaming: false },
     } as any));
     expect(calls).toHaveLength(0);

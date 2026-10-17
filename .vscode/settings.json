@@ -45,6 +45,23 @@
 	},
 	"typescript.preferences.importModuleSpecifier": "relative",
 	"typescript.tsdk": "agent/node_modules/typescript/lib",
+	"json.schemaDownload.enable": false,
+	"json.schemas": [
+		{
+			"fileMatch": [
+				"ide/**/tsconfig.json",
+				"ide/**/tsconfig.*.json"
+			],
+			"url": "ide/extensions/typescript-language-features/schemas/tsconfig.schema.json"
+		},
+		{
+			"fileMatch": [
+				"agent/**/tsconfig.json",
+				"agent/**/tsconfig.*.json"
+			],
+			"url": "ide/extensions/typescript-language-features/schemas/tsconfig.schema.json"
+		}
+	],
 	"eslint.workingDirectories": [
 		{ "directory": "agent", "changeProcessCWD": true },
 		{ "directory": "ide", "changeProcessCWD": true }

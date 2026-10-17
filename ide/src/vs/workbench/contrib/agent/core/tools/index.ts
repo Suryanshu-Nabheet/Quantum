@@ -1,4 +1,6 @@
 import { ConfigDependentToolParams, Tool } from "..";
+
+export type { Tool };
 import { isRecommendedAgentModel } from "../llm/toolSupport";
 import * as toolDefinitions from "./definitions";
 

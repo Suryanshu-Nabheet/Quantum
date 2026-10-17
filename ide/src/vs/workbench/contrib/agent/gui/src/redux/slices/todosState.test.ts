@@ -1,3 +1,4 @@
+import type { TodoItem } from "core";
 import { describe, expect, it } from "vitest";
 import sessionReducer, {
   INITIAL_SESSION_STATE,
@@ -85,7 +86,7 @@ describe("session todos state", () => {
     );
     source[0].status = "done";
     state = sessionReducer(state, completeOpenTodos());
-    expect(state.todos.map((item) => item.status)).toEqual(["done"]);
+    expect(state.todos.map((item: TodoItem) => item.status)).toEqual(["done"]);
     expect(state.history[0].toolCallStates?.[0].todosSnapshot).toEqual([
       todo("a", "in_progress"),
     ]);
