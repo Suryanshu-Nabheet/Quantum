@@ -18,6 +18,14 @@
 			"problemMatcher": []
 		},
 		{
+			"label": "Agent: eval regression",
+			"type": "shell",
+			"command": "bun run eval",
+			"options": { "cwd": "${workspaceFolder}/eval" },
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
 			"label": "Quantum: E2E smoke",
 			"type": "shell",
 			"command": "./scripts/e2e.sh",

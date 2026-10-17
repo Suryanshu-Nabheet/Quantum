@@ -1,0 +1,8 @@
+{
+  "id": "workspace-counter-ok",
+  "description": "Fixture workspace tests pass (verify pipeline for future live eval)",
+  "kind": "fixture",
+  "verify": {
+    "command": ["bun", "test"]
+  }
+}

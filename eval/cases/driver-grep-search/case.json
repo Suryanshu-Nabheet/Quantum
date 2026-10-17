@@ -1,0 +1,7 @@
+{
+  "id": "driver-grep-search",
+  "description": "Agent driver issues grep_search then completes",
+  "kind": "harness",
+  "prompt": "Search the repo for TODO markers",
+  "expect_tools": [{ "name": "grep_search", "min_calls": 1, "max_calls": 2 }]
+}

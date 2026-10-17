@@ -16,6 +16,7 @@ From the repo root:
 ```bash
 ./scripts/setup.sh    # Install + build Agent Manager and IDE
 ./scripts/verify.sh   # Confirm both products are ready
+cd eval && bun run eval   # Workbench Agent harness + fixture regression
 ```
 
 See [scripts/README.md](scripts/README.md) and [CONTRIBUTING.md](CONTRIBUTING.md).

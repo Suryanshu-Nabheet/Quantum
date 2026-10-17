@@ -1,0 +1,13 @@
+{
+  "name": "@quantum/eval",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Workbench Agent regression benchmarks (harness + fixtures)",
+  "license": "MIT",
+  "scripts": {
+    "eval": "bash scripts/run.sh",
+    "eval:harness": "bash scripts/run.sh --lane harness",
+    "eval:fixture": "bash scripts/run.sh --lane fixture"
+  }
+}

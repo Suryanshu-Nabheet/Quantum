@@ -64,6 +64,8 @@ quantum/
 │   ├── extensions/        # Built-in developer extensions
 │   └── build/             # Microsoft gulp toolchain (daily dev compile)
 │
+├── eval/                  # Workbench Agent regression (cd eval && bun run eval)
+│
 ├── scripts/               # Monorepo setup and verification (./scripts/setup.sh)
 │
 ├── LICENCE                # MIT License
@@ -101,6 +103,7 @@ One command sets up both products (Agent Manager + IDE):
 # Verify after setup
 ./scripts/verify.sh
 ./scripts/e2e.sh
+cd eval && bun run eval    # Agent prompt/driver regression (no API keys)
 
 # Launch individual products
 cd agent && bun run dev        # Agent Manager

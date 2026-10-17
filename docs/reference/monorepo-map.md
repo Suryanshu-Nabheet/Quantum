@@ -9,6 +9,7 @@ Quick reference for top-level directories in [Suryanshu-Nabheet/Quantum](https:/
 | [`build/`](../../build/) | Source yes | Release packaging from upstream VS Code |
 | [`docs/`](../../docs/) | Yes | Documentation hub (this tree) |
 | [`scripts/`](../../scripts/) | Yes | `setup.sh`, `verify.sh`, `e2e.sh`, `verify-repo-config.sh` |
+| [`eval/`](../../eval/) | Yes | Workbench Agent regression (`cd eval && bun run eval`) |
 | [`web/`](../../web/) | Source yes | Public website (scaffold) |
 | [`.vscode/`](../../.vscode/) | Partial | Root workspace tasks/settings (whitelist) |
 | [`.cursor/`](../../.cursor/) | Partial | Cursor rules + `mcp.json` |

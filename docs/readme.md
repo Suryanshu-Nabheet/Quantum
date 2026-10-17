@@ -58,6 +58,7 @@ quantum/
 ├── ide/            # Quantum IDE (VS Code fork + contrib/agent)
 ├── build/          # Release packaging (upstream VS Code → Quantum binaries)
 ├── docs/           # This documentation hub
+├── eval/           # Workbench Agent regression (bun run eval)
 ├── scripts/        # ./scripts/setup.sh, verify.sh, e2e.sh
 └── web/            # Public website (in progress)
 ```

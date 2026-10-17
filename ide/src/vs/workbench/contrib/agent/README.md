@@ -162,6 +162,7 @@ npm run tsc:check
 npm test
 npm run build:agent
 npm run verify   # full matrix (core, gui, packages)
+npm run eval:harness   # monorepo eval cases (or: cd ../../../../../eval && bun run eval)
 ```
 
 Known test baselines (do not increase failure count): core — 1 failure in `runTerminalCommand.vitest.ts`; gui — 14 failures in `streamResponse*.test.ts`.

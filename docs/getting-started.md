@@ -31,11 +31,12 @@ This installs and builds **Agent Manager**, then compiles **IDE** (longest step 
 ```bash
 ./scripts/verify.sh              # Repo config + product artifacts
 ./scripts/verify-repo-config.sh  # Editor/git policy only (fast)
+cd eval && bun run eval          # Workbench Agent regression (harness, no API keys)
 ```
 
 ## Open the workspace
 
-In VS Code or Cursor, open **[`Quantum.code-workspace`](../Quantum.code-workspace)** (multi-root: root, `agent/`, `ide/`, `docs/`, `build/`).
+In VS Code or Cursor, open **[`Quantum.code-workspace`](../Quantum.code-workspace)** (multi-root: root, `agent/`, `ide/`, `docs/`, `build/`, `eval/`).
 
 ## Run the products
 

@@ -1,0 +1,31 @@
+{
+  "compileChat": {
+    "compiledChatMessages": [{ "role": "user", "content": "Search the repo for TODO markers" }],
+    "didPrune": false,
+    "contextPercentage": 0.4
+  },
+  "turns": [
+    {
+      "chunks": [
+        [
+          {
+            "role": "assistant",
+            "content": "",
+            "toolCalls": [
+              {
+                "id": "tool-1",
+                "type": "function",
+                "function": { "name": "grep_search", "arguments": "{\"query\":\"TODO\"}" }
+              }
+            ]
+          }
+        ]
+      ],
+      "completion": ""
+    },
+    {
+      "chunks": [[{ "role": "assistant", "content": "Found 3 TODO comments." }]],
+      "completion": "Found 3 TODO comments."
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "turns": [
+    {
+      "chunks": [[{ "role": "assistant", "content": "Hello — ready to help with your code." }]],
+      "completion": "Hello — ready to help with your code."
+    }
+  ]
+}

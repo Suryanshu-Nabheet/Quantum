@@ -61,6 +61,7 @@ Recommended: install [nvm](https://github.com/nvm-sh/nvm) or [fnm](https://githu
 ./scripts/e2e.sh                 # Full E2E smoke suite (recommended)
 ./scripts/e2e.sh --only agent
 ./scripts/verify.sh --skip-ide
+cd eval && bun run eval          # Workbench Agent harness + fixtures (no API keys)
 ```
 
 Checks:

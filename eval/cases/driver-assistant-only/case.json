@@ -1,0 +1,7 @@
+{
+  "id": "driver-assistant-only",
+  "description": "Single-turn assistant reply with no tools",
+  "kind": "harness",
+  "prompt": "Say hello in one short sentence.",
+  "expect_tools": []
+}

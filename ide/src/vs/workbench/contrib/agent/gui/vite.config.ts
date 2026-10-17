@@ -101,6 +101,7 @@ export default defineConfig({
     globals: true,
     environment: "jsdom",
     setupFiles: "./src/util/test/setupTests.ts",
+    include: ["src/**/*.{test,spec}.?(c|m)[jt]s?(x)"],
     onConsoleLog(log, type) {
       if (type === "stderr") {
         if (
