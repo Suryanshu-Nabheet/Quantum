@@ -1,5 +1,5 @@
 {
-  "name": "@quantum/monorepo",
+  "name": "@quantum/agent",
   "version": "0.0.1",
   "private": true,
   "description": "Quantum Agent Manager — parallel agents, one workspace.",

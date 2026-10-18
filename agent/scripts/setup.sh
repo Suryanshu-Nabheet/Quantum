@@ -81,8 +81,8 @@ ensure_bun() {
 
 ensure_repo() {
 	[[ -f "$ROOT/package.json" ]] || die "Run from the Quantum Agent Manager repository."
-	grep -q '"@quantum/monorepo"' "$ROOT/package.json" 2>/dev/null || \
-		die "Expected @quantum/monorepo in agent/package.json."
+	grep -q '"@quantum/agent"' "$ROOT/package.json" 2>/dev/null || \
+		die "Expected @quantum/agent in agent/package.json."
 }
 
 main() {
