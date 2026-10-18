@@ -17,9 +17,13 @@ Thank you for your interest in contributing to the Quantum ecosystem.
 From the monorepo root:
 
 ```bash
+npm ci                      # Root Turbo orchestration (committed lockfile)
 ./scripts/setup.sh          # Install + build Agent Manager and IDE
 ./scripts/verify.sh         # Repo config + product verification
+npm run eval                # Workbench Agent regression (optional)
 ```
+
+Orchestration model: [docs/architecture/monorepo-orchestration.md](docs/architecture/monorepo-orchestration.md).
 
 Per-product setup: `agent/scripts/`, `ide/scripts/`. See [scripts/README.md](scripts/README.md).
 

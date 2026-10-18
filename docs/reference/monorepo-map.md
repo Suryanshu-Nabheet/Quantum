@@ -4,12 +4,16 @@ Quick reference for top-level directories in [Suryanshu-Nabheet/Quantum](https:/
 
 | Path | Commit? | Purpose |
 | --- | --- | --- |
+| [`package.json`](../package.json) | Yes | Root orchestration (`@quantum/root`), Turbo, `npm run` entrypoints |
+| [`turbo.json`](../turbo.json) | Yes | Task graph for `eval/` |
+| [`mise.toml`](../mise.toml) | Yes | Canonical Bun / Node 24 pins |
+| [`scripts/monorepo-doctor.sh`](../../scripts/monorepo-doctor.sh) | Yes | Layout, lockfiles, install state, git scale |
 | [`agent/`](../../agent/) | Source yes | Agent Manager — Bun monorepo (server, web, desktop) |
 | [`ide/`](../../ide/) | Source yes | Quantum IDE — VS Code fork + workbench agent |
 | [`build/`](../../build/) | Source yes | Release packaging from upstream VS Code |
 | [`docs/`](../../docs/) | Yes | Documentation hub (this tree) |
 | [`scripts/`](../../scripts/) | Yes | `setup.sh`, `verify.sh`, `e2e.sh`, `verify-repo-config.sh` |
-| [`eval/`](../../eval/) | Yes | Workbench Agent regression (`cd eval && bun run eval`) |
+| [`eval/`](../../eval/) | Yes | Workbench Agent regression (`npm run eval` from root) |
 | [`web/`](../../web/) | Source yes | Public website (scaffold) |
 | [`.vscode/`](../../.vscode/) | Partial | Root workspace tasks/settings (whitelist) |
 | [`.cursor/`](../../.cursor/) | Partial | Cursor rules + `mcp.json` |

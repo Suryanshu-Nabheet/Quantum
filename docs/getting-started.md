@@ -12,15 +12,18 @@ One monorepo, two products. This guide gets you from clone to a running IDE and 
 | Python | — | 3.10–3.13 (3.11 recommended on macOS) |
 | C/C++ toolchain | — | Xcode CLT / build-essential / VS Build Tools |
 
-Use [nvm](https://github.com/nvm-sh/nvm) or [fnm](https://github.com/Schniz/fnm) for Node. See [`scripts/README.md`](../scripts/README.md) for troubleshooting.
+Use [nvm](https://github.com/nvm-sh/nvm) or [fnm](https://github.com/Schniz/fnm) for IDE Node, and [mise](https://mise.jdx.dev) for Bun + Agent Node (see root [`mise.toml`](../mise.toml)). See [`scripts/README.md`](../scripts/README.md) for troubleshooting.
 
 ## Clone and setup
 
 ```bash
 git clone https://github.com/Suryanshu-Nabheet/Quantum.git
 cd Quantum
+npm ci                # root orchestration (Turbo) — optional before setup; setup installs if missing
 ./scripts/setup.sh
 ```
+
+Equivalent: `npm run setup` after `npm ci`.
 
 Windows: `scripts\setup.bat`
 
@@ -31,7 +34,7 @@ This installs and builds **Agent Manager**, then compiles **IDE** (longest step 
 ```bash
 ./scripts/verify.sh              # Repo config + product artifacts
 ./scripts/verify-repo-config.sh  # Editor/git policy only (fast)
-cd eval && bun run eval          # Workbench Agent regression (harness, no API keys)
+npm run eval                     # Workbench Agent regression (harness, no API keys)
 ```
 
 ## Open the workspace

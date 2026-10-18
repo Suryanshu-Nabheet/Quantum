@@ -28,6 +28,9 @@ If something “won’t commit”, check `git check-ignore -v <path>`. A global 
 | [`.vscode/launch.json`](../.vscode/launch.json) | Shared launch configs |
 | [`.vscode/extensions.json`](../.vscode/extensions.json) | Recommended extensions |
 | [`.idea/`](../.idea/) (whitelisted files) | JetBrains modules, code style, run configs |
+| [`package.json`](../package.json), [`package-lock.json`](../package-lock.json) | Root orchestration (Turbo); not product deps |
+| [`turbo.json`](../turbo.json), [`mise.toml`](../mise.toml), [`.npmrc`](../.npmrc) | Task graph and toolchain pins |
+| [`scripts/monorepo-doctor.sh`](../scripts/monorepo-doctor.sh) | Monorepo health check |
 | [`scripts/`](../scripts/) | Setup, verify, E2E |
 | [`agent/`](../agent/), [`ide/`](../ide/), [`build/`](../build/), [`docs/`](../docs/) | Product and release sources |
 

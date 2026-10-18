@@ -55,8 +55,10 @@ esac
 
 print_setup_banner "$ROOT"
 ensure_repo_layout "$ROOT"
+ensure_mise_toolchain "$ROOT"
 ensure_bun
 ensure_node_min "$QUANTUM_NODE_MIN_MAJOR"
+ensure_root_orchestration "$ROOT"
 
 FAILED=0
 
@@ -70,6 +72,11 @@ verify_repo_config() {
 }
 
 verify_repo_config
+
+if [[ -f "${ROOT}/scripts/monorepo-doctor.sh" ]]; then
+	log_step "Monorepo doctor"
+	bash "${ROOT}/scripts/monorepo-doctor.sh" && log_ok "Monorepo doctor passed" || FAILED=1
+fi
 
 verify_agent() {
 	log_step "Verifying Quantum Agent Manager"

@@ -6,8 +6,10 @@ Production-grade setup and verification for both Quantum products.
 
 | Platform | Command |
 |----------|---------|
-| macOS / Linux | `./scripts/setup.sh` |
-| Windows | `scripts\setup.bat` |
+| macOS / Linux | `npm ci && ./scripts/setup.sh` |
+| Windows | `npm ci` then `scripts\setup.bat` |
+
+Root `npm ci` installs **Turbo only** (`@quantum/root`; workspace: `eval`). Product deps still install inside `agent/` (Bun) and `ide/` (npm). See [docs/architecture/monorepo-orchestration.md](../docs/architecture/monorepo-orchestration.md).
 
 Full setup installs dependencies and builds **Agent Manager → IDE**. The IDE compile step is the longest; expect several minutes on first run.
 
@@ -22,7 +24,7 @@ Full setup installs dependencies and builds **Agent Manager → IDE**. The IDE c
 
 The root setup detects Homebrew's versioned Node formula and can load nvm or fnm from a non-interactive shell. It selects the Agent Manager's pinned Node version when a manager is available and Node is missing or too old. The IDE setup then selects its own pinned version from `ide/.nvmrc`.
 
-Recommended: install [nvm](https://github.com/nvm-sh/nvm) or [fnm](https://github.com/Schniz/fnm) for IDE Node version management, and [mise](https://mise.jdx.dev) for Agent Manager (`agent/.mise.toml`).
+Recommended: [mise](https://mise.jdx.dev) at the repo root (`mise.toml` — Bun + Node 24), plus [nvm](https://github.com/nvm-sh/nvm) or [fnm](https://github.com/Schniz/fnm) for IDE Node **22.22.1** (`ide/.nvmrc`).
 
 ## Setup options
 
@@ -61,7 +63,7 @@ Recommended: install [nvm](https://github.com/nvm-sh/nvm) or [fnm](https://githu
 ./scripts/e2e.sh                 # Full E2E smoke suite (recommended)
 ./scripts/e2e.sh --only agent
 ./scripts/verify.sh --skip-ide
-cd eval && bun run eval          # Workbench Agent harness + fixtures (no API keys)
+npm run eval                     # Workbench Agent harness + fixtures (no API keys)
 ```
 
 Checks:

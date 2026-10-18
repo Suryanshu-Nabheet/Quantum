@@ -1,0 +1,23 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "tui",
+  "globalDependencies": [
+    ".mise.toml",
+    "mise.toml",
+    "scripts/**/*.sh",
+    "ide/.nvmrc",
+    "agent/package.json",
+    "agent/bun.lock"
+  ],
+  "tasks": {
+    "eval": {
+      "cache": false
+    },
+    "eval:harness": {
+      "cache": false
+    },
+    "eval:fixture": {
+      "cache": false
+    }
+  }
+}

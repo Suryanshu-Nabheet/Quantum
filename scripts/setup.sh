@@ -49,8 +49,10 @@ done
 
 print_setup_banner "$ROOT"
 ensure_repo_layout "$ROOT"
+ensure_mise_toolchain "$ROOT"
 ensure_bun
 ensure_node_min "$QUANTUM_NODE_MIN_MAJOR"
+ensure_root_orchestration "$ROOT"
 
 if [[ "$SKIP_AGENT" -eq 0 ]]; then
 	run_subsystem_setup "Quantum Agent Manager" "${ROOT}/agent" "scripts/setup.sh"

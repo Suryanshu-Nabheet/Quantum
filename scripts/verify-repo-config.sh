@@ -13,6 +13,12 @@ cd "$ROOT"
 
 REQUIRED_PATHS=(
 	AGENTS.md
+	package.json
+	package-lock.json
+	turbo.json
+	mise.toml
+	.npmrc
+	scripts/monorepo-doctor.sh
 	Quantum.code-workspace
 	.editorconfig
 	.gitattributes

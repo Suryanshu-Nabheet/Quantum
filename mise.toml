@@ -1,0 +1,12 @@
+# Canonical toolchain pins for the Quantum monorepo.
+# Agent Manager uses node + bun from this file when you run `mise install` at the repo root.
+# Quantum IDE still requires Node 22.22.1 from ide/.nvmrc during ide/scripts/setup.sh (VS Code upstream).
+
+[tools]
+node = "24.13.1"
+bun = "1.3.12"
+
+[env]
+QUANTUM_IDE_NODE_VERSION = "22.22.1"
+QUANTUM_AGENT_NODE_VERSION = "24.13.1"
+QUANTUM_BUN_MIN_VERSION = "1.3.9"

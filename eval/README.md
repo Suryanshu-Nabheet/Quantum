@@ -1,17 +1,26 @@
-# Agent eval
+ # Agent eval
 
 Regression checks for the **Workbench Agent** (`ide/src/vs/workbench/contrib/agent`).
 
 ## Run
 
+From the **repository root** (recommended):
+
 ```bash
-cd eval
-bun run eval              # harness + fixture cases
-bun run eval:harness      # mock LLM driver only
-bun run eval:fixture      # workspace verify only
+npm run eval              # harness + fixture cases (turbo)
+npm run eval:harness
+npm run eval:fixture
 ```
 
-Requires **Bun**. First run builds agent packages via `eval/scripts/prereq.sh` (same deps as GUI tests).
+Or from this directory:
+
+```bash
+bun run eval
+bun run eval:harness
+bun run eval:fixture
+```
+
+First run builds agent packages via `eval/scripts/prereq.sh` (same deps as GUI tests). Harness scripts use **Bun** where needed; root entrypoints use **Turbo**.
 
 ## Lanes
 

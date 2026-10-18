@@ -14,10 +14,14 @@ This repository contains two products. Use the product-specific guide for implem
 From the repo root:
 
 ```bash
+npm ci                # Root Turbo orchestration (small; commit package-lock.json)
 ./scripts/setup.sh    # Install + build Agent Manager and IDE
 ./scripts/verify.sh   # Confirm both products are ready
-cd eval && bun run eval   # Workbench Agent harness + fixture regression
+npm run eval          # Workbench Agent harness + fixture regression (turbo)
+npm run doctor        # scripts/monorepo-doctor.sh (layout, installs, git scale)
 ```
+
+Orchestration model: [docs/architecture/monorepo-orchestration.md](docs/architecture/monorepo-orchestration.md). **Do not** hoist `ide/` and `agent/` into one package-manager workspace.
 
 See [scripts/README.md](scripts/README.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
 

@@ -25,6 +25,12 @@ Cursor project rules: [`.cursor/rules/quantum-monorepo.mdc`](../.cursor/rules/qu
 | Agent Manager server/UI | [Agent Manager](products/agent-manager.md) |
 | VS Code layering / tsc | [`ide/.github/copilot-instructions.md`](../ide/.github/copilot-instructions.md) |
 
+## Monorepo orchestration (root)
+
+- **Dual install is intentional:** `ide/` = npm, `agent/` = Bun. Do not merge into one workspace `node_modules`.
+- **Root:** `package.json`, `turbo.json`, `mise.toml` — run `./scripts/setup.sh` or `npm run setup` after `npm ci`.
+- Doctor: `scripts/monorepo-doctor.sh` (not product TS). Details: [Monorepo orchestration](architecture/monorepo-orchestration.md).
+
 ## Hard rules (all products)
 
 1. **No secrets in git** — `.env`, API keys, tokens.

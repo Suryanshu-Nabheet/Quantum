@@ -24,6 +24,7 @@ Central documentation for the **Quantum** monorepo: two products (IDE + Agent Ma
 | Topic | Document |
 | --- | --- |
 | Ecosystem topology | [Architecture overview](architecture/overview.md) |
+| Monorepo orchestration (Turbo, mise, dual PM) | [Monorepo orchestration](architecture/monorepo-orchestration.md) |
 | Privacy & local data | [Privacy and data](architecture/privacy-and-data.md) |
 | Model Context Protocol | [MCP](architecture/mcp.md) |
 
@@ -58,7 +59,7 @@ quantum/
 ├── ide/            # Quantum IDE (VS Code fork + contrib/agent)
 ├── build/          # Release packaging (upstream VS Code → Quantum binaries)
 ├── docs/           # This documentation hub
-├── eval/           # Workbench Agent regression (bun run eval)
+├── eval/           # Workbench Agent regression (npm run eval)
 ├── scripts/        # ./scripts/setup.sh, verify.sh, e2e.sh
 └── web/            # Public website (in progress)
 ```

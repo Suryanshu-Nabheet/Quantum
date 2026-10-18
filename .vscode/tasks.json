@@ -18,10 +18,18 @@
 			"problemMatcher": []
 		},
 		{
+			"label": "Quantum: root npm ci (orchestration)",
+			"type": "shell",
+			"command": "npm ci",
+			"options": { "cwd": "${workspaceFolder}" },
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
 			"label": "Agent: eval regression",
 			"type": "shell",
-			"command": "bun run eval",
-			"options": { "cwd": "${workspaceFolder}/eval" },
+			"command": "npm run eval",
+			"options": { "cwd": "${workspaceFolder}" },
 			"group": "test",
 			"problemMatcher": []
 		},

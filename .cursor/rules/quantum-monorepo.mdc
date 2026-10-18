@@ -10,7 +10,7 @@ Two products share this repository:
 - **`agent/`** — Agent Manager (Bun, Effect, React). Follow [agent/AGENTS.md](../../agent/AGENTS.md).
 - **`ide/`** — Quantum IDE (VS Code fork). Follow [ide/AGENTS.md](../../ide/AGENTS.md).
 
-Root setup: `./scripts/setup.sh` and `./scripts/verify.sh` ([scripts/README.md](../../scripts/README.md)).
+Root orchestration: `npm ci` (Turbo), `./scripts/setup.sh`, `./scripts/verify.sh` ([monorepo-orchestration.md](../../docs/architecture/monorepo-orchestration.md)). **Do not** merge `ide/` and `agent/` into one package-manager workspace — IDE stays npm, Agent stays Bun.
 
 Documentation hub: [docs/readme.md](../../docs/readme.md) · agent routing: [docs/for-agents.md](../../docs/for-agents.md).
 

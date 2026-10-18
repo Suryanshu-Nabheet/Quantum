@@ -1,0 +1,40 @@
+{
+  "name": "@quantum/root",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Quantum monorepo orchestration — product installs and builds remain in ide/ (npm) and agent/ (Bun).",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Suryanshu-Nabheet/Quantum.git"
+  },
+  "workspaces": [
+    "eval"
+  ],
+  "scripts": {
+    "setup": "bash scripts/setup.sh",
+    "verify": "bash scripts/verify.sh",
+    "verify:repo": "bash scripts/verify-repo-config.sh",
+    "e2e": "bash scripts/e2e.sh",
+    "mise:install": "mise install",
+    "eval": "turbo run eval",
+    "eval:harness": "turbo run eval:harness",
+    "eval:fixture": "turbo run eval:fixture",
+    "build:agent": "bun run --cwd agent build",
+    "build:agent:desktop": "bun run --cwd agent build:desktop",
+    "dev:agent": "bun run --cwd agent dev",
+    "typecheck:agent": "bun run --cwd agent typecheck",
+    "test:agent": "bun run --cwd agent test",
+    "compile:ide": "npm run compile --prefix ide",
+    "compile:ide:agent": "npm run compile-agent --prefix ide",
+    "doctor": "bash scripts/monorepo-doctor.sh",
+    "doctor:strict": "bash scripts/monorepo-doctor.sh --strict"
+  },
+  "devDependencies": {
+    "turbo": "^2.9.14"
+  },
+  "engines": {
+    "node": ">=22.22.1"
+  },
+  "packageManager": "npm@10.9.2"
+}

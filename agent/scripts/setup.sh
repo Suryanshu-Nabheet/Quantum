@@ -92,10 +92,11 @@ main() {
 
 	echo "Quantum Agent Manager setup (root: $ROOT)"
 
-	if [[ -s "${MISE_DATA_DIR:-$HOME/.local/share/mise}/shims/mise" ]] || command -v mise >/dev/null 2>&1; then
-		if command -v mise >/dev/null 2>&1; then
-			log_step "Toolchain (mise)"
-			# Honor agent/.mise.toml when mise is available.
+	if command -v mise >/dev/null 2>&1; then
+		log_step "Toolchain (mise)"
+		if [[ -f "${ROOT}/../mise.toml" ]]; then
+			( cd "${ROOT}/.." && mise install -y 2>/dev/null || mise install 2>/dev/null || true )
+		else
 			mise install -y 2>/dev/null || mise install 2>/dev/null || true
 		fi
 	fi

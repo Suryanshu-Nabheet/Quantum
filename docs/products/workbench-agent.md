@@ -48,7 +48,7 @@ npm run eval:harness   # replay eval transcripts (see ../../../eval/)
 Monorepo regression suite (harness + fixture cases):
 
 ```bash
-cd eval && bun run eval
+npm run eval   # from repository root (turbo)
 ```
 
 See [eval/README.md](../../../eval/README.md).
