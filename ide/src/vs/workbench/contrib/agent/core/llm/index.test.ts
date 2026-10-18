@@ -1,11 +1,12 @@
 import { ChatMessage, LLMOptions } from "..";
 
 import { allModelProviders } from "llm-info";
-import { LlmInfo } from "llm-info/dist/types";
 import { BaseLLM } from ".";
 import { DEFAULT_CONTEXT_LENGTH } from "./constants";
 import { LLMClasses } from "./llms";
 import { LLMLogger } from "./logger";
+
+type LlmInfo = (typeof allModelProviders)[number]["models"][number];
 
 class DummyLLM extends BaseLLM {
   static providerName = "openai";

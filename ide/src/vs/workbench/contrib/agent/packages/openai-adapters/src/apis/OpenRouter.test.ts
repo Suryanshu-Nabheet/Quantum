@@ -239,6 +239,32 @@ describe("OpenRouterApi Anthropic caching", () => {
       });
     });
 
+    it("leaves user messages untouched when conversation caching is off", () => {
+      const body: ChatCompletionCreateParams = {
+        model: "anthropic/claude-sonnet-4-5",
+        messages: [
+          { role: "system", content: "Stay focused" },
+          { role: "user", content: "Question" },
+        ],
+      };
+
+      applyAnthropicCachingToOpenRouterBody(body, "systemOnly", {
+        cacheConversation: false,
+      });
+
+      expect(body.messages[0]).toEqual({
+        role: "system",
+        content: [
+          {
+            type: "text",
+            text: "Stay focused",
+            cache_control: { type: "ephemeral" },
+          },
+        ],
+      });
+      expect(body.messages[1]).toEqual({ role: "user", content: "Question" });
+    });
+
     it("leaves system untouched when strategy is none while caching users", () => {
       const body: ChatCompletionCreateParams = {
         model: "anthropic/claude-sonnet-4-5",

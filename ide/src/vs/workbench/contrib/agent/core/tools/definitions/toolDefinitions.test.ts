@@ -22,7 +22,7 @@ describe("Tool Definitions", () => {
   };
 
   it("should have all required parameters defined in properties for each tool", async () => {
-    const exportedTools = Object.values(toolDefinitions);
+    const exportedTools = Object.values(toolDefinitions).flat();
 
     for (const toolDefinition of exportedTools) {
       const tool = await getToolObject(toolDefinition);

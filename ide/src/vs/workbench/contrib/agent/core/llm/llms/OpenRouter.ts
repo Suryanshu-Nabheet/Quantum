@@ -38,16 +38,27 @@ class OpenRouter extends OpenAI {
   ): ChatCompletionCreateParams {
     body = super.modifyChatBody(body);
 
-    const shouldCache =
-      this.cacheBehavior?.cacheConversation ||
-      this.cacheBehavior?.cacheSystemMessage ||
-      this.completionOptions.promptCaching;
+    const promptCaching = !!this.completionOptions.promptCaching;
+    const cacheSystemMessage =
+      !!this.cacheBehavior?.cacheSystemMessage || promptCaching;
+    const cacheConversation =
+      !!this.cacheBehavior?.cacheConversation || promptCaching;
 
-    if (!this.isAnthropicModel(body.model) || !shouldCache) {
+    if (
+      !this.isAnthropicModel(body.model) ||
+      (!cacheSystemMessage && !cacheConversation)
+    ) {
       return body;
     }
 
-    applyAnthropicCachingToOpenRouterBody(body, "systemAndTools");
+    const strategy = !cacheSystemMessage
+      ? "none"
+      : cacheConversation
+        ? "systemAndTools"
+        : "systemOnly";
+    applyAnthropicCachingToOpenRouterBody(body, strategy, {
+      cacheConversation,
+    });
     return body;
   }
 }

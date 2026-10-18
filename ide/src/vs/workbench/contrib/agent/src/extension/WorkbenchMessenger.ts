@@ -128,10 +128,11 @@ export class WorkbenchMessenger {
         "workbench.activityBar.orientation",
         "vertical",
       );
+      const activityBarOrientation: "vertical" | "horizontal" =
+        orientation === "horizontal" ? "horizontal" : "vertical";
       return {
         statusBarVisible: config.get<boolean>("workbench.statusBar.visible", true),
-        activityBarOrientation:
-          orientation === "horizontal" ? "horizontal" : "vertical",
+        activityBarOrientation,
       };
     });
 

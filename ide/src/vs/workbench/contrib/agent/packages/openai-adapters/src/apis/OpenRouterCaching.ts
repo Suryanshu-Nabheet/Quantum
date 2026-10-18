@@ -154,6 +154,7 @@ const convertToAnthropic = (
 export const applyAnthropicCachingToOpenRouterBody = (
   body: ChatCompletionCreateParams,
   strategy: CachingStrategyName,
+  { cacheConversation = true }: { cacheConversation?: boolean } = {},
 ): void => {
   const { anthropicBody, systemMappings, messageMappings } =
     convertToAnthropic(body);
@@ -163,7 +164,9 @@ export const applyAnthropicCachingToOpenRouterBody = (
   const cachedBody = cachingStrategy({ ...anthropicBody });
 
   cachedBody.messages = cachedBody.messages ?? [];
-  addCacheControlToLastTwoUserMessages(cachedBody.messages);
+  if (cacheConversation) {
+    addCacheControlToLastTwoUserMessages(cachedBody.messages);
+  }
 
   const cachedSystem = Array.isArray(cachedBody.system)
     ? cachedBody.system

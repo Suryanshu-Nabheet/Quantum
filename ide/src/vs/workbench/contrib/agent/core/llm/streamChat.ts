@@ -49,10 +49,6 @@ export async function* llmStreamChat(
     modelProvider: model?.underlyingProviderName ?? "unknown",
     completion: "",
     prompt: "",
-    completionOptions: {
-      ...msg.data.completionOptions,
-      model: model?.model,
-    },
   };
 
   try {
