@@ -123,7 +123,7 @@ function buildReasoningCompletionOptions(
   return reasoningOptions;
 }
 
-export const streamNormalInput = createAsyncThunk<
+export const streamModelTurn = createAsyncThunk<
   void,
   {
     legacySlashCommandData?: ToCoreProtocol["llm/streamChat"][0]["legacySlashCommandData"];
@@ -131,7 +131,7 @@ export const streamNormalInput = createAsyncThunk<
   },
   ThunkApiType
 >(
-  "chat/streamNormalInput",
+  "chat/streamModelTurn",
   async (
     { legacySlashCommandData, depth = 0 },
     { dispatch, extra, getState },
@@ -352,7 +352,7 @@ export async function runAgentDriver({
 
       let streamOutcome = await runTurnWithOverloadRetry(selectedChatModel, () =>
         withAgentStreamLock(async () =>
-          runStreamNormalInputLocked({
+          runStreamModelTurnLocked({
             legacySlashCommandData,
             depth: currentDepth,
             dispatch,
@@ -463,7 +463,7 @@ export async function runAgentDriver({
   }
 }
 
-async function runStreamNormalInputLocked({
+async function runStreamModelTurnLocked({
   legacySlashCommandData,
   depth,
   dispatch,
@@ -570,7 +570,7 @@ async function runStreamNormalInputLocked({
   dispatch(setActive());
   dispatch(setInlineErrorMessage(undefined));
 
-  const precompiledRes = await extra.ideMessenger.request("llm/compileChat", {
+  const precompiledRes = await extra.hostBridge.request("llm/assembleChat", {
     messages,
     options: completionOptions,
   });
@@ -593,7 +593,7 @@ async function runStreamNormalInputLocked({
 
   const streamAborter = getState().session.streamAborter;
   try {
-    let gen = extra.ideMessenger.llmStreamChat(
+    let gen = extra.hostBridge.llmStreamChat(
       {
         completionOptions,
         title: selectedChatModel.title,
@@ -769,7 +769,7 @@ async function runPostStreamToolPhase({
     return "stop";
   }
   const generatedCalls2 = selectPendingToolCalls(state2);
-  await preprocessToolCalls(dispatch, extra.ideMessenger, generatedCalls2);
+  await preprocessToolCalls(dispatch, extra.hostBridge, generatedCalls2);
 
   // 3. Security check: evaluate updated policies based on args
   const state3 = getState();
@@ -780,7 +780,7 @@ async function runPostStreamToolPhase({
   const toolPolicies = state3.ui.toolSettings;
   const policies = await evaluateToolPolicies(
     dispatch,
-    extra.ideMessenger,
+    extra.hostBridge,
     activeTools,
     generatedCalls3,
     toolPolicies,
@@ -929,7 +929,7 @@ async function runPostStreamToolPhase({
           return "stop";
         }
         // Finalize exactly as the resume thunk did, then let the loop take
-        // the next turn instead of re-entering streamNormalInput recursively.
+        // the next turn instead of re-entering streamModelTurn recursively.
         dispatch(resetNextCodeBlockToApplyIndex());
         if (
           !canResumeAfterToolCall(

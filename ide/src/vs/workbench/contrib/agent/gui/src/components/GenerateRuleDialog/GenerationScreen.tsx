@@ -7,7 +7,7 @@ import { InformationCircleIcon } from "@heroicons/react/24/outline";
 import { CreateRuleBlockArgs } from "core/tools/implementations/createRuleBlock";
 import { useContext, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { IdeMessengerContext } from "../../context/IdeMessenger";
+import { HostBridgeContext } from "../../context/HostBridge";
 import Spinner from "../gui/Spinner";
 import { ToolTip } from "../gui/Tooltip";
 import { Button } from "../ui";
@@ -26,7 +26,7 @@ export function GenerationScreen({
   onSuccess,
   isManualMode = false,
 }: GenerationScreenProps) {
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
 
   const { register, watch, setValue, reset } = useForm<CreateRuleBlockArgs>({
     defaultValues: {
@@ -91,7 +91,7 @@ export function GenerationScreen({
     }
 
     try {
-      ideMessenger.post("config/addRule", {
+      hostBridge.post("config/addRule", {
         name: formData.name,
         content: formData.rule,
         description: formData.description || undefined,

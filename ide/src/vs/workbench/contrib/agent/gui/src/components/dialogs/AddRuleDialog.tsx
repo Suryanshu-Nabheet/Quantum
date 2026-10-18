@@ -3,7 +3,7 @@ import { useContext, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 import { Input, SecondaryButton } from "..";
 import Switch from "../gui/Switch";
-import { IdeMessengerContext } from "../../context/IdeMessenger";
+import { HostBridgeContext } from "../../context/HostBridge";
 import { setDialogMessage, setShowDialog } from "../../redux/slices/uiSlice";
 
 interface ExistingRule {
@@ -40,7 +40,7 @@ function AddRuleDialog({
   existingRule?: ExistingRule;
 }) {
   const dispatch = useDispatch();
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const [name, setName] = useState(existingRule?.name ?? "new-rule");
   const [description, setDescription] = useState(
     existingRule?.description ?? "",
@@ -138,12 +138,12 @@ function AddRuleDialog({
     setIsSubmitting(true);
     try {
       if (existingRule) {
-        ideMessenger.post("config/updateRule", {
+        hostBridge.post("config/updateRule", {
           ruleId: existingRule.ruleId,
           ...payload,
         });
       } else {
-        ideMessenger.post("config/addRule", payload);
+        hostBridge.post("config/addRule", payload);
       }
       closeDialog();
     } catch {

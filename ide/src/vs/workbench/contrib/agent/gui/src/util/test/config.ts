@@ -1,11 +1,11 @@
 import { EnhancedStore } from "@reduxjs/toolkit";
 import { BrowserSerializedAgentConfig, ModelDescription } from "core";
 import { copyOf } from "core/util";
-import { MockIdeMessenger } from "../../context/MockIdeMessenger";
+import { MockHostBridge } from "../../context/MockHostBridge";
 
 interface TestConfigUpdateParams {
   store: EnhancedStore;
-  ideMessenger: MockIdeMessenger;
+  hostBridge: MockHostBridge;
   newProfileId?: string;
   editConfig?: (
     current: BrowserSerializedAgentConfig,
@@ -14,12 +14,12 @@ interface TestConfigUpdateParams {
 
 export function triggerConfigUpdate({
   store,
-  ideMessenger,
+  hostBridge,
   editConfig,
   newProfileId,
 }: TestConfigUpdateParams) {
   const state = store.getState();
-  ideMessenger.mockMessageToWebview("configUpdate", {
+  hostBridge.mockMessageToWebview("configUpdate", {
     profileId: newProfileId ?? (state as any).profiles.selectedProfileId,
     result: {
       config: editConfig
@@ -33,12 +33,12 @@ export function triggerConfigUpdate({
 
 export function addAndSelectChatModel(
   store: EnhancedStore,
-  ideMessenger: MockIdeMessenger,
+  hostBridge: MockHostBridge,
   llmDesc: ModelDescription,
 ) {
   triggerConfigUpdate({
     store,
-    ideMessenger,
+    hostBridge,
     editConfig(current) {
       current.modelsByRole.chat.push(llmDesc);
       current.selectedModelByRole.chat = llmDesc;
@@ -49,9 +49,9 @@ export function addAndSelectChatModel(
 
 export function addAndSelectMockLlm(
   store: EnhancedStore,
-  ideMessenger: MockIdeMessenger,
+  hostBridge: MockHostBridge,
 ) {
-  addAndSelectChatModel(store, ideMessenger, {
+  addAndSelectChatModel(store, hostBridge, {
     model: "mock",
     provider: "mock",
     title: "Mock LLM",

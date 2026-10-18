@@ -3,9 +3,9 @@ import * as os from "node:os";
 import { RangeInFileWithContents } from "core";
 import * as vscode from "vscode";
 
-import { VsCodeIdeUtils } from "./ideUtils";
+import { WorkbenchIdeUtils } from "./ideUtils";
 
-import type { VsCodeWebviewProtocol } from "../webviewProtocol";
+import type { WorkbenchWebviewProtocol } from "../webviewProtocol";
 
 export function getRangeInFileWithContents(
   allowEmpty?: boolean,
@@ -92,7 +92,7 @@ export function getRangeInFileWithContents(
 }
 
 export async function addHighlightedCodeToContext(
-  webviewProtocol: VsCodeWebviewProtocol | undefined,
+  webviewProtocol: WorkbenchWebviewProtocol | undefined,
 ) {
   // When selection is empty, only the highlighted range is added (not the whole file).
   const rangeInFileWithContents = getRangeInFileWithContents(false);
@@ -105,8 +105,8 @@ export async function addHighlightedCodeToContext(
 
 export async function addEntireFileToContext(
   uri: vscode.Uri,
-  webviewProtocol: VsCodeWebviewProtocol | undefined,
-  ideUtils: VsCodeIdeUtils,
+  webviewProtocol: WorkbenchWebviewProtocol | undefined,
+  ideUtils: WorkbenchIdeUtils,
 ) {
   // If a directory, add all files in the directory
   const stat = await ideUtils.stat(uri);

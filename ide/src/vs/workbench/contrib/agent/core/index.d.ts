@@ -95,7 +95,7 @@ export interface ILLM
     options?: LLMFullCompletionOptions,
   ): Promise<ChatMessage>;
 
-  compileChatMessages(
+  assembleChatMessages(
     messages: ChatMessage[],
     options: LLMFullCompletionOpeions,
   ): CompiledChatMessagesReport;

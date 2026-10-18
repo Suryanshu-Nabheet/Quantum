@@ -9,7 +9,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { IdeMessengerContext } from "../../../context/IdeMessenger";
+import { HostBridgeContext } from "../../../context/HostBridge";
 import useUpdatingRef from "../../../hooks/useUpdatingRef";
 import { useAppDispatch, useAppSelector } from "../../../redux/hooks";
 import { selectSelectedChatModel } from "../../../redux/slices/configSlice";
@@ -49,7 +49,7 @@ function TipTapEditorInner(props: TipTapEditorProps) {
   const dispatch = useAppDispatch();
   const mainEditorContext = useMainEditor();
 
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
 
   const defaultModel = useAppSelector(selectSelectedChatModel);
   const isStreaming = useAppSelector((state) => state.session.isStreaming);
@@ -58,7 +58,7 @@ function TipTapEditorInner(props: TipTapEditorProps) {
 
   const { editor, onEnter } = createEditorConfig({
     props,
-    ideMessenger,
+    hostBridge,
     dispatch,
   });
 
@@ -257,7 +257,7 @@ function TipTapEditorInner(props: TipTapEditorProps) {
         if (!file) {
           return;
         }
-        void handleImageFile(ideMessenger, file).then((result) => {
+        void handleImageFile(hostBridge, file).then((result) => {
           if (!editor || !result) {
             return;
           }
@@ -286,7 +286,7 @@ function TipTapEditorInner(props: TipTapEditorProps) {
           onEnter={onEnter}
           onClick={() => editor?.commands.focus()}
           onImageFileSelected={(file) => {
-            void handleImageFile(ideMessenger, file).then((result) => {
+            void handleImageFile(hostBridge, file).then((result) => {
               if (!editor || !result) {
                 return;
               }

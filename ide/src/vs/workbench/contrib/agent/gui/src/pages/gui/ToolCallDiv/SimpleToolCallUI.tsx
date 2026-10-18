@@ -6,7 +6,7 @@ import {
   ContextItemsPeekItem,
   openContextItem,
 } from "../../../components/mainInput/belowMainInput/ContextItemsPeek";
-import { IdeMessengerContext } from "../../../context/IdeMessenger";
+import { HostBridgeContext } from "../../../context/HostBridge";
 import { ToggleWithIcon } from "./ToggleWithIcon";
 import { ToolCallStatusMessage } from "./ToolCallStatusMessage";
 import { ToolTruncateHistoryIcon } from "./ToolTruncateHistoryIcon";
@@ -70,7 +70,7 @@ export function SimpleToolCallUI({
   tool,
   historyIndex,
 }: SimpleToolCallUIProps) {
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const shownContextItems = useMemo(() => {
     const contextItems = toolCallStateToContextItems(toolCallState);
     return contextItems.filter((item) => !item.hidden);
@@ -89,13 +89,13 @@ export function SimpleToolCallUI({
 
   function handleClick() {
     if (target?.kind === "file" && target.path) {
-      ideMessenger.post("openFile", { path: target.path });
+      hostBridge.post("openFile", { path: target.path });
       return;
     }
     if (isToggleable) {
       setOpen((prev) => !prev);
     } else if (isSingleItem) {
-      openContextItem(shownContextItems[0], ideMessenger);
+      openContextItem(shownContextItems[0], hostBridge);
     }
   }
 

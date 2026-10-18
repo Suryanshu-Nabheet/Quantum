@@ -1,7 +1,7 @@
 import { act, screen } from "@testing-library/react";
 import { ChatHistoryItem } from "core";
 import { describe, expect, it, vi } from "vitest";
-import { MockIdeMessenger } from "../../context/MockIdeMessenger";
+import { MockHostBridge } from "../../context/MockHostBridge";
 import { renderWithProviders } from "../../util/test/render";
 import { setupStore } from "../../redux/store";
 import {
@@ -53,7 +53,7 @@ function seedHistory(n: number): ChatHistoryItem[] {
 
 describe("Chat long-thread render cost", () => {
   it("re-renders only the streaming tail timeline row per chunk", async () => {
-    const store = setupStore({ ideMessenger: new MockIdeMessenger() });
+    const store = setupStore({ hostBridge: new MockHostBridge() });
     store.dispatch(
       newSession({
         sessionId: "long-thread",

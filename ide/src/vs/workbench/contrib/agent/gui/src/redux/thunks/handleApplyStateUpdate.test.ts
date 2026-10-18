@@ -76,7 +76,7 @@ describe("handleApplyStateUpdate", () => {
     mockDispatch = vi.fn();
     mockGetState = vi.fn();
     mockExtra = {
-      ideMessenger: {
+      hostBridge: {
         post: vi.fn(),
         request: vi.fn(),
       },
@@ -129,7 +129,7 @@ describe("handleApplyStateUpdate", () => {
         toolCallState,
         true,
         true,
-        mockExtra.ideMessenger,
+        mockExtra.hostBridge,
       );
       expect(exitEdit).toHaveBeenCalledWith({});
       expect(mockDispatch).toHaveBeenCalledWith(
@@ -188,7 +188,7 @@ describe("handleApplyStateUpdate", () => {
         toolCallState,
         true,
         true,
-        mockExtra.ideMessenger,
+        mockExtra.hostBridge,
       );
       expect(acceptToolCall).toHaveBeenCalledWith({
         toolCallId: "test-tool-call",
@@ -227,7 +227,7 @@ describe("handleApplyStateUpdate", () => {
         toolCallState,
         false,
         true,
-        mockExtra.ideMessenger,
+        mockExtra.hostBridge,
       );
       expect(acceptToolCall).not.toHaveBeenCalled();
       expect(streamResponseAfterToolCall).not.toHaveBeenCalled();
@@ -347,7 +347,7 @@ describe("handleApplyStateUpdate", () => {
       const thunk = handleApplyStateUpdate(applyState);
       await thunk(mockDispatch, mockGetState, mockExtra);
 
-      expect(mockExtra.ideMessenger.post).toHaveBeenCalledWith("acceptDiff", {
+      expect(mockExtra.hostBridge.post).toHaveBeenCalledWith("acceptDiff", {
         streamId: "chat-stream",
         filepath: "test.txt",
       });
@@ -459,7 +459,7 @@ describe("applyForEditTool", () => {
     mockDispatch = vi.fn();
     mockGetState = vi.fn();
     mockExtra = {
-      ideMessenger: {
+      hostBridge: {
         request: vi.fn(),
       },
     };
@@ -475,7 +475,7 @@ describe("applyForEditTool", () => {
         isSearchAndReplace: true,
       };
 
-      mockExtra.ideMessenger.request.mockResolvedValue({ status: "success" });
+      mockExtra.hostBridge.request.mockResolvedValue({ status: "success" });
 
       const thunk = applyForEditTool(payload);
       await thunk(mockDispatch, mockGetState, mockExtra);
@@ -488,7 +488,7 @@ describe("applyForEditTool", () => {
       expect(mockDispatch).toHaveBeenCalledWith(
         expect.objectContaining({ type: "session/updateApplyState" }),
       );
-      expect(mockExtra.ideMessenger.request).toHaveBeenCalledWith(
+      expect(mockExtra.hostBridge.request).toHaveBeenCalledWith(
         "applyToFile",
         payload,
       );
@@ -519,7 +519,7 @@ describe("applyForEditTool", () => {
       vi.mocked(selectApplyStateByToolCallId).mockReturnValue(applyState);
       mockGetState.mockReturnValue({});
 
-      mockExtra.ideMessenger.request.mockRejectedValue(
+      mockExtra.hostBridge.request.mockRejectedValue(
         new Error("Request failed"),
       );
 
@@ -566,7 +566,7 @@ describe("applyForEditTool", () => {
       vi.mocked(selectApplyStateByToolCallId).mockReturnValue(applyState);
       mockGetState.mockReturnValue({});
 
-      mockExtra.ideMessenger.request.mockResolvedValue({ status: "error" });
+      mockExtra.hostBridge.request.mockResolvedValue({ status: "error" });
 
       const thunk = applyForEditTool(payload);
       await thunk(mockDispatch, mockGetState, mockExtra);
@@ -611,7 +611,7 @@ describe("applyForEditTool", () => {
       vi.mocked(selectApplyStateByToolCallId).mockReturnValue(applyState);
       mockGetState.mockReturnValue({});
 
-      mockExtra.ideMessenger.request.mockRejectedValue(
+      mockExtra.hostBridge.request.mockRejectedValue(
         new Error("Request failed"),
       );
 
@@ -645,7 +645,7 @@ describe("applyForEditTool", () => {
       vi.mocked(selectApplyStateByToolCallId).mockReturnValue(applyState);
       mockGetState.mockReturnValue({});
 
-      mockExtra.ideMessenger.request.mockRejectedValue(
+      mockExtra.hostBridge.request.mockRejectedValue(
         new Error("Request failed"),
       );
 
@@ -672,7 +672,7 @@ describe("applyForEditTool", () => {
       });
       mockGetState.mockReturnValue({});
 
-      mockExtra.ideMessenger.request.mockRejectedValue(
+      mockExtra.hostBridge.request.mockRejectedValue(
         new Error("Request failed"),
       );
 
@@ -695,7 +695,7 @@ describe("applyForEditTool", () => {
       vi.mocked(selectApplyStateByToolCallId).mockReturnValue(undefined); // Apply state not found
       mockGetState.mockReturnValue({});
 
-      mockExtra.ideMessenger.request.mockRejectedValue(
+      mockExtra.hostBridge.request.mockRejectedValue(
         new Error("Request failed"),
       );
 
@@ -728,12 +728,12 @@ describe("applyForEditTool", () => {
 
       for (const payload of payloads) {
         vi.clearAllMocks();
-        mockExtra.ideMessenger.request.mockResolvedValue({ status: "success" });
+        mockExtra.hostBridge.request.mockResolvedValue({ status: "success" });
 
         const thunk = applyForEditTool(payload);
         await thunk(mockDispatch, mockGetState, mockExtra);
 
-        expect(mockExtra.ideMessenger.request).toHaveBeenCalledWith(
+        expect(mockExtra.hostBridge.request).toHaveBeenCalledWith(
           "applyToFile",
           payload,
         );

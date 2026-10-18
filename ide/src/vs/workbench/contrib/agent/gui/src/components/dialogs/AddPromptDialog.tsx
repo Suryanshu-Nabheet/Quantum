@@ -1,7 +1,7 @@
 import { useContext, useLayoutEffect, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 import { Input, SecondaryButton } from "..";
-import { IdeMessengerContext } from "../../context/IdeMessenger";
+import { HostBridgeContext } from "../../context/HostBridge";
 import { setDialogMessage, setShowDialog } from "../../redux/slices/uiSlice";
 
 interface ExistingPrompt {
@@ -13,7 +13,7 @@ interface ExistingPrompt {
 
 function AddPromptDialog({ existingPrompt }: { existingPrompt?: ExistingPrompt }) {
   const dispatch = useDispatch();
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const [name, setName] = useState(existingPrompt?.name ?? "new-prompt");
   const [description, setDescription] = useState(
     existingPrompt?.description ?? "A short description",
@@ -53,14 +53,14 @@ function AddPromptDialog({ existingPrompt }: { existingPrompt?: ExistingPrompt }
     setIsSubmitting(true);
     try {
       if (existingPrompt) {
-        ideMessenger.post("config/updatePrompt", {
+        hostBridge.post("config/updatePrompt", {
           promptId: existingPrompt.promptId,
           name: trimmed,
           prompt: content.trim(),
           description: description.trim() || undefined,
         });
       } else {
-        ideMessenger.post("config/addPrompt", {
+        hostBridge.post("config/addPrompt", {
           name: trimmed,
           prompt: content.trim(),
           description: description.trim() || undefined,

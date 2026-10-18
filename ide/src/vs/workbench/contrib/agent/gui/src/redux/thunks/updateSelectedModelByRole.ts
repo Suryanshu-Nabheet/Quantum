@@ -49,7 +49,7 @@ export const updateSelectedModelByRole = createAsyncThunk<
       }),
     );
 
-    extra.ideMessenger.post("config/updateSelectedModel", {
+    extra.hostBridge.post("config/updateSelectedModel", {
       role,
       profileId: selectedProfile.id,
       title: modelTitle,

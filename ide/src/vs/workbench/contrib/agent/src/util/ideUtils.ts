@@ -7,7 +7,7 @@ import {
   isThreadStopped,
   normalizeThreadId,
 } from "../debug/debug";
-import { VsCodeExtension } from "../extension/VsCodeExtension";
+import { WorkbenchExtension } from "../extension/WorkbenchExtension";
 import { GitExtension, Repository } from "../otherExtensions/git";
 
 import { getUniqueId, openEditorAndRevealRange } from "./vscode";
@@ -20,7 +20,7 @@ const asyncExec = util.promisify(require("node:child_process").exec);
 const NO_FS_PROVIDER_ERROR = "ENOPRO";
 const UNSUPPORTED_SCHEMES: Set<string> = new Set();
 
-export class VsCodeIdeUtils {
+export class WorkbenchIdeUtils {
   visibleMessages: Set<string> = new Set();
 
   async gotoDefinition(
@@ -214,7 +214,7 @@ export class VsCodeIdeUtils {
   async showVirtualFile(name: string, contents: string, preview = false) {
     const uri = vscode.Uri.parse(
       `${
-        VsCodeExtension.agentVirtualDocumentScheme
+        WorkbenchExtension.agentVirtualDocumentScheme
       }:${encodeURIComponent(name)}?${encodeURIComponent(contents)}`,
     );
     const doc = await vscode.workspace.openTextDocument(uri);
@@ -561,7 +561,7 @@ export class VsCodeIdeUtils {
 
       await new Promise((resolve) => setTimeout(resolve, 1000));
       i++;
-      if (i >= VsCodeIdeUtils.secondsToWaitForGitToLoad) {
+      if (i >= WorkbenchIdeUtils.secondsToWaitForGitToLoad) {
         this._repoWasNone = true;
         return undefined;
       }

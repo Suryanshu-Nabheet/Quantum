@@ -1,6 +1,6 @@
 import { SymbolWithRange } from "core";
 import { useContext, useMemo } from "react";
-import { IdeMessengerContext } from "../../context/IdeMessenger";
+import { HostBridgeContext } from "../../context/HostBridge";
 import { ToolTip } from "../gui/Tooltip";
 
 interface SymbolLinkProps {
@@ -9,10 +9,10 @@ interface SymbolLinkProps {
 }
 
 function SymbolLink({ symbol, content }: SymbolLinkProps) {
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
 
   function onClick() {
-    ideMessenger.post("showLines", {
+    hostBridge.post("showLines", {
       filepath: symbol.filepath,
       startLine: symbol.range.start.line,
       endLine: symbol.range.end.line,

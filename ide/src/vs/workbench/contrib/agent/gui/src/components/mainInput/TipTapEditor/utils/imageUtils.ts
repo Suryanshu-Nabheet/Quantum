@@ -1,5 +1,5 @@
 import { Editor } from "@tiptap/core";
-import { IIdeMessenger } from "../../../../context/IdeMessenger";
+import { IHostBridge } from "../../../../context/HostBridge";
 
 const IMAGE_RESOLUTION = 1024;
 
@@ -100,14 +100,14 @@ function getDataUrlForFile(
 }
 
 export async function handleImageFile(
-  ideMessenger: IIdeMessenger,
+  hostBridge: IHostBridge,
   file: File,
 ): Promise<[HTMLImageElement, string] | undefined> {
   const mime = resolveImageMime(file);
   const filesizeMb = file.size / 1024 / 1024;
 
   if (!mime || filesizeMb >= 10) {
-    ideMessenger.post("showToast", [
+    hostBridge.post("showToast", [
       "error",
       "Images need to be jpg, png, gif, or webp and less than 10MB.",
     ]);
@@ -126,7 +126,7 @@ export async function handleImageFile(
     return [displayImage, dataUrl];
   } catch (error) {
     console.error("Failed to attach image:", error);
-    ideMessenger.post("showToast", [
+    hostBridge.post("showToast", [
       "error",
       "Could not read that image. Try a different file.",
     ]);

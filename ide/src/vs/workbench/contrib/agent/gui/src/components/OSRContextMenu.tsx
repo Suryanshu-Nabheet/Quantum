@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
 import useIsOSREnabled from "../hooks/useIsOSREnabled";
-import { IdeMessengerContext } from "../context/IdeMessenger";
+import { HostBridgeContext } from "../context/HostBridge";
 import { getPlatform } from "../util";
 
 interface Position {
@@ -11,7 +11,7 @@ interface Position {
 }
 
 const OSRContextMenu = () => {
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const isOSREnabled = useIsOSREnabled();
   const platform = useRef(getPlatform());
 
@@ -191,7 +191,7 @@ const OSRContextMenu = () => {
           className="cursor-pointer hover:opacity-90"
           onClick={async (e) => {
             onMenuItemClick(e);
-            const response = await ideMessenger.request(
+            const response = await hostBridge.request(
               "getClipboardContent",
               undefined,
             );
@@ -212,7 +212,7 @@ const OSRContextMenu = () => {
         className="cursor-pointer hover:opacity-90"
         onClick={(e) => {
           onMenuItemClick(e);
-          ideMessenger.post("toggleDevTools", undefined);
+          hostBridge.post("toggleDevTools", undefined);
         }}
       >
         Open Dev Tools

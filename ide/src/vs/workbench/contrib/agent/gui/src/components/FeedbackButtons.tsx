@@ -4,7 +4,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { ChatHistoryItem } from "core";
 import { useContext, useState } from "react";
-import { IdeMessengerContext } from "../context/IdeMessenger";
+import { HostBridgeContext } from "../context/HostBridge";
 import { useAppSelector } from "../redux/hooks";
 import HeaderButtonWithToolTip from "./gui/HeaderButtonWithToolTip";
 
@@ -14,7 +14,7 @@ export interface FeedbackButtonsProps {
 
 export function FeedbackButtons({ item }: FeedbackButtonsProps) {
   const [feedback, setFeedback] = useState<boolean | undefined>(undefined);
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const sessionId = useAppSelector((store) => store.session.id);
 
   const sendFeedback = (feedback: boolean) => {

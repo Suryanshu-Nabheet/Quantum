@@ -103,15 +103,15 @@ describe("streamResponseThunk", () => {
     ];
     initialState.session.id = "session-123";
     const mockStore = createMockStore(initialState);
-    const mockIdeMessenger = mockStore.mockIdeMessenger;
+    const mockHostBridge = mockStore.mockHostBridge;
 
-    mockIdeMessenger.responses["llm/compileChat"] = {
+    mockHostBridge.responses["llm/assembleChat"] = {
       compiledChatMessages: [{ role: "user", content: "Hello" }],
       didPrune: false,
       contextPercentage: 0.8,
     };
-    const requestSpy = vi.spyOn(mockIdeMessenger, "request");
-    const postSpy = vi.spyOn(mockIdeMessenger, "post");
+    const requestSpy = vi.spyOn(mockHostBridge, "request");
+    const postSpy = vi.spyOn(mockHostBridge, "post");
 
     // Setup streaming generator
     async function* mockStreamGenerator(): AsyncGenerator<
@@ -130,7 +130,7 @@ describe("streamResponseThunk", () => {
 
     const mockStreamChat = vi.fn();
     mockStreamChat.mockReturnValue(mockStreamGenerator());
-    mockIdeMessenger.llmStreamChat = mockStreamChat;
+    mockHostBridge.llmStreamChat = mockStreamChat;
 
     // Execute thunk
     const result = await mockStore.dispatch(
@@ -146,7 +146,7 @@ describe("streamResponseThunk", () => {
     expectStreamResponseLifecycle(dispatchedActions);
 
     // Verify IDE messenger calls
-    expect(requestSpy).toHaveBeenCalledWith("llm/compileChat", {
+    expect(requestSpy).toHaveBeenCalledWith("llm/assembleChat", {
       messages: [
         {
           role: "system",
@@ -174,7 +174,7 @@ describe("streamResponseThunk", () => {
       options: {},
     });
 
-    expect(mockIdeMessenger.llmStreamChat).toHaveBeenCalledWith(
+    expect(mockHostBridge.llmStreamChat).toHaveBeenCalledWith(
       {
         completionOptions: {},
         legacySlashCommandData: undefined,
@@ -268,17 +268,17 @@ describe("streamResponseThunk", () => {
     stateWithToolSettings.session.id = "session-123";
     const mockStoreWithToolSettings = createMockStore(stateWithToolSettings);
 
-    const mockIdeMessengerWithTool = mockStoreWithToolSettings.mockIdeMessenger;
+    const mockHostBridgeWithTool = mockStoreWithToolSettings.mockHostBridge;
 
     // Setup successful compilation and tool responses
-    mockIdeMessengerWithTool.responses["llm/compileChat"] = {
+    mockHostBridgeWithTool.responses["llm/assembleChat"] = {
       compiledChatMessages: [
         { role: "user", content: "Please search the codebase" },
       ],
       didPrune: false,
       contextPercentage: 0.9,
     };
-    mockIdeMessengerWithTool.responses["tools/call"] = {
+    mockHostBridgeWithTool.responses["tools/call"] = {
       contextItems: [
         {
           name: "Search Results",
@@ -290,7 +290,7 @@ describe("streamResponseThunk", () => {
       ],
       errorMessage: undefined,
     };
-    const requestSpy = vi.spyOn(mockIdeMessengerWithTool, "request");
+    const requestSpy = vi.spyOn(mockHostBridgeWithTool, "request");
 
     // Setup streaming generator with tool call
     async function* mockStreamGeneratorWithTool(): AsyncGenerator<
@@ -351,7 +351,7 @@ describe("streamResponseThunk", () => {
         return simpleGenerator();
       }
     });
-    mockIdeMessengerWithTool.llmStreamChat = mockStreamChat;
+    mockHostBridgeWithTool.llmStreamChat = mockStreamChat;
 
     // Execute thunk
     const result = await mockStoreWithToolSettings.dispatch(
@@ -369,8 +369,8 @@ describe("streamResponseThunk", () => {
     // the tool runs, the agent resumes streaming, and the turn completes.
     const actionTypes = dispatchedActions.map((action: any) => action.type);
     expect(actionTypes).toContain("chat/callTool/fulfilled");
-    expect(actionTypes.filter((t) => t === "chat/streamNormalInput/fulfilled")).toHaveLength(1);
-    expect(actionTypes).toContain("chat/streamNormalInput/fulfilled");
+    expect(actionTypes.filter((t) => t === "chat/streamModelTurn/fulfilled")).toHaveLength(1);
+    expect(actionTypes).toContain("chat/streamModelTurn/fulfilled");
     expect(actionTypes.at(-1)).toBe("chat/streamResponse/fulfilled");
 
     // Verify key payload data for important actions
@@ -436,7 +436,7 @@ describe("streamResponseThunk", () => {
     });
 
     // Verify IDE messenger calls
-    expect(requestSpy).toHaveBeenCalledWith("llm/compileChat", {
+    expect(requestSpy).toHaveBeenCalledWith("llm/assembleChat", {
       messages: [
         {
           role: "system",
@@ -477,7 +477,7 @@ describe("streamResponseThunk", () => {
 
     // Verify that multiple compilation calls were made (due to tool call continuation)
     expect(requestSpy).toHaveBeenCalledWith(
-      "llm/compileChat",
+      "llm/assembleChat",
       expect.any(Object),
     );
 
@@ -514,14 +514,14 @@ describe("streamResponseThunk", () => {
     ];
     abortState.session.id = "session-123";
     const mockStoreWithAbort = createMockStore(abortState);
-    const mockIdeMessengerAbort = mockStoreWithAbort.mockIdeMessenger;
-    mockIdeMessengerAbort.responses["llm/compileChat"] = {
+    const mockHostBridgeAbort = mockStoreWithAbort.mockHostBridge;
+    mockHostBridgeAbort.responses["llm/assembleChat"] = {
       compiledChatMessages: [{ role: "user", content: "Hello" }],
       didPrune: false,
       contextPercentage: 0.8,
     };
-    const requestSpy = vi.spyOn(mockIdeMessengerAbort, "request");
-    const postSpy = vi.spyOn(mockIdeMessengerAbort, "post");
+    const requestSpy = vi.spyOn(mockHostBridgeAbort, "request");
+    const postSpy = vi.spyOn(mockHostBridgeAbort, "post");
 
     // Setup streaming generator that simulates abort by user interaction
     async function* mockStreamGeneratorWithAbort(): AsyncGenerator<
@@ -555,7 +555,7 @@ describe("streamResponseThunk", () => {
     const mockStreamChat = vi
       .fn()
       .mockReturnValue(mockStreamGeneratorWithAbort());
-    mockIdeMessengerAbort.llmStreamChat = mockStreamChat;
+    mockHostBridgeAbort.llmStreamChat = mockStreamChat;
 
     // Execute thunk - should be aborted
     const result = await mockStoreWithAbort.dispatch(
@@ -572,7 +572,7 @@ describe("streamResponseThunk", () => {
     expectStreamResponseLifecycle(dispatchedActions, { aborted: true });
 
     // Verify IDE messenger calls
-    expect(requestSpy).toHaveBeenCalledWith("llm/compileChat", {
+    expect(requestSpy).toHaveBeenCalledWith("llm/assembleChat", {
       messages: [
         {
           role: "system",
@@ -600,7 +600,7 @@ describe("streamResponseThunk", () => {
       options: {},
     });
 
-    expect(mockIdeMessengerAbort.llmStreamChat).toHaveBeenCalledWith(
+    expect(mockHostBridgeAbort.llmStreamChat).toHaveBeenCalledWith(
       {
         completionOptions: {},
         legacySlashCommandData: undefined,

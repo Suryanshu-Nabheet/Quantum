@@ -7,7 +7,7 @@ import {
   setActive,
 } from "../slices/sessionSlice";
 import { ThunkApiType } from "../store";
-import { runAgentDriver } from "./streamNormalInput";
+import { runAgentDriver } from "./streamModelTurn";
 import { streamThunkWrapper } from "./streamThunkWrapper";
 import { appendToolResultMessage } from "../util/toolResultMessages";
 

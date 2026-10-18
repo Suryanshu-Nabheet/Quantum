@@ -1,11 +1,11 @@
 import { useContext } from "react";
-import { IdeMessengerContext } from "../../../../context/IdeMessenger";
+import { HostBridgeContext } from "../../../../context/HostBridge";
 import { useAppDispatch } from "../../../../redux/hooks";
 import { cancelStream } from "../../../../redux/thunks/cancelStream";
 import { GeneratingIndicator } from "./GeneratingIndicator";
 
 export const IsApplyingToolbar = () => {
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const dispatch = useAppDispatch();
 
   return (
@@ -20,7 +20,7 @@ export const IsApplyingToolbar = () => {
           // Apply is prioritized because it can be more catastrophic
           // Intentional to be more WYSIWYG for now
           void dispatch(cancelStream());
-          ideMessenger.post("rejectDiff", {});
+          hostBridge.post("rejectDiff", {});
         }}
       >
         Cancel

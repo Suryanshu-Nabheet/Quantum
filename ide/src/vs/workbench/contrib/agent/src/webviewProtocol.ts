@@ -9,7 +9,7 @@ import { QUANTUM_SETTINGS } from "./util/extensionMeta";
 
 const WEBVIEW_REQUEST_TIMEOUT_MS = 15_000;
 
-export class VsCodeWebviewProtocol
+export class WorkbenchWebviewProtocol
   implements IMessenger<FromWebviewProtocol, ToWebviewProtocol>
 {
   listeners = new Map<

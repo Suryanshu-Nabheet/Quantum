@@ -6,7 +6,7 @@ import { getReadResponseTTS } from "core/config/uiPreferences";
 import { useContext } from "react";
 import { useFontSize } from "../../../components/ui";
 import { ConfigPanel } from "../components/ConfigPanel";
-import { IdeMessengerContext } from "../../../context/IdeMessenger";
+import { HostBridgeContext } from "../../../context/HostBridge";
 import { useAppDispatch, useAppSelector } from "../../../redux/hooks";
 import { updateConfig } from "../../../redux/slices/configSlice";
 import { setLocalStorage } from "../../../util/localStorage";
@@ -18,13 +18,13 @@ import { CONFIG_PAGE_GAP, CONFIG_SECTIONS_STACK } from "../configLayout";
 
 export function UserSettingsSection() {
   const dispatch = useAppDispatch();
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const config = useAppSelector((state) => state.config.config);
 
   function handleUpdate(sharedConfig: SharedConfigSchema) {
     const updatedConfig = modifyAnyConfigWithSharedConfig(config, sharedConfig);
     dispatch(updateConfig(updatedConfig));
-    ideMessenger.post("config/updateSharedConfig", sharedConfig);
+    hostBridge.post("config/updateSharedConfig", sharedConfig);
   }
 
   const showSessionTabs = config.ui?.showSessionTabs ?? false;

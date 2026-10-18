@@ -52,7 +52,7 @@ export const updateFileSymbolsFromFiles = createAsyncThunk<
 
       // Update symbols for those files
       if (uniqueUris.length > 0) {
-        const result = await extra.ideMessenger.request(
+        const result = await extra.hostBridge.request(
           "context/getSymbolsForFiles",
           { uris: uniqueUris },
         );

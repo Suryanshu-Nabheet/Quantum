@@ -20,9 +20,9 @@ export const multiEditImpl: ClientToolImpl = async (
   return enqueueFileEdit(async () => {
     const fileUri = await validateSearchAndReplaceFilepath(
       args.filepath,
-      extras.ideMessenger.ide,
+      extras.hostBridge.ide,
     );
-    const editingFileContents = await extras.ideMessenger.ide.readFile(fileUri);
+    const editingFileContents = await extras.hostBridge.ide.readFile(fileUri);
     const newFileContents = executeMultiFindAndReplace(
       editingFileContents,
       edits,

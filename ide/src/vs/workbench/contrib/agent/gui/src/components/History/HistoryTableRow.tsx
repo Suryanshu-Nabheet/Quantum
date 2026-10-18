@@ -9,7 +9,7 @@ import { getUriPathBasename } from "core/util/uri";
 import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "..";
-import { IdeMessengerContext } from "../../context/IdeMessenger";
+import { HostBridgeContext } from "../../context/HostBridge";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { exitEdit } from "../../redux/thunks/edit";
 import {
@@ -37,7 +37,7 @@ export function HistoryTableRow({
 }) {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
 
   const [hovered, setHovered] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -51,7 +51,7 @@ export function HistoryTableRow({
   }, [sessionMetadata]);
 
   const shareSession = async (sessionId: string) => {
-    await ideMessenger.request("session/share", {
+    await hostBridge.request("session/share", {
       sessionId,
     });
   };
@@ -66,7 +66,7 @@ export function HistoryTableRow({
         // imperfect solution of loading session just to update it
         // but fine for now, pretty low latency
         const currentSession = await getSession(
-          ideMessenger,
+          hostBridge,
           sessionMetadata.sessionId,
         );
         await dispatch(

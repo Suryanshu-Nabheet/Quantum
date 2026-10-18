@@ -26,11 +26,11 @@ export const editToolImpl: ClientToolImpl = async (
 
     let firstUriMatch = await resolveRelativePathInDir(
       filepath,
-      extras.ideMessenger.ide,
+      extras.hostBridge.ide,
     );
 
     if (!firstUriMatch) {
-      const openFiles = await extras.ideMessenger.ide.getOpenFiles();
+      const openFiles = await extras.hostBridge.ide.getOpenFiles();
       for (const uri of openFiles) {
         if (uri.endsWith(filepath)) {
           firstUriMatch = uri;

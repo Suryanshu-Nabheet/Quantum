@@ -11,7 +11,7 @@ import { useEditor } from "@tiptap/react";
 import { InputModifiers } from "core";
 import { modelSupportsImages } from "core/llm/autodetect";
 import { useRef } from "react";
-import { IIdeMessenger } from "../../../../context/IdeMessenger";
+import { IHostBridge } from "../../../../context/HostBridge";
 import { useSubmenuContextProviders } from "../../../../context/SubmenuContextProviders";
 import { useInputHistory } from "../../../../hooks/useInputHistory";
 import useUpdatingRef from "../../../../hooks/useUpdatingRef";
@@ -79,10 +79,10 @@ function hasValidEditorContent(json: JSONContent): boolean {
  */
 export function createEditorConfig(options: {
   props: TipTapEditorProps;
-  ideMessenger: IIdeMessenger;
+  hostBridge: IHostBridge;
   dispatch: AppDispatch;
 }) {
-  const { props, ideMessenger, dispatch } = options;
+  const { props, hostBridge, dispatch } = options;
 
   const { getSubmenuContextItems, refreshSubmenuProviders } =
     useSubmenuContextProviders();
@@ -187,7 +187,7 @@ export function createEditorConfig(options: {
                     }
                     handled = true;
                     event.preventDefault();
-                    void handleImageFile(ideMessenger, file).then((resp) => {
+                    void handleImageFile(hostBridge, file).then((resp) => {
                       if (!resp) return;
                       const [, dataUrl] = resp;
                       if (tipTapEditor) {
@@ -326,7 +326,7 @@ export function createEditorConfig(options: {
                   }),
                 );
               }
-              ideMessenger.post("focusEditor", undefined);
+              hostBridge.post("focusEditor", undefined);
 
               return true;
             },
@@ -364,7 +364,7 @@ export function createEditorConfig(options: {
           onClose,
           onOpen,
           inSubmenuRef,
-          ideMessenger,
+          hostBridge,
         ),
       }),
       SlashCommand.configure({
@@ -372,7 +372,7 @@ export function createEditorConfig(options: {
           availableSlashCommandsRef,
           onClose,
           onOpen,
-          ideMessenger,
+          hostBridge,
           dispatch,
           props.inputId,
         ),

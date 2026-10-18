@@ -13,7 +13,7 @@ import {
 import { createFilter } from "redux-persist-transform-filter";
 import autoMergeLevel2 from "redux-persist/lib/stateReconciler/autoMergeLevel2";
 import storage from "redux-persist/lib/storage";
-import { IdeMessenger, IIdeMessenger } from "../context/IdeMessenger";
+import { HostBridge, IHostBridge } from "../context/HostBridge";
 import configReducer from "./slices/configSlice";
 import editModeStateReducer from "./slices/editState";
 import { profilesReducer } from "./slices/profilesSlice";
@@ -105,8 +105,8 @@ const persistedReducer = persistReducer<ReturnType<typeof rootReducer>>(
   rootReducer,
 );
 
-export function setupStore(options: { ideMessenger?: IIdeMessenger }) {
-  const ideMessenger = options.ideMessenger ?? new IdeMessenger();
+export function setupStore(options: { hostBridge?: IHostBridge }) {
+  const hostBridge = options.hostBridge ?? new HostBridge();
 
   return configureStore({
     // persistedReducer causes type errors with async thunks
@@ -116,14 +116,14 @@ export function setupStore(options: { ideMessenger?: IIdeMessenger }) {
         serializableCheck: false,
         thunk: {
           extraArgument: {
-            ideMessenger,
+            hostBridge,
           },
         },
       }),
   });
 }
 
-export type ThunkExtrasType = { ideMessenger: IIdeMessenger };
+export type ThunkExtrasType = { hostBridge: IHostBridge };
 
 export type ThunkApiType = {
   state: RootState;

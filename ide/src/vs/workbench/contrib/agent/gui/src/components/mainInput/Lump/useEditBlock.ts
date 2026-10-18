@@ -2,7 +2,7 @@ import { RuleMetadata } from "core";
 import { quantumSettingsPath } from "core/util/branding";
 import { useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { IdeMessengerContext } from "../../../context/IdeMessenger";
+import { HostBridgeContext } from "../../../context/HostBridge";
 import {
   buildConfigRoute,
   type ConfigTab,
@@ -20,14 +20,14 @@ export function useEditModel() {
 
 export function useOpenRule() {
   const navigate = useNavigate();
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   return (rule: RuleMetadata) => {
     if (
       rule.source === "default-chat" ||
       rule.source === "default-plan" ||
       rule.source === "default-agent"
     ) {
-      ideMessenger.post("showToast", [
+      hostBridge.post("showToast", [
         "info",
         `Built-in system messages cannot be edited. Add a custom rule in ${quantumSettingsPath("Rules")} to override them.`,
       ]);
@@ -40,7 +40,7 @@ export function useOpenRule() {
     }
 
     if (rule.sourceFile && rule.source === "agentFile") {
-      void ideMessenger.ide.openFile(rule.sourceFile);
+      void hostBridge.ide.openFile(rule.sourceFile);
       return;
     }
 

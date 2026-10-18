@@ -12,12 +12,12 @@ import {
     executeSymbolProvider,
 } from "./autocomplete/lsp";
 import { Repository } from "./otherExtensions/git";
-import { SecretStorage } from "./stubs/SecretStorage";
+import { SecretStorage } from "./platform/SecretStorage";
 import { EXTENSION_NAME } from "./util/constants";
-import { VsCodeIdeUtils } from "./util/ideUtils";
+import { WorkbenchIdeUtils } from "./util/ideUtils";
 import { getExtensionVersion, isExtensionPrerelease } from "./util/util";
 import { getExtensionUri, openEditorAndRevealRange } from "./util/vscode";
-import { VsCodeWebviewProtocol } from "./webviewProtocol";
+import { WorkbenchWebviewProtocol } from "./webviewProtocol";
 import {
   AGENT_BROWSER_ENSURE_SHARED_COMMAND,
   AGENT_BROWSER_GET_OPEN_PAGES_COMMAND,
@@ -42,8 +42,8 @@ import type {
     Thread,
 } from "core";
 
-class VsCodeIde implements IDE {
-  ideUtils: VsCodeIdeUtils;
+class WorkbenchIde implements IDE {
+  ideUtils: WorkbenchIdeUtils;
   secretStorage: SecretStorage;
   private attachFileCache: { at: number; files: string[] } | undefined;
   private attachFileInflight: Promise<string[]> | undefined;
@@ -55,10 +55,10 @@ class VsCodeIde implements IDE {
   private static readonly IGNORE_GLOBS_TTL_MS = 30_000;
 
   constructor(
-    private readonly vscodeWebviewProtocolPromise: Promise<VsCodeWebviewProtocol>,
+    private readonly workbenchWebviewProtocolPromise: Promise<WorkbenchWebviewProtocol>,
     private readonly context: vscode.ExtensionContext,
   ) {
-    this.ideUtils = new VsCodeIdeUtils();
+    this.ideUtils = new WorkbenchIdeUtils();
     this.secretStorage = new SecretStorage(context);
     const dropAttachCache = () => {
       this.attachFileCache = undefined;
@@ -396,7 +396,7 @@ class VsCodeIde implements IDE {
       }
 
       const fileStats = await this.ideUtils.stat(uri);
-      if (fileStats === null || fileStats.size > 10 * VsCodeIde.MAX_BYTES) {
+      if (fileStats === null || fileStats.size > 10 * WorkbenchIde.MAX_BYTES) {
         return "";
       }
 
@@ -406,7 +406,7 @@ class VsCodeIde implements IDE {
       }
 
       // Truncate the buffer to the first MAX_BYTES
-      const truncatedBytes = bytes.slice(0, VsCodeIde.MAX_BYTES);
+      const truncatedBytes = bytes.slice(0, WorkbenchIde.MAX_BYTES);
       const contents = new TextDecoder().decode(truncatedBytes);
       return contents;
     } catch (e) {
@@ -487,7 +487,7 @@ class VsCodeIde implements IDE {
     if (
       cached &&
       cached.includeMedia === includeMedia &&
-      Date.now() - cached.at < VsCodeIde.IGNORE_GLOBS_TTL_MS
+      Date.now() - cached.at < WorkbenchIde.IGNORE_GLOBS_TTL_MS
     ) {
       return cached.globs;
     }
@@ -563,13 +563,13 @@ class VsCodeIde implements IDE {
     const now = Date.now();
     if (
       this.attachFileCache &&
-      now - this.attachFileCache.at < VsCodeIde.ATTACH_FILE_TTL_MS
+      now - this.attachFileCache.at < WorkbenchIde.ATTACH_FILE_TTL_MS
     ) {
       return Promise.resolve(this.attachFileCache.files.slice(0, maxResults));
     }
     if (!this.attachFileInflight) {
       this.attachFileInflight = this.collectAttachableFiles(
-        VsCodeIde.ATTACH_FILE_CAP,
+        WorkbenchIde.ATTACH_FILE_CAP,
       )
         .then((files) => {
           if (files.length > 0) {
@@ -755,7 +755,7 @@ class VsCodeIde implements IDE {
       (pattern === "**/*" || pattern === "**") &&
       options?.includeMedia
     ) {
-      const fast = await this.listAttachableFiles(maxResults ?? VsCodeIde.ATTACH_FILE_CAP);
+      const fast = await this.listAttachableFiles(maxResults ?? WorkbenchIde.ATTACH_FILE_CAP);
       if (fast.length > 0) {
         return fast;
       }
@@ -950,4 +950,4 @@ class VsCodeIde implements IDE {
   }
 }
 
-export { VsCodeIde };
+export { WorkbenchIde };

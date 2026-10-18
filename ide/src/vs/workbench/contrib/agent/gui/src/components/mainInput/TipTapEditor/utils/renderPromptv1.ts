@@ -6,10 +6,10 @@ import {
 import { SUPPORTED_PROMPT_CONTEXT_PROVIDERS } from "core/promptFiles";
 import { renderTemplatedString } from "core/util/handlebars/renderTemplatedString";
 import { resolveRelativePathInDir } from "core/util/ideUtils";
-import { IIdeMessenger } from "../../../../context/IdeMessenger";
+import { IHostBridge } from "../../../../context/HostBridge";
 
 export async function getRenderedV1Prompt(
-  ideMessenger: IIdeMessenger,
+  hostBridge: IHostBridge,
   command: SlashCommandDescWithSource,
   userInput: string,
   selectedCode: RangeInFile[],
@@ -21,7 +21,7 @@ export async function getRenderedV1Prompt(
     (name: ContextProviderName): [string, Handlebars.HelperDelegate] => [
       name,
       async (helperContext: any) => {
-        const response = await ideMessenger.request("context/getContextItems", {
+        const response = await hostBridge.request("context/getContextItems", {
           fullInput: userInput,
           name,
           query: "",
@@ -38,9 +38,9 @@ export async function getRenderedV1Prompt(
       },
     ],
   );
-  const workspaceDirs = await ideMessenger.ide.getWorkspaceDirs();
+  const workspaceDirs = await hostBridge.ide.getWorkspaceDirs();
   const getUriFromPath = (path: string) => {
-    return resolveRelativePathInDir(path, ideMessenger.ide, workspaceDirs);
+    return resolveRelativePathInDir(path, hostBridge.ide, workspaceDirs);
   };
   const handlebars = (await import("handlebars")).default;
   let rendered = await renderTemplatedString(
@@ -48,7 +48,7 @@ export async function getRenderedV1Prompt(
     command.prompt,
     { input: userInput },
     handleBarHelpers,
-    ideMessenger.ide.readFile.bind(ideMessenger.ide),
+    hostBridge.ide.readFile.bind(hostBridge.ide),
     getUriFromPath,
   );
   // For prompt file append the input if it isn't rendered

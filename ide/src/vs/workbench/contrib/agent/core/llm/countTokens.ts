@@ -408,7 +408,7 @@ function pruneRawPromptFromTop(
  * @returns Processed array of chat messages that fit within context constraints
  * @throws Error if non-negotiable elements exceed available context
  */
-function compileChatMessages({
+function assembleChatMessages({
   modelName,
   msgs,
   knownContextLength,
@@ -552,7 +552,7 @@ async function cleanupAsyncEncoders(): Promise<void> {
 
 export {
   cleanupAsyncEncoders,
-  compileChatMessages,
+  assembleChatMessages,
   countTokens,
   countTokensAsync,
   extractToolSequence,

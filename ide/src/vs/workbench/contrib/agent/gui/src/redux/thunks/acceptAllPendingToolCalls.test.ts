@@ -2,7 +2,7 @@ import { AssistantChatMessage, ModelDescription, PromptLog } from "core";
 import { serializeTool } from "core/tools";
 import { grepSearchTool } from "core/tools/definitions";
 import { describe, expect, it, vi } from "vitest";
-import { MockIdeMessenger } from "../../context/MockIdeMessenger";
+import { MockHostBridge } from "../../context/MockHostBridge";
 import { createMockStore } from "../../util/test/mockStore";
 import { getEmptyRootState } from "../../util/test/mockStore";
 import { RootState } from "../store";
@@ -60,8 +60,8 @@ describe("acceptAllPendingToolCalls (batch resume)", () => {
     };
     initialState.config.config.tools = [grepTool];
 
-    const ideMessenger = new MockIdeMessenger();
-    ideMessenger.responses["llm/compileChat"] = {
+    const hostBridge = new MockHostBridge();
+    hostBridge.responses["llm/assembleChat"] = {
       compiledChatMessages: [
         { role: "user", content: "Run two searches" },
       ],
@@ -70,7 +70,7 @@ describe("acceptAllPendingToolCalls (batch resume)", () => {
     };
 
     let streamCalls = 0;
-    ideMessenger.llmStreamChat = vi.fn().mockImplementation(() => {
+    hostBridge.llmStreamChat = vi.fn().mockImplementation(() => {
       streamCalls++;
       if (streamCalls === 1) {
         return (async function* (): AsyncGenerator<
@@ -125,7 +125,7 @@ describe("acceptAllPendingToolCalls (batch resume)", () => {
     });
 
     const toolCallIds: string[] = [];
-    ideMessenger.responseHandlers["tools/call"] = async (data: any) => {
+    hostBridge.responseHandlers["tools/call"] = async (data: any) => {
       toolCallIds.push(data.toolCall.id);
       return {
         contextItems: [
@@ -140,7 +140,7 @@ describe("acceptAllPendingToolCalls (batch resume)", () => {
       };
     };
 
-    const store = createMockStore(initialState, ideMessenger);
+    const store = createMockStore(initialState, hostBridge);
 
     // Turn 1: produces two tool calls awaiting approval (no auto-execution).
     await store.dispatch(

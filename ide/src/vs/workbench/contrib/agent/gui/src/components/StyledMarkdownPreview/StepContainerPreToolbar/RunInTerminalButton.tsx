@@ -1,7 +1,7 @@
 import { CommandLineIcon } from "@heroicons/react/24/outline";
 import { useContext } from "react";
 import { lightGray, vscForeground } from "../..";
-import { IdeMessengerContext } from "../../../context/IdeMessenger";
+import { HostBridgeContext } from "../../../context/HostBridge";
 import { extractCommand } from "../utils/commandExtractor";
 
 interface RunInTerminalButtonProps {
@@ -9,12 +9,12 @@ interface RunInTerminalButtonProps {
 }
 
 export function RunInTerminalButton({ command }: RunInTerminalButtonProps) {
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
 
   function runInTerminal() {
     // Extract just the command line
     const extractedCommand = extractCommand(command);
-    void ideMessenger.post("runCommand", { command: extractedCommand });
+    void hostBridge.post("runCommand", { command: extractedCommand });
   }
 
   return (

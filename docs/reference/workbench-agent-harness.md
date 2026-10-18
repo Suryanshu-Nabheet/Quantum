@@ -9,24 +9,24 @@ Maintainer reference for the **chat / tool turn loop** in `ide/src/vs/workbench/
 Production turns follow:
 
 ```
-streamNormalInput
+streamModelTurn
   → tool policy evaluation
   → runParallelToolCalls / callToolById
   → streamResponseAfterToolCall
-  → streamNormalInput (next iteration)
+  → streamModelTurn (next iteration)
 ```
 
-Entry driver: `runAgentDriver` / `runStreamNormalInputLocked` in the GUI redux thunks layer (`gui/src/redux/thunks/streamNormalInput.ts` and related).
+Entry driver: `runAgentDriver` / `runStreamModelTurnLocked` in the GUI redux thunks layer (`gui/src/redux/thunks/streamModelTurn.ts` and related).
 
 ## Invariants
 
 | Rule | Detail |
 | --- | --- |
-| **One LLM stream** | `withAgentStreamLock` on `streamNormalInput` only; parallel tools defer LLM resume via `agentToolPipeline` |
+| **One LLM stream** | `withAgentStreamLock` on `streamModelTurn` only; parallel tools defer LLM resume via `agentToolPipeline` |
 | **Stream continuation** | Handled inside `core/llm/streamChat.ts` (bounded segments when truncated — avoid duplicate GUI re-stream loops) |
 | **Step depth** | Resets each user message; tool execution uses `agentStepDepth + 1`; `streamResponseAfterToolCall(depth)` starts next LLM at `depth + 1` |
 | **Mixed approval** | Auto-approved tools use `resumeAgent: false`; user Accept / Accept all continues when all tools on the turn complete |
-| **IPC timeouts** | `IdeMessenger`: long timeouts for `tools/call` and `llm/compileChat`; LLM stream idle ~600s |
+| **IPC timeouts** | `HostBridge`: long timeouts for `tools/call` and `llm/assembleChat`; LLM stream idle ~600s |
 | **Gateway models** | Non–`api.openai.com` OpenAI-compatible APIs: `parallel_tool_calls: true` (core + openai-adapters) |
 
 ## Reliability

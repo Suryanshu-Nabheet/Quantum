@@ -1,7 +1,7 @@
 import type { ToWebviewProtocol } from "core/protocol/index.js";
 import { Message } from "core/protocol/messenger";
 import { useContext, useEffect } from "react";
-import { IdeMessengerContext } from "../context/IdeMessenger";
+import { HostBridgeContext } from "../context/HostBridge";
 
 export function useWebviewListener<T extends keyof ToWebviewProtocol>(
   messageType: T,
@@ -9,7 +9,7 @@ export function useWebviewListener<T extends keyof ToWebviewProtocol>(
   dependencies?: any[],
   skip?: boolean,
 ) {
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
 
   useEffect(
     () => {
@@ -21,7 +21,7 @@ export function useWebviewListener<T extends keyof ToWebviewProtocol>(
         listener = async (event) => {
           if (event.data.messageType === messageType) {
             const result = await handler(event.data.data);
-            ideMessenger.respond(messageType, result, event.data.messageId);
+            hostBridge.respond(messageType, result, event.data.messageId);
           }
         };
 
@@ -34,6 +34,6 @@ export function useWebviewListener<T extends keyof ToWebviewProtocol>(
         }
       };
     },
-    dependencies ? [...dependencies, skip, ideMessenger] : [skip, ideMessenger],
+    dependencies ? [...dependencies, skip, hostBridge] : [skip, hostBridge],
   );
 }

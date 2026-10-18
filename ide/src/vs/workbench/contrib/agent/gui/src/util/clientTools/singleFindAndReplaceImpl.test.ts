@@ -34,7 +34,7 @@ describe("singleFindAndReplaceImpl", () => {
         },
       })) as any,
       dispatch: vi.fn() as any,
-      ideMessenger: {
+      hostBridge: {
         ide: {
           readFile: vi.fn(),
         },
@@ -47,7 +47,7 @@ describe("singleFindAndReplaceImpl", () => {
     beforeEach(() => {
       // For validation tests, make the file exist so we can test validation errors
       mockResolveRelativePathInDir.mockResolvedValue("/test/file.txt");
-      mockExtras.ideMessenger.ide.readFile = vi
+      mockExtras.hostBridge.ide.readFile = vi
         .fn()
         .mockResolvedValue("content");
     });
@@ -135,7 +135,7 @@ describe("singleFindAndReplaceImpl", () => {
 
     it("should resolve relative file paths", async () => {
       mockResolveRelativePathInDir.mockResolvedValue("/absolute/path/test.txt");
-      mockExtras.ideMessenger.ide.readFile = vi
+      mockExtras.hostBridge.ide.readFile = vi
         .fn()
         .mockResolvedValue("test content");
 
@@ -149,9 +149,9 @@ describe("singleFindAndReplaceImpl", () => {
 
       expect(mockResolveRelativePathInDir).toHaveBeenCalledWith(
         "test.txt",
-        mockExtras.ideMessenger.ide,
+        mockExtras.hostBridge.ide,
       );
-      expect(mockExtras.ideMessenger.ide.readFile).toHaveBeenCalledWith(
+      expect(mockExtras.hostBridge.ide.readFile).toHaveBeenCalledWith(
         "/absolute/path/test.txt",
       );
     });
@@ -163,7 +163,7 @@ describe("singleFindAndReplaceImpl", () => {
     });
 
     it("should throw error if old_string is not found in file", async () => {
-      mockExtras.ideMessenger.ide.readFile = vi
+      mockExtras.hostBridge.ide.readFile = vi
         .fn()
         .mockResolvedValue("different content");
 
@@ -183,7 +183,7 @@ describe("singleFindAndReplaceImpl", () => {
     });
 
     it("should replace single occurrence", async () => {
-      mockExtras.ideMessenger.ide.readFile = vi
+      mockExtras.hostBridge.ide.readFile = vi
         .fn()
         .mockResolvedValue("Hello world\nThis is a test file\nGoodbye world");
 
@@ -206,7 +206,7 @@ describe("singleFindAndReplaceImpl", () => {
     });
 
     it("should throw error if old_string appears multiple times and replace_all is false", async () => {
-      mockExtras.ideMessenger.ide.readFile = vi
+      mockExtras.hostBridge.ide.readFile = vi
         .fn()
         .mockResolvedValue("Hello world\nThis is a test file\nGoodbye world");
 
@@ -227,7 +227,7 @@ describe("singleFindAndReplaceImpl", () => {
     });
 
     it("should replace all occurrences when replace_all is true", async () => {
-      mockExtras.ideMessenger.ide.readFile = vi
+      mockExtras.hostBridge.ide.readFile = vi
         .fn()
         .mockResolvedValue("Hello world\nThis is a test file\nGoodbye world");
 
@@ -250,7 +250,7 @@ describe("singleFindAndReplaceImpl", () => {
     });
 
     it("should handle empty new_string (deletion)", async () => {
-      mockExtras.ideMessenger.ide.readFile = vi
+      mockExtras.hostBridge.ide.readFile = vi
         .fn()
         .mockResolvedValue("Hello world\nThis is a test file");
 
@@ -272,7 +272,7 @@ describe("singleFindAndReplaceImpl", () => {
     });
 
     it("should handle special characters in strings", async () => {
-      mockExtras.ideMessenger.ide.readFile = vi
+      mockExtras.hostBridge.ide.readFile = vi
         .fn()
         .mockResolvedValue(
           'const regex = /[a-z]+/g;\nconst text = "Hello $world"',
@@ -296,7 +296,7 @@ describe("singleFindAndReplaceImpl", () => {
     });
 
     it("should preserve whitespace and indentation", async () => {
-      mockExtras.ideMessenger.ide.readFile = vi
+      mockExtras.hostBridge.ide.readFile = vi
         .fn()
         .mockResolvedValue(
           "function test() {\n    const value = 'old';\n    return value;\n}",
@@ -323,7 +323,7 @@ describe("singleFindAndReplaceImpl", () => {
   describe("return value", () => {
     it("should return correct response structure", async () => {
       mockResolveRelativePathInDir.mockResolvedValue("/test/file.txt");
-      mockExtras.ideMessenger.ide.readFile = vi
+      mockExtras.hostBridge.ide.readFile = vi
         .fn()
         .mockResolvedValue("test content");
 
@@ -349,7 +349,7 @@ describe("singleFindAndReplaceImpl", () => {
   describe("error handling", () => {
     it("should wrap and rethrow errors from readFile", async () => {
       mockResolveRelativePathInDir.mockResolvedValue("/test/file.txt");
-      mockExtras.ideMessenger.ide.readFile = vi
+      mockExtras.hostBridge.ide.readFile = vi
         .fn()
         .mockRejectedValue(new Error("Permission denied"));
 

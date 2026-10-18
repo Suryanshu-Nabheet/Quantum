@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { IdeMessenger } from "./IdeMessenger";
+import { HostBridge } from "./HostBridge";
 
-describe("IdeMessenger request lifecycle", () => {
+describe("HostBridge request lifecycle", () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
@@ -10,7 +10,7 @@ describe("IdeMessenger request lifecycle", () => {
   it("fails boundedly when the extension host does not respond", async () => {
     vi.useFakeTimers();
     vi.stubGlobal("vscode", { postMessage: vi.fn() });
-    const messenger = new IdeMessenger();
+    const messenger = new HostBridge();
     const request = messenger.request("getIdeInfo", undefined);
     const rejection = expect(request).rejects.toThrow(
       "The agent request timed out while waiting for getIdeInfo.",
@@ -25,7 +25,7 @@ describe("IdeMessenger request lifecycle", () => {
     const postMessage = vi.fn();
     vi.stubGlobal("vscode", { postMessage });
     vi.stubGlobal("window", new EventTarget());
-    const messenger = new IdeMessenger();
+    const messenger = new HostBridge();
     const controller = new AbortController();
     controller.abort();
 

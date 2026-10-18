@@ -3,7 +3,7 @@ import { ContextItemWithId } from "core";
 import { ctxItemToRifWithContents } from "core/commands/util";
 import { dedent, getMarkdownLanguageTagForFile } from "core/util";
 import { useContext, useMemo } from "react";
-import { IdeMessengerContext } from "../../../../../context/IdeMessenger";
+import { HostBridgeContext } from "../../../../../context/HostBridge";
 import FileIcon from "../../../../FileIcon";
 import StyledMarkdownPreview from "../../../../StyledMarkdownPreview";
 import { ExpandableToolbarPreview } from "../../components/ExpandableToolbarPreview";
@@ -17,7 +17,7 @@ const backticksRegex = /`{3,}/gm;
 export const CodeBlockPreview = ({ node, deleteNode }: NodeViewProps) => {
   const item: ContextItemWithId = node.attrs.item;
   const inputId = node.attrs.inputId;
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
 
   const content = useMemo(() => {
     return dedent`${item.content}`;
@@ -32,18 +32,18 @@ export const CodeBlockPreview = ({ node, deleteNode }: NodeViewProps) => {
     e.stopPropagation();
 
     if (item.id.providerTitle === "file" && item.uri?.value) {
-      ideMessenger.post("showFile", {
+      hostBridge.post("showFile", {
         filepath: item.uri.value,
       });
     } else if (item.id.providerTitle === "code") {
       const rif = ctxItemToRifWithContents(item, true);
-      void ideMessenger.ide.showLines(
+      void hostBridge.ide.showLines(
         rif.filepath,
         rif.range.start.line,
         rif.range.end.line,
       );
     } else {
-      ideMessenger.post("showVirtualFile", {
+      hostBridge.post("showVirtualFile", {
         content: item.content,
         name: item.name,
       });

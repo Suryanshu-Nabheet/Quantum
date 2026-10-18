@@ -63,7 +63,7 @@ export const moveTerminalProcessToBackground = createAsyncThunk<
     );
 
     // Mark the process as backgrounded so we ignore future events
-    await extra.ideMessenger.request("process/markAsBackgrounded", {
+    await extra.hostBridge.request("process/markAsBackgrounded", {
       toolCallId,
     });
 

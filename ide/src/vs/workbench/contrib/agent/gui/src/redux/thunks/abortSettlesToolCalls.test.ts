@@ -3,7 +3,7 @@ import { ModelDescription } from "core";
 import { getEmptyRootState, createMockStore } from "../../util/test/mockStore";
 import { RootState } from "../store";
 import { selectCurrentToolCalls } from "../selectors/selectToolCalls";
-import { runAgentDriver } from "./streamNormalInput";
+import { runAgentDriver } from "./streamModelTurn";
 
 const claude: ModelDescription = {
   title: "Claude 3.5 Sonnet",
@@ -53,8 +53,8 @@ function stateWithGeneratingToolCall(): RootState {
 describe("aborted stream settles in-flight tool calls", () => {
   it("moves a call still in generating to errored so the next turn is not wedged", async () => {
     const mockStore = createMockStore(stateWithGeneratingToolCall());
-    const messenger = mockStore.mockIdeMessenger;
-    messenger.responses["llm/compileChat"] = {
+    const messenger = mockStore.mockHostBridge;
+    messenger.responses["llm/assembleChat"] = {
       compiledChatMessages: [{ role: "user", content: "edit files" }],
       didPrune: false,
       contextPercentage: 0.5,

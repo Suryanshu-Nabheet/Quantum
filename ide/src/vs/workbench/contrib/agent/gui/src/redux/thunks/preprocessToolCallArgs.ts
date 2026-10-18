@@ -1,6 +1,6 @@
 import { ToolCallState } from "core";
 import { AgentErrorReason } from "core/util/errors";
-import { IIdeMessenger } from "../../context/IdeMessenger";
+import { IHostBridge } from "../../context/HostBridge";
 import {
   errorToolCall,
   setProcessedToolCallArgs,
@@ -10,7 +10,7 @@ import { AppThunkDispatch } from "../store";
 
 export async function preprocessToolCalls(
   dispatch: AppThunkDispatch,
-  ideMessenger: IIdeMessenger,
+  hostBridge: IHostBridge,
   generatedToolCalls: ToolCallState[],
 ): Promise<void> {
   // Tool call pre-processing
@@ -19,7 +19,7 @@ export async function preprocessToolCalls(
       let errorReason: AgentErrorReason | undefined = undefined;
       let errorMessage: string | undefined = undefined;
       let preprocessedArgs: Record<string, unknown> | undefined = undefined;
-      const result = await ideMessenger.request("tools/preprocessArgs", {
+      const result = await hostBridge.request("tools/preprocessArgs", {
         toolName: tcState.toolCall.function.name,
         args: tcState.parsedArgs,
       });

@@ -2,7 +2,7 @@ import { screen, waitFor } from "@testing-library/dom";
 import { act } from "@testing-library/react";
 import { Editor } from "@tiptap/core";
 import { ChatMessage } from "core";
-import { MockIdeMessenger } from "../../context/MockIdeMessenger";
+import { MockHostBridge } from "../../context/MockHostBridge";
 
 function logDomText() {
   const bodyText = document.body.innerHTML;
@@ -71,12 +71,12 @@ export async function getMainEditor(): Promise<Editor> {
 }
 
 export async function sendInputWithMockedResponse(
-  ideMessenger: MockIdeMessenger,
+  hostBridge: MockHostBridge,
   input: string,
   response: ChatMessage[],
 ): Promise<void> {
   // Setup the mock response before any actions
-  ideMessenger.chatResponse = response;
+  hostBridge.chatResponse = response;
 
   // Wait for the editor to be in the document
   const editor = await getMainEditor();

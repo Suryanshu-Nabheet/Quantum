@@ -34,7 +34,7 @@ export function expectStreamResponseLifecycle(
 	const types = actions.map((action) => action.type);
 	expect(types[0]).toBe("chat/streamResponse/pending");
 	expect(types).toContain("session/submitEditorAndInitAtIndex");
-	expect(types).toContain("chat/streamNormalInput/pending");
+	expect(types).toContain("chat/streamModelTurn/pending");
 	expect(types).toContain("session/setAgentStepDepth");
 	expect(types).toContain("session/setActive");
 	if (!options.aborted) {
@@ -42,7 +42,7 @@ export function expectStreamResponseLifecycle(
 	}
 	expect(types).toContain("session/setInactive");
 	if (!options.aborted) {
-		expect(types).toContain("chat/streamNormalInput/fulfilled");
+		expect(types).toContain("chat/streamModelTurn/fulfilled");
 		expect(types).toContain("chat/streamWrapper/fulfilled");
 	}
 	if (options.aborted) {

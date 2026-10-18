@@ -35,8 +35,8 @@ function stateWithOpenTodo(): RootState {
 describe("resumeOpenTodos error policy", () => {
   it("cancels the stream and surfaces an error when a continuation turn fails", async () => {
     const mockStore = createMockStore(stateWithOpenTodo());
-    const messenger = mockStore.mockIdeMessenger;
-    messenger.responses["llm/compileChat"] = {
+    const messenger = mockStore.mockHostBridge;
+    messenger.responses["llm/assembleChat"] = {
       compiledChatMessages: [{ role: "user", content: "do it" }],
       didPrune: false,
       contextPercentage: 0.5,

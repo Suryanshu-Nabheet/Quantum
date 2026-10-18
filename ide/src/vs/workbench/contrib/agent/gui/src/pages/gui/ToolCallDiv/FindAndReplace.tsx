@@ -9,7 +9,7 @@ import { diffLines } from "diff";
 import { useContext, useMemo, useState, type CSSProperties } from "react";
 import { ApplyActions } from "../../../components/StyledMarkdownPreview/StepContainerPreToolbar/ApplyActions";
 import { FileInfo } from "../../../components/StyledMarkdownPreview/StepContainerPreToolbar/FileInfo";
-import { IdeMessengerContext } from "../../../context/IdeMessenger";
+import { HostBridgeContext } from "../../../context/HostBridge";
 import { useAppSelector } from "../../../redux/hooks";
 import {
   selectApplyStateByToolCallId,
@@ -116,7 +116,7 @@ export function FindAndReplaceDisplay({
   historyIndex,
 }: FindAndReplaceDisplayProps) {
   const [isExpanded, setIsExpanded] = useState<boolean | undefined>(undefined);
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const applyState: ApplyState | undefined = useAppSelector((state) =>
     selectApplyStateByToolCallId(state, toolCallId),
   );
@@ -228,7 +228,7 @@ export function FindAndReplaceDisplay({
           onClick={(e) => {
             if (toolCallState.output) {
               e.stopPropagation();
-              ideMessenger.post("showVirtualFile", {
+              hostBridge.post("showVirtualFile", {
                 name: "Edit output",
                 content: renderContextItems(toolCallState.output),
               });
@@ -266,7 +266,7 @@ export function FindAndReplaceDisplay({
                   return;
                 }
                 e.stopPropagation();
-                ideMessenger.post("openFile", { path: fileUri });
+                hostBridge.post("openFile", { path: fileUri });
               }}
             />
           </div>
@@ -276,13 +276,13 @@ export function FindAndReplaceDisplay({
         {applyState && (
           <ApplyActions
             onClickAccept={() => {
-              ideMessenger.post(`acceptDiff`, {
+              hostBridge.post(`acceptDiff`, {
                 filepath: fileUri,
                 streamId: applyState.streamId,
               });
             }}
             onClickReject={() => {
-              ideMessenger.post(`rejectDiff`, {
+              hostBridge.post(`rejectDiff`, {
                 filepath: fileUri,
                 streamId: applyState.streamId,
               });

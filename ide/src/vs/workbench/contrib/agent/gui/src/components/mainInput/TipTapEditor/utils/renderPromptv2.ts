@@ -1,17 +1,17 @@
 import { SlashCommandDescWithSource } from "core";
 import { SUPPORTED_PROMPT_CONTEXT_PROVIDERS } from "core/promptFiles";
 import { resolveRelativePathInDir } from "core/util/ideUtils";
-import { IIdeMessenger } from "../../../../context/IdeMessenger";
+import { IHostBridge } from "../../../../context/HostBridge";
 import { GetContextRequest } from "./types";
 
 export async function getPromptV2ContextRequests(
-  ideMessenger: IIdeMessenger,
+  hostBridge: IHostBridge,
   command: SlashCommandDescWithSource,
 ): Promise<GetContextRequest[]> {
   if (!command.prompt) {
     return [];
   }
-  const workspaceDirs = await ideMessenger.ide.getWorkspaceDirs();
+  const workspaceDirs = await hostBridge.ide.getWorkspaceDirs();
   const visitedFiles = new Set<string>();
   if (command.sourceFile) {
     visitedFiles.add(command.sourceFile);
@@ -35,7 +35,7 @@ export async function getPromptV2ContextRequests(
       // Files
       const resolvedFileUri = await resolveRelativePathInDir(
         match[1],
-        ideMessenger.ide,
+        hostBridge.ide,
         workspaceDirs,
       );
       if (resolvedFileUri) {

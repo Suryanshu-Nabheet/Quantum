@@ -34,7 +34,7 @@ export const handleApplyStateUpdate = createAsyncThunk<
           applyState.toolCallId!,
         );
         if (toolCallState) {
-          logToolUsage(toolCallState, true, true, extra.ideMessenger);
+          logToolUsage(toolCallState, true, true, extra.hostBridge);
         }
         void dispatch(exitEdit({}));
       }
@@ -52,7 +52,7 @@ export const handleApplyStateUpdate = createAsyncThunk<
         // Write the edit and continue. The user reviews the saved files after
         // the turn, instead of accepting each file before the next one starts.
         if (applyState.status === "done" && toolCallState) {
-          extra.ideMessenger.post("acceptDiff", {
+          extra.hostBridge.post("acceptDiff", {
             streamId: applyState.streamId,
             filepath: applyState.filepath,
           });
@@ -68,7 +68,7 @@ export const handleApplyStateUpdate = createAsyncThunk<
 
             const accepted = toolCallState.status !== "canceled";
 
-            logToolUsage(toolCallState, accepted, true, extra.ideMessenger);
+            logToolUsage(toolCallState, accepted, true, extra.hostBridge);
 
             if (accepted) {
               if (toolCallState.status !== "errored") {
@@ -193,7 +193,7 @@ export const applyForEditTool = createAsyncThunk<
 
   let didError = false;
   try {
-    const response = await extra.ideMessenger.request("applyToFile", payload);
+    const response = await extra.hostBridge.request("applyToFile", payload);
     if (response.status === "error") {
       didError = true;
     }

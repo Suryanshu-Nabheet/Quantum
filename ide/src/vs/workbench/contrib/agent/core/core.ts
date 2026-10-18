@@ -232,7 +232,7 @@ export class Core {
   private registerMessageHandlers() {
     const on = this.messenger.on.bind(this.messenger);
 
-    // Note, VsCode's in-process messenger doesn't do anything with this
+    // Note, the workbench in-process messenger doesn't do anything with this
     this.messenger.onError((message, err) => {
       void this.ide.showToast("error", err.message);
     });
@@ -614,7 +614,7 @@ export class Core {
     });
     on("llm/listModels", this.handleListModels.bind(this));
 
-    on("llm/compileChat", async (msg) => {
+    on("llm/assembleChat", async (msg) => {
       const { messages, options } = msg.data;
       const model = (await this.configHandler.loadConfig()).config
         ?.selectedModelByRole.chat;
@@ -623,7 +623,7 @@ export class Core {
         throw new Error("No chat model selected");
       }
 
-      return model.compileChatMessages(messages, options);
+      return model.assembleChatMessages(messages, options);
     });
 
     // Provide messenger to utils so they can interact with GUI + state

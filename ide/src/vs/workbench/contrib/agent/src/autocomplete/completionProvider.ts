@@ -20,7 +20,7 @@ import {
   stopStatusBarLoading,
 } from "./statusBar";
 
-interface VsCodeCompletionInput {
+interface WorkbenchCompletionInput {
   document: vscode.TextDocument;
   position: vscode.Position;
   context: vscode.InlineCompletionContext;

@@ -22,7 +22,7 @@ import {
   ListboxOption,
   ListboxOptions,
 } from "../../../components/ui";
-import { IdeMessengerContext } from "../../../context/IdeMessenger";
+import { HostBridgeContext } from "../../../context/HostBridge";
 import { AddMcpServerForm } from "../../../forms/AddMcpServerForm";
 import ConfirmationDialog from "../../../components/dialogs/ConfirmationDialog";
 import { useAppDispatch, useAppSelector } from "../../../redux/hooks";
@@ -97,7 +97,7 @@ function MCPServerPreview({
   const [expandedSections, setExpandedSections] = useState<{
     [key: string]: boolean;
   }>({});
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const config = useAppSelector((store) => store.config.config);
   const dispatch = useAppDispatch();
   const updateMCPServerStatus = (status: MCPServerStatus["status"]) => {
@@ -121,12 +121,12 @@ function MCPServerPreview({
   const onRefresh = async () => {
     updateMCPServerStatus("connecting");
     if (server.status === "disabled") {
-      await ideMessenger.request("mcp/setServerEnabled", {
+      await hostBridge.request("mcp/setServerEnabled", {
         id: server.id,
         enabled: true,
       });
     } else {
-      await ideMessenger.request("mcp/reloadServer", {
+      await hostBridge.request("mcp/reloadServer", {
         id: server.id,
       });
     }
@@ -140,7 +140,7 @@ function MCPServerPreview({
         tools: config.tools.filter((tool) => tool.group !== server.id),
       }),
     );
-    await ideMessenger.request("mcp/setServerEnabled", {
+    await hostBridge.request("mcp/setServerEnabled", {
       id: server.id,
       enabled: false,
     });
@@ -342,7 +342,7 @@ function MCPServerPreview({
               size="sm"
               className="cursor-pointer transition-all hover:underline"
               onClick={() =>
-                void ideMessenger.ide.showVirtualFile(server.name, error)
+                void hostBridge.ide.showVirtualFile(server.name, error)
               }
             >
               <span className="text-xs">
@@ -362,7 +362,7 @@ function MCPServerPreview({
               size="sm"
               className="transition-all"
               onClick={() =>
-                void ideMessenger.ide.showVirtualFile(server.name, info)
+                void hostBridge.ide.showVirtualFile(server.name, info)
               }
             >
               <span
@@ -384,7 +384,7 @@ export function MCPSection() {
   const servers = useAppSelector(
     (store) => store.config.config.mcpServerStatuses,
   );
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const duplicateDetection = useMemo(() => {
     const counts: Record<string, number> = {};
     availableTools.forEach((tool) => {
@@ -437,7 +437,7 @@ export function MCPSection() {
           confirmText="Delete"
           onConfirm={async () => {
             try {
-              await ideMessenger.request("config/deleteMcpServer", {
+              await hostBridge.request("config/deleteMcpServer", {
                 name: server.name,
               });
             } catch (error) {

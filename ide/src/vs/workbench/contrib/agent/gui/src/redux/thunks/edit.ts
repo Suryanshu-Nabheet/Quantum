@@ -48,7 +48,7 @@ export const streamEditThunk = createAsyncThunk<
           modifiers: {
             noContext: true,
           },
-          ideMessenger: extra.ideMessenger,
+          hostBridge: extra.hostBridge,
           defaultContextProviders,
           availableSlashCommands: [],
           dispatch,
@@ -60,7 +60,7 @@ export const streamEditThunk = createAsyncThunk<
           stripImages(content),
         ].join("\n\n");
 
-        const response = await extra.ideMessenger.request("edit/sendPrompt", {
+        const response = await extra.hostBridge.request("edit/sendPrompt", {
           prompt,
           range: codeToEdit[0] as RangeInFileWithContents,
         });
@@ -91,12 +91,12 @@ export const exitEdit = createAsyncThunk<
   }
 
   if (codeToEdit[0] && state.editModeState.applyState.numDiffs) {
-    extra.ideMessenger.post("rejectDiff", {
+    extra.hostBridge.post("rejectDiff", {
       filepath: codeToEdit[0].filepath,
     });
   }
 
-  extra.ideMessenger.post("edit/clearDecorations", undefined);
+  extra.hostBridge.post("edit/clearDecorations", undefined);
 
   dispatch(clearCodeToEdit());
   dispatch(updateEditStateApplyState(INITIAL_EDIT_APPLY_STATE));
@@ -132,7 +132,7 @@ export const enterEdit = createAsyncThunk<
     }
 
     if (!state.editModeState.codeToEdit[0]) {
-      extra.ideMessenger.post("showToast", [
+      extra.hostBridge.post("showToast", [
         "info",
         "Please open a file to use Edit mode",
       ]);

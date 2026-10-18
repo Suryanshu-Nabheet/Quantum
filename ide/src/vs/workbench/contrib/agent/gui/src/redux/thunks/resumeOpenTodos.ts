@@ -4,7 +4,7 @@ import {
   setInlineErrorMessage,
 } from "../slices/sessionSlice";
 import { ThunkApiType } from "../store";
-import { streamNormalInput } from "./streamNormalInput";
+import { streamModelTurn } from "./streamModelTurn";
 import { streamThunkWrapper } from "./streamThunkWrapper";
 
 /**
@@ -25,7 +25,7 @@ export const resumeOpenTodos = createAsyncThunk<void, void, ThunkApiType>(
     unwrapResult(
       await dispatch(
         streamThunkWrapper(async () => {
-          unwrapResult(await dispatch(streamNormalInput({ depth: 0 })));
+          unwrapResult(await dispatch(streamModelTurn({ depth: 0 })));
         }),
       ),
     );

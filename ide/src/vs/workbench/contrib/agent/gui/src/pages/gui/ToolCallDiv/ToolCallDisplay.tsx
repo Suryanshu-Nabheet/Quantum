@@ -1,7 +1,7 @@
 import { Tool, ToolCallState } from "core";
 import { useContext, useMemo } from "react";
 import { openContextItem } from "../../../components/mainInput/belowMainInput/ContextItemsPeek";
-import { IdeMessengerContext } from "../../../context/IdeMessenger";
+import { HostBridgeContext } from "../../../context/HostBridge";
 import { ToolCallStatusMessage } from "./ToolCallStatusMessage";
 import { toolCallStateToContextItems } from "./utils";
 import { ToolTruncateHistoryIcon } from "./ToolTruncateHistoryIcon";
@@ -21,7 +21,7 @@ export function ToolCallDisplay({
   icon,
   historyIndex,
 }: ToolCallDisplayProps) {
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const shownContextItems = useMemo(() => {
     const contextItems = toolCallStateToContextItems(toolCallState);
     return contextItems.filter((item) => !item.hidden);
@@ -31,7 +31,7 @@ export function ToolCallDisplay({
 
   function handleClick() {
     if (shownContextItems.length > 0) {
-      openContextItem(shownContextItems[0], ideMessenger);
+      openContextItem(shownContextItems[0], hostBridge);
     }
   }
   return (

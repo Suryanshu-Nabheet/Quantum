@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import { cn } from "../../../util/cn";
-import { IdeMessengerContext } from "../../../context/IdeMessenger";
+import { HostBridgeContext } from "../../../context/HostBridge";
 import {
   ConfigNavItem,
   configNavFooter,
@@ -45,7 +45,7 @@ function renderNavCell(
 }
 
 export function ConfigSidebar({ activeTab, onTabSelect }: ConfigSidebarProps) {
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
 
   const handleNavItem = (item: ConfigNavItem) => {
     switch (item.action.type) {
@@ -53,10 +53,10 @@ export function ConfigSidebar({ activeTab, onTabSelect }: ConfigSidebarProps) {
         onTabSelect(item.action.tabId);
         break;
       case "vscode-settings":
-        ideMessenger.post("openVscodeSettings", undefined);
+        hostBridge.post("openVscodeSettings", undefined);
         break;
       case "url":
-        ideMessenger.post("openUrl", item.action.url);
+        hostBridge.post("openUrl", item.action.url);
         break;
     }
   };

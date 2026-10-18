@@ -6,7 +6,7 @@ import {
 } from "../slices/sessionSlice";
 import { ThunkApiType } from "../store";
 import { cancelStream } from "./cancelStream";
-import { waitForAgentDriver } from "./streamNormalInput";
+import { waitForAgentDriver } from "./streamModelTurn";
 import { streamResponseThunk } from "./streamResponse";
 
 /** Stop the current turn if one is running, then send this queued message. */
@@ -23,7 +23,7 @@ export const sendQueuedNow = createAsyncThunk<void, string, ThunkApiType>(
     if (getState().session.isStreaming) {
       for (const applyState of selectDoneApplyStates(getState())) {
         if (applyState.status === "done") {
-          extra.ideMessenger.post("rejectDiff", applyState);
+          extra.hostBridge.post("rejectDiff", applyState);
         }
       }
       await dispatch(cancelStream());

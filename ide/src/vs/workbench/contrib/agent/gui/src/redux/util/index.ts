@@ -1,5 +1,5 @@
 import { ContextItem, ToolCallState, ToolStatus } from "core";
-import { IIdeMessenger } from "../../context/IdeMessenger";
+import { IHostBridge } from "../../context/HostBridge";
 import { ChatHistoryItemWithMessageId } from "../slices/sessionSlice";
 import { RootState } from "../store";
 
@@ -91,7 +91,7 @@ export function logToolUsage(
   toolCallState: ToolCallState,
   accepted: boolean,
   success: boolean,
-  messenger: IIdeMessenger,
+  messenger: IHostBridge,
   finalOutput?: ContextItem[],
 ) {}
 

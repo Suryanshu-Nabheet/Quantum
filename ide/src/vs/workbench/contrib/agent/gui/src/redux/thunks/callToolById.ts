@@ -82,7 +82,7 @@ export const callToolById = createAsyncThunk<
       error: clientToolError,
     } = await callClientTool(toolCallState, {
       dispatch,
-      ideMessenger: extra.ideMessenger,
+      hostBridge: extra.hostBridge,
       getState,
     });
     output = clientToolOutput;
@@ -90,7 +90,7 @@ export const callToolById = createAsyncThunk<
     streamResponse = respondImmediately;
   } else {
     // Tool is called on core side
-    const result = await extra.ideMessenger.request("tools/call", {
+    const result = await extra.hostBridge.request("tools/call", {
       toolCall: toolCallState.toolCall,
     });
     if (result.status === "error") {
@@ -147,14 +147,14 @@ export const callToolById = createAsyncThunk<
 
   if (streamResponse) {
     if (error) {
-      logToolUsage(toolCallState, false, false, extra.ideMessenger, output);
+      logToolUsage(toolCallState, false, false, extra.hostBridge, output);
       dispatch(
         errorToolCall({
           toolCallId,
         }),
       );
     } else {
-      logToolUsage(toolCallState, true, true, extra.ideMessenger, output);
+      logToolUsage(toolCallState, true, true, extra.hostBridge, output);
       dispatch(
         acceptToolCall({
           toolCallId,

@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import styled from "styled-components";
-import { IdeMessengerContext } from "../../../../context/IdeMessenger";
+import { HostBridgeContext } from "../../../../context/HostBridge";
 import { getFontSize } from "../../../../util";
 import { GeneratingIndicator } from "./GeneratingIndicator";
 
@@ -19,7 +19,7 @@ const StopButton = styled.div`
 `;
 
 export function TtsActiveToolbar() {
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
 
   return (
     <Container>
@@ -27,7 +27,7 @@ export function TtsActiveToolbar() {
       <StopButton
         className="text-description"
         onClick={() => {
-          ideMessenger.post("tts/kill", undefined);
+          hostBridge.post("tts/kill", undefined);
         }}
       >
         ■ Stop TTS

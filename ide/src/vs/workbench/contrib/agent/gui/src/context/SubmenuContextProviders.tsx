@@ -16,7 +16,7 @@ import {
 import { useWebviewListener } from "../hooks/useWebviewListener";
 import { useAppSelector } from "../redux/hooks";
 import { selectSubmenuContextProviders } from "../redux/selectors";
-import { IdeMessengerContext } from "./IdeMessenger";
+import { HostBridgeContext } from "./HostBridge";
 
 const MINISEARCH_OPTIONS = {
   prefix: true,
@@ -62,7 +62,7 @@ export const SubmenuContextProvidersProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const submenuContextProviders = useAppSelector(selectSubmenuContextProviders);
 
   const [, setCacheVersion] = useState(0);
@@ -212,7 +212,7 @@ export const SubmenuContextProvidersProvider = ({
               const loadVersion = (providerLoadVersions.get(title) ?? 0) + 1;
               providerLoadVersions.set(title, loadVersion);
               try {
-                const result: any = await ideMessenger.request(
+                const result: any = await hostBridge.request(
                   "context/loadSubmenuItems",
                   { title },
                 );
@@ -284,7 +284,7 @@ export const SubmenuContextProvidersProvider = ({
     },
     [
       submenuContextProviders,
-      ideMessenger,
+      hostBridge,
       fallbackResults,
       minisearches,
       providersLoading,

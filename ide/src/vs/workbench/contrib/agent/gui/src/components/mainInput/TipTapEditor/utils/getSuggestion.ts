@@ -5,7 +5,7 @@ import {
 } from "core";
 import { createElement, MutableRefObject } from "react";
 import tippy from "tippy.js";
-import { IIdeMessenger } from "../../../../context/IdeMessenger";
+import { IHostBridge } from "../../../../context/HostBridge";
 import { AppDispatch } from "../../../../redux/store";
 import AddPromptDialog from "../../../dialogs/AddPromptDialog";
 import AtMentionDropdown from "../../AtMentionDropdown";
@@ -108,7 +108,7 @@ export function getContextProviderDropdownOptions(
   onClose: () => void,
   onOpen: () => void,
   inSubmenu: MutableRefObject<string | undefined>,
-  ideMessenger: IIdeMessenger,
+  hostBridge: IHostBridge,
 ) {
   const items = async ({ query }: { query: string }) => {
     if (inSubmenu.current) {
@@ -169,7 +169,7 @@ export function getSlashCommandDropdownOptions(
   availableSlashCommandsRef: MutableRefObject<ComboBoxItem[]>,
   onClose: () => void,
   onOpen: () => void,
-  ideMessenger: IIdeMessenger,
+  hostBridge: IHostBridge,
   dispatch: AppDispatch,
   inputId: string,
 ) {

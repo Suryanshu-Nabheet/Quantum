@@ -11,7 +11,7 @@ import {
 } from "core/llm/autodetect";
 import { BuiltInToolNames } from "core/tools/builtIn";
 import { memo, useContext, useRef } from "react";
-import { IdeMessengerContext } from "../../context/IdeMessenger";
+import { HostBridgeContext } from "../../context/HostBridge";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { selectToolCallsByStatus } from "../../redux/selectors/selectToolCalls";
 import { selectSelectedChatModel } from "../../redux/slices/configSlice";
@@ -50,7 +50,7 @@ interface InputToolbarProps {
 
 function InputToolbar(props: InputToolbarProps) {
   const dispatch = useAppDispatch();
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const defaultModel = useAppSelector(selectSelectedChatModel);
   const isInEdit = useAppSelector((store) => store.session.isInEdit);
@@ -85,11 +85,11 @@ function InputToolbar(props: InputToolbarProps) {
       const stopPromises = runningTerminalCalls.map(
         async (terminalCall: ToolCallState) => {
           try {
-            await ideMessenger.request("process/killTerminalProcess", {
+            await hostBridge.request("process/killTerminalProcess", {
               toolCallId: terminalCall.toolCallId,
             });
             dispatch(cancelToolCall({ toolCallId: terminalCall.toolCallId }));
-            logToolUsage(terminalCall, false, true, ideMessenger);
+            logToolUsage(terminalCall, false, true, hostBridge);
           } catch (error) {
             console.error(`Failed to cancel terminal:`, error);
           }
@@ -222,7 +222,7 @@ function InputToolbar(props: InputToolbarProps) {
                 className="hidden hover:underline sm:flex"
                 onClick={async () => {
                   void dispatch(exitEdit({}));
-                  ideMessenger.post("focusEditor", undefined);
+                  hostBridge.post("focusEditor", undefined);
                 }}
               >
                 <span>

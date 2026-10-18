@@ -10,14 +10,14 @@ import { serializeTool } from "core/tools";
 import { grepSearchTool } from "core/tools/definitions";
 import { vi } from "vitest";
 import type { RootState } from "../redux/store";
-import { runAgentDriver } from "../redux/thunks/streamNormalInput";
+import { runAgentDriver } from "../redux/thunks/streamModelTurn";
 import {
 	createMockStore,
 	getEmptyRootState,
 } from "../util/test/mockStore";
 
 export interface HarnessTranscript {
-	compileChat?: {
+	assembleChat?: {
 		compiledChatMessages: { role: string; content: string }[];
 		didPrune?: boolean;
 		contextPercentage?: number;
@@ -167,15 +167,15 @@ export async function runHarnessCase(caseDir: string): Promise<HarnessCaseResult
 	const mockStore = createMockStore(
 		stateWithPrompt(manifest.prompt, manifest.expect_tools) as Partial<RootState>,
 	);
-	const mockIdeMessenger = mockStore.mockIdeMessenger;
+	const mockHostBridge = mockStore.mockHostBridge;
 
-	const compile = transcript.compileChat ?? {
+	const compile = transcript.assembleChat ?? {
 		compiledChatMessages: [{ role: "user", content: manifest.prompt }],
 		didPrune: false,
 		contextPercentage: 0.5,
 	};
-	mockIdeMessenger.responses["llm/compileChat"] = compile as any;
-	mockIdeMessenger.responses["tools/call"] = {
+	mockHostBridge.responses["llm/assembleChat"] = compile as any;
+	mockHostBridge.responses["tools/call"] = {
 		contextItems: [
 			{
 				content: "ok",
@@ -197,15 +197,15 @@ export async function runHarnessCase(caseDir: string): Promise<HarnessCaseResult
 		}
 		return turn(next.chunks, next.completion);
 	});
-	mockIdeMessenger.llmStreamChat = streamChat as any;
+	mockHostBridge.llmStreamChat = streamChat as any;
 
-	const requestSpy = vi.spyOn(mockIdeMessenger, "request");
+	const requestSpy = vi.spyOn(mockHostBridge, "request");
 
 	try {
 		await runAgentDriver({
 			depth: 0,
 			dispatch: mockStore.dispatch as any,
-			extra: { ideMessenger: mockIdeMessenger } as any,
+			extra: { hostBridge: mockHostBridge } as any,
 			getState: mockStore.getState as any,
 		});
 	} catch (err) {

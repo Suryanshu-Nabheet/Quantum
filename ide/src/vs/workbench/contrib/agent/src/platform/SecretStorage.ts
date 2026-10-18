@@ -9,9 +9,9 @@ import { EXTENSION_ID } from "../util/extensionMeta";
 const ENCRYPTION_KEY_NAME = EXTENSION_ID;
 
 /**
- * vscode.SecretStorage is not reliable (often loads older values for a key)
- * but keytar cannot be used in vscode extensions without majorly complicating the build
- * so we store the encryption key in vscode.SecretStorage, and handle the encrypted data ourselves
+ * Secret values live on disk as AES-256-GCM ciphertext under global storage.
+ * Only the data key is held in the platform secret store, because that store
+ * can return stale values for keys that are rewritten frequently.
  */
 export class SecretStorage {
   private globalStoragePath: string;

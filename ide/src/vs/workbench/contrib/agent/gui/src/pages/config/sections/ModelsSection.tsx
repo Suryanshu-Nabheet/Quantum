@@ -3,7 +3,7 @@ import { ModelDescription } from "core";
 import { useContext, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import ConfirmationDialog from "../../../components/dialogs/ConfirmationDialog";
-import { IdeMessengerContext } from "../../../context/IdeMessenger";
+import { HostBridgeContext } from "../../../context/HostBridge";
 import { AddModelForm } from "../../../forms/AddModelForm";
 import { useConfigureModelDialog } from "../../../hooks/useConfigureModelDialog";
 import { useAppDispatch, useAppSelector } from "../../../redux/hooks";
@@ -29,7 +29,7 @@ const DEFAULT_CHAT_MODEL_ROLES: ModelRole[] = [
 
 export function ModelsSection() {
   const dispatch = useAppDispatch();
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const navigate = useNavigate();
   const config = useAppSelector((state) => state.config.config);
   const configuredProviders = useMemo(() => {
@@ -63,7 +63,7 @@ export function ModelsSection() {
           confirmText="Remove"
           onConfirm={async () => {
             try {
-              await ideMessenger.request("config/deleteModel", {
+              await hostBridge.request("config/deleteModel", {
                 provider: group.credentialModel.provider,
                 titlesToClear: group.models.map((m) => m.title),
               });

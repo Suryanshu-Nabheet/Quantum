@@ -10,7 +10,7 @@ import {
   SlashCommandDescWithSource,
 } from "core";
 import { stripImages } from "core/util/messageContent";
-import { IIdeMessenger } from "../../../../context/IdeMessenger";
+import { IHostBridge } from "../../../../context/HostBridge";
 import { setIsGatheringContext } from "../../../../redux/slices/sessionSlice";
 import { RootState } from "../../../../redux/store";
 import { processEditorContent } from "./processEditorContent";
@@ -20,7 +20,7 @@ import { GetContextRequest } from "./types";
 interface ResolveEditorContentInput {
   editorState: JSONContent;
   modifiers: InputModifiers;
-  ideMessenger: IIdeMessenger;
+  hostBridge: IHostBridge;
   defaultContextProviders: DefaultContextProvider[];
   availableSlashCommands: SlashCommandDescWithSource[];
   dispatch: Dispatch;
@@ -45,7 +45,7 @@ interface ResolveEditorContentOutput {
  */
 export async function resolveEditorContent({
   editorState,
-  ideMessenger,
+  hostBridge,
   defaultContextProviders,
   availableSlashCommands,
   dispatch,
@@ -63,7 +63,7 @@ export async function resolveEditorContent({
     contextRequests: slashContextRequests,
     legacyCommandWithInput,
   } = await renderSlashCommandPrompt(
-    ideMessenger,
+    hostBridge,
     slashCommandName,
     parts,
     availableSlashCommands,
@@ -82,7 +82,7 @@ export async function resolveEditorContent({
 
   const selectedContextItems = await gatherContextItems({
     contextRequests,
-    ideMessenger,
+    hostBridge,
     defaultContextProviders,
     parts: slashedParts,
     selectedCode,
@@ -106,14 +106,14 @@ export async function resolveEditorContent({
  */
 async function gatherContextItems({
   contextRequests,
-  ideMessenger,
+  hostBridge,
   defaultContextProviders,
   parts,
   selectedCode,
   getState,
 }: {
   contextRequests: GetContextRequest[];
-  ideMessenger: IIdeMessenger;
+  hostBridge: IHostBridge;
   defaultContextProviders: DefaultContextProvider[];
   parts: MessagePart[];
   selectedCode: RangeInFile[];
@@ -144,7 +144,7 @@ async function gatherContextItems({
   // Fetch all context providers in parallel — sequential awaits added seconds per submit.
   const results = await Promise.all(
     deduplicatedInputs.map((item) =>
-      ideMessenger.request("context/getContextItems", {
+      hostBridge.request("context/getContextItems", {
         name: item.provider,
         query: item.query ?? "",
         fullInput: stripImages(parts),

@@ -2,7 +2,7 @@ import { MCPServer } from "agent-config";
 import { MCPServerStatus } from "core";
 import { useContext, useState } from "react";
 import { Button, Input } from "../components";
-import { IdeMessengerContext } from "../context/IdeMessenger";
+import { HostBridgeContext } from "../context/HostBridge";
 import { HAIRLINE_BORDER } from "../styles/borders";
 import { cn } from "../util/cn";
 interface AddMcpServerFormProps {
@@ -52,7 +52,7 @@ export function AddMcpServerForm({
   existingServer,
   originalName,
 }: AddMcpServerFormProps) {
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const initial = existingServer
     ? serverToFormState(existingServer)
     : {
@@ -97,12 +97,12 @@ export function AddMcpServerForm({
     }
 
     if (isEditing && originalName) {
-      ideMessenger.post("config/updateMcpServer", {
+      hostBridge.post("config/updateMcpServer", {
         originalName,
         server,
       });
     } else {
-      ideMessenger.post("config/addMcpServer", server);
+      hostBridge.post("config/addMcpServer", server);
     }
     onDone();
   };

@@ -2,7 +2,7 @@ import { ToolCallDelta } from "core";
 import { createRuleBlock } from "core/tools/definitions/createRuleBlock";
 import { CreateRuleBlockArgs } from "core/tools/implementations/createRuleBlock";
 import { useCallback, useContext, useState } from "react";
-import { IdeMessengerContext } from "../../context/IdeMessenger";
+import { HostBridgeContext } from "../../context/HostBridge";
 import { useAppSelector } from "../../redux/hooks";
 import { selectSelectedChatModel } from "../../redux/slices/configSlice";
 import { constructMessages } from "../../redux/util/constructMessages";
@@ -45,7 +45,7 @@ export function useRuleGeneration(
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const currentHistory = useAppSelector((state) => state.session.history);
   const selectedChatModel = useAppSelector(selectSelectedChatModel);
 
@@ -86,7 +86,7 @@ export function useRuleGeneration(
       const abortController = new AbortController();
 
       // Stream the response with createRuleBlock tool
-      const gen = ideMessenger.llmStreamChat(
+      const gen = hostBridge.llmStreamChat(
         {
           messages,
           completionOptions: {
@@ -123,7 +123,7 @@ export function useRuleGeneration(
     } finally {
       setIsGenerating(false);
     }
-  }, [ideMessenger, currentHistory, selectedChatModel, inputPrompt]);
+  }, [hostBridge, currentHistory, selectedChatModel, inputPrompt]);
 
   const reset = useCallback(() => {
     setError(null);

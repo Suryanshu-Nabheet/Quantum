@@ -34,7 +34,7 @@ import { useOpenRule } from "../../../components/mainInput/Lump/useEditBlock";
 import { useMainEditor } from "../../../components/mainInput/TipTapEditor/MainEditorProvider";
 import { Card } from "../../../components/ui";
 import { ConfigEmptyAction } from "../components/ConfigEmptyAction";
-import { IdeMessengerContext } from "../../../context/IdeMessenger";
+import { HostBridgeContext } from "../../../context/HostBridge";
 import { useBookmarkedSlashCommands } from "../../../hooks/useBookmarkedSlashCommands";
 import { useSkills, type DetectedSkill } from "../../../hooks/useSkills";
 import { useAppDispatch, useAppSelector } from "../../../redux/hooks";
@@ -142,7 +142,7 @@ interface RuleCardProps {
 
 const RuleCard: React.FC<RuleCardProps> = ({ rule }) => {
   const dispatch = useAppDispatch();
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const policy = useAppSelector((state) =>
     rule.name
       ? state.ui.ruleSettings[rule.name] || DEFAULT_RULE_SETTING
@@ -214,7 +214,7 @@ const RuleCard: React.FC<RuleCardProps> = ({ rule }) => {
           confirmText="Delete"
           onConfirm={async () => {
             try {
-              await ideMessenger.request("config/deleteRule", { ruleId });
+              await hostBridge.request("config/deleteRule", { ruleId });
             } catch (error) {
               console.error("Failed to delete rule:", error);
             }
@@ -306,7 +306,7 @@ const RuleCard: React.FC<RuleCardProps> = ({ rule }) => {
 function PromptsSubSection() {
   const dispatch = useAppDispatch();
   const { isCommandBookmarked, toggleBookmark } = useBookmarkedSlashCommands();
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
 
   const slashCommands = useAppSelector(
     (state) => state.config.config.slashCommands ?? [],
@@ -332,7 +332,7 @@ function PromptsSubSection() {
     }
 
     if (prompt.sourceFile) {
-      void ideMessenger.ide.openFile(prompt.sourceFile);
+      void hostBridge.ide.openFile(prompt.sourceFile);
     }
   };
 
@@ -374,7 +374,7 @@ function PromptsSubSection() {
           confirmText="Delete"
           onConfirm={async () => {
             try {
-              await ideMessenger.request("config/deletePrompt", { promptId });
+              await hostBridge.request("config/deletePrompt", { promptId });
             } catch (error) {
               console.error("Failed to delete prompt:", error);
             }
@@ -492,7 +492,7 @@ function RulesSubSection() {
   const selectedProfile = useAppSelector(selectSelectedProfile);
   const config = useAppSelector((store) => store.config.config);
   const mode = useAppSelector((store) => store.session.mode);
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const dispatch = useAppDispatch();
   const isLocal = selectedProfile?.profileType === "local";
   const [globalRulesMode, setGlobalRulesMode] = useState<string>("workspace");
@@ -571,7 +571,7 @@ function RulesSubSection() {
  */
 function SkillsSubSection() {
   const dispatch = useAppDispatch();
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const { skills, isLoading, refresh } = useSkills();
 
   const handleAddSkill = () => {
@@ -581,7 +581,7 @@ function SkillsSubSection() {
 
   const handleOpenSkill = (skill: DetectedSkill) => {
     if (skill.sourceFile) {
-      void ideMessenger.ide.openFile(skill.sourceFile);
+      void hostBridge.ide.openFile(skill.sourceFile);
     }
   };
 

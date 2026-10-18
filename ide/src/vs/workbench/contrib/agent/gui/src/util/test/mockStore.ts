@@ -1,7 +1,7 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { copyOf } from "core/util";
 import { vi } from "vitest";
-import { MockIdeMessenger } from "../../context/MockIdeMessenger";
+import { MockHostBridge } from "../../context/MockHostBridge";
 import configReducer, {
   INITIAL_CONFIG_SLICE,
 } from "../../redux/slices/configSlice";
@@ -48,13 +48,13 @@ export const getEmptyRootState: () => RootState = () => {
 
 export const createMockStore = (
   initialState?: Partial<RootState>,
-  mockMessenger?: MockIdeMessenger,
+  mockMessenger?: MockHostBridge,
 ): ReturnType<typeof configureStore> & {
-  mockIdeMessenger: MockIdeMessenger;
+  mockHostBridge: MockHostBridge;
   getActions: () => any[];
   clearActions: () => void;
 } => {
-  const mockIdeMessenger = mockMessenger ?? new MockIdeMessenger();
+  const mockHostBridge = mockMessenger ?? new MockHostBridge();
 
   const store = configureStore({
     reducer: {
@@ -77,7 +77,7 @@ export const createMockStore = (
         },
         thunk: {
           extraArgument: {
-            ideMessenger: mockIdeMessenger,
+            hostBridge: mockHostBridge,
           },
         },
       }),
@@ -87,22 +87,22 @@ export const createMockStore = (
   const actions: any[] = [];
   const originalDispatch = store.dispatch;
 
-  // Override dispatch to track actions and inject ideMessenger
+  // Override dispatch to track actions and inject hostBridge
   store.dispatch = vi.fn((action: any) => {
     if (typeof action === "function") {
-      // For thunks, provide the extra argument with ideMessenger
+      // For thunks, provide the extra argument with hostBridge
       return action(store.dispatch, store.getState, {
-        ideMessenger: mockIdeMessenger,
+        hostBridge: mockHostBridge,
       });
     }
     actions.push(action);
     return originalDispatch(action);
   });
 
-  // Expose mockIdeMessenger so tests can configure it
+  // Expose mockHostBridge so tests can configure it
   return {
     ...store,
-    mockIdeMessenger,
+    mockHostBridge,
     getActions: () => actions,
     clearActions: () => actions.splice(0, actions.length),
   };

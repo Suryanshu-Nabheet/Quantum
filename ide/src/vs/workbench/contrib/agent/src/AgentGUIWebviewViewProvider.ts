@@ -11,14 +11,14 @@ import {
 } from "./util/guiAssets";
 import { getExtensionVersion, getvsCodeUriScheme } from "./util/util";
 import { getExtensionUri, getNonce } from "./util/vscode";
-import { VsCodeWebviewProtocol } from "./webviewProtocol";
+import { WorkbenchWebviewProtocol } from "./webviewProtocol";
 
 import type { FileEdit } from "core";
 
 export class AgentGUIWebviewViewProvider
   implements vscode.WebviewViewProvider {
   public static readonly viewType = "agent.agentGUIView";
-  public webviewProtocol: VsCodeWebviewProtocol;
+  public webviewProtocol: WorkbenchWebviewProtocol;
 
   public get isReady(): boolean {
     return !!this.webview;
@@ -75,7 +75,7 @@ export class AgentGUIWebviewViewProvider
     private readonly extensionContext: vscode.ExtensionContext,
     private readonly onResolve?: () => void,
   ) {
-    this.webviewProtocol = new VsCodeWebviewProtocol();
+    this.webviewProtocol = new WorkbenchWebviewProtocol();
 
     extensionContext.subscriptions.push(
       vscode.workspace.onDidChangeConfiguration((e) => {

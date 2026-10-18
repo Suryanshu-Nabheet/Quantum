@@ -11,7 +11,7 @@ import {
   clearNewestToolbarPreviewForInput,
 } from "../slices/sessionSlice";
 import { ThunkApiType } from "../store";
-import { streamNormalInput } from "./streamNormalInput";
+import { streamModelTurn } from "./streamModelTurn";
 import { streamThunkWrapper } from "./streamThunkWrapper";
 import { updateFileSymbolsFromFiles } from "./updateFileSymbols";
 
@@ -44,7 +44,7 @@ export const streamResponseThunk = createAsyncThunk<
           clearNewestToolbarPreviewForInput({ inputId: "main-editor-input" }),
         );
 
-        void extra.ideMessenger.request("notifyAgentBrowserSubmit", undefined);
+        void extra.hostBridge.request("notifyAgentBrowserSubmit", undefined);
 
         const defaultContextProviders =
           state.config.config.experimental?.defaultContext ?? [];
@@ -58,7 +58,7 @@ export const streamResponseThunk = createAsyncThunk<
         } = await resolveEditorContent({
           editorState,
           modifiers,
-          ideMessenger: extra.ideMessenger,
+          hostBridge: extra.hostBridge,
           defaultContextProviders,
           availableSlashCommands: state.config.config.slashCommands,
           dispatch,
@@ -90,7 +90,7 @@ export const streamResponseThunk = createAsyncThunk<
 
         unwrapResult(
           await dispatch(
-            streamNormalInput({
+            streamModelTurn({
               legacySlashCommandData: legacyCommandWithInput
                 ? {
                     command: legacyCommandWithInput.command,

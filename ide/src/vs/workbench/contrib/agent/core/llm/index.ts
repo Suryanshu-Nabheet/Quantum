@@ -54,7 +54,7 @@ import {
   LLMConfigurationStatuses,
 } from "./constants.js";
 import {
-  compileChatMessages,
+  assembleChatMessages,
   countTokens,
   pruneRawPromptFromTop,
 } from "./countTokens.js";
@@ -944,14 +944,14 @@ export abstract class BaseLLM implements ILLM {
     return { role: "assistant" as const, content: completion };
   }
 
-  compileChatMessages(
+  assembleChatMessages(
     message: ChatMessage[],
     options: LLMFullCompletionOptions,
   ) {
     let { completionOptions } = this._parseCompletionOptions(options);
     completionOptions = this._modifyCompletionOptions(completionOptions);
 
-    return compileChatMessages({
+    return assembleChatMessages({
       modelName: completionOptions.model,
       msgs: message,
       knownContextLength: this.contextLength,
@@ -1131,7 +1131,7 @@ export abstract class BaseLLM implements ILLM {
 
     // If not precompiled, compile the chat messages
     if (!messageOptions?.precompiled) {
-      const { compiledChatMessages } = compileChatMessages({
+      const { compiledChatMessages } = assembleChatMessages({
         modelName: completionOptions.model,
         msgs: _messages,
         knownContextLength: this.contextLength,

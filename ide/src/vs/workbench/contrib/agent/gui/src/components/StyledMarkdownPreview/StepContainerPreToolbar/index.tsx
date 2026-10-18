@@ -2,8 +2,8 @@ import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import { inferResolvedUriFromRelativePath } from "core/util/ideUtils";
 import { renderContextItems } from "core/util/messageContent";
 import { useContext, useEffect, useMemo, useState } from "react";
-import { IdeMessengerContext } from "../../../context/IdeMessenger";
-import { useIdeMessengerRequest } from "../../../hooks/useIdeMessengerRequest";
+import { HostBridgeContext } from "../../../context/HostBridge";
+import { useHostBridgeRequest } from "../../../hooks/useHostBridgeRequest";
 import { useWebviewListener } from "../../../hooks/useWebviewListener";
 import { getStatusIcon } from "../../../pages/gui/ToolCallDiv/utils";
 import { useAppSelector } from "../../../redux/hooks";
@@ -56,7 +56,7 @@ export function StepContainerPreToolbar({
   disableManualApply,
   collapsible,
 }: StepContainerPreToolbarProps) {
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const history = useAppSelector((state) => state.session.history);
   const [isExpanded, setIsExpanded] = useState(expanded ?? true);
 
@@ -73,7 +73,7 @@ export function StepContainerPreToolbar({
     result: fileExists,
     refresh: refreshFileExists,
     isLoading: isLoadingFileExists,
-  } = useIdeMessengerRequest("fileExists", fileExistsInput);
+  } = useHostBridgeRequest("fileExists", fileExistsInput);
 
   const nextCodeBlockIndex = useAppSelector(
     (state) => state.session.codeBlockApplyStates.curIndex,
@@ -99,7 +99,7 @@ export function StepContainerPreToolbar({
         className={`mr-1 h-4 w-4 flex-shrink-0 ${toolCallState.output ? "cursor-pointer" : ""}`}
         onClick={() => {
           if (toolCallState.output) {
-            ideMessenger.post("showVirtualFile", {
+            hostBridge.post("showVirtualFile", {
               name: "Edit output",
               content: renderContextItems(toolCallState.output),
             });
@@ -148,13 +148,13 @@ export function StepContainerPreToolbar({
       if (relativeFilepath) {
         const resolvedUri = await inferResolvedUriFromRelativePath(
           relativeFilepath,
-          ideMessenger.ide,
+          hostBridge.ide,
         );
         setRelativeFilepathUri(resolvedUri);
       }
     };
     void getRelativeFilepathUri();
-  }, [relativeFilepath, ideMessenger.ide]);
+  }, [relativeFilepath, hostBridge.ide]);
 
   async function getFileUriToApplyTo() {
     // If we've already resolved a file URI (from clicking apply), use that
@@ -168,7 +168,7 @@ export function StepContainerPreToolbar({
     }
 
     // If no filepath was provided, get the current file
-    const currentFile = await ideMessenger.ide.getCurrentFile();
+    const currentFile = await hostBridge.ide.getCurrentFile();
     if (currentFile) {
       return currentFile.path;
     }
@@ -179,7 +179,7 @@ export function StepContainerPreToolbar({
   async function onClickApply() {
     const fileUri = await getFileUriToApplyTo();
     if (!fileUri) {
-      void ideMessenger.ide.showToast(
+      void hostBridge.ide.showToast(
         "error",
         "Could not resolve filepath to apply changes",
       );
@@ -187,7 +187,7 @@ export function StepContainerPreToolbar({
     }
 
     // applyToFile will create the file if it doesn't exist
-    ideMessenger.post("applyToFile", {
+    hostBridge.post("applyToFile", {
       streamId: codeBlockStreamId,
       filepath: fileUri,
       text: codeBlockContent,
@@ -198,20 +198,20 @@ export function StepContainerPreToolbar({
   }
 
   function onClickInsertAtCursor() {
-    ideMessenger.post("insertAtCursor", { text: codeBlockContent });
+    hostBridge.post("insertAtCursor", { text: codeBlockContent });
   }
 
   async function handleDiffAction(action: "accept" | "reject") {
     const filepath = await getFileUriToApplyTo();
     if (!filepath) {
-      void ideMessenger.ide.showToast(
+      void hostBridge.ide.showToast(
         "error",
         `Could not resolve filepath to ${action} changes`,
       );
       return;
     }
 
-    ideMessenger.post(`${action}Diff`, {
+    hostBridge.post(`${action}Diff`, {
       filepath,
       streamId: codeBlockStreamId,
     });
@@ -221,7 +221,7 @@ export function StepContainerPreToolbar({
 
   async function onClickFilename() {
     if (appliedFileUri) {
-      ideMessenger.post("showFile", {
+      hostBridge.post("showFile", {
         filepath: appliedFileUri,
       });
     }
@@ -229,10 +229,10 @@ export function StepContainerPreToolbar({
     if (relativeFilepath) {
       const filepath = await inferResolvedUriFromRelativePath(
         relativeFilepath,
-        ideMessenger.ide,
+        hostBridge.ide,
       );
 
-      ideMessenger.post("showFile", {
+      hostBridge.post("showFile", {
         filepath,
       });
     }

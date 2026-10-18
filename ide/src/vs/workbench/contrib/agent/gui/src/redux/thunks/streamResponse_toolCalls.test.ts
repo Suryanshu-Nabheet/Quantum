@@ -30,7 +30,7 @@ import {
   runTerminalCommandTool,
 } from "core/tools/definitions";
 import { resolveEditorContent } from "../../components/mainInput/TipTapEditor/utils/resolveEditorContent";
-import { MockIdeMessenger } from "../../context/MockIdeMessenger";
+import { MockHostBridge } from "../../context/MockHostBridge";
 import { RootState } from "../store";
 import { getRootStateWithClaude } from "./streamResponse.test";
 import { expectStreamResponseLifecycle } from "../../util/test/dispatchAssertions";
@@ -102,18 +102,18 @@ describe("streamResponseThunk - tool calls", () => {
     initialState.session.id = "session-123";
     initialState.config.config.tools = [grepTool];
     const mockStoreWithToolSettings = createMockStore(initialState);
-    const mockIdeMessengerWithTool = mockStoreWithToolSettings.mockIdeMessenger;
+    const mockHostBridgeWithTool = mockStoreWithToolSettings.mockHostBridge;
 
-    const requestSpy = vi.spyOn(mockIdeMessengerWithTool, "request");
+    const requestSpy = vi.spyOn(mockHostBridgeWithTool, "request");
 
-    mockIdeMessengerWithTool.responses["llm/compileChat"] = {
+    mockHostBridgeWithTool.responses["llm/assembleChat"] = {
       compiledChatMessages: [
         { role: "user", content: "Please search the codebase" },
       ],
       didPrune: false,
       contextPercentage: 0.9,
     };
-    mockIdeMessengerWithTool.responses["tools/call"] = {
+    mockHostBridgeWithTool.responses["tools/call"] = {
       contextItems: [
         {
           name: "Search Results",
@@ -183,7 +183,7 @@ describe("streamResponseThunk - tool calls", () => {
       }
     });
 
-    mockIdeMessengerWithTool.llmStreamChat = mockStreamChat;
+    mockHostBridgeWithTool.llmStreamChat = mockStreamChat;
 
     // Track isStreaming state changes to detect UI flashing during auto-approved tool execution
     const streamingStateChanges: boolean[] = [];
@@ -252,7 +252,7 @@ describe("streamResponseThunk - tool calls", () => {
     // Verify the tool-call invariants rather than an incidental ordering:
     // the tool runs, the agent resumes streaming, and the turn completes.
     expect(actionTypes).toContain("chat/callTool/fulfilled");
-    expect(actionTypes).toContain("chat/streamNormalInput/fulfilled");
+    expect(actionTypes).toContain("chat/streamModelTurn/fulfilled");
     expect(actionTypes.at(-1)).toBe("chat/streamResponse/fulfilled");
 
     // Verify key payload data for important actions
@@ -318,7 +318,7 @@ describe("streamResponseThunk - tool calls", () => {
     });
 
     // Verify IDE messenger calls
-    expect(requestSpy).toHaveBeenCalledWith("llm/compileChat", {
+    expect(requestSpy).toHaveBeenCalledWith("llm/assembleChat", {
       messages: [
         {
           role: "system",
@@ -361,7 +361,7 @@ describe("streamResponseThunk - tool calls", () => {
 
     // Verify that multiple compilation calls were made (due to tool call continuation)
     const compileCallsCount = requestSpy.mock.calls.filter(
-      (call: any) => call[0] === "llm/compileChat",
+      (call: any) => call[0] === "llm/assembleChat",
     ).length;
     expect(compileCallsCount).toBeGreaterThanOrEqual(1);
 
@@ -401,10 +401,10 @@ describe("streamResponseThunk - tool calls", () => {
     initialState.config.config.tools = [grepTool];
     const mockStoreWithManualApproval = createMockStore(initialState);
 
-    const mockIdeMessengerManual = mockStoreWithManualApproval.mockIdeMessenger;
-    const requestSpy = vi.spyOn(mockIdeMessengerManual, "request");
+    const mockHostBridgeManual = mockStoreWithManualApproval.mockHostBridge;
+    const requestSpy = vi.spyOn(mockHostBridgeManual, "request");
     // Setup successful compilation
-    mockIdeMessengerManual.responses["llm/compileChat"] = {
+    mockHostBridgeManual.responses["llm/assembleChat"] = {
       compiledChatMessages: [
         { role: "user", content: "Please search the codebase" },
       ],
@@ -447,7 +447,7 @@ describe("streamResponseThunk - tool calls", () => {
     const mockChat = vi
       .fn()
       .mockReturnValue(mockStreamGeneratorWithApprovalTool());
-    mockIdeMessengerManual.llmStreamChat = mockChat;
+    mockHostBridgeManual.llmStreamChat = mockChat;
 
     // Track isStreaming state changes to ensure it doesn't become false after tool generation
     const streamingStates: boolean[] = [];
@@ -481,12 +481,12 @@ describe("streamResponseThunk - tool calls", () => {
 
     const dispatchedActions = mockStoreWithManualApproval.getActions();
     expect(dispatchedActions.map((a) => a.type)).toContain(
-      "chat/streamNormalInput/fulfilled",
+      "chat/streamModelTurn/fulfilled",
     );
     expect(dispatchedActions.at(-1)?.type).toBe("chat/streamResponse/fulfilled");
 
     // Verify IDE messenger calls - compilation should happen, streaming should happen
-    expect(requestSpy).toHaveBeenCalledWith("llm/compileChat", {
+    expect(requestSpy).toHaveBeenCalledWith("llm/assembleChat", {
       messages: [
         {
           role: "system",
@@ -514,7 +514,7 @@ describe("streamResponseThunk - tool calls", () => {
       options: { tools: [grepTool] },
     });
 
-    expect(mockIdeMessengerManual.llmStreamChat).toHaveBeenCalledWith(
+    expect(mockHostBridgeManual.llmStreamChat).toHaveBeenCalledWith(
       {
         completionOptions: { tools: [grepTool] },
         legacySlashCommandData: undefined,
@@ -563,10 +563,10 @@ describe("streamResponseThunk - tool calls", () => {
     initialState.config.config.tools = [grepTool];
 
     const mockStoreWithApproval = createMockStore(initialState);
-    const mockIdeMessengerApproval = mockStoreWithApproval.mockIdeMessenger;
+    const mockHostBridgeApproval = mockStoreWithApproval.mockHostBridge;
     // Setup successful compilation
 
-    mockIdeMessengerApproval.responses["llm/compileChat"] = {
+    mockHostBridgeApproval.responses["llm/assembleChat"] = {
       compiledChatMessages: [
         {
           role: "user",
@@ -577,7 +577,7 @@ describe("streamResponseThunk - tool calls", () => {
       contextPercentage: 0.85,
     };
 
-    mockIdeMessengerApproval.responses["tools/call"] = {
+    mockHostBridgeApproval.responses["tools/call"] = {
       contextItems: [
         {
           name: "Search Results",
@@ -656,8 +656,8 @@ describe("streamResponseThunk - tool calls", () => {
         return followupGenerator();
       }
     });
-    mockIdeMessengerApproval.llmStreamChat = mockChat;
-    const requestSpy = vi.spyOn(mockIdeMessengerApproval, "request");
+    mockHostBridgeApproval.llmStreamChat = mockChat;
+    const requestSpy = vi.spyOn(mockHostBridgeApproval, "request");
 
     // Track isStreaming state changes throughout the entire test
     const streamingStateChanges: boolean[] = [];
@@ -746,8 +746,8 @@ describe("streamResponseThunk - tool calls", () => {
       initialState.config.config.tools = [grepTool];
       const mockStore = createMockStore(initialState);
 
-      const mockIdeMessenger = mockStore.mockIdeMessenger;
-      mockIdeMessenger.responseHandlers["tools/evaluatePolicy"] = async (
+      const mockHostBridge = mockStore.mockHostBridge;
+      mockHostBridge.responseHandlers["tools/evaluatePolicy"] = async (
         data,
       ) => {
         if (
@@ -759,7 +759,7 @@ describe("streamResponseThunk - tool calls", () => {
         }
         return { policy: data.basePolicy };
       };
-      mockIdeMessenger.responses["llm/compileChat"] = {
+      mockHostBridge.responses["llm/assembleChat"] = {
         compiledChatMessages: [{ role: "user", content: "Run echo hello" }],
         didPrune: false,
         contextPercentage: 0.5,
@@ -796,8 +796,8 @@ describe("streamResponseThunk - tool calls", () => {
       }
 
       const mockChat = vi.fn().mockReturnValue(mockStreamWithEcho());
-      mockIdeMessenger.llmStreamChat = mockChat;
-      const requestSpy = vi.spyOn(mockIdeMessenger, "request");
+      mockHostBridge.llmStreamChat = mockChat;
+      const requestSpy = vi.spyOn(mockHostBridge, "request");
 
       // Execute thunk
       await mockStore.dispatch(
@@ -836,11 +836,11 @@ describe("streamResponseThunk - tool calls", () => {
       };
       initialState.config.config.tools = [terminalTool];
       const mockStore = createMockStore(initialState);
-      const mockIdeMessenger = mockStore.mockIdeMessenger;
-      const requestSpy = vi.spyOn(mockIdeMessenger, "request");
+      const mockHostBridge = mockStore.mockHostBridge;
+      const requestSpy = vi.spyOn(mockHostBridge, "request");
 
       // Simple mock - just return disabled policy
-      mockIdeMessenger.responseHandlers["llm/compileChat"] = async (data) => {
+      mockHostBridge.responseHandlers["llm/assembleChat"] = async (data) => {
         const history = (mockStore.getState() as RootState).session.history;
         return {
           compiledChatMessages: [
@@ -852,7 +852,7 @@ describe("streamResponseThunk - tool calls", () => {
         };
       };
       let numCalls = 0;
-      mockIdeMessenger.responseHandlers["tools/evaluatePolicy"] = async (
+      mockHostBridge.responseHandlers["tools/evaluatePolicy"] = async (
         data,
       ) => {
         numCalls++;
@@ -896,7 +896,7 @@ describe("streamResponseThunk - tool calls", () => {
       }
 
       const mockChat = vi.fn().mockImplementation(() => mockStreamWithLs());
-      mockIdeMessenger.llmStreamChat = mockChat;
+      mockHostBridge.llmStreamChat = mockChat;
 
       // Execute thunk
       await mockStore.dispatch(
@@ -946,11 +946,11 @@ describe("streamResponseThunk - tool calls", () => {
       };
 
       const mockStore = createMockStore(initialState);
-      const mockIdeMessenger = mockStore.mockIdeMessenger;
+      const mockHostBridge = mockStore.mockHostBridge;
 
       // Mock evaluation failure
       let numCalls = 0;
-      const requestSpy = vi.spyOn(mockIdeMessenger, "request");
+      const requestSpy = vi.spyOn(mockHostBridge, "request");
       requestSpy.mockImplementation(async (endpoint, data) => {
         if (endpoint === "tools/evaluatePolicy") {
           numCalls++;
@@ -971,7 +971,7 @@ describe("streamResponseThunk - tool calls", () => {
             };
           }
         }
-        mockIdeMessenger.responseHandlers["llm/compileChat"] = async (data) => {
+        mockHostBridge.responseHandlers["llm/assembleChat"] = async (data) => {
           const history = (mockStore.getState() as RootState).session.history;
           return {
             compiledChatMessages: [
@@ -983,7 +983,7 @@ describe("streamResponseThunk - tool calls", () => {
           };
         };
 
-        return new MockIdeMessenger().request(endpoint, data);
+        return new MockHostBridge().request(endpoint, data);
       });
 
       // Setup streaming with tool call
@@ -1017,7 +1017,7 @@ describe("streamResponseThunk - tool calls", () => {
       }
 
       const mockChat = vi.fn().mockImplementation(() => mockStreamWithTool());
-      mockIdeMessenger.llmStreamChat = mockChat;
+      mockHostBridge.llmStreamChat = mockChat;
 
       // Execute thunk - should handle error gracefully
       const result = await mockStore.dispatch(
@@ -1031,7 +1031,7 @@ describe("streamResponseThunk - tool calls", () => {
       expect(result.type).toBe("chat/streamResponse/fulfilled");
 
       // Tool should be treated as disabled due to evaluation error
-      expect(mockIdeMessenger.request).not.toHaveBeenCalledWith(
+      expect(mockHostBridge.request).not.toHaveBeenCalledWith(
         "tools/call",
         expect.any(Object),
       );
@@ -1049,10 +1049,10 @@ describe("streamResponseThunk - tool calls", () => {
       };
       const mockStoreWithTerminalTool = createMockStore(initialState);
 
-      const mockTerminalIdeMessenger =
-        mockStoreWithTerminalTool.mockIdeMessenger;
+      const mockTerminalHostBridge =
+        mockStoreWithTerminalTool.mockHostBridge;
 
-      mockTerminalIdeMessenger.responseHandlers["llm/compileChat"] = async (
+      mockTerminalHostBridge.responseHandlers["llm/assembleChat"] = async (
         data,
       ) => {
         const history = (mockStoreWithTerminalTool.getState() as RootState)
@@ -1068,7 +1068,7 @@ describe("streamResponseThunk - tool calls", () => {
       };
 
       let numCalls = 0;
-      mockTerminalIdeMessenger.responseHandlers["tools/evaluatePolicy"] =
+      mockTerminalHostBridge.responseHandlers["tools/evaluatePolicy"] =
         async (data) => {
           const args = data.parsedArgs || {};
           numCalls++;
@@ -1115,10 +1115,10 @@ describe("streamResponseThunk - tool calls", () => {
         };
       }
 
-      mockTerminalIdeMessenger.llmStreamChat = vi
+      mockTerminalHostBridge.llmStreamChat = vi
         .fn()
         .mockImplementation(() => mockStreamWithEvalCommand());
-      const requestSpy = vi.spyOn(mockTerminalIdeMessenger, "request");
+      const requestSpy = vi.spyOn(mockTerminalHostBridge, "request");
 
       // Execute thunk
       await mockStoreWithTerminalTool.dispatch(

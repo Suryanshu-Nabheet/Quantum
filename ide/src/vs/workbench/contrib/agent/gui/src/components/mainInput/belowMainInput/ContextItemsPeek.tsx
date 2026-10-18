@@ -4,9 +4,9 @@ import { ctxItemToRifWithContents } from "core/commands/util";
 import { getUriPathBasename } from "core/util/uri";
 import { ComponentType, useContext, useMemo } from "react";
 import {
-  IdeMessengerContext,
-  IIdeMessenger,
-} from "../../../context/IdeMessenger";
+  HostBridgeContext,
+  IHostBridge,
+} from "../../../context/HostBridge";
 import { useAppSelector } from "../../../redux/hooks";
 import { selectIsGatheringContext } from "../../../redux/slices/sessionSlice";
 import { AnimatedEllipsis } from "../../AnimatedEllipsis";
@@ -29,7 +29,7 @@ interface ContextItemsPeekItemProps {
 
 export function openContextItem(
   contextItem: ContextItemWithId,
-  ideMessenger: IIdeMessenger,
+  hostBridge: IHostBridge,
 ) {
   const { uri, name, content } = contextItem;
 
@@ -38,23 +38,23 @@ export function openContextItem(
 
     if (isRangeInFile) {
       const rif = ctxItemToRifWithContents(contextItem, true);
-      void ideMessenger.ide.showLines(
+      void hostBridge.ide.showLines(
         rif.filepath,
         rif.range.start.line,
         rif.range.end.line,
       );
     } else {
-      void ideMessenger.ide.openFile(uri.value);
+      void hostBridge.ide.openFile(uri.value);
     }
   } else {
-    void ideMessenger.ide.showVirtualFile(name, content);
+    void hostBridge.ide.showVirtualFile(name, content);
   }
 }
 
 export function ContextItemsPeekItem({
   contextItem,
 }: ContextItemsPeekItemProps) {
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const isUrl = contextItem.uri?.type === "url";
 
   function getContextItemIcon() {
@@ -122,7 +122,7 @@ export function ContextItemsPeekItem({
 
   return (
     <div
-      onClick={() => openContextItem(contextItem, ideMessenger)}
+      onClick={() => openContextItem(contextItem, hostBridge)}
       className="mr-2 flex min-w-0 max-w-full cursor-pointer flex-row items-center gap-1.5 overflow-hidden whitespace-nowrap rounded px-1.5 py-1 text-xs hover:bg-white/10"
       data-testid="context-items-peek-item"
     >
@@ -140,7 +140,7 @@ export function ContextItemsPeekItem({
             ? (e) => {
                 if (contextItem.uri?.value) {
                   e.stopPropagation();
-                  ideMessenger.post("openUrl", contextItem.uri.value);
+                  hostBridge.post("openUrl", contextItem.uri.value);
                 } else {
                   console.error("Couldn't open url", contextItem.uri);
                 }

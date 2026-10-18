@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { IdeMessengerContext } from "../context/IdeMessenger";
+import { HostBridgeContext } from "../context/HostBridge";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
 import {
   setCompactionLoading,
@@ -9,7 +9,7 @@ import { loadSession, saveCurrentSession } from "../redux/thunks/session";
 
 export const useCompactConversation = () => {
   const dispatch = useAppDispatch();
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const currentSessionId = useAppSelector((state) => state.session.id);
 
   return async (index: number) => {
@@ -21,7 +21,7 @@ export const useCompactConversation = () => {
       // Set loading state
       dispatch(setCompactionLoading({ index, loading: true }));
 
-      await ideMessenger.request("conversation/compact", {
+      await hostBridge.request("conversation/compact", {
         index,
         sessionId: currentSessionId,
       });

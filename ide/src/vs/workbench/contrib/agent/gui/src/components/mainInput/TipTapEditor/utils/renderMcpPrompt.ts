@@ -1,9 +1,9 @@
 import { SlashCommandDescWithSource } from "core";
-import { IIdeMessenger } from "../../../../context/IdeMessenger";
+import { IHostBridge } from "../../../../context/HostBridge";
 
 export async function renderMcpPrompt(
   command: SlashCommandDescWithSource,
-  ideMessenger: IIdeMessenger,
+  hostBridge: IHostBridge,
   userInput?: string,
 ) {
   const args: { [key: string]: string } = {};
@@ -19,7 +19,7 @@ export async function renderMcpPrompt(
       }
     }
   }
-  const response = await ideMessenger.request("mcp/getPrompt", {
+  const response = await hostBridge.request("mcp/getPrompt", {
     serverName: command.mcpServerName!,
     promptName: command.name,
     args: args,

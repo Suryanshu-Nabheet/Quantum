@@ -1,6 +1,6 @@
 import { MessagePart, RangeInFile, SlashCommandDescWithSource } from "core";
 import { stripImages } from "core/util/messageContent";
-import { IIdeMessenger } from "../../../../context/IdeMessenger";
+import { IHostBridge } from "../../../../context/HostBridge";
 import { renderMcpPrompt } from "./renderMcpPrompt";
 import { getRenderedV1Prompt } from "./renderPromptv1";
 import { getPromptV2ContextRequests } from "./renderPromptv2";
@@ -11,7 +11,7 @@ import { GetContextRequest } from "./types";
  * Active sources: built-in, quantum-settings-prompt, invokable-rule, mcp-prompt.
  */
 export async function renderSlashCommandPrompt(
-  ideMessenger: IIdeMessenger,
+  hostBridge: IHostBridge,
   commandName: string | undefined,
   parts: MessagePart[],
   availableSlashCommands: SlashCommandDescWithSource[],
@@ -56,7 +56,7 @@ export async function renderSlashCommandPrompt(
     case "mcp-prompt": {
       const renderedMcpPrompt = await renderMcpPrompt(
         command,
-        ideMessenger,
+        hostBridge,
         userInput,
       );
       slashedParts.push({
@@ -74,14 +74,14 @@ export async function renderSlashCommandPrompt(
       let renderedPrompt: string;
       if (command.prompt.includes("{{{ input }}}")) {
         renderedPrompt = await getRenderedV1Prompt(
-          ideMessenger,
+          hostBridge,
           command,
           userInput,
           selectedCode,
         );
       } else {
         const promptFileCtxRequests = await getPromptV2ContextRequests(
-          ideMessenger,
+          hostBridge,
           command,
         );
         contextRequests.push(...promptFileCtxRequests);

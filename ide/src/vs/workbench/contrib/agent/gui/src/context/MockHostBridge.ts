@@ -12,7 +12,7 @@ import {
   GeneratorYieldType,
   WebviewSingleProtocolMessage,
 } from "core/protocol/util";
-import { IIdeMessenger } from "./IdeMessenger";
+import { IHostBridge } from "./HostBridge";
 
 type MockResponses = Partial<{
   [K in keyof FromWebviewProtocol]: FromWebviewProtocol[K][1];
@@ -77,7 +77,7 @@ const DEFAULT_MOCK_CORE_RESPONSES: MockResponses = {
   "tools/preprocessArgs": {
     preprocessedArgs: undefined,
   },
-  "llm/compileChat": {
+  "llm/assembleChat": {
     compiledChatMessages: [],
     didPrune: false,
     contextPercentage: 0.5,
@@ -114,7 +114,7 @@ const DEFAULT_CHAT_RESPONSE: ChatMessage[] = [
     content: "This is a test",
   },
 ];
-export class MockIdeMessenger implements IIdeMessenger {
+export class MockHostBridge implements IHostBridge {
   ide: IDE;
 
   constructor() {
@@ -179,11 +179,11 @@ export class MockIdeMessenger implements IIdeMessenger {
   ): AsyncGenerator<ChatMessage[], PromptLog | undefined> {
     for (const response of this.chatResponse) {
       if (cancelToken.aborted) {
-        console.log("MockIdeMessenger: Stream aborted");
+        console.log("MockHostBridge: Stream aborted");
         return undefined;
       }
       console.log(
-        "MockIdeMessenger: Yielding chunk",
+        "MockHostBridge: Yielding chunk",
         JSON.stringify(response, null, 2),
       );
       yield [response];
@@ -226,7 +226,7 @@ export class MockIdeMessenger implements IIdeMessenger {
     }
     console.error(messageType);
     throw new Error(
-      "MockIdeMessenger: No response handler or response defined for " +
+      "MockHostBridge: No response handler or response defined for " +
         messageType,
     );
   }

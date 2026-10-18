@@ -41,7 +41,7 @@ import {
 	AGENT_BROWSER_NOTIFY_SUBMIT_COMMAND,
 	type AgentAttachBrowserContextArgs,
 } from "../shared/browser";
-import { VsCodeIde } from "./VsCodeIde";
+import { WorkbenchIde } from "./WorkbenchIde";
 
 let fullScreenPanel: vscode.WebviewPanel | undefined;
 let configPanel: vscode.WebviewPanel | undefined;
@@ -173,7 +173,7 @@ function showInlineEditError(error: unknown) {
 
 // Copy everything over from extension.ts
 const getCommandsMap: (
-  ide: VsCodeIde,
+  ide: WorkbenchIde,
   extensionContext: vscode.ExtensionContext,
   sidebar: AgentGUIWebviewViewProvider,
   configHandler: ConfigHandler,
@@ -859,7 +859,7 @@ async function installModelWithProgress(
 
 export function registerAllCommands(
   context: vscode.ExtensionContext,
-  ide: VsCodeIde,
+  ide: WorkbenchIde,
   extensionContext: vscode.ExtensionContext,
   sidebar: AgentGUIWebviewViewProvider,
   configHandler: ConfigHandler,

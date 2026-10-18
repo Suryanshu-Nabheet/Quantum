@@ -1,5 +1,5 @@
 import { useCallback, useContext, useEffect, useState } from "react";
-import { IdeMessengerContext } from "../context/IdeMessenger";
+import { HostBridgeContext } from "../context/HostBridge";
 
 export type ActivityBarOrientation = "vertical" | "horizontal";
 
@@ -9,12 +9,12 @@ interface WorkbenchAppearanceLayout {
 }
 
 export function useWorkbenchAppearanceLayout() {
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const [layout, setLayout] = useState<WorkbenchAppearanceLayout | null>(null);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    const result = await ideMessenger.request(
+    const result = await hostBridge.request(
       "workbench/getAppearanceLayout",
       undefined,
     );
@@ -22,14 +22,14 @@ export function useWorkbenchAppearanceLayout() {
       setLayout(result.content);
     }
     setLoading(false);
-  }, [ideMessenger]);
+  }, [hostBridge]);
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
 
   async function setStatusBarVisible(visible: boolean) {
-    await ideMessenger.request("workbench/setAppearanceLayout", {
+    await hostBridge.request("workbench/setAppearanceLayout", {
       statusBarVisible: visible,
     });
     setLayout((prev) =>
@@ -40,7 +40,7 @@ export function useWorkbenchAppearanceLayout() {
   async function setActivityBarOrientation(
     orientation: ActivityBarOrientation,
   ) {
-    await ideMessenger.request("workbench/setAppearanceLayout", {
+    await hostBridge.request("workbench/setAppearanceLayout", {
       activityBarOrientation: orientation,
     });
     setLayout((prev) =>

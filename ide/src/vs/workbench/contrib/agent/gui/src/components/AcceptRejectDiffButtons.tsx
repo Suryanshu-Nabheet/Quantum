@@ -1,7 +1,7 @@
 import { CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { ApplyState } from "core";
 import { useContext } from "react";
-import { IdeMessengerContext, IIdeMessenger } from "../context/IdeMessenger";
+import { HostBridgeContext, IHostBridge } from "../context/HostBridge";
 import { useAppDispatch } from "../redux/hooks";
 import type { AppDispatch } from "../redux/store";
 import { cancelToolCall, updateApplyState } from "../redux/slices/sessionSlice";
@@ -9,16 +9,16 @@ import { getMetaKeyLabel } from "../util";
 import { ToolTip } from "./gui/Tooltip";
 
 export async function revertReviewedEdit(
-  ideMessenger: IIdeMessenger,
+  hostBridge: IHostBridge,
   dispatch: AppDispatch,
   applyState: ApplyState,
 ) {
   if (applyState.filepath && applyState.originalFileContent !== undefined) {
-    await ideMessenger.request("overwriteFile", {
+    await hostBridge.request("overwriteFile", {
       filepath: applyState.filepath,
       prevFileContent: applyState.originalFileContent,
     });
-    await ideMessenger.request("saveFile", { filepath: applyState.filepath });
+    await hostBridge.request("saveFile", { filepath: applyState.filepath });
   }
   dispatch(
     updateApplyState({
@@ -42,13 +42,13 @@ export default function AcceptRejectAllButtons({
   const pendingApplyStates = applyStates.filter(
     (state) => state.status === "done" || state.status === "review",
   );
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const dispatch = useAppDispatch();
   async function handleAcceptOrReject(status: AcceptOrRejectOutcome) {
     for (const applyState of pendingApplyStates) {
       if (applyState.status === "review") {
         if (status === "rejectDiff") {
-          await revertReviewedEdit(ideMessenger, dispatch, applyState);
+          await revertReviewedEdit(hostBridge, dispatch, applyState);
         } else {
           dispatch(
             updateApplyState({
@@ -68,7 +68,7 @@ export default function AcceptRejectAllButtons({
         );
       }
 
-      ideMessenger.post(status, {
+      hostBridge.post(status, {
         filepath: applyState.filepath ?? "",
         streamId: applyState.streamId,
       });

@@ -25,7 +25,7 @@ import { VerticalDiffManager } from "../diff/vertical/manager";
 import { registerAllCodeLensProviders } from "../lang-server/codeLens/registerAllCodeLensProviders";
 import EditDecorationManager from "../quickEdit/EditDecorationManager";
 import { QuickEdit } from "../quickEdit/QuickEditQuickPick";
-import { UriEventHandler } from "../stubs/uriHandler";
+import { UriEventHandler } from "../platform/uriHandler";
 import { Battery } from "../util/battery";
 import { FileSearch } from "../util/FileSearch";
 import { EXTENSION_NAME } from "../util/constants";
@@ -34,20 +34,20 @@ import {
   handleTextDocumentChange,
   initDocumentContentCache,
 } from "../util/editLoggingUtils";
-import { VsCodeIde } from "../VsCodeIde";
-import type { VsCodeWebviewProtocol } from "../webviewProtocol";
+import { WorkbenchIde } from "../WorkbenchIde";
+import type { WorkbenchWebviewProtocol } from "../webviewProtocol";
 
-import { VsCodeMessenger } from "./VsCodeMessenger";
+import { WorkbenchMessenger } from "./WorkbenchMessenger";
 
-export class VsCodeExtension {
+export class WorkbenchExtension {
   private readonly configHandler: ConfigHandler;
   private readonly extensionContext: vscode.ExtensionContext;
-  private readonly ide: VsCodeIde;
+  private readonly ide: WorkbenchIde;
   private readonly sidebar: AgentGUIWebviewViewProvider;
   private readonly windowId: string;
   private readonly editDecorationManager: EditDecorationManager;
   private readonly verticalDiffManager: VerticalDiffManager;
-  private readonly webviewProtocolPromise: Promise<VsCodeWebviewProtocol>;
+  private readonly webviewProtocolPromise: Promise<WorkbenchWebviewProtocol>;
   private readonly core: Core;
   private readonly battery: Battery;
   private readonly fileSearch: FileSearch;
@@ -64,13 +64,13 @@ export class VsCodeExtension {
     this.extensionContext = context;
     this.windowId = uuidv4();
 
-    let resolveWebviewProtocol: (value: VsCodeWebviewProtocol) => void =
+    let resolveWebviewProtocol: (value: WorkbenchWebviewProtocol) => void =
       () => {};
     this.webviewProtocolPromise = new Promise((resolve) => {
       resolveWebviewProtocol = resolve;
     });
 
-    this.ide = new VsCodeIde(this.webviewProtocolPromise, context);
+    this.ide = new WorkbenchIde(this.webviewProtocolPromise, context);
 
     let resolveVerticalDiffManager: (value: VerticalDiffManager) => void =
       () => {};
@@ -104,7 +104,7 @@ export class VsCodeExtension {
       FromCoreProtocol
     >();
 
-    new VsCodeMessenger(
+    new WorkbenchMessenger(
       inProcessMessenger,
       this.sidebar.webviewProtocol,
       this.ide,
@@ -192,7 +192,7 @@ export class VsCodeExtension {
     })();
     context.subscriptions.push(
       vscode.workspace.registerTextDocumentContentProvider(
-        VsCodeExtension.agentVirtualDocumentScheme,
+        WorkbenchExtension.agentVirtualDocumentScheme,
         documentContentProvider,
       ),
     );

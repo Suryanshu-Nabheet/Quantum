@@ -22,10 +22,10 @@ import { addCurrentSelectionToEdit } from "../quickEdit/AddCurrentSelection";
 import EditDecorationManager from "../quickEdit/EditDecorationManager";
 import { handleLLMError } from "../util/errorHandling";
 import { getExtensionUri } from "../util/vscode";
-import { VsCodeIde } from "../VsCodeIde";
-import { VsCodeWebviewProtocol } from "../webviewProtocol";
+import { WorkbenchIde } from "../WorkbenchIde";
+import { WorkbenchWebviewProtocol } from "../webviewProtocol";
 
-import { VsCodeExtension } from "./VsCodeExtension";
+import { WorkbenchExtension } from "./WorkbenchExtension";
 
 type ToIdeOrWebviewFromCoreProtocol = ToIdeFromCoreProtocol &
   ToWebviewFromCoreProtocol;
@@ -33,7 +33,7 @@ type ToIdeOrWebviewFromCoreProtocol = ToIdeFromCoreProtocol &
 /**
  * Routes messages between Core, the Agent webview, and VS Code IDE APIs.
  */
-export class VsCodeMessenger {
+export class WorkbenchMessenger {
   onWebview<T extends keyof FromWebviewProtocol>(
     messageType: T,
     handler: (
@@ -71,13 +71,13 @@ export class VsCodeMessenger {
       ToCoreProtocol,
       FromCoreProtocol
     >,
-    private readonly webviewProtocol: VsCodeWebviewProtocol,
-    private readonly ide: VsCodeIde,
+    private readonly webviewProtocol: WorkbenchWebviewProtocol,
+    private readonly ide: WorkbenchIde,
     private readonly verticalDiffManagerPromise: Promise<VerticalDiffManager>,
     private readonly configHandlerPromise: Promise<ConfigHandler>,
     private readonly editDecorationManager: EditDecorationManager,
     _context: vscode.ExtensionContext,
-    _vsCodeExtension: VsCodeExtension,
+    _workbenchExtension: WorkbenchExtension,
   ) {
     this.onWebview("showFile", (msg) => {
       this.ide.openFile(msg.data.filepath);

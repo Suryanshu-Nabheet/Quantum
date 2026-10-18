@@ -1,7 +1,7 @@
 import { ChatBubbleLeftIcon } from "@heroicons/react/24/outline";
 import { NodeViewProps } from "@tiptap/react";
 import { useContext, useEffect } from "react";
-import { IdeMessengerContext } from "../../../../../context/IdeMessenger";
+import { HostBridgeContext } from "../../../../../context/HostBridge";
 import { useAppDispatch } from "../../../../../redux/hooks";
 import { setNewestToolbarPreviewForInput } from "../../../../../redux/slices/sessionSlice";
 import { ExpandableToolbarPreview } from "../../components/ExpandableToolbarPreview";
@@ -14,7 +14,7 @@ import { PromptBlockAttributes } from "./PromptBlock";
 export const PromptBlockPreview = ({ node, editor }: NodeViewProps) => {
   const { item, inputId } = node.attrs as PromptBlockAttributes;
 
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const dispatch = useAppDispatch();
 
   // Register a freshly inserted prompt as the newest attachment so it behaves
@@ -35,7 +35,7 @@ export const PromptBlockPreview = ({ node, editor }: NodeViewProps) => {
 
   const handleTitleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    ideMessenger.post("showVirtualFile", {
+    hostBridge.post("showVirtualFile", {
       content: item.content,
       name: item.name,
     });

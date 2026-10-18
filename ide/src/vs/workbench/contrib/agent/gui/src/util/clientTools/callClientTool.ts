@@ -1,7 +1,7 @@
 import { ContextItem, ToolCallState } from "core";
 import { BuiltInToolNames } from "core/tools/builtIn";
 import { AgentError, AgentErrorReason } from "core/util/errors";
-import { IIdeMessenger } from "../../context/IdeMessenger";
+import { IHostBridge } from "../../context/HostBridge";
 import { AppThunkDispatch, RootState } from "../../redux/store";
 import { editToolImpl } from "./editImpl";
 import { multiEditImpl } from "./multiEditImpl";
@@ -10,7 +10,7 @@ import { singleFindAndReplaceImpl } from "./singleFindAndReplaceImpl";
 export interface ClientToolExtras {
   getState: () => RootState;
   dispatch: AppThunkDispatch;
-  ideMessenger: IIdeMessenger;
+  hostBridge: IHostBridge;
 }
 
 interface ClientToolOutput {

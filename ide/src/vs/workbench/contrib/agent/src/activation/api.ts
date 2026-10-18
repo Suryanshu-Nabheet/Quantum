@@ -1,11 +1,11 @@
 import { IContextProvider } from "core";
 
-import { VsCodeExtension } from "../extension/VsCodeExtension";
+import { WorkbenchExtension } from "../extension/WorkbenchExtension";
 
-export class VsCodeAgentApi {
-  constructor(private readonly vscodeExtension: VsCodeExtension) {}
+export class WorkbenchAgentApi {
+  constructor(private readonly workbenchExtension: WorkbenchExtension) {}
 
   registerCustomContextProvider(contextProvider: IContextProvider) {
-    this.vscodeExtension.registerCustomContextProvider(contextProvider);
+    this.workbenchExtension.registerCustomContextProvider(contextProvider);
   }
 }

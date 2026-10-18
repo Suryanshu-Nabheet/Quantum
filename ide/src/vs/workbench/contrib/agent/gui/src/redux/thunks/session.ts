@@ -3,7 +3,7 @@ import { BaseSessionMetadata, ChatMessage, Session } from "core";
 
 import { NEW_SESSION_TITLE } from "core/util/constants";
 import { renderChatMessage } from "core/util/messageContent";
-import { IIdeMessenger } from "../../context/IdeMessenger";
+import { IHostBridge } from "../../context/HostBridge";
 import { selectSelectedChatModel } from "../slices/configSlice";
 import { selectSelectedProfile } from "../slices/profilesSlice";
 import {
@@ -22,10 +22,10 @@ const MAX_TITLE_LENGTH = 100;
 // see sessionSlice for sync redux session functions
 
 export async function getSession(
-  ideMessenger: IIdeMessenger,
+  hostBridge: IHostBridge,
   id: string,
 ): Promise<Session> {
-  const result = await ideMessenger.request("history/load", { id });
+  const result = await hostBridge.request("history/load", { id });
   if (result.status === "error") {
     throw new Error(result.error);
   }
@@ -41,7 +41,7 @@ export const refreshSessionMetadata = createAsyncThunk<
   },
   ThunkApiType
 >("session/refreshMetadata", async ({ offset, limit }, { dispatch, extra }) => {
-  const result = await extra.ideMessenger.request("history/list", {
+  const result = await extra.hostBridge.request("history/list", {
     limit,
     offset,
   });
@@ -61,7 +61,7 @@ export const deleteSession = createAsyncThunk<void, string, ThunkApiType>(
     if (id === state.session.id) {
       await dispatch(loadLastSession());
     }
-    const result = await extra.ideMessenger.request("history/delete", { id });
+    const result = await extra.hostBridge.request("history/delete", { id });
     if (result.status === "error") {
       throw new Error(result.error);
     }
@@ -78,7 +78,7 @@ export const updateSession = createAsyncThunk<void, Session, ThunkApiType>(
         title: session.title,
       }),
     ); // optimistic session metadata update
-    await extra.ideMessenger.request("history/save", session);
+    await extra.hostBridge.request("history/save", session);
     await dispatch(refreshSessionMetadata({}));
   },
 );
@@ -105,7 +105,7 @@ export const loadSession = createAsyncThunk<
         }),
       );
     }
-    const session = await getSession(extra.ideMessenger, sessionId);
+    const session = await getSession(extra.hostBridge, sessionId);
     dispatch(newSession(session));
 
     // Restore selected chat model from session, if present
@@ -145,7 +145,7 @@ export const loadLastSession = createAsyncThunk<void, void, ThunkApiType>(
   async (_, { extra, dispatch, getState }) => {
     let lastSessionId = getState().session.lastSessionId;
 
-    // const lastSessionResult = await extra.ideMessenger.request("history/list", {
+    // const lastSessionResult = await extra.hostBridge.request("history/list", {
     //   limit: 1,
     // });
     // if (lastSessionResult.status === "success") {
@@ -159,11 +159,11 @@ export const loadLastSession = createAsyncThunk<void, void, ThunkApiType>(
 
     let session: Session;
     try {
-      session = await getSession(extra.ideMessenger, lastSessionId);
+      session = await getSession(extra.hostBridge, lastSessionId);
     } catch {
       // retry again after 1 sec
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      session = await getSession(extra.ideMessenger, lastSessionId);
+      session = await getSession(extra.hostBridge, lastSessionId);
     }
     dispatch(newSession(session));
     if (session.chatModelTitle) {
@@ -218,7 +218,7 @@ export const saveCurrentSession = createAsyncThunk<
 
         if (assistantResponse && generateTitle) {
           try {
-            const result = await extra.ideMessenger.request(
+            const result = await extra.hostBridge.request(
               "chatDescriber/describe",
               {
                 text: assistantResponse,

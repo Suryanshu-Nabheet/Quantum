@@ -1,5 +1,5 @@
 import { useCallback, useContext, useEffect, useRef } from "react";
-import { IdeMessengerContext } from "../context/IdeMessenger";
+import { HostBridgeContext } from "../context/HostBridge";
 
 import { FromCoreProtocol } from "core/protocol";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
@@ -36,7 +36,7 @@ import { useWebviewListener } from "./useWebviewListener";
 
 function ParallelListeners() {
   const dispatch = useAppDispatch();
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const history = useAppSelector((store) => store.session.history);
   const isInEdit = useAppSelector((store) => store.session.isInEdit);
   const selectedProfileId = useAppSelector(
@@ -125,7 +125,7 @@ function ParallelListeners() {
     async function initialLoadConfig() {
       dispatch(setConfigLoading(true));
       try {
-        const result = await ideMessenger.request(
+        const result = await hostBridge.request(
           "config/getSerializedProfileInfo",
           undefined,
         );
@@ -176,7 +176,7 @@ function ParallelListeners() {
     return () => {
       cancelled = true;
     };
-  }, [ideMessenger]);
+  }, [hostBridge]);
 
   // Restore chat history from ~/.agent/sessions on webview boot.
   // Message history is not kept in redux-persist — only session id is —

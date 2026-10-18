@@ -8,7 +8,7 @@ import {
   DEFAULT_AGENT_ACCESS_MODE,
   DEFAULT_TERMINAL_AUTO_EXECUTION,
 } from "core/tools/policies/agentAccess";
-import { IIdeMessenger } from "../../context/IdeMessenger";
+import { IHostBridge } from "../../context/HostBridge";
 import { errorToolCall, updateToolCallOutput } from "../slices/sessionSlice";
 import { DEFAULT_TOOL_SETTING, ToolPolicies } from "../slices/uiSlice";
 import { AppThunkDispatch } from "../store";
@@ -31,7 +31,7 @@ export interface EvaluateToolPoliciesOptions {
  * Note that tool group policies are not considered here because activeTools already excludes disabled groups
  */
 async function evaluateToolPolicy(
-  ideMessenger: IIdeMessenger,
+  hostBridge: IHostBridge,
   activeTools: Tool[],
   toolCallState: ToolCallState,
   toolPolicies: ToolPolicies,
@@ -45,7 +45,7 @@ async function evaluateToolPolicy(
     DEFAULT_TOOL_SETTING;
 
   const toolName = toolCallState.toolCall.function.name;
-  const result = await ideMessenger.request("tools/evaluatePolicy", {
+  const result = await hostBridge.request("tools/evaluatePolicy", {
     toolName,
     basePolicy,
     parsedArgs: toolCallState.parsedArgs,
@@ -83,7 +83,7 @@ async function evaluateToolPolicy(
 */
 export async function evaluateToolPolicies(
   dispatch: AppThunkDispatch,
-  ideMessenger: IIdeMessenger,
+  hostBridge: IHostBridge,
   activeTools: Tool[],
   generatedToolCalls: ToolCallState[],
   toolPolicies: ToolPolicies,
@@ -93,7 +93,7 @@ export async function evaluateToolPolicies(
   const policyResults = await Promise.all(
     generatedToolCalls.map((toolCallState) =>
       evaluateToolPolicy(
-        ideMessenger,
+        hostBridge,
         activeTools,
         toolCallState,
         toolPolicies,

@@ -13,7 +13,7 @@ import Shortcut from "../gui/Shortcut";
 
 import { XMarkIcon } from "@heroicons/react/24/solid";
 import { useNavigate } from "react-router-dom";
-import { IdeMessengerContext } from "../../context/IdeMessenger";
+import { HostBridgeContext } from "../../context/HostBridge";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import {
   newSession,
@@ -32,7 +32,7 @@ export function History() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const searchInputRef = React.useRef<HTMLInputElement>(null);
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
 
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -136,7 +136,7 @@ export function History() {
             dispatch(setAllSessionMetadata([]));
 
             // actual update + refresh
-            await ideMessenger.request("history/clear", undefined);
+            await hostBridge.request("history/clear", undefined);
             void dispatch(refreshSessionMetadata({}));
 
             // start a new session

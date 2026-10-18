@@ -240,7 +240,7 @@ export type ToCoreFromIdeOrWebviewProtocol = {
   ];
   streamDiffLines: [StreamDiffLinesPayload, AsyncGenerator<DiffLine>];
   getDiffLines: [{ oldContent: string; newContent: string }, DiffLine[]];
-  "llm/compileChat": [
+  "llm/assembleChat": [
     { messages: ChatMessage[]; options: LLMFullCompletionOptions },
     CompiledMessagesResult,
   ];

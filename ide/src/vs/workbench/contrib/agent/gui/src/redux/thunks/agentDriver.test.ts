@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import { getEmptyRootState } from "../../util/test/mockStore";
 import { createMockStore } from "../../util/test/mockStore";
 import { RootState } from "../store";
-import { runAgentDriver } from "./streamNormalInput";
+import { runAgentDriver } from "./streamModelTurn";
 // Imported as a namespace so the spy observes real call sites in the driver.
 import * as resumeModule from "./streamResponseAfterToolCall";
 
@@ -72,14 +72,14 @@ describe("runAgentDriver", () => {
       [grepName]: "allowedWithoutPermission",
     };
     const mockStore = createMockStore(initialState);
-    const mockIdeMessenger = mockStore.mockIdeMessenger;
+    const mockHostBridge = mockStore.mockHostBridge;
 
-    mockIdeMessenger.responses["llm/compileChat"] = {
+    mockHostBridge.responses["llm/assembleChat"] = {
       compiledChatMessages: [{ role: "user", content: "search" }],
       didPrune: false,
       contextPercentage: 0.5,
     };
-    mockIdeMessenger.responses["tools/call"] = {
+    mockHostBridge.responses["tools/call"] = {
       contextItems: [
         { name: "grep", description: "match", content: "found" },
       ],
@@ -106,14 +106,14 @@ describe("runAgentDriver", () => {
       }
       return turn([[{ role: "assistant", content: "all done" }]], "all done");
     });
-    mockIdeMessenger.llmStreamChat = streamChat as any;
+    mockHostBridge.llmStreamChat = streamChat as any;
 
     const resumeSpy = vi.spyOn(resumeModule, "streamResponseAfterToolCall");
 
     await runAgentDriver({
       depth: 0,
       dispatch: mockStore.dispatch as any,
-      extra: { ideMessenger: mockIdeMessenger } as any,
+      extra: { hostBridge: mockHostBridge } as any,
       getState: mockStore.getState as any,
     });
 

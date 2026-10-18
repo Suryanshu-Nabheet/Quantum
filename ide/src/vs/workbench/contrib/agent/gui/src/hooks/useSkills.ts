@@ -1,6 +1,6 @@
 import type { FromWebviewProtocol } from "core/protocol";
 import { useCallback, useContext, useEffect, useState } from "react";
-import { IdeMessengerContext } from "../context/IdeMessenger";
+import { HostBridgeContext } from "../context/HostBridge";
 
 export type DetectedSkill = FromWebviewProtocol["config/listSkills"][1][number];
 
@@ -10,21 +10,21 @@ export type DetectedSkill = FromWebviewProtocol["config/listSkills"][1][number];
  * and can be refreshed after a new skill file is created.
  */
 export function useSkills() {
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const [skills, setSkills] = useState<DetectedSkill[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const refresh = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await ideMessenger.request("config/listSkills", undefined);
+      const response = await hostBridge.request("config/listSkills", undefined);
       if (response.status === "success") {
         setSkills(response.content);
       }
     } finally {
       setIsLoading(false);
     }
-  }, [ideMessenger]);
+  }, [hostBridge]);
 
   useEffect(() => {
     void refresh();

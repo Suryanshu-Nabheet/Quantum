@@ -6,7 +6,7 @@ import {
 import { useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { ConfigPanel } from "../components/ConfigPanel";
-import { IdeMessengerContext } from "../../../context/IdeMessenger";
+import { HostBridgeContext } from "../../../context/HostBridge";
 import { AddModelForm } from "../../../forms/AddModelForm";
 import { useConfigureModelDialog } from "../../../hooks/useConfigureModelDialog";
 import { useAppDispatch, useAppSelector } from "../../../redux/hooks";
@@ -27,7 +27,7 @@ const TAB_IGNORE_SUGGESTIONS = [".env", ".env.*", "**/*.md", "**/secrets/**"];
 
 export function TabSettingsSection() {
   const dispatch = useAppDispatch();
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const navigate = useNavigate();
   const config = useAppSelector((state) => state.config.config);
   const selectedProfile = useAppSelector(selectSelectedProfile);
@@ -47,7 +47,7 @@ export function TabSettingsSection() {
   function handleUpdate(sharedConfig: SharedConfigSchema) {
     const updatedConfig = modifyAnyConfigWithSharedConfig(config, sharedConfig);
     dispatch(updateConfig(updatedConfig));
-    ideMessenger.post("config/updateSharedConfig", sharedConfig);
+    hostBridge.post("config/updateSharedConfig", sharedConfig);
   }
 
   function handleTabModelSelect(model: ModelDescription | null) {

@@ -24,7 +24,7 @@ import {
   vscListActiveForeground,
   vscQuickInputBackground,
 } from "../..";
-import { IdeMessengerContext } from "../../../context/IdeMessenger";
+import { HostBridgeContext } from "../../../context/HostBridge";
 import { useAppSelector } from "../../../redux/hooks";
 import AddPromptDialog from "../../dialogs/AddPromptDialog";
 import AddRuleDialog from "../../dialogs/AddRuleDialog";
@@ -167,7 +167,7 @@ const formatFileSize = (fileSize: number) => {
 const AtMentionDropdown = forwardRef((props: AtMentionDropdownProps, ref) => {
   const dispatch = useDispatch();
 
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const isInAgentMode = useAppSelector(
     (store) => store.session.mode === "agent",
   );
@@ -192,7 +192,7 @@ const AtMentionDropdown = forwardRef((props: AtMentionDropdownProps, ref) => {
   ): Promise<[boolean, number]> {
     const selectedCode: RangeInFile[] = [];
     // Get context item from core
-    const contextResult = await ideMessenger.request(
+    const contextResult = await hostBridge.request(
       "context/getContextItems",
       {
         name,
@@ -210,7 +210,7 @@ const AtMentionDropdown = forwardRef((props: AtMentionDropdownProps, ref) => {
     const item = contextResult.content[0];
 
     // Check if the context item exceeds the context length of the selected model
-    const result = await ideMessenger.request("isItemTooBig", {
+    const result = await hostBridge.request("isItemTooBig", {
       item,
     });
 
@@ -230,7 +230,7 @@ const AtMentionDropdown = forwardRef((props: AtMentionDropdownProps, ref) => {
   ) {
     if (fileExceeds) {
       // Trigger warning toast but don't delete text or block addition
-      void ideMessenger.ide.showToast(
+      void hostBridge.ide.showToast(
         "warning",
         `'${item.title}' is very large (${formatFileSize(fileSize)}) and may be truncated.`,
       );

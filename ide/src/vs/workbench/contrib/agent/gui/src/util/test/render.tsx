@@ -5,8 +5,8 @@ import { PropsWithChildren } from "react";
 import { Provider } from "react-redux";
 import { MemoryRouter, RouterProps } from "react-router-dom";
 import { MainEditorProvider } from "../../components/mainInput/TipTapEditor";
-import { IdeMessengerProvider } from "../../context/IdeMessenger";
-import { MockIdeMessenger } from "../../context/MockIdeMessenger";
+import { HostBridgeProvider } from "../../context/HostBridge";
+import { MockHostBridge } from "../../context/MockHostBridge";
 import ParallelListeners from "../../hooks/ParallelListeners";
 import { setupStore } from "../../redux/store";
 
@@ -17,7 +17,7 @@ import { setupStore } from "../../redux/store";
 type ExtendedRenderOptions = Omit<RenderOptions, "queries"> & {
   store?: ReturnType<typeof setupStore>;
   routerProps?: RouterProps;
-  mockIdeMessenger?: MockIdeMessenger;
+  mockHostBridge?: MockHostBridge;
 };
 
 function setupMocks() {
@@ -33,13 +33,13 @@ export async function renderWithProviders(
   extendedRenderOptions: ExtendedRenderOptions = {},
 ) {
   setupMocks();
-  const ideMessenger =
-    extendedRenderOptions?.mockIdeMessenger ?? new MockIdeMessenger();
+  const hostBridge =
+    extendedRenderOptions?.mockHostBridge ?? new MockHostBridge();
 
   const {
     // Automatically create a store instance if no store was passed in
     store = setupStore({
-      ideMessenger,
+      hostBridge,
     }),
     routerProps = {},
     ...renderOptions
@@ -49,14 +49,14 @@ export async function renderWithProviders(
 
   const Wrapper = ({ children }: PropsWithChildren) => (
     <MemoryRouter {...routerProps}>
-      <IdeMessengerProvider messenger={ideMessenger}>
+      <HostBridgeProvider messenger={hostBridge}>
         <Provider store={store}>
           <MainEditorProvider>
             {children}
             <ParallelListeners />
           </MainEditorProvider>
         </Provider>
-      </IdeMessengerProvider>
+      </HostBridgeProvider>
     </MemoryRouter>
   );
 
@@ -69,7 +69,7 @@ export async function renderWithProviders(
   return {
     user,
     store,
-    ideMessenger,
+    hostBridge,
     ...rendered!,
   };
 }

@@ -20,7 +20,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { IdeMessengerContext } from "../../../context/IdeMessenger";
+import { HostBridgeContext } from "../../../context/HostBridge";
 import { useAppDispatch } from "../../../redux/hooks";
 import { streamResponseThunk } from "../../../redux/thunks/streamResponse";
 
@@ -94,7 +94,7 @@ export function McpAppRenderer({
 }: {
   toolCallState: ToolCallState;
 }) {
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const dispatch = useAppDispatch();
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const appBridgeRef = useRef<AppBridge | null>(null);
@@ -167,7 +167,7 @@ export function McpAppRenderer({
 
     bridge.onopenlink = async (params: { url: string }) => {
       if (params.url) {
-        ideMessenger.post("openUrl", params.url);
+        hostBridge.post("openUrl", params.url);
       }
       return {};
     };
@@ -206,7 +206,7 @@ export function McpAppRenderer({
     };
 
     bridge.oncalltool = async (params: any) => {
-      const output = await ideMessenger.request("tools/call", {
+      const output = await hostBridge.request("tools/call", {
         toolCall: {
           function: {
             name: getToolNameFromMCPServer(
@@ -279,7 +279,7 @@ export function McpAppRenderer({
     return () => {
       appBridgeRef.current = null;
     };
-  }, [ideMessenger, dispatch]);
+  }, [hostBridge, dispatch]);
 
   // Connect bridge to iframe when it loads
   const handleIframeLoad = useCallback(async () => {

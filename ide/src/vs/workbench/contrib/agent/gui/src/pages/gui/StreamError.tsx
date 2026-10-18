@@ -11,7 +11,7 @@ import { useConfigureModelDialog } from "../../hooks/useConfigureModelDialog";
 import { useEditModel } from "../../components/mainInput/Lump/useEditBlock";
 import { useMainEditor } from "../../components/mainInput/TipTapEditor";
 import ToggleDiv from "../../components/ToggleDiv";
-import { IdeMessengerContext } from "../../context/IdeMessenger";
+import { HostBridgeContext } from "../../context/HostBridge";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { selectSelectedChatModel } from "../../redux/slices/configSlice";
 import { selectSelectedProfile } from "../../redux/slices/profilesSlice";
@@ -26,7 +26,7 @@ interface StreamErrorProps {
 
 const StreamErrorDialog = ({ error }: StreamErrorProps) => {
   const dispatch = useAppDispatch();
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const selectedModel = useAppSelector(selectSelectedChatModel);
   const selectedProfile = useAppSelector(selectSelectedProfile);
   const { mainEditor } = useMainEditor();
@@ -41,7 +41,7 @@ const StreamErrorDialog = ({ error }: StreamErrorProps) => {
   } = useMemo(() => analyzeError(error, selectedModel), [error, selectedModel]);
 
   const handleRefreshProfiles = () => {
-    ideMessenger.post("config/refreshProfiles", undefined);
+    hostBridge.post("config/refreshProfiles", undefined);
     dispatch(setShowDialog(false));
     dispatch(setDialogMessage(undefined));
   };
@@ -55,7 +55,7 @@ const StreamErrorDialog = ({ error }: StreamErrorProps) => {
   const checkKeysButton = apiKeyUrl ? (
     <GhostButton
       className="flex items-center"
-      onClick={() => ideMessenger.ide.openUrl(apiKeyUrl)}
+      onClick={() => hostBridge.ide.openUrl(apiKeyUrl)}
     >
       <KeyIcon className="mr-1.5 h-3.5 w-3.5" />
       <span>View key</span>
@@ -264,7 +264,7 @@ const StreamErrorDialog = ({ error }: StreamErrorProps) => {
 
                 <GhostButton
                   onClick={() => {
-                    ideMessenger.post("toggleDevTools", undefined);
+                    hostBridge.post("toggleDevTools", undefined);
                   }}
                   className="flex items-center"
                 >

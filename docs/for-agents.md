@@ -42,7 +42,7 @@ Cursor project rules: [`.cursor/rules/quantum-monorepo.mdc`](../.cursor/rules/qu
 
 Source: `ide/src/vs/workbench/contrib/agent/`
 
-- **Turn loop:** `streamNormalInput` → tool policy → parallel tools → `streamResponseAfterToolCall` → repeat.
+- **Turn loop:** `streamModelTurn` → tool policy → parallel tools → `streamResponseAfterToolCall` → repeat.
 - **One LLM stream** at a time (`withAgentStreamLock`).
 - **Build output:** `ide/out/agent/` (generated; not committed).
 - **Config on disk:** `~/.agent/index/globalContext.json`, sessions under `~/.agent/sessions/`.

@@ -24,7 +24,7 @@ vi.mock(
 
 import { unwrapResult } from "@reduxjs/toolkit";
 import { resolveEditorContent } from "../../components/mainInput/TipTapEditor/utils/resolveEditorContent";
-import { MockIdeMessenger } from "../../context/MockIdeMessenger";
+import { MockHostBridge } from "../../context/MockHostBridge";
 import { RootState } from "../store";
 import { getRootStateWithClaude } from "./streamResponse.test";
 import { expectStreamResponseLifecycle } from "../../util/test/dispatchAssertions";
@@ -73,9 +73,9 @@ describe("streamResponseThunk", () => {
 
     // Create store with no selected chat model
     const mockStoreNoModel = createMockStore(noModelState);
-    const requestSpy = vi.spyOn(mockStoreNoModel.mockIdeMessenger, "request");
+    const requestSpy = vi.spyOn(mockStoreNoModel.mockHostBridge, "request");
     const chatSpy = vi.spyOn(
-      mockStoreNoModel.mockIdeMessenger,
+      mockStoreNoModel.mockHostBridge,
       "llmStreamChat",
     );
 
@@ -95,7 +95,7 @@ describe("streamResponseThunk", () => {
     expect(dispatchedActions.at(-1)?.type).toBe("chat/streamResponse/fulfilled");
 
     expect(requestSpy).not.toHaveBeenCalledWith(
-      "llm/compileChat",
+      "llm/assembleChat",
       expect.anything(),
     );
     expect(chatSpy).not.toHaveBeenCalled();
@@ -121,19 +121,19 @@ describe("streamResponseThunk", () => {
     ];
     initialState.session.id = "session-123";
     const mockStore = createMockStore(initialState);
-    const mockIdeMessenger = mockStore.mockIdeMessenger;
-    const requestSpy = vi.spyOn(mockIdeMessenger, "request");
-    const chatSpy = vi.spyOn(mockIdeMessenger, "llmStreamChat");
+    const mockHostBridge = mockStore.mockHostBridge;
+    const requestSpy = vi.spyOn(mockHostBridge, "request");
+    const chatSpy = vi.spyOn(mockHostBridge, "llmStreamChat");
 
     requestSpy.mockImplementation(async (message, data) => {
-      if (message === "llm/compileChat") {
+      if (message === "llm/assembleChat") {
         return {
           done: true,
           status: "error",
           error: "Not enough context available for this request",
         };
       } else {
-        return await new MockIdeMessenger().request(message, data);
+        return await new MockHostBridge().request(message, data);
       }
     });
 
@@ -152,7 +152,7 @@ describe("streamResponseThunk", () => {
     // Verify exact action sequence for this error path
     const dispatchedActions = mockStore.getActions();
     // Verify IDE messenger was called for compilation but not streaming
-    expect(requestSpy).toHaveBeenCalledWith("llm/compileChat", {
+    expect(requestSpy).toHaveBeenCalledWith("llm/assembleChat", {
       messages: [
         {
           role: "system",
@@ -246,14 +246,14 @@ describe("streamResponseThunk", () => {
       },
     ];
     const mockStore = createMockStore(initialState);
-    const mockIdeMessenger = mockStore.mockIdeMessenger;
-    const originalRequest = mockIdeMessenger.request.bind(mockIdeMessenger);
-    const requestSpy = vi.spyOn(mockIdeMessenger, "request");
-    const chatSpy = vi.spyOn(mockIdeMessenger, "llmStreamChat");
+    const mockHostBridge = mockStore.mockHostBridge;
+    const originalRequest = mockHostBridge.request.bind(mockHostBridge);
+    const requestSpy = vi.spyOn(mockHostBridge, "request");
+    const chatSpy = vi.spyOn(mockHostBridge, "llmStreamChat");
 
     // Mock compilation failure with generic error
     requestSpy.mockImplementation(async (message, data) => {
-      if (message === "llm/compileChat") {
+      if (message === "llm/assembleChat") {
         return {
           done: true,
           status: "error",
@@ -278,7 +278,7 @@ describe("streamResponseThunk", () => {
     // Verify exact action sequence for compilation error with dialog
     const dispatchedActions = mockStore.getActions();
     // Verify IDE messenger was called for compilation but not streaming
-    expect(requestSpy).toHaveBeenCalledWith("llm/compileChat", {
+    expect(requestSpy).toHaveBeenCalledWith("llm/assembleChat", {
       messages: [
         {
           role: "system",

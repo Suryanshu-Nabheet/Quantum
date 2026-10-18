@@ -1,7 +1,7 @@
 import { useContext } from "react";
 import Shortcut from "../../../components/gui/Shortcut";
 import { Card } from "../../../components/ui";
-import { IdeMessengerContext } from "../../../context/IdeMessenger";
+import { HostBridgeContext } from "../../../context/HostBridge";
 import { AGENT_NAME, IDE_SETTINGS_LABEL } from "core/util/branding";
 import { ConfigCrossLink } from "../components/ConfigCrossLink";
 import { ConfigHeader } from "../components/ConfigHeader";
@@ -33,7 +33,7 @@ const SHORTCUTS: { description: string; shortcut: string }[] = [
 ];
 
 export function KeyboardShortcutsSection() {
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
 
   return (
     <div className={CONFIG_PAGE_GAP}>
@@ -60,7 +60,7 @@ export function KeyboardShortcutsSection() {
       </Card>
 
       <ConfigCrossLink
-        onClick={() => ideMessenger.post("openKeyboardShortcuts", undefined)}
+        onClick={() => hostBridge.post("openKeyboardShortcuts", undefined)}
       >
         Open {IDE_SETTINGS_LABEL} → Keyboard Shortcuts
       </ConfigCrossLink>

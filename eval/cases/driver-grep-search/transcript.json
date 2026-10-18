@@ -1,5 +1,5 @@
 {
-  "compileChat": {
+  "assembleChat": {
     "compiledChatMessages": [{ "role": "user", "content": "Search the repo for TODO markers" }],
     "didPrune": false,
     "contextPercentage": 0.4

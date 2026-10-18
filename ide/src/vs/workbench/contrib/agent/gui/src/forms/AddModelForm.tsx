@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { FormProvider, useForm } from "react-hook-form";
 import { Button, Input, StyledActionButton } from "../components";
 import ModelSelectionListbox from "../components/modelSelection/ModelSelectionListbox";
-import { IdeMessengerContext } from "../context/IdeMessenger";
+import { HostBridgeContext } from "../context/HostBridge";
 import { completionParamsInputs } from "../pages/AddNewModel/configs/completionParamsInputs";
 import { DisplayInfo, models } from "../pages/AddNewModel/configs/models";
 import {
@@ -68,7 +68,7 @@ export function AddModelForm({
         }
       : {},
   });
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -203,7 +203,7 @@ export function AddModelForm({
     };
 
     if (existingModel) {
-      await ideMessenger.request("config/updateModel", {
+      await hostBridge.request("config/updateModel", {
         title: existingModel.title,
         model: {
           ...model,
@@ -213,7 +213,7 @@ export function AddModelForm({
         },
       });
     } else {
-      await ideMessenger.request("config/addModel", { model, roles });
+      await hostBridge.request("config/addModel", { model, roles });
     }
 
     onDone();
@@ -221,7 +221,7 @@ export function AddModelForm({
 
   function onClickDownloadProvider() {
     selectedProvider.downloadUrl &&
-      ideMessenger.post("openUrl", selectedProvider.downloadUrl);
+      hostBridge.post("openUrl", selectedProvider.downloadUrl);
   }
 
   const extraFields = (selectedProvider.collectInputFor ?? []).filter(
@@ -306,7 +306,7 @@ export function AddModelForm({
                     <a
                       className="cursor-pointer text-inherit underline hover:text-inherit hover:brightness-125"
                       onClick={() => {
-                        ideMessenger.post(
+                        hostBridge.post(
                           "openUrl",
                           selectedProvider.apiKeyUrl!,
                         );

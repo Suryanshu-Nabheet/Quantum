@@ -7,7 +7,7 @@ import * as vscode from "vscode";
 
 import { VerticalDiffManager } from "../diff/vertical/manager";
 import { FileSearch } from "../util/FileSearch";
-import { VsCodeWebviewProtocol } from "../webviewProtocol";
+import { WorkbenchWebviewProtocol } from "../webviewProtocol";
 
 import { getContextProviderQuickPickVal } from "./ContextProvidersQuickPick";
 import { appendToHistory, getHistoryQuickPickVal } from "./HistoryQuickPick";
@@ -100,7 +100,7 @@ export class QuickEdit {
   constructor(
     private readonly verticalDiffManager: VerticalDiffManager,
     private readonly configHandler: ConfigHandler,
-    private readonly webviewProtocol: VsCodeWebviewProtocol,
+    private readonly webviewProtocol: WorkbenchWebviewProtocol,
     private readonly ide: IDE,
     private readonly context: vscode.ExtensionContext,
     private readonly fileSearch: FileSearch,

@@ -24,7 +24,7 @@ import AgentInputBox from "../../components/mainInput/AgentInputBox";
 import StepContainer from "../../components/StepContainer";
 import { TabBar } from "../../components/TabBar/TabBar";
 import { TaskList } from "../../components/ui/task-list";
-import { IdeMessengerContext } from "../../context/IdeMessenger";
+import { HostBridgeContext } from "../../context/HostBridge";
 import { useWebviewListener } from "../../hooks/useWebviewListener";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import {
@@ -42,7 +42,7 @@ import {
 import { streamEditThunk } from "../../redux/thunks/edit";
 
 import { streamResponseThunk } from "../../redux/thunks/streamResponse";
-import { waitForAgentDriver } from "../../redux/thunks/streamNormalInput";
+import { waitForAgentDriver } from "../../redux/thunks/streamModelTurn";
 import { cancelStream } from "../../redux/thunks/cancelStream";
 import { ToolCallDiv } from "./ToolCallDiv";
 
@@ -187,7 +187,7 @@ function fallbackRender({ error, resetErrorBoundary }: any) {
 
 export function Chat() {
   const dispatch = useAppDispatch();
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const reduxStore = useStore<RootState>();
   const showSessionTabs = useAppSelector(
     (store) => store.config.config.ui?.showSessionTabs,
@@ -258,7 +258,7 @@ export function Chat() {
         }
         latestPendingApplyStates.forEach((applyState) => {
           if (applyState.status === "done") {
-            ideMessenger.post("rejectDiff", applyState);
+            hostBridge.post("rejectDiff", applyState);
           }
         });
         void (async () => {
@@ -289,7 +289,7 @@ export function Chat() {
         // Saved reviews stay on disk. Only an open diff is dropped when a new
         // message starts, because that diff has not been written yet.
         if (applyState.status === "done") {
-          ideMessenger.post("rejectDiff", applyState);
+          hostBridge.post("rejectDiff", applyState);
         }
       });
       const model = isCurrentlyInEdit
@@ -322,7 +322,7 @@ export function Chat() {
 
 
     },
-    [dispatch, ideMessenger, reduxStore],
+    [dispatch, hostBridge, reduxStore],
   );
 
   useWebviewListener(

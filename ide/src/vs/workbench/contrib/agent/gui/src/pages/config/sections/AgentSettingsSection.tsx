@@ -19,7 +19,7 @@ import Shortcut from "../../../components/gui/Shortcut";
 import { Button } from "../../../components/ui";
 import { cn } from "../../../util/cn";
 import { ConfigPanel } from "../components/ConfigPanel";
-import { IdeMessengerContext } from "../../../context/IdeMessenger";
+import { HostBridgeContext } from "../../../context/HostBridge";
 import { AddModelForm } from "../../../forms/AddModelForm";
 import { useConfigureModelDialog } from "../../../hooks/useConfigureModelDialog";
 import { useAppDispatch, useAppSelector } from "../../../redux/hooks";
@@ -115,7 +115,7 @@ export function AgentSettingsSection() {
   const selectedProfile = useAppSelector(selectSelectedProfile);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const config = useAppSelector((state) => state.config.config);
   const openConfigureModelDialog = useConfigureModelDialog();
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -139,7 +139,7 @@ export function AgentSettingsSection() {
   function handleSharedConfigUpdate(sharedConfig: SharedConfigSchema) {
     const updatedConfig = modifyAnyConfigWithSharedConfig(config, sharedConfig);
     dispatch(updateConfig(updatedConfig));
-    ideMessenger.post("config/updateSharedConfig", sharedConfig);
+    hostBridge.post("config/updateSharedConfig", sharedConfig);
   }
 
   function handleAgentModelSelect(model: ModelDescription | null) {

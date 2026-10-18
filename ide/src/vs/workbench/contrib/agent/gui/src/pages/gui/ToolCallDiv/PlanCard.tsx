@@ -13,7 +13,7 @@ import {
 } from "core/tools/implementations/createPlan";
 import { CSSProperties, useContext } from "react";
 import StyledMarkdownPreview from "../../../components/StyledMarkdownPreview";
-import { IdeMessengerContext } from "../../../context/IdeMessenger";
+import { HostBridgeContext } from "../../../context/HostBridge";
 import { useAppDispatch, useAppSelector } from "../../../redux/hooks";
 import { setMode, setPlanBrief, setTodos } from "../../../redux/slices/sessionSlice";
 import { streamResponseThunk } from "../../../redux/thunks/streamResponse";
@@ -90,7 +90,7 @@ export function PlanCard({
   alongsideResearch: boolean;
 }) {
   const dispatch = useAppDispatch();
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const isStreaming = useAppSelector((state) => state.session.isStreaming);
   const researched = useAppSelector((state) =>
     historyHasResearch(
@@ -137,7 +137,7 @@ export function PlanCard({
     if (!plan) {
       return;
     }
-    void ideMessenger.ide.showVirtualFile(
+    void hostBridge.ide.showVirtualFile(
       planFileName(plan.title),
       formatPlanDocument(plan),
       true,

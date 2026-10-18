@@ -1,7 +1,7 @@
 import { RangeInFile } from "core";
 import { findUriInDirs, getUriPathBasename } from "core/util/uri";
 import { useContext } from "react";
-import { IdeMessengerContext } from "../../context/IdeMessenger";
+import { HostBridgeContext } from "../../context/HostBridge";
 import FileIcon from "../FileIcon";
 import { ToolTip } from "../gui/Tooltip";
 
@@ -10,10 +10,10 @@ interface FilenameLinkProps {
 }
 
 function FilenameLink({ rif }: FilenameLinkProps) {
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
 
   function onClick() {
-    ideMessenger.post("showLines", {
+    hostBridge.post("showLines", {
       filepath: rif.filepath,
       startLine: rif.range.start.line,
       endLine: rif.range.end.line,

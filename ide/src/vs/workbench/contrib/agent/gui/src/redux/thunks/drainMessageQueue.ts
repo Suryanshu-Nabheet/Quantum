@@ -27,7 +27,7 @@ export async function injectQueuedMessageIfReady(
     const resolved = await resolveEditorContent({
       editorState: head.editorState,
       modifiers: head.modifiers,
-      ideMessenger: extra.ideMessenger,
+      hostBridge: extra.hostBridge,
       defaultContextProviders,
       availableSlashCommands: state.config.config.slashCommands,
       dispatch,

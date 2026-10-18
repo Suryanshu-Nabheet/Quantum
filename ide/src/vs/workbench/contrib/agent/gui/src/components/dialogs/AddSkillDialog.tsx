@@ -1,7 +1,7 @@
 import { useContext, useLayoutEffect, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 import { Input, SecondaryButton } from "..";
-import { IdeMessengerContext } from "../../context/IdeMessenger";
+import { HostBridgeContext } from "../../context/HostBridge";
 import { setDialogMessage, setShowDialog } from "../../redux/slices/uiSlice";
 
 function slugify(value: string): string {
@@ -14,7 +14,7 @@ function slugify(value: string): string {
 
 function AddSkillDialog({ onCreated }: { onCreated?: () => void }) {
   const dispatch = useDispatch();
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const [name, setName] = useState("new-skill");
   const [description, setDescription] = useState(
     "Describe when the agent should use this skill.",
@@ -52,7 +52,7 @@ function AddSkillDialog({ onCreated }: { onCreated?: () => void }) {
     setError(undefined);
     setIsSubmitting(true);
     try {
-      const workspaceDirs = await ideMessenger.ide.getWorkspaceDirs();
+      const workspaceDirs = await hostBridge.ide.getWorkspaceDirs();
       const baseDir = workspaceDirs[0];
       if (!baseDir) {
         setError("Open a workspace folder to create a skill");
@@ -63,7 +63,7 @@ function AddSkillDialog({ onCreated }: { onCreated?: () => void }) {
       const dir = baseDir.replace(/\/+$/, "");
       const fileUri = `${dir}/.agents/skills/${slug}/SKILL.md`;
 
-      if (await ideMessenger.ide.fileExists(fileUri)) {
+      if (await hostBridge.ide.fileExists(fileUri)) {
         setError(`A skill named "${slug}" already exists`);
         setIsSubmitting(false);
         return;
@@ -85,8 +85,8 @@ Describe step-by-step how the agent should perform this task. This file is
 loaded on demand when its description matches what you're working on.
 `;
 
-      await ideMessenger.ide.writeFile(fileUri, content);
-      await ideMessenger.ide.openFile(fileUri);
+      await hostBridge.ide.writeFile(fileUri, content);
+      await hostBridge.ide.openFile(fileUri);
       onCreated?.();
       closeDialog();
     } catch {

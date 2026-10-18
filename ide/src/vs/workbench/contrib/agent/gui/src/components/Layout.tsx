@@ -3,7 +3,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { CustomScrollbarDiv } from ".";
 
-import { IdeMessengerContext } from "../context/IdeMessenger";
+import { HostBridgeContext } from "../context/HostBridge";
 import { LocalStorageProvider } from "../context/LocalStorage";
 import { useWebviewListener } from "../hooks/useWebviewListener";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
@@ -39,7 +39,7 @@ const Layout = () => {
   const location = useLocation();
   const dispatch = useAppDispatch();
 
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
 
   const { mainEditor } = useMainEditor();
   const dialogMessage = useAppSelector((state) => state.ui.dialogMessage);
@@ -55,10 +55,10 @@ const Layout = () => {
 
   useEffect(() => {
     if (location.pathname === ROUTES.CONFIG && !(window as any).isFullScreen) {
-      ideMessenger.post("openConfigPage", undefined);
+      hostBridge.post("openConfigPage", undefined);
       navigate(ROUTES.HOME);
     }
-  }, [location.pathname, ideMessenger, navigate]);
+  }, [location.pathname, hostBridge, navigate]);
 
   // Lock full-screen mode to config/features only
   useEffect(() => {
@@ -153,11 +153,11 @@ const Layout = () => {
   useWebviewListener(
     "focusEdit",
     async () => {
-      await ideMessenger.request("edit/addCurrentSelection", undefined);
+      await hostBridge.request("edit/addCurrentSelection", undefined);
       await dispatch(enterEdit({ editorContent: mainEditor?.getJSON() }));
       mainEditor?.commands.focus();
     },
-    [ideMessenger, mainEditor],
+    [hostBridge, mainEditor],
   );
 
   useWebviewListener(

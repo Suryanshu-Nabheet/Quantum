@@ -35,12 +35,12 @@ These rules apply to **every** change. Do not skip them.
 
 ## Agent harness (webview loop)
 
-Production agent turns flow through: `streamNormalInput` → tool policy → `runParallelToolCalls` / `callToolById` → `streamResponseAfterToolCall` → next `streamNormalInput`. Invariants:
+Production agent turns flow through: `streamModelTurn` → tool policy → `runParallelToolCalls` / `callToolById` → `streamResponseAfterToolCall` → next `streamModelTurn`. Invariants:
 
-- **One LLM stream:** `withAgentStreamLock` on `streamNormalInput` only; parallel tools defer LLM resume via `agentToolPipeline`.
+- **One LLM stream:** `withAgentStreamLock` on `streamModelTurn` only; parallel tools defer LLM resume via `agentToolPipeline`.
 - **Depth:** `agentStepDepth` resets each user message; tool execution uses `agentStepDepth + 1`; `streamResponseAfterToolCall(depth)` starts the next LLM at `depth + 1`.
 - **Mixed approval:** auto tools use `resumeAgent: false`; user Accept / Accept all continues when all tools on the turn are done.
-- **IPC:** `IdeMessenger` long timeouts for `tools/call` and `llm/compileChat`; LLM stream idle 600s.
+- **IPC:** `HostBridge` long timeouts for `tools/call` and `llm/assembleChat`; LLM stream idle 600s.
 - **Gateway models:** non–api.openai.com OpenAI-compatible APIs use `parallel_tool_calls: true` (core + openai-adapters).
 
 Before changing the harness: `npm --prefix gui run tsc:check`, then desktop smoke (multi-tool prompt + optional long terminal command). Settings: Agent Access **Full**, Terminal **Auto** for autonomous runs.

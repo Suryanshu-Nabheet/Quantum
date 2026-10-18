@@ -1,16 +1,16 @@
 import type { FromWebviewProtocol } from "core/protocol";
 import type { SuccessWebviewSingleMessage } from "core/protocol/util";
 import { useContext, useEffect, useState } from "react";
-import { IdeMessengerContext } from "../context/IdeMessenger";
+import { HostBridgeContext } from "../context/HostBridge";
 
 /**
  * Generic hook for making IDE messenger requests with automatic error handling and refresh capability
  */
-export function useIdeMessengerRequest<T extends keyof FromWebviewProtocol>(
+export function useHostBridgeRequest<T extends keyof FromWebviewProtocol>(
   messageType: T,
   data: FromWebviewProtocol[T][0] | null,
 ) {
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const [result, setResult] = useState<
     SuccessWebviewSingleMessage<FromWebviewProtocol[T][1]>["content"] | null
   >(null);
@@ -24,7 +24,7 @@ export function useIdeMessengerRequest<T extends keyof FromWebviewProtocol>(
 
     setIsLoading(true);
     try {
-      const response = await ideMessenger.request(messageType, data);
+      const response = await hostBridge.request(messageType, data);
       if (response.status === "success") {
         setResult(response.content);
       } else {

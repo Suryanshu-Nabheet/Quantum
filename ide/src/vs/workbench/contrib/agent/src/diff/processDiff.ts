@@ -3,14 +3,14 @@ import { myersDiff } from "core/diff/myers";
 import { Logger } from "core/util/Logger";
 
 import { AgentGUIWebviewViewProvider } from "../AgentGUIWebviewViewProvider";
-import { VsCodeIde } from "../VsCodeIde";
+import { WorkbenchIde } from "../WorkbenchIde";
 
 import { VerticalDiffManager } from "./vertical/manager";
 
 export async function processDiff(
   action: "accept" | "reject",
   sidebar: AgentGUIWebviewViewProvider,
-  ide: VsCodeIde,
+  ide: WorkbenchIde,
   core: Core,
   verticalDiffManager: VerticalDiffManager,
   newFileUri?: string,

@@ -11,7 +11,7 @@ import * as vscode from "vscode";
 import { isFastApplyModel } from "../../apply/utils";
 import EditDecorationManager from "../../quickEdit/EditDecorationManager";
 import { handleLLMError } from "../../util/errorHandling";
-import { VsCodeWebviewProtocol } from "../../webviewProtocol";
+import { WorkbenchWebviewProtocol } from "../../webviewProtocol";
 
 
 import { VerticalDiffHandler, VerticalDiffHandlerOptions } from "./handler";
@@ -34,7 +34,7 @@ export class VerticalDiffManager {
   logDiffs: DiffLine[] | undefined;
 
   constructor(
-    private readonly webviewProtocol: VsCodeWebviewProtocol,
+    private readonly webviewProtocol: WorkbenchWebviewProtocol,
     private readonly editDecorationManager: EditDecorationManager,
     private readonly ide: IDE,
   ) {

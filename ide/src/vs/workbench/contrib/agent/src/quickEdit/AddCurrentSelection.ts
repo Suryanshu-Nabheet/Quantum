@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 
 import { VerticalDiffManager } from "../diff/vertical/manager";
 import { getRangeInFileWithContents } from "../util/addCode";
-import { VsCodeWebviewProtocol } from "../webviewProtocol";
+import { WorkbenchWebviewProtocol } from "../webviewProtocol";
 
 import EditDecorationManager from "./EditDecorationManager";
 import { QuickEditShowParams } from "./QuickEditQuickPick";
@@ -13,7 +13,7 @@ export async function addCurrentSelectionToEdit({
   args,
   editDecorationManager,
 }: {
-  webviewProtocol: VsCodeWebviewProtocol;
+  webviewProtocol: WorkbenchWebviewProtocol;
   verticalDiffManager: VerticalDiffManager;
   args: QuickEditShowParams | undefined;
   editDecorationManager: EditDecorationManager;

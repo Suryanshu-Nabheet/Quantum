@@ -7,11 +7,11 @@ import { CodeBlockPreview } from "./CodeBlockPreview";
 
 const postIde = vi.fn();
 
-vi.mock("../../../../../context/MockIdeMessenger", async (importOriginal) => {
+vi.mock("../../../../../context/MockHostBridge", async (importOriginal) => {
   const original = (await importOriginal()) as any;
   return {
     ...original,
-    MockIdeMessenger: class MockedMockIdeMessenger extends original.MockIdeMessenger {
+    MockHostBridge: class MockedMockHostBridge extends original.MockHostBridge {
       post(...args: any[]) {
         postIde(...args);
       }

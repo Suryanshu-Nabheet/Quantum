@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { IdeMessengerContext } from "../../../../context/IdeMessenger";
+import { HostBridgeContext } from "../../../../context/HostBridge";
 import { useAppDispatch, useAppSelector } from "../../../../redux/hooks";
 import { exitEdit } from "../../../../redux/thunks/edit";
 import AcceptRejectDiffButtons from "../../../AcceptRejectDiffButtons";
@@ -11,7 +11,7 @@ export function EditOutcomeToolbar() {
     (store) => store.editModeState.applyState,
   );
   const { mainEditor } = useMainEditor();
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
 
   return (
     <div className="text-description-muted flex items-center justify-between py-0.5 text-xs">
@@ -25,7 +25,7 @@ export function EditOutcomeToolbar() {
         onAcceptOrReject={async (outcome) => {
           if (outcome === "acceptDiff") {
             await dispatch(exitEdit({}));
-            ideMessenger.post("focusEditor", undefined);
+            hostBridge.post("focusEditor", undefined);
           } else {
             mainEditor?.commands.focus();
           }

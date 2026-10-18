@@ -1,6 +1,6 @@
 import { useContext, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { IdeMessengerContext } from "../../context/IdeMessenger";
+import { HostBridgeContext } from "../../context/HostBridge";
 import { useAppSelector } from "../../redux/hooks";
 import { selectSelectedProfile } from "../../redux/slices/profilesSlice";
 import { CONFIG_ROUTES } from "../../util/navigation";
@@ -10,7 +10,7 @@ export const FatalErrorIndicator = () => {
   const configError = useAppSelector((store) => store.config.configError);
   const location = useLocation();
   const navigate = useNavigate();
-  const ideMessenger = useContext(IdeMessengerContext);
+  const hostBridge = useContext(HostBridgeContext);
   const selectedProfile = useAppSelector(selectSelectedProfile);
 
   const hasFatalErrors = useMemo(() => {
@@ -42,7 +42,7 @@ export const FatalErrorIndicator = () => {
           <div
             className={`cursor-pointer underline`}
             onClick={() => {
-              ideMessenger.post("config/refreshProfiles", undefined);
+              hostBridge.post("config/refreshProfiles", undefined);
             }}
           >
             Reload

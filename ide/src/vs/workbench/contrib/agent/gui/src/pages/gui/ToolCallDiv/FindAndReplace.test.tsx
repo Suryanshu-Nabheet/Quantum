@@ -5,8 +5,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { FindAndReplaceDisplay } from "./FindAndReplace";
 
 // Mock the dependencies
-vi.mock("../../../context/IdeMessenger", () => ({
-  IdeMessengerContext: {
+vi.mock("../../../context/HostBridge", () => ({
+  HostBridgeContext: {
     _currentValue: { post: vi.fn() },
   },
 }));

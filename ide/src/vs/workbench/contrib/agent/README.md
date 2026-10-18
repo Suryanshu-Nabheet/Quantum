@@ -132,13 +132,13 @@ After `npm run compile`, confirm:
 
 ## Agent harness (maintainers)
 
-Chat/tool turns: `runAgentDriver` in `streamNormalInput` → `withAgentStreamLock` → tool policy → parallel tools → next driver iteration.
+Chat/tool turns: `runAgentDriver` in `streamModelTurn` → `withAgentStreamLock` → tool policy → parallel tools → next driver iteration.
 
-- One LLM stream at a time: `withAgentStreamLock` on `runStreamNormalInputLocked`
+- One LLM stream at a time: `withAgentStreamLock` on `runStreamModelTurnLocked`
 - **Stream continuation:** only inside `core/llm/streamChat.ts` (up to 3 segments when truncated or clearly cut off — no extra GUI re-stream loops)
 - Step depth resets per user message; tools at `depth + 1`
 - Mixed approval: auto tools do not auto-resume the LLM
-- IPC: long timeouts for `tools/call` and `llm/compileChat`
+- IPC: long timeouts for `tools/call` and `llm/assembleChat`
 
 **Reliability invariants:** one terminal outcome per stream; abortable streams; bounded errors instead of spinners; `ensureAgentTurnInactive` when the driver exits; invalid tool JSON surfaces as errors, not execution. Prefer deleting eager imports and duplicate listeners over new orchestration layers.
 

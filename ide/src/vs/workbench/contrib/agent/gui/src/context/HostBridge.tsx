@@ -29,13 +29,13 @@ const LLM_STREAM_IDLE_TIMEOUT_MS = 600_000;
 const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
 /** Builds, test runs, and large repo reads can exceed 30s. */
 const AGENT_TOOL_REQUEST_TIMEOUT_MS = 600_000;
-const COMPILE_CHAT_REQUEST_TIMEOUT_MS = 120_000;
+const ASSEMBLE_CHAT_REQUEST_TIMEOUT_MS = 120_000;
 
 const REQUEST_TIMEOUT_MS_BY_TYPE: Partial<
   Record<keyof FromWebviewProtocol, number>
 > = {
   "tools/call": AGENT_TOOL_REQUEST_TIMEOUT_MS,
-  "llm/compileChat": COMPILE_CHAT_REQUEST_TIMEOUT_MS,
+  "llm/assembleChat": ASSEMBLE_CHAT_REQUEST_TIMEOUT_MS,
 };
 
 function resolveRequestTimeoutMs<T extends keyof FromWebviewProtocol>(
@@ -48,7 +48,7 @@ function resolveRequestTimeoutMs<T extends keyof FromWebviewProtocol>(
   return REQUEST_TIMEOUT_MS_BY_TYPE[messageType] ?? DEFAULT_REQUEST_TIMEOUT_MS;
 }
 
-export interface IIdeMessenger {
+export interface IHostBridge {
   post<T extends keyof FromWebviewProtocol>(
     messageType: T,
     data: FromWebviewProtocol[T][0],
@@ -86,7 +86,7 @@ export interface IIdeMessenger {
   ide: IDE;
 }
 
-export class IdeMessenger implements IIdeMessenger {
+export class HostBridge implements IHostBridge {
   ide: IDE;
 
   constructor() {
@@ -341,17 +341,17 @@ export class IdeMessenger implements IIdeMessenger {
   }
 }
 
-export const IdeMessengerContext = createContext<IIdeMessenger>(
-  new IdeMessenger(),
+export const HostBridgeContext = createContext<IHostBridge>(
+  new HostBridge(),
 );
 
-export const IdeMessengerProvider: React.FC<{
+export const HostBridgeProvider: React.FC<{
   children: React.ReactNode;
-  messenger?: IIdeMessenger;
-}> = ({ children, messenger = new IdeMessenger() }) => {
+  messenger?: IHostBridge;
+}> = ({ children, messenger = new HostBridge() }) => {
   return (
-    <IdeMessengerContext.Provider value={messenger}>
+    <HostBridgeContext.Provider value={messenger}>
       {children}
-    </IdeMessengerContext.Provider>
+    </HostBridgeContext.Provider>
   );
 };

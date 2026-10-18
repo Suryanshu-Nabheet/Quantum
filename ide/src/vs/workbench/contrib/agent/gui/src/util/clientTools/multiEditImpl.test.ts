@@ -33,7 +33,7 @@ describe("multiEditImpl GUI specific", () => {
         config: { config: {} },
       })) as any,
       dispatch: vi.fn() as any,
-      ideMessenger: {
+      hostBridge: {
         ide: {
           readFile: vi.fn(),
           getWorkspaceDirs: vi.fn().mockResolvedValue(["dir1"]),
@@ -86,7 +86,7 @@ describe("multiEditImpl GUI specific", () => {
     });
 
     it("should read file from IDE and dispatch edit", async () => {
-      mockExtras.ideMessenger.ide.readFile = vi
+      mockExtras.hostBridge.ide.readFile = vi
         .fn()
         .mockResolvedValue("Hello world");
 
@@ -99,7 +99,7 @@ describe("multiEditImpl GUI specific", () => {
         mockExtras,
       );
 
-      expect(mockExtras.ideMessenger.ide.readFile).toHaveBeenCalledWith(
+      expect(mockExtras.hostBridge.ide.readFile).toHaveBeenCalledWith(
         "file:///dir/test/file.txt",
       );
       expect(mockApplyForEditTool).toHaveBeenCalledWith({
@@ -112,7 +112,7 @@ describe("multiEditImpl GUI specific", () => {
     });
 
     it("should wrap IDE readFile errors", async () => {
-      mockExtras.ideMessenger.ide.readFile = vi
+      mockExtras.hostBridge.ide.readFile = vi
         .fn()
         .mockRejectedValue(new Error("Read failed"));
 
@@ -134,7 +134,7 @@ describe("multiEditImpl GUI specific", () => {
       mockResolveRelativePathInDir.mockResolvedValue(
         "file:///dir/test/file.txt",
       );
-      mockExtras.ideMessenger.ide.readFile = vi.fn().mockResolvedValue("test");
+      mockExtras.hostBridge.ide.readFile = vi.fn().mockResolvedValue("test");
 
       const result = await multiEditImpl(
         {

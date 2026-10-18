@@ -12,16 +12,16 @@ import { getUriPathBasename } from "core/util/uri";
 import * as vscode from "vscode";
 
 import { VerticalDiffManager } from "../diff/vertical/manager";
-import { VsCodeIde } from "../VsCodeIde";
-import { VsCodeWebviewProtocol } from "../webviewProtocol";
+import { WorkbenchIde } from "../WorkbenchIde";
+import { WorkbenchWebviewProtocol } from "../webviewProtocol";
 
 /**
  * Handles applying text/code to files including diff generation and streaming
  */
 export class ApplyManager {
   constructor(
-    private readonly ide: VsCodeIde,
-    private readonly webviewProtocol: VsCodeWebviewProtocol,
+    private readonly ide: WorkbenchIde,
+    private readonly webviewProtocol: WorkbenchWebviewProtocol,
     private readonly verticalDiffManager: VerticalDiffManager,
     private readonly configHandler: ConfigHandler,
   ) {}
