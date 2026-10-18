@@ -1,7 +1,6 @@
 # Dependencies & caches
 **/node_modules
 .npm-cache
-.tiktoken_cache
 
 # Generated outputs
 tmp/
@@ -18,7 +17,6 @@ packages/agent-config/schema/
 !.env.example
 .agent-debug
 .agentrc.json
-.aider*
 
 # OS & editors
 .DS_Store
@@ -28,16 +26,3 @@ packages/agent-config/schema/
 
 # Test & coverage
 coverage
-.pytest_cache
-htmlcov/
-.coverage
-*.cover
-
-# Misc
-notes.txt
-cached_embeddings.pkl
-.channels_cache.json
-.copy-status
-.copy-log
-codeql
-.ruff_cache

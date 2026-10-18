@@ -14,7 +14,7 @@
   "include": ["src/**/*", "core/**/*.ts", "core/**/*.d.ts"],
   "exclude": [
     "core/dist/**/*",
-    "core/**/*.test.ts",
+    "core/**/*.vitest.ts",
     "core/**/test/**/*",
     "core/**/*.skip.ts"
   ]
