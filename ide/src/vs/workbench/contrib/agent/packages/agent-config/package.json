@@ -6,7 +6,7 @@
   "types": "../../../../../../../out/agent-packages/agent-config/index.d.ts",
   "type": "module",
   "scripts": {
-    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
+    "test": "vitest run",
     "build": "rm -rf ../../../../../../../out/agent-packages/agent-config && tsc"
   },
   "author": "Suryanshu Nabheet",
@@ -16,11 +16,8 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.14",
     "@types/node": "^20.0.0",
-    "cross-env": "^7.0.3",
-    "jest": "^29.7.0",
-    "ts-jest": "^29.2.3"
+    "vitest": "^3.2.4"
   },
   "repository": {
     "type": "git",
