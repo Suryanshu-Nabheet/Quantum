@@ -64,15 +64,6 @@ class WalkDirCache {
     this.dirListCache.clear();
     this.dirIgnoreCache.clear();
   }
-  // invalidateIgnore(uri: string) {
-  //   this.dirIgnoreCache.delete(uri);
-  // }
-  // invalidateParent(uri: string) {
-  //   const splitUri = fileUri.split("/");
-  //   splitUri.pop();
-  //   const parent = splitUri.join("/");
-  //   this.dirListCache.delete(uri);
-  // }
 }
 export const walkDirCache = new WalkDirCache();
 

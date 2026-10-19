@@ -251,11 +251,6 @@ Set secrets in ~/.agent/.env or your workspace .env file (see config docs in the
                 }
               }
 
-              // register server notification handlers
-              // this.client.transport?.onmessage(msg => console.log())
-              // this.client.setNotificationHandler(, notification => {
-              //   console.log(notification)
-              // })
               const capabilities = this.client.getServerCapabilities();
 
               // Resources <—> Context Provider

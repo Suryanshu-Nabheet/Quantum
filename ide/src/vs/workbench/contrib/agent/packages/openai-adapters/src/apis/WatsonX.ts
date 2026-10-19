@@ -88,48 +88,6 @@ export class WatsonXApi implements BaseLlmApi {
         token: wxToken["access_token"] ?? wxToken["token"],
         expiration: 0,
       };
-      // } else if (!this.config.apiKey?.includes(":")) {
-      //   // Using ZenApiKey auth
-      //   return {
-      //     token: this.config.apiKey ?? "",
-      //     expiration: -1,
-      //   };
-      // } else {
-      //   // Using username/password credentials
-      //   const userPass = this.config.apiKey?.split(":");
-      //   const wxToken = (await (
-      //     await customFetch(this.config.requestOptions)(
-      //       `${this.apiBase}/icp4d-api/v1/authorize`,
-      //       {
-      //         method: "POST",
-      //         headers: {
-      //           "Content-Type": "application/json",
-      //           Accept: "application/json",
-      //         },
-      //         body: JSON.stringify({
-      //           username: userPass[0],
-      //           password: userPass[1],
-      //         }),
-      //       },
-      //     )
-      //   ).json()) as any;
-      //   const wxTokenExpiry = (await (
-      //     await customFetch(this.config.requestOptions)(
-      //       `${this.apiBase}/usermgmt/v1/user/tokenExpiry`,
-      //       {
-      //         method: "GET",
-      //         headers: {
-      //           Accept: "application/json",
-      //           Authorization: `Bearer ${wxToken["token"]}`,
-      //         },
-      //       },
-      //     )
-      //   ).json()) as any;
-      //   return {
-      //     token: wxToken["token"],
-      //     expiration: wxTokenExpiry["exp"],
-      //   };
-      // }
     }
   }
 

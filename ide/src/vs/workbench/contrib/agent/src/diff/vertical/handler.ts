@@ -217,13 +217,6 @@ export class VerticalDiffHandler implements vscode.Disposable {
         this.editor.document.getText(),
       );
 
-      // Reject on user typing
-      // const listener = vscode.workspace.onDidChangeTextDocument((e) => {
-      //   if (URI.equal(e.document.uri.toString(), this.fileUri)) {
-      //     this.clear(false);
-      //     listener.dispose();
-      //   }
-      // });
     } catch (e) {
       this.clearForFileUri(this.fileUri, false);
       throw e;
