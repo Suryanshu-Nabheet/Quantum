@@ -41,31 +41,31 @@ const StyledMarkdown = styled.div<{
   isRenderingInStepContainer?: boolean;
 }>`
   h1 {
-    font-size: ${(props) => (props.isThinking ? "1.05em" : "1.25em")};
+    font-size: 1.25em;
   }
 
   h2 {
-    font-size: ${(props) => (props.isThinking ? "1em" : "1.15em")};
+    font-size: 1.15em;
   }
 
   h3 {
-    font-size: ${(props) => (props.isThinking ? "0.95em" : "1.05em")};
+    font-size: 1.05em;
   }
 
   h4 {
-    font-size: ${(props) => (props.isThinking ? "0.9em" : "1em")};
+    font-size: 1em;
   }
 
   h5 {
-    font-size: ${(props) => (props.isThinking ? "0.85em" : "0.95em")};
+    font-size: 0.95em;
   }
 
   h6 {
-    font-size: ${(props) => (props.isThinking ? "0.8em" : "0.9em")};
+    font-size: 0.9em;
   }
 
   p {
-    margin: ${(props) => (props.isThinking ? "0.2em 0" : "0.5em 0")};
+    margin: 0.5em 0;
   }
 
   p:first-child {
@@ -110,7 +110,7 @@ const StyledMarkdown = styled.div<{
     word-wrap: break-word;
     border-radius: 0.3125rem;
     background-color: ${vscEditorBackground};
-    font-size: ${(props) => (props.isThinking ? "0.65rem" : `${getFontSize() - 2}px`)};
+    font-size: ${(props) => `${getFontSize() - 2}px`};
     font-family: var(--vscode-editor-font-family);
   }
 
@@ -123,7 +123,7 @@ const StyledMarkdown = styled.div<{
   }
 
   li {
-    margin-bottom: ${(props) => (props.isThinking ? "0.2em" : "0.3em")};
+    margin-bottom: 0.3em;
   }
   li:last-child {
     margin-bottom: 0;
@@ -131,8 +131,8 @@ const StyledMarkdown = styled.div<{
 
   ul,
   ol {
-    padding-left: ${(props) => (props.isThinking ? "1.25em" : "2em")};
-    margin: ${(props) => (props.isThinking ? "0.2em 0" : "0")};
+    padding-left: 2em;
+    margin: 0;
   }
 
   strong {
@@ -160,7 +160,7 @@ const StyledMarkdown = styled.div<{
     "Helvetica Neue",
     sans-serif;
   font-size: ${(props) =>
-    props.isThinking ? "0.75rem" : props.fontSize ? `${props.fontSize}px` : `${getFontSize()}px`};
+    props.fontSize ? `${props.fontSize}px` : `${getFontSize()}px`};
   padding-left: ${(props) => (props.isRenderingInStepContainer ? "0" : "8px")};
   padding-right: ${(props) => (props.isRenderingInStepContainer ? "0" : "8px")};
   color: ${(props) =>
@@ -170,7 +170,7 @@ const StyledMarkdown = styled.div<{
   li,
   ol,
   ul {
-    line-height: ${(props) => (props.isThinking ? "1.25" : "1.5")};
+    line-height: 1.5;
   }
 
   * {

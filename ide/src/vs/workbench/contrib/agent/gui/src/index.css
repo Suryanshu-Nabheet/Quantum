@@ -315,22 +315,22 @@ body {
 .trr-sentence {
   margin: 0;
   color: var(--vscode-descriptionForeground, #8c8c8c);
-  font-size: 13px;
-  line-height: 20px;
+  font-size: inherit;
+  line-height: 1.5;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   animation: tr-sentence-in 200ms cubic-bezier(0.23, 1, 0.32, 1) both;
 }
 
 .trr-markdown {
-  font-size: 13px;
-  line-height: 20px;
+  font-size: inherit;
+  line-height: 1.5;
 }
 
 .trr-markdown p,
 .trr-markdown ul,
 .trr-markdown ol {
-  margin: 0.2em 0;
+  margin: 0.5em 0;
 }
 
 .trr-markdown p:first-child,
@@ -341,11 +341,11 @@ body {
 
 .trr-markdown ul,
 .trr-markdown ol {
-  padding-left: 1.25em;
+  padding-left: 1.5em;
 }
 
 .trr-markdown li {
-  margin: 0.1em 0;
+  margin: 0.2em 0;
 }
 
 .trr-markdown strong {
@@ -354,7 +354,7 @@ body {
 }
 
 .trr-markdown code {
-  font-size: 12px;
+  font-size: inherit;
 }
 
 .tdl-root {
@@ -362,7 +362,6 @@ body {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  margin: 0;
   padding: 0 8px 0 10px;
 }
 

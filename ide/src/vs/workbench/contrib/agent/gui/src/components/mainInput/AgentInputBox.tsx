@@ -102,8 +102,7 @@ function AgentInputBox(props: AgentInputBoxProps) {
   }, [isInEdit, editModeState.applyState.status]);
 
   const { appliedRules = [], contextItems = [] } = props;
-  const showStreamingStatus =
-    isStreaming && (props.isLastUserInput || isInEdit);
+  const showStreamingStatus = isStreaming && isInEdit;
   const showPeeks = appliedRules.length > 0 || contextItems.length > 0;
 
   return (

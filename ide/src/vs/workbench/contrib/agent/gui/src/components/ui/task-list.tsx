@@ -193,7 +193,7 @@ export function TaskList({
       className={
         scroll
           ? styles.todo
-          : `${styles.todo} border-command-border bg-input mt-2 rounded-default border border-solid`
+          : `${styles.todo} border-command-border bg-input mt-3 mb-1 rounded-default border border-solid`
       }
     >
       <button

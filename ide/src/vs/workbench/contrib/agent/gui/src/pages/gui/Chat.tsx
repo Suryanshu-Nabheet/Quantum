@@ -21,12 +21,14 @@ import TimelineItem from "../../components/gui/TimelineItem";
 
 import ThinkingBlockPeek from "../../components/mainInput/belowMainInput/ThinkingBlockPeek";
 import AgentInputBox from "../../components/mainInput/AgentInputBox";
+import { ShinyLoading } from "../../components/mainInput/ShinyLoading";
 import StepContainer from "../../components/StepContainer";
 import { TabBar } from "../../components/TabBar/TabBar";
 import { TaskList } from "../../components/ui/task-list";
 import { HostBridgeContext } from "../../context/HostBridge";
 import { useWebviewListener } from "../../hooks/useWebviewListener";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
+import { selectStreamingStatus } from "../../redux/selectors";
 import {
   selectDoneApplyStates,
   selectPendingToolCalls,
@@ -198,6 +200,7 @@ export function Chat() {
   const stepsDivRef = useRef<HTMLDivElement>(null);
   const tabsRef = useRef<HTMLDivElement>(null);
   const history = useAppSelector((state) => state.session.history);
+  const streamingStatus = useAppSelector(selectStreamingStatus);
   const showChatScrollbar = useAppSelector(
     (state) => state.config.config.ui?.showChatScrollbar,
   );
@@ -542,11 +545,20 @@ export function Chat() {
                 >
                   {rendered}
                 </ErrorBoundary>
-                {turnTodos ? <TaskList todos={turnTodos} scroll={false} /> : null}
+                {turnTodos ? (
+                  <div className={rendered ? "mt-3" : ""}>
+                    <TaskList todos={turnTodos} scroll={false} />
+                  </div>
+                ) : null}
                 {index === history.length - 1 && <InlineErrorMessage />}
               </div>
             );
           })}
+          {isStreaming && (
+            <div className="min-w-0 max-w-full">
+              <ShinyLoading status={streamingStatus ?? undefined} />
+            </div>
+          )}
         </div>
       </StepsDiv>
       <div className="relative min-w-0 max-w-full shrink-0">
