@@ -23,10 +23,17 @@ Quantum / VS Code is built with a layered architecture using TypeScript, web API
   - `workbench/browser/` - Core workbench UI components (parts, layout, actions)
   - `workbench/services/` - Service implementations
   - `workbench/contrib/` - Feature contributions (git, debug, search, terminal, etc.)
+    - `workbench/contrib/agent/` - **Quantum Workbench Agent** (sole engine for all Quantum IDE AI features: chat, inline edit, autocomplete, tools, MCP). Quantum does NOT use Microsoft's Copilot code (`contrib/chat`, `contrib/inlineChat`, `vs/sessions`).
   - `workbench/api/` - Extension host and VS Code API implementation
 - `src/vs/code/` - Electron main process specific implementation
 - `src/vs/server/` - Server specific implementation
-- `src/vs/sessions/` - Agent sessions window, a dedicated workbench layer for agentic workflows (sits alongside `vs/workbench`, may import from it but not vice versa)
+- `src/vs/sessions/` - Upstream Microsoft Copilot sessions experiment (**NOT used by Quantum Agent**)
+
+### AI Architecture: Quantum Agent vs Upstream Microsoft Copilot
+
+Quantum is an AI-native editor with its own first-party agent architecture:
+- **Quantum Workbench Agent (`src/vs/workbench/contrib/agent/`)**: The exclusive source of all agentic AI features in Quantum IDE (chat, edit, autocomplete, plan mode, MCP, browser tools). Similar to how Cursor builds Composer rather than using VS Code's Copilot code, Quantum implements its AI workflows strictly inside `contrib/agent/`.
+- **Upstream Copilot directories (`contrib/chat/`, `contrib/inlineChat/`, `vs/sessions/`, `platform/chat/`)**: Upstream Microsoft Copilot infrastructure that is NOT used by Quantum. Do not direct AI/chat enhancements or bug fixes to these directories.
 
 The core architecture follows these principles:
 - **Layered architecture** - from `base`, `platform`, `editor`, to `workbench`

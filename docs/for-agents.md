@@ -37,11 +37,13 @@ Cursor project rules: [`.cursor/rules/quantum-monorepo.mdc`](../.cursor/rules/qu
 2. **No telemetry** — do not add analytics or undisclosed network calls.
 3. **Stay in product tree** — do not couple `agent/` and `ide/` codebases.
 4. **Verify before claiming done** — run the checks listed in the product `AGENTS.md`.
+5. **Never confuse Quantum Agent with upstream VS Code Copilot code** — `ide/src/vs/workbench/contrib/agent/` is the **only** AI agent in the IDE. Upstream Microsoft Copilot directories (`src/vs/workbench/contrib/chat`, `src/vs/workbench/contrib/inlineChat`, `src/vs/sessions`) are NOT used by Quantum.
 
 ## Workbench Agent (quick maintainer facts)
 
 Source: `ide/src/vs/workbench/contrib/agent/`
 
+- **Sole IDE AI engine:** Powers chat, edit, autocomplete, tools, and MCP (analogous to Cursor's Composer vs VS Code's Copilot).
 - **Turn loop:** `streamModelTurn` → tool policy → parallel tools → `streamResponseAfterToolCall` → repeat.
 - **One LLM stream** at a time (`withAgentStreamLock`).
 - **Build output:** `ide/out/agent/` (generated; not committed).

@@ -16,6 +16,21 @@
 
 User data directory: **`~/.quantum`** (see `ide/product.json` for product-specific names in dev).
 
+## AI Architecture: Quantum Agent vs Upstream Microsoft Copilot
+
+> [!IMPORTANT]
+> **Quantum uses its own first-party Agent (`ide/src/vs/workbench/contrib/agent`) for all agentic AI features — NOT Microsoft's Copilot codebase.**
+>
+> Just as **Cursor** forks the VS Code editor shell but replaces VS Code's native Copilot AI code with their own **Composer**, **Quantum** uses the VS Code editor workbench as a host shell while powering **all** chat, inline edit, tab autocomplete, plan mode, to-do lists, MCP, and autonomous tool workflows exclusively through **`ide/src/vs/workbench/contrib/agent`**.
+>
+> **Do not confuse with upstream Microsoft Copilot directories:**
+> - `ide/src/vs/workbench/contrib/chat/` — Upstream Microsoft VS Code Copilot chat infrastructure (**NOT used by Quantum Agent**).
+> - `ide/src/vs/workbench/contrib/inlineChat/` — Upstream Microsoft Copilot inline chat (**NOT used by Quantum Agent**).
+> - `ide/src/vs/sessions/` — Upstream Microsoft Copilot session window experiment (**NOT used by Quantum Agent**).
+> - `ide/src/vs/platform/chat/` — Upstream Microsoft Copilot platform types.
+>
+> If you are working on AI features, chat UI, model integrations, prompt generation, tool execution, diff application, or agent workflows, **all work belongs in `ide/src/vs/workbench/contrib/agent/`**.
+
 ## High-level architecture
 
 ```

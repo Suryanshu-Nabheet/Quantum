@@ -10,6 +10,18 @@ Monorepo documentation: [docs/for-agents.md](../docs/for-agents.md) · [Workbenc
 
 **First-time dev setup:** `./scripts/setup.sh` (macOS/Linux) or `scripts\setup.bat` (Windows). After a successful build, relaunch with `./scripts/setup.sh --launch-only` or `VSCODE_SKIP_PRELAUNCH=1 ./scripts/code.sh`. Details: [scripts/README.md](scripts/README.md).
 
+## AI Architecture: Quantum Agent vs Upstream Microsoft Copilot Code
+
+> [!IMPORTANT]
+> **Quantum IDE does NOT use Microsoft's Copilot codebase.**
+> - **Quantum Workbench Agent lives in [`src/vs/workbench/contrib/agent/`](src/vs/workbench/contrib/agent/):** This is the **exclusive** engine powering all agentic AI features in the IDE (chat sidebar, inline edit, tab autocomplete, plan mode, to-dos, browser tools, diff apply, and MCP).
+> - **Do NOT touch or confuse with upstream Copilot directories:**
+>   - `src/vs/workbench/contrib/chat/` — Upstream Microsoft Copilot chat infrastructure (**NOT used by Quantum Agent**).
+>   - `src/vs/workbench/contrib/inlineChat/` — Upstream Microsoft Copilot inline chat (**NOT used by Quantum Agent**).
+>   - `src/vs/sessions/` — Upstream Microsoft Copilot sessions experiment (**NOT used by Quantum Agent**).
+>   - `src/vs/platform/chat/` — Upstream Microsoft Copilot platform types.
+> - Just as Cursor forks VS Code and provides its own Composer rather than using VS Code's Copilot chat, Quantum provides its own first-party **Agent** (`contrib/agent`). Always make AI-related changes inside `src/vs/workbench/contrib/agent/`.
+
 ## Workflow rules (mandatory)
 
 These rules apply to **every** change. Do not skip them.

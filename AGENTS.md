@@ -28,6 +28,7 @@ See [scripts/README.md](scripts/README.md) and [CONTRIBUTING.md](CONTRIBUTING.md
 ## Scope boundaries
 
 - Keep dependencies, tooling, and docs inside each product directory unless the change is truly monorepo-wide (root `scripts/`, shared policy, workspace config).
+- In `ide/`, all agentic AI features (chat, edit, tools, MCP) are powered exclusively by `ide/src/vs/workbench/contrib/agent`. Do not confuse with or touch upstream Microsoft Copilot directories (`contrib/chat`, `contrib/inlineChat`, `sessions`).
 - Do not add telemetry or non-consensual network calls (see [readme.md](readme.md)).
 - IDE debugging and F5 launch configs live in `ide/.vscode/` — open the **IDE** folder or use `Quantum.code-workspace` for day-to-day editor work on `ide/`.
 

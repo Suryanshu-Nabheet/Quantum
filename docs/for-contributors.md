@@ -14,6 +14,12 @@ How to work in the Quantum monorepo without crossing product boundaries.
 
 Do **not** import `agent/` from `ide/` or vice versa. Shared policy lives at the repo root only.
 
+> [!IMPORTANT]
+> **Where is the AI and Chat code?**
+> All agentic AI capabilities in Quantum IDE (chat, edit, autocomplete, MCP, tool execution) are powered by **`ide/src/vs/workbench/contrib/agent/`**.
+>
+> Just as Cursor uses its own Composer rather than VS Code's Copilot code, Quantum does **not** use Microsoft's built-in Copilot codebase (`src/vs/workbench/contrib/chat`, `src/vs/workbench/contrib/inlineChat`, or `src/vs/sessions`). Never direct AI changes or bug fixes to Microsoft's upstream chat directories.
+
 ## Setup and verification
 
 ```bash
