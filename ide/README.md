@@ -13,7 +13,7 @@
 
 **Quantum** is an MIT-licensed, AI-native code editor — a fork of [Visual Studio Code](https://github.com/microsoft/vscode) with a **first-party agent** built into the workbench, plus an embedded browser that can attach live page context to chat.
 
-Not a plugin bolted on later, and **not** using Microsoft's Copilot code (`contrib/chat`, `sessions`): like Cursor built Composer rather than using VS Code's Copilot AI, Quantum powers all chat, inline edit, and agentic workflows through its own first-party agent in [`src/vs/workbench/contrib/agent`](src/vs/workbench/contrib/agent).
+Not a marketplace extension bolted on later: all conversational chat, inline code generation, multi-file editing, and agentic workflows are powered natively by Quantum's first-party agent in [`src/vs/workbench/contrib/agent`](src/vs/workbench/contrib/agent).
 
 <p align="center">
   <img alt="Quantum with the Agent sidebar open beside the editor" src="./assets/screenshots/demo.png" width="100%" />

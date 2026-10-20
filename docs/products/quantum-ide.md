@@ -16,20 +16,19 @@
 
 User data directory: **`~/.quantum`** (see `ide/product.json` for product-specific names in dev).
 
-## AI Architecture: Quantum Agent vs Upstream Microsoft Copilot
+## AI Architecture: First-Party Agent Subsystem
+
+Quantum IDE integrates a custom, first-party agent architecture designed specifically for local-first, autonomous engineering workflows:
+
+- **Quantum Workbench Agent ([`ide/src/vs/workbench/contrib/agent/`](../../ide/src/vs/workbench/contrib/agent/)):**
+  The sole engine powering all AI capabilities across Quantum IDE. This includes conversational chat, inline code generation and refactoring, multi-file editing, tab autocomplete, plan and to-do execution, Model Context Protocol (MCP) clients, and automated browser tools. It is packaged and loaded as the built-in system extension `quantum.agent`.
+
+- **Upstream VS Code Copilot Infrastructure (Unused):**
+  The repository maintains an upstream Visual Studio Code codebase fork. Directories inherited from upstream Microsoft Copilot integrations — including `src/vs/workbench/contrib/chat/`, `src/vs/workbench/contrib/inlineChat/`, `src/vs/sessions/`, and `src/vs/platform/chat/` — are dormant upstream artifacts and are not utilized by Quantum IDE.
 
 > [!IMPORTANT]
-> **Quantum uses its own first-party Agent (`ide/src/vs/workbench/contrib/agent`) for all agentic AI features — NOT Microsoft's Copilot codebase.**
->
-> Just as **Cursor** forks the VS Code editor shell but replaces VS Code's native Copilot AI code with their own **Composer**, **Quantum** uses the VS Code editor workbench as a host shell while powering **all** chat, inline edit, tab autocomplete, plan mode, to-do lists, MCP, and autonomous tool workflows exclusively through **`ide/src/vs/workbench/contrib/agent`**.
->
-> **Do not confuse with upstream Microsoft Copilot directories:**
-> - `ide/src/vs/workbench/contrib/chat/` — Upstream Microsoft VS Code Copilot chat infrastructure (**NOT used by Quantum Agent**).
-> - `ide/src/vs/workbench/contrib/inlineChat/` — Upstream Microsoft Copilot inline chat (**NOT used by Quantum Agent**).
-> - `ide/src/vs/sessions/` — Upstream Microsoft Copilot session window experiment (**NOT used by Quantum Agent**).
-> - `ide/src/vs/platform/chat/` — Upstream Microsoft Copilot platform types.
->
-> If you are working on AI features, chat UI, model integrations, prompt generation, tool execution, diff application, or agent workflows, **all work belongs in `ide/src/vs/workbench/contrib/agent/`**.
+> **Implementation Boundary:**
+> All AI features, model integrations, prompt engineering, agentic tools, context indexing, and chat interfaces must be implemented exclusively within [`ide/src/vs/workbench/contrib/agent/`](../../ide/src/vs/workbench/contrib/agent/). Do not extend, modify, or link against upstream Microsoft Copilot modules.
 
 ## High-level architecture
 

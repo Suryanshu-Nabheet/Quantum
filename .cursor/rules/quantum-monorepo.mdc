@@ -19,6 +19,6 @@ Git / editor policy: [docs/version-control.md](../../docs/version-control.md). R
 When editing:
 
 - Touch only the product tree that matches the task; avoid cross-imports between `agent/` and `ide/`.
-- In `ide/`, all agentic AI features (chat, inline edit, tools, MCP) belong exclusively in `ide/src/vs/workbench/contrib/agent/`. Never edit or confuse with upstream Microsoft Copilot directories (`contrib/chat`, `contrib/inlineChat`, `sessions`).
+- In `ide/`, all agentic AI features (chat, inline edit, tools, MCP) belong exclusively in `ide/src/vs/workbench/contrib/agent/`. Upstream editor Copilot directories (`contrib/chat`, `contrib/inlineChat`, `sessions`) are inactive and must not be modified.
 - Use `Quantum.code-workspace` or open `ide/` / `agent/` directly for product-specific VS Code tasks and debug configs.
 - No telemetry; client-side privacy is a core invariant ([readme.md](../../readme.md)).

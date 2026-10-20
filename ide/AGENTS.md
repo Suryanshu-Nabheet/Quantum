@@ -10,17 +10,13 @@ Monorepo documentation: [docs/for-agents.md](../docs/for-agents.md) · [Workbenc
 
 **First-time dev setup:** `./scripts/setup.sh` (macOS/Linux) or `scripts\setup.bat` (Windows). After a successful build, relaunch with `./scripts/setup.sh --launch-only` or `VSCODE_SKIP_PRELAUNCH=1 ./scripts/code.sh`. Details: [scripts/README.md](scripts/README.md).
 
-## AI Architecture: Quantum Agent vs Upstream Microsoft Copilot Code
+## AI Architecture & Boundaries
 
 > [!IMPORTANT]
-> **Quantum IDE does NOT use Microsoft's Copilot codebase.**
-> - **Quantum Workbench Agent lives in [`src/vs/workbench/contrib/agent/`](src/vs/workbench/contrib/agent/):** This is the **exclusive** engine powering all agentic AI features in the IDE (chat sidebar, inline edit, tab autocomplete, plan mode, to-dos, browser tools, diff apply, and MCP).
-> - **Do NOT touch or confuse with upstream Copilot directories:**
->   - `src/vs/workbench/contrib/chat/` — Upstream Microsoft Copilot chat infrastructure (**NOT used by Quantum Agent**).
->   - `src/vs/workbench/contrib/inlineChat/` — Upstream Microsoft Copilot inline chat (**NOT used by Quantum Agent**).
->   - `src/vs/sessions/` — Upstream Microsoft Copilot sessions experiment (**NOT used by Quantum Agent**).
->   - `src/vs/platform/chat/` — Upstream Microsoft Copilot platform types.
-> - Just as Cursor forks VS Code and provides its own Composer rather than using VS Code's Copilot chat, Quantum provides its own first-party **Agent** (`contrib/agent`). Always make AI-related changes inside `src/vs/workbench/contrib/agent/`.
+> **First-Party Agent Scope (`src/vs/workbench/contrib/agent/`)**
+> - The **Quantum Workbench Agent** ([`src/vs/workbench/contrib/agent/`](src/vs/workbench/contrib/agent/)) is the sole engine powering all AI features in Quantum IDE (chat sidebar, inline editing, tab autocomplete, plan mode, browser tools, diff apply, and MCP).
+> - Upstream editor modules inherited from Microsoft Copilot integrations (`src/vs/workbench/contrib/chat/`, `src/vs/workbench/contrib/inlineChat/`, `src/vs/sessions/`, `src/vs/platform/chat/`) are inactive upstream components and must not be used or modified.
+> - Always direct all AI-related development, prompt changes, tool additions, and bug fixes to `src/vs/workbench/contrib/agent/`.
 
 ## Workflow rules (mandatory)
 

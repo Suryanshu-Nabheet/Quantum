@@ -12,12 +12,13 @@ Canonical technical README: [`contrib/agent/README.md`](../../ide/src/vs/workben
 - **BYOK** — user API keys and local models; no Quantum cloud account required for core flows
 - **Local-first** — settings and sessions on disk under `~/.agent/`
 
-## Sole AI Engine for Quantum IDE
+## Architectural Scope
 
-> [!NOTE]
-> `ide/src/vs/workbench/contrib/agent/` is the **exclusive** engine powering all AI features in Quantum IDE.
+> [!IMPORTANT]
+> **Primary AI Engine:**
+> `ide/src/vs/workbench/contrib/agent/` serves as the exclusive engine for all AI features in Quantum IDE.
 >
-> Much like Cursor builds its own AI layer (Composer) while reusing the VS Code shell, Quantum does not use Microsoft's built-in Copilot codebase (`src/vs/workbench/contrib/chat`, `src/vs/workbench/contrib/inlineChat`, or `src/vs/sessions`). All AI features — chat UI, tool execution, model providers, MCP, inline edits, and tab autocomplete — are implemented strictly within `contrib/agent/`. Do not direct agent changes or fixes to Microsoft's upstream chat directories.
+> Quantum operates independently of upstream Microsoft Copilot infrastructure (`src/vs/workbench/contrib/chat`, `src/vs/workbench/contrib/inlineChat`, `src/vs/sessions`, and `src/vs/platform/chat`). All agentic workflows, conversational interfaces, tool policies, model provider adapters, MCP integrations, inline code generation, and autocomplete systems are centralized in `contrib/agent/`. Feature development and fixes must not target upstream chat directories.
 
 ## Directory layout
 

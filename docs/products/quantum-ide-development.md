@@ -75,10 +75,10 @@ Release pipeline from pinned upstream: [`build/dev/build.sh`](../../build/dev/bu
 
 | Path | Purpose |
 | --- | --- |
-| `src/vs/workbench/contrib/agent/` | **Quantum Workbench Agent** (sole engine for all IDE AI features: chat, edit, autocomplete, MCP) |
-| `src/vs/workbench/contrib/browserView/` | In-IDE browser |
-| `src/vs/workbench/contrib/chat/` | Upstream Microsoft Copilot chat (**NOT used by Quantum Agent**) |
-| `src/vs/sessions/` | Upstream Microsoft Copilot sessions experiment (**NOT used by Quantum Agent**) |
+| `src/vs/workbench/contrib/agent/` | Quantum Workbench Agent (primary engine for chat, edit, autocomplete, tools, and MCP) |
+| `src/vs/workbench/contrib/browserView/` | In-IDE browser integration |
+| `src/vs/workbench/contrib/chat/` | Upstream editor chat module (inactive; not used in Quantum) |
+| `src/vs/sessions/` | Upstream editor sessions module (inactive; not used in Quantum) |
 | `build/gulpfile.agent.ts` | Agent build integration |
 | `out/agent/` | Built-in `quantum.agent` extension output |
 | `product.json` | Branding, update endpoints, data folder names |

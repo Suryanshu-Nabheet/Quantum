@@ -24,12 +24,12 @@ Quick reference for top-level directories in [Suryanshu-Nabheet/Quantum](https:/
 
 | Path | Purpose |
 | --- | --- |
-| `src/vs/workbench/contrib/agent/` | **Quantum Workbench Agent** (powers ALL IDE AI: chat, edit, autocomplete, tools, MCP) |
+| `src/vs/workbench/contrib/agent/` | Quantum Workbench Agent (core AI engine: chat, inline edit, autocomplete, tools, MCP) |
 | `src/vs/workbench/contrib/browserView/` | Embedded browser UI |
 | `src/vs/platform/browserView/` | Browser platform services |
-| `src/vs/workbench/contrib/chat/` | Upstream Microsoft Copilot chat (**NOT used by Quantum Agent**) |
-| `src/vs/workbench/contrib/inlineChat/` | Upstream Microsoft Copilot inline chat (**NOT used by Quantum Agent**) |
-| `src/vs/sessions/` | Upstream Microsoft Copilot sessions experiment (**NOT used by Quantum Agent**) |
+| `src/vs/workbench/contrib/chat/` | Upstream editor chat module (inactive; not used in Quantum) |
+| `src/vs/workbench/contrib/inlineChat/` | Upstream editor inline chat module (inactive; not used in Quantum) |
+| `src/vs/sessions/` | Upstream editor sessions module (inactive; not used in Quantum) |
 | `ide/extensions/` | Built-in extensions (including `quantum-*`) |
 | `build/gulpfile.agent.ts` | Agent compile pipeline |
 | `out/agent/` | **Generated** built-in agent extension |

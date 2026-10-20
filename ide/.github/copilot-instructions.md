@@ -23,17 +23,17 @@ Quantum / VS Code is built with a layered architecture using TypeScript, web API
   - `workbench/browser/` - Core workbench UI components (parts, layout, actions)
   - `workbench/services/` - Service implementations
   - `workbench/contrib/` - Feature contributions (git, debug, search, terminal, etc.)
-    - `workbench/contrib/agent/` - **Quantum Workbench Agent** (sole engine for all Quantum IDE AI features: chat, inline edit, autocomplete, tools, MCP). Quantum does NOT use Microsoft's Copilot code (`contrib/chat`, `contrib/inlineChat`, `vs/sessions`).
+    - `workbench/contrib/agent/` - **Quantum Workbench Agent** (primary engine for chat, inline editing, autocomplete, tool orchestration, and MCP).
   - `workbench/api/` - Extension host and VS Code API implementation
 - `src/vs/code/` - Electron main process specific implementation
 - `src/vs/server/` - Server specific implementation
-- `src/vs/sessions/` - Upstream Microsoft Copilot sessions experiment (**NOT used by Quantum Agent**)
+- `src/vs/sessions/` - Upstream editor sessions experiment (inactive in Quantum IDE)
 
-### AI Architecture: Quantum Agent vs Upstream Microsoft Copilot
+### AI Subsystem Architecture
 
-Quantum is an AI-native editor with its own first-party agent architecture:
-- **Quantum Workbench Agent (`src/vs/workbench/contrib/agent/`)**: The exclusive source of all agentic AI features in Quantum IDE (chat, edit, autocomplete, plan mode, MCP, browser tools). Similar to how Cursor builds Composer rather than using VS Code's Copilot code, Quantum implements its AI workflows strictly inside `contrib/agent/`.
-- **Upstream Copilot directories (`contrib/chat/`, `contrib/inlineChat/`, `vs/sessions/`, `platform/chat/`)**: Upstream Microsoft Copilot infrastructure that is NOT used by Quantum. Do not direct AI/chat enhancements or bug fixes to these directories.
+Quantum IDE features a custom first-party agent engine:
+- **Quantum Workbench Agent (`src/vs/workbench/contrib/agent/`)**: The core implementation for all AI capabilities in Quantum IDE, including conversational chat, inline diff editing, autocomplete, autonomous planning, browser automation tools, and MCP servers.
+- **Upstream Copilot modules (`contrib/chat/`, `contrib/inlineChat/`, `vs/sessions/`, `platform/chat/`)**: Dormant upstream VS Code components that are not part of Quantum's AI pipeline. All new AI features, fixes, and prompt logic belong exclusively in `contrib/agent/`.
 
 The core architecture follows these principles:
 - **Layered architecture** - from `base`, `platform`, `editor`, to `workbench`
