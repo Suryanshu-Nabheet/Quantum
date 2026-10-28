@@ -71,7 +71,7 @@ VSCODE_SKIP_PRELAUNCH=1 ./scripts/code.sh
 | `watch-client-transpile` | Workbench / Electron client (`src/` → `out/`) |
 | `watch-client` | Typecheck + API proposal / extension-point / codicon updates |
 | `watch-extensions` | Built-in extensions under `extensions/` |
-| `watch-agent` | Agent extension host, GUI webview, and agent packages |
+| `watch-agent` | Native Agent runtime, GUI webview, and agent packages |
 
 After a watched rebuild, use **Developer: Reload Window** (or relaunch) to pick up Electron / extension-host changes. Agent GUI webview updates usually apply on the next panel refresh.
 

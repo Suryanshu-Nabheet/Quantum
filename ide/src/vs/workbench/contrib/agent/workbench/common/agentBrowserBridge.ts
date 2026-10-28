@@ -14,7 +14,7 @@ export const AGENT_BROWSER_INVOKE_TOOL_COMMAND = 'agent.browser.invokeTool';
 export const AGENT_ATTACH_BROWSER_CONTEXT_COMMAND = 'agent.attachBrowserContext';
 export const AGENT_BROWSER_NOTIFY_SUBMIT_COMMAND = 'agent.browser.notifySubmit';
 
-/** Tool ids shared with VS Code Chat browser LM tools (see browserTools.contribution). */
+/** Tool ids shared by the native Agent and integrated browser bridge. */
 export const AgentBrowserToolIds = {
 	OpenBrowserPage: 'open_browser_page',
 	ListOpenPages: 'list_open_pages',

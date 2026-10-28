@@ -37,7 +37,7 @@ import globCallback from 'glob';
 import rceditCallback from 'rcedit';
 import { spawnTsgo } from './lib/tsgo.ts';
 import { runEsbuildTranspile, runEsbuildBundle } from './lib/esbuild.ts';
-import { compileAgentExtension } from './gulpfile.agent.ts';
+import { compileAgentRuntime } from './gulpfile.agent.ts';
 
 
 const glob = promisify(globCallback);
@@ -582,7 +582,7 @@ BUILD_TARGETS.forEach(buildTarget => {
 			const previousTarget = process.env.AGENT_BUILD_TARGET;
 			process.env.AGENT_BUILD_TARGET = `${platform}-${arch}`;
 			try {
-				await compileAgentExtension();
+				await compileAgentRuntime();
 			} finally {
 				if (previousTarget === undefined) {
 					delete process.env.AGENT_BUILD_TARGET;

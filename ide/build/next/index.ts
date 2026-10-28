@@ -28,32 +28,31 @@ const globAsync = promisify(glob);
 const REPO_ROOT = path.dirname(path.dirname(import.meta.dirname));
 
 /**
- * Agent extension host code is built separately (gulp compile-agent / esbuild).
- * Workbench integration under contrib/agent/workbench and shared ids must still
- * transpile with the main workbench bundle.
+ * Agent Core and runtime worker sources are built separately (gulp compile-agent / esbuild).
+ * Native workbench integration and shared IDs still transpile with the main workbench bundle.
  */
-const AGENT_EXTENSION_ONLY_PATH_PREFIXES = [
-	'vs/workbench/contrib/agent/src/',
+const AGENT_SEPARATE_BUILD_PATH_PREFIXES = [
 	'vs/workbench/contrib/agent/core/',
 	'vs/workbench/contrib/agent/gui/',
 	'vs/workbench/contrib/agent/packages/',
 	'vs/workbench/contrib/agent/scripts/',
+	'vs/workbench/contrib/agent/workbench/runtime/',
 	'vs/workbench/contrib/agent/node_modules/',
 ] as const;
 
-const AGENT_EXTENSION_ONLY_GLOB_EXCLUDES = [
-	...AGENT_EXTENSION_ONLY_PATH_PREFIXES.map(prefix => `${prefix}**`),
+const AGENT_SEPARATE_BUILD_GLOB_EXCLUDES = [
+	...AGENT_SEPARATE_BUILD_PATH_PREFIXES.map(prefix => `${prefix}**`),
 	'vs/workbench/contrib/agent/vitest.config.ts',
 ];
 
-function isAgentExtensionOnlySource(relativePath: string): boolean {
+function isAgentSeparateBuildSource(relativePath: string): boolean {
 	if (!relativePath.startsWith('vs/workbench/contrib/agent/')) {
 		return false;
 	}
 	if (relativePath.startsWith('vs/workbench/contrib/agent/workbench/') || relativePath.startsWith('vs/workbench/contrib/agent/shared/')) {
 		return false;
 	}
-	return AGENT_EXTENSION_ONLY_PATH_PREFIXES.some(prefix => relativePath.startsWith(prefix))
+	return AGENT_SEPARATE_BUILD_PATH_PREFIXES.some(prefix => relativePath.startsWith(prefix))
 		|| relativePath === 'vs/workbench/contrib/agent/vitest.config.ts';
 }
 
@@ -595,7 +594,7 @@ async function copyAllNonTsFiles(outDir: string, excludeTests: boolean): Promise
 	const ignorePatterns = [
 		// Exclude .ts files but keep .d.ts files (they're needed at runtime for type references)
 		'**/*.ts',
-		...AGENT_EXTENSION_ONLY_GLOB_EXCLUDES,
+		...AGENT_SEPARATE_BUILD_GLOB_EXCLUDES,
 	];
 	if (excludeTests) {
 		ignorePatterns.push('**/test/**');
@@ -801,7 +800,7 @@ async function transpile(outDir: string, excludeTests: boolean): Promise<void> {
 	// Find all .ts files
 	const ignorePatterns = [
 		'**/*.d.ts',
-		...AGENT_EXTENSION_ONLY_GLOB_EXCLUDES,
+		...AGENT_SEPARATE_BUILD_GLOB_EXCLUDES,
 		...desktopStandaloneFiles,
 	];
 	if (excludeTests) {
@@ -1296,7 +1295,7 @@ async function watch(): Promise<void> {
 		if (!relativePath || relativePath.startsWith('..')) {
 			return;
 		}
-		if (isAgentExtensionOnlySource(relativePath)) {
+		if (isAgentSeparateBuildSource(relativePath)) {
 			return;
 		}
 

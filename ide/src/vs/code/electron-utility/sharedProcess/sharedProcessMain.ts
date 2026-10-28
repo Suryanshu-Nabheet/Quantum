@@ -143,6 +143,7 @@ import { PlaywrightChannel } from '../../../platform/browserView/node/playwright
 import { AgentNetworkFilterService } from '../../../platform/networkFilter/common/networkFilterService.js';
 import { ILocalGitService } from '../../../platform/git/common/localGitService.js';
 import { LocalGitService } from '../../../platform/git/node/localGitService.js';
+import { AgentRuntimeChannel } from '../../../workbench/contrib/agent/workbench/electron-main/agentRuntimeChannel.js';
 
 class SharedProcessMain extends Disposable implements IClientConnectionFilter {
 
@@ -429,6 +430,15 @@ class SharedProcessMain extends Disposable implements IClientConnectionFilter {
 	}
 
 	private initChannels(accessor: ServicesAccessor): void {
+
+		// Quantum Agent execution host (created only when an Agent window requests it).
+		const agentRuntimeChannel = this._register(new AgentRuntimeChannel(
+			this.server,
+			accessor.get(INativeEnvironmentService).appRoot,
+			accessor.get(INativeEnvironmentService).userHome.fsPath,
+			accessor.get(ILogService),
+		));
+		this.server.registerChannel('agentRuntime', agentRuntimeChannel);
 
 		// Extensions Management
 		const channel = new ExtensionManagementChannel(accessor.get(IExtensionManagementService), () => null);

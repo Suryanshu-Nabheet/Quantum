@@ -25,10 +25,10 @@ bash "$ROOT/scripts/verify-dev.sh"
 echo ""
 echo "Agent + browser integration artifacts"
 
-if [[ -f out/agent/package.json && -f out/agent/out/extension.js ]]; then
-	pass "built-in agent extension (out/agent)"
+if [[ -f out/agent/runtime/AgentRuntime.js && -f out/agent/runtime/agentRuntimeWorker.js ]]; then
+	pass "native agent runtime (out/agent/runtime)"
 else
-	fail "out/agent extension missing — run npm run compile / compile-agent"
+	fail "native Agent runtime missing — run npm run compile / compile-agent"
 fi
 
 if [[ -d out/agent/webview ]]; then

@@ -81,6 +81,18 @@ async function cleanAgentSourceGeneratedArtifacts(): Promise<void> {
 	}));
 }
 
+async function removeLegacyAgentBuildOutput(): Promise<void> {
+	await Promise.all([
+		path.join(root, 'out/agent/package.json'),
+		path.join(root, 'out/agent/out/extension.js'),
+		path.join(root, 'out/agent/out/extension.js.map'),
+		path.join(root, 'out/agent/runtime/agentRuntime.js'),
+		path.join(root, 'out/agent/runtime/agentRuntime.js.map'),
+		path.join(root, 'out/agent/out/node_modules/@vscode/ripgrep'),
+		path.join(root, 'out/agent/out/node_modules/workerpool'),
+	].map(output => fs.promises.rm(output, { force: true, recursive: true })));
+}
+
 function runNodeScript(scriptName: string, args: string[] = [], env: NodeJS.ProcessEnv = {}): Promise<void> {
 	return new Promise((resolve, reject) => {
 		const scriptPath = path.join(agentRoot, 'scripts', scriptName);
@@ -155,7 +167,8 @@ function keepWatchProcessAlive(scriptName: string, label: string, args: string[]
 	launch();
 }
 
-export async function compileAgentExtension(): Promise<void> {
+export async function compileAgentRuntime(): Promise<void> {
+	await removeLegacyAgentBuildOutput();
 	if (!agentPackagesBuilt()) {
 		await runNodeScript('build-packages.js');
 	}
@@ -170,15 +183,16 @@ function watchAgentExtension(): NodeJS.ReadWriteStream {
 
 	void (async () => {
 		try {
+			await removeLegacyAgentBuildOutput();
 			if (!agentPackagesBuilt()) {
 				await runNodeScript('build-packages.js');
 			}
 			await runNodeScript('ensure-webview.js');
 			await runNodeScript('copy-native-assets.js');
 
-			fancyLog('[agent] watching extension (esbuild) + GUI (vite) + packages + native assets');
+			fancyLog('[agent] watching native runtime (esbuild) + GUI (vite) + packages + native assets');
 
-			keepWatchProcessAlive('esbuild.js', 'extension', ['--sourcemap', '--watch']);
+			keepWatchProcessAlive('esbuild.js', 'native runtime', ['--sourcemap', '--watch']);
 			keepWatchProcessAlive('watch-gui.js', 'GUI');
 			keepWatchProcessAlive('watch-packages.js', 'packages');
 		} catch (err) {
@@ -189,7 +203,7 @@ function watchAgentExtension(): NodeJS.ReadWriteStream {
 	return stream;
 }
 
-const compileAgentTask = task.define('compile-agent', () => compileAgentExtension());
+const compileAgentTask = task.define('compile-agent', () => compileAgentRuntime());
 gulp.task(compileAgentTask);
 
 const watchAgentTask = task.define('watch-agent', () => watchAgentExtension());

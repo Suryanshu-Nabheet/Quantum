@@ -850,8 +850,6 @@ export interface IDE {
     maxBytes?: number,
   ): Promise<string | undefined>;
 
-  subprocess(command: string, cwd?: string): Promise<[string, string]>;
-
   getProblems(fileUri?: string | undefined): Promise<Problem[]>;
 
   getBranch(dir: string): Promise<string>;
@@ -865,6 +863,12 @@ export interface IDE {
   ): Promise<any>;
 
   getGitRootPath(dir: string): Promise<string | undefined>;
+
+  getGitRefs(dir: string): Promise<Array<{ id: string; name: string; revision?: string }>>;
+
+  getGitHistory(dir: string, ref: string, limit: number): Promise<Array<{ id: string; displayId?: string; subject: string; message: string; author?: string; timestamp?: number }>>;
+
+  getGitCommitContext(dir: string, commitId: string): Promise<string | undefined>;
 
   listDir(dir: string): Promise<[string, FileType][]>;
 

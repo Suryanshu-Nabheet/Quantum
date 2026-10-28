@@ -144,7 +144,7 @@ export interface INativeEnvironmentService extends IEnvironmentService {
 	extensionsPath: string;
 	extensionsDownloadLocation: URI;
 	builtinExtensionsPath: string;
-	builtinAgentExtensionPath: string;
+	agentRuntimePath: string;
 
 	// --- use in-memory Secret Storage
 	useInMemorySecretStorage?: boolean;

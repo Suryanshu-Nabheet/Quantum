@@ -235,12 +235,20 @@ export class MessageIde implements IDE {
     return this.request("getProblems", { filepath: fileUri });
   }
 
-  subprocess(command: string, cwd?: string): Promise<[string, string]> {
-    return this.request("subprocess", { command, cwd });
-  }
-
   async getBranch(dir: string): Promise<string> {
     return this.request("getBranch", { dir });
+  }
+
+  getGitRefs(dir: string) {
+    return this.request("getGitRefs", { dir });
+  }
+
+  getGitHistory(dir: string, ref: string, limit: number) {
+    return this.request("getGitHistory", { dir, ref, limit });
+  }
+
+  getGitCommitContext(dir: string, commitId: string) {
+    return this.request("getGitCommitContext", { dir, commitId });
   }
 
   getBrowserPages() {

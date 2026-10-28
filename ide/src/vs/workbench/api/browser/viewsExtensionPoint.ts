@@ -15,8 +15,7 @@ import { ContextKeyExpr } from '../../../platform/contextkey/common/contextkey.j
 import { ExtensionIdentifier, ExtensionIdentifierSet, IExtensionDescription, IExtensionManifest } from '../../../platform/extensions/common/extensions.js';
 import { SyncDescriptor } from '../../../platform/instantiation/common/descriptors.js';
 import { IInstantiationService } from '../../../platform/instantiation/common/instantiation.js';
-import { IConfigurationService } from '../../../platform/configuration/common/configuration.js';
-import { AGENT_EXTENSION_ID, isAgentNativeMode, isAgentViewContainer } from '../../contrib/agent/workbench/common/agentMode.js';
+import { isAgentNativeMode, isAgentViewContainer } from '../../contrib/agent/workbench/common/agentMode.js';
 import { ILogService } from '../../../platform/log/common/log.js';
 import { Registry } from '../../../platform/registry/common/platform.js';
 import { PaneCompositeRegistry, Extensions as ViewletExtensions } from '../../browser/panecomposite.js';
@@ -286,7 +285,6 @@ class ViewsExtensionHandler implements IWorkbenchContribution {
 	constructor(
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@ILogService private readonly logService: ILogService,
-		@IConfigurationService private readonly configurationService: IConfigurationService,
 	) {
 		this.viewContainersRegistry = Registry.as<IViewContainersRegistry>(ViewContainerExtensions.ViewContainersRegistry);
 		this.viewsRegistry = Registry.as<IViewsRegistry>(ViewContainerExtensions.ViewsRegistry);
@@ -324,7 +322,7 @@ class ViewsExtensionHandler implements IWorkbenchContribution {
 						panelOrder = this.registerCustomViewContainers(value, description, panelOrder, existingViewContainers, ViewContainerLocation.Panel);
 						break;
 					case 'secondarySidebar':
-						if (isAgentNativeMode(this.configurationService) && !ExtensionIdentifier.equals(description.identifier, AGENT_EXTENSION_ID)) {
+						if (isAgentNativeMode()) {
 							activityBarOrder = this.registerCustomViewContainers(value, description, activityBarOrder, existingViewContainers, ViewContainerLocation.Sidebar);
 						} else {
 							auxiliaryBarOrder = this.registerCustomViewContainers(value, description, auxiliaryBarOrder, existingViewContainers, ViewContainerLocation.AuxiliaryBar);
@@ -529,7 +527,7 @@ class ViewsExtensionHandler implements IWorkbenchContribution {
 						containerIcon: icon || viewContainer?.icon,
 						containerTitle: item.contextualTitle || (viewContainer && (typeof viewContainer.title === 'string' ? viewContainer.title : viewContainer.title.value)),
 						canToggleVisibility: true,
-						canMoveView: viewContainer?.id !== REMOTE && !(isAgentNativeMode(this.configurationService) && viewContainer && isAgentViewContainer(viewContainer)),
+						canMoveView: viewContainer?.id !== REMOTE && !(isAgentNativeMode() && viewContainer && isAgentViewContainer(viewContainer)),
 						treeView: type === ViewType.Tree ? this.instantiationService.createInstance(CustomTreeView, item.id, item.name, extension.description.identifier.value) : undefined,
 						collapsed: this.showCollapsed(container) || initialVisibility === InitialVisibility.Collapsed,
 						order: order,

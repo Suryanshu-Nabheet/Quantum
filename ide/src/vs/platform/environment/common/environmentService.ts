@@ -118,7 +118,7 @@ export abstract class AbstractNativeEnvironmentService implements INativeEnviron
 	}
 
 	@memoize
-	get builtinAgentExtensionPath(): string {
+	get agentRuntimePath(): string {
 		return normalize(join(this.appRoot, 'out', 'agent'));
 	}
 

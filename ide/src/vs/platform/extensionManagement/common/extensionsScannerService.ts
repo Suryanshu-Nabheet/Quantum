@@ -19,7 +19,7 @@ import * as semver from '../../../base/common/semver/semver.js';
 import Severity from '../../../base/common/severity.js';
 import { URI } from '../../../base/common/uri.js';
 import { localize } from '../../../nls.js';
-import { IEnvironmentService, INativeEnvironmentService } from '../../environment/common/environment.js';
+import { IEnvironmentService } from '../../environment/common/environment.js';
 import { IProductVersion, Metadata } from './extensionManagement.js';
 import { areSameExtensions, computeTargetPlatform, getExtensionId, getGalleryExtensionId } from './extensionManagementUtil.js';
 import { ExtensionType, ExtensionIdentifier, IExtensionManifest, TargetPlatform, IExtensionIdentifier, IRelaxedExtensionManifest, UNDEFINED_PUBLISHER, IExtensionDescription, BUILTIN_MANIFEST_CACHE_FILE, USER_MANIFEST_CACHE_FILE, ExtensionIdentifierMap, parseEnabledApiProposalNames } from '../../extensions/common/extensions.js';
@@ -216,9 +216,8 @@ export abstract class AbstractExtensionsScannerService extends Disposable implem
 		const promises: Promise<IRelaxedScannedExtension[]>[] = [];
 		promises.push(this.scanDefaultSystemExtensions(scanOptions.language));
 		promises.push(this.scanDevSystemExtensions(scanOptions.language, !!scanOptions.checkControlFile));
-		promises.push(this.scanBuiltinContribAgentExtension(scanOptions.language));
-		const [defaultSystemExtensions, devSystemExtensions, contribAgentExtensions] = await Promise.all(promises);
-		let allSystemExtensions = [...defaultSystemExtensions, ...devSystemExtensions, ...contribAgentExtensions];
+		const [defaultSystemExtensions, devSystemExtensions] = await Promise.all(promises);
+		let allSystemExtensions = [...defaultSystemExtensions, ...devSystemExtensions];
 
 		if (this.environmentService.skipBuiltinExtensions?.length) {
 			const skipSet = new Set(this.environmentService.skipBuiltinExtensions.map(id => id.toLowerCase()));
@@ -446,34 +445,6 @@ export abstract class AbstractExtensionsScannerService extends Disposable implem
 		const result = await extensionsScanner.scanExtensions(extensionsScannerInput);
 		this.logService.trace('Scanned system extensions:', result.length);
 		return result;
-	}
-
-	private async scanBuiltinContribAgentExtension(language: string | undefined): Promise<IRelaxedScannedExtension[]> {
-		const nativeEnvironmentService = this.environmentService as INativeEnvironmentService;
-		if (!nativeEnvironmentService.builtinAgentExtensionPath) {
-			this.logService.warn('[ExtensionsScanner] builtinAgentExtensionPath is not set; skipping Agent extension scan');
-			return [];
-		}
-		const location = URI.file(nativeEnvironmentService.builtinAgentExtensionPath);
-		try {
-			const stat = await this.fileService.resolve(location);
-			if (!stat.isDirectory) {
-				this.logService.warn(`[ExtensionsScanner] builtin agent path is not a directory: ${location.fsPath}`);
-				return [];
-			}
-		} catch {
-			this.logService.warn(`[ExtensionsScanner] builtin agent path not found: ${location.fsPath}`);
-			return [];
-		}
-		this.logService.trace('Started scanning builtin agent extension');
-		const extensionsScannerInput = await this.createExtensionScannerInput(location, false, ExtensionType.System, language, true, undefined, this.getProductVersion());
-		const extension = await this.extensionsScanner.scanExtension(extensionsScannerInput);
-		if (extension) {
-			this.logService.trace('Scanned builtin agent extension');
-			return [extension];
-		}
-		this.logService.warn(`[ExtensionsScanner] failed to scan builtin agent extension at ${location.fsPath}`);
-		return [];
 	}
 
 	private async scanDevSystemExtensions(language: string | undefined, checkControlFile: boolean): Promise<IRelaxedScannedExtension[]> {

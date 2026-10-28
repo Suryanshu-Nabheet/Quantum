@@ -111,6 +111,8 @@ registerSingleton(IUserDataInitializationService, new SyncDescriptor(UserDataIni
 
 // Logs
 import './contrib/logs/electron-browser/logs.contribution.js';
+import './contrib/agent/workbench/electron-browser/agentNativeService.js';
+import './contrib/agent/workbench/electron-browser/agentAutocomplete.js';
 
 // Localizations
 import './contrib/localization/electron-browser/localization.contribution.js';

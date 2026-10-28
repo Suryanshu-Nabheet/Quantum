@@ -11,25 +11,16 @@ import { onUnexpectedError } from '../../../../base/common/errors.js';
 import { localize } from '../../../../nls.js';
 import { ICommandService } from '../../../../platform/commands/common/commands.js';
 import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
-import { ChatConfiguration } from '../../../contrib/chat/common/constants.js';
 import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
 import { IKeybindingService } from '../../../../platform/keybinding/common/keybinding.js';
 import { IViewsService } from '../../../services/views/common/viewsService.js';
 import { IWorkbenchLayoutService, Parts, Position, positionToString } from '../../../services/layout/browser/layoutService.js';
+import { AGENT_GUI_VIEW_ID } from '../../../contrib/agent/shared/ids.js';
 import { isWeb } from '../../../../base/common/platform.js';
 import { mainWindow } from '../../../../base/browser/window.js';
 
-const CHAT_VIEW_ID = 'workbench.panel.chat.view.copilot';
-const AGENT_GUI_VIEW_ID = 'agent.agentGUIView';
 const AGENT_OPEN_PANEL_COMMAND = 'agent.openPanel';
 const BROWSER_EDITOR_ID = 'workbench.editor.browser';
-const AGENT_SESSIONS_SIDEBAR_ORIENTATION = 2; // AgentSessionsViewerOrientation.SideBySide
-
-const LAYOUT_TOGGLE_CONTEXT_KEYS = new Set([
-	'mainEditorAreaVisible',
-	'agentSessionsViewerOrientation',
-]);
-
 const LAYOUT_MODE_CONTEXT_KEYS = new Set([
 	'inZenMode',
 	'activeEditor',
@@ -125,9 +116,6 @@ export class LayoutQuickMenuWidget extends Disposable {
 		this._disposables.add(this.layoutService.onDidChangePartVisibility(() => this._refreshAllSwitches()));
 		this._disposables.add(this.viewsService.onDidChangeViewVisibility(() => this._refreshAllSwitches()));
 		this._disposables.add(this.contextKeyService.onDidChangeContext(e => {
-			if (e.affectsSome(LAYOUT_TOGGLE_CONTEXT_KEYS)) {
-				this._refreshAllSwitches();
-			}
 			if (e.affectsSome(LAYOUT_MODE_CONTEXT_KEYS)) {
 				this._refreshModeSelection();
 			}
@@ -199,12 +187,7 @@ export class LayoutQuickMenuWidget extends Disposable {
 		}
 
 		if (auxiliaryOnLeft && auxiliaryVisible && sidebarVisible) {
-			const chatDisabled = this.configurationService.getValue<boolean>(ChatConfiguration.AIDisabled) === true;
-			if (chatDisabled && this.viewsService.isViewVisible(AGENT_GUI_VIEW_ID)) {
-				return LayoutQuickMenuMode.Agent;
-			}
-			if (!chatDisabled &&
-				(this.viewsService.isViewVisible(CHAT_VIEW_ID) || this.viewsService.isViewVisible(AGENT_GUI_VIEW_ID))) {
+			if (this.viewsService.isViewVisible(AGENT_GUI_VIEW_ID)) {
 				return LayoutQuickMenuMode.Agent;
 			}
 		}
@@ -262,28 +245,12 @@ export class LayoutQuickMenuWidget extends Disposable {
 	}
 
 	private _getToggleItems(): IToggleItem[] {
-		const chatDisabled = this.configurationService.getValue<boolean>(ChatConfiguration.AIDisabled) === true;
 		return [
 			{
 				label: localize('layoutQuickMenu.agentPanel', "Agent"),
 				icon: Codicon.commentDiscussion,
 				commandId: 'agent.togglePanel',
 				isOn: () => this.viewsService.isViewVisible(AGENT_GUI_VIEW_ID) && this.layoutService.isVisible(Parts.AUXILIARYBAR_PART),
-				when: () => chatDisabled,
-			},
-			{
-				label: localize('layoutQuickMenu.agents', "Agents"),
-				icon: Codicon.layoutSidebarRight,
-				commandId: 'agentSessions.toggleAgentSessionsSidebar',
-				isOn: () => this.contextKeyService.getContext(null).getValue<number>('agentSessionsViewerOrientation') === 2,
-				when: () => this.contextKeyService.getContext(null).getValue<boolean>('chatIsEnabled') === true,
-			},
-			{
-				label: localize('layoutQuickMenu.chat', "Chat"),
-				icon: Codicon.commentDiscussion,
-				commandId: 'workbench.action.chat.toggle',
-				isOn: () => this.viewsService.isViewVisible(CHAT_VIEW_ID),
-				when: () => this.contextKeyService.getContext(null).getValue<boolean>('chatIsEnabled') === true,
 			},
 			{
 				label: localize('layoutQuickMenu.editors', "Editors"),
@@ -324,10 +291,6 @@ export class LayoutQuickMenuWidget extends Disposable {
 	}
 
 	private _renderOptionsSection(container: HTMLElement): void {
-		const chatDisabled = this.configurationService.getValue<boolean>(ChatConfiguration.AIDisabled) === true;
-		if (chatDisabled) {
-			return;
-		}
 		const section = append(container, $('.layout-quick-menu__section'));
 		this._renderSecondarySideBarRow(section);
 	}
@@ -460,26 +423,6 @@ export class LayoutQuickMenuWidget extends Disposable {
 		}
 	}
 
-	private async _setAgentSessionsSidebarVisible(visible: boolean): Promise<void> {
-		if (!this.contextKeyService.getContext(null).getValue<boolean>('chatIsEnabled')) {
-			return;
-		}
-
-		const orientation = this.contextKeyService.getContext(null).getValue<number>('agentSessionsViewerOrientation');
-		const isVisible = orientation === AGENT_SESSIONS_SIDEBAR_ORIENTATION;
-		if (visible === isVisible) {
-			return;
-		}
-
-		try {
-			await this.commandService.executeCommand(visible
-				? 'agentSessions.showAgentSessionsSidebar'
-				: 'agentSessions.hideAgentSessionsSidebar');
-		} catch (error) {
-			onUnexpectedError(error);
-		}
-	}
-
 	async applyLayoutMode(mode: LayoutQuickMenuMode): Promise<void> {
 		if (this._store.isDisposed) {
 			return;
@@ -500,7 +443,6 @@ export class LayoutQuickMenuWidget extends Disposable {
 					this.layoutService.setPartHidden(true, Parts.SIDEBAR_PART);
 					this.layoutService.setPartHidden(false, Parts.AUXILIARYBAR_PART);
 					this.layoutService.setPartHidden(false, Parts.EDITOR_PART);
-					await this._setAgentSessionsSidebarVisible(false);
 					await this.commandService.executeCommand(AGENT_OPEN_PANEL_COMMAND);
 					await this.commandService.executeCommand('workbench.action.browser.open');
 					break;
@@ -510,14 +452,7 @@ export class LayoutQuickMenuWidget extends Disposable {
 					this.layoutService.setPartHidden(false, Parts.SIDEBAR_PART);
 					this.layoutService.setPartHidden(false, Parts.AUXILIARYBAR_PART);
 					this.layoutService.setPartHidden(false, Parts.EDITOR_PART);
-					await this._setAgentSessionsSidebarVisible(false);
-					const chatDisabled = this.configurationService.getValue<boolean>(ChatConfiguration.AIDisabled) === true;
-					if (chatDisabled) {
-						await this.commandService.executeCommand(AGENT_OPEN_PANEL_COMMAND);
-					} else if (this.contextKeyService.getContext(null).getValue<boolean>('chatIsEnabled') &&
-						!this.viewsService.isViewVisible(CHAT_VIEW_ID)) {
-						await this.viewsService.openView(CHAT_VIEW_ID, true);
-					}
+					await this.commandService.executeCommand(AGENT_OPEN_PANEL_COMMAND);
 					break;
 				}
 				case LayoutQuickMenuMode.Editor:
@@ -527,7 +462,6 @@ export class LayoutQuickMenuWidget extends Disposable {
 					this.layoutService.setPartHidden(false, Parts.SIDEBAR_PART);
 					this.layoutService.setPartHidden(false, Parts.AUXILIARYBAR_PART);
 					this.layoutService.setPartHidden(false, Parts.EDITOR_PART);
-					await this._setAgentSessionsSidebarVisible(false);
 					if (!this.layoutService.isVisible(Parts.EDITOR_PART, mainWindow)) {
 						this.layoutService.toggleMaximizedPanel();
 					}

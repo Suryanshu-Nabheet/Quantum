@@ -253,6 +253,18 @@ class FileSystemIde implements IDE {
     return Promise.resolve("");
   }
 
+  getGitRefs(dir: string): Promise<Array<{ id: string; name: string; revision?: string }>> {
+    return Promise.resolve([]);
+  }
+
+  getGitHistory(dir: string, ref: string, limit: number): Promise<Array<{ id: string; displayId?: string; subject: string; message: string; author?: string; timestamp?: number }>> {
+    return Promise.resolve([]);
+  }
+
+  getGitCommitContext(dir: string, commitId: string): Promise<string | undefined> {
+    return Promise.resolve(undefined);
+  }
+
   getOpenFiles(): Promise<string[]> {
     return Promise.resolve([]);
   }
@@ -284,9 +296,6 @@ class FileSystemIde implements IDE {
     return Promise.resolve([]);
   }
 
-  async subprocess(command: string, cwd?: string): Promise<[string, string]> {
-    return ["", ""];
-  }
 }
 
 export default FileSystemIde;

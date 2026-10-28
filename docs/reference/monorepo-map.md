@@ -32,7 +32,7 @@ Quick reference for top-level directories in [Suryanshu-Nabheet/Quantum](https:/
 | `src/vs/sessions/` | Upstream editor sessions module (inactive; not used in Quantum) |
 | `ide/extensions/` | Built-in extensions (including `quantum-*`) |
 | `build/gulpfile.agent.ts` | Agent compile pipeline |
-| `out/agent/` | **Generated** built-in agent extension |
+| `out/agent/` | **Generated** native Agent runtime and GUI |
 
 ## `agent/` internals (selected)
 

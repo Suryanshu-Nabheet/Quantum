@@ -22,7 +22,6 @@ const directories = [
   "webview",
   "build",
   "tmp",
-  "extension",
   ".agent-debug",
   "packages/config-types/node_modules",
   "packages/config-types/dist",

@@ -10,16 +10,15 @@ Autonomous AI coding agent for **Quantum IDE** (VS Code–compatible editor). Ch
 
 ```
 src/vs/workbench/contrib/agent/   # source (this directory)
-├── src/            # extension host
 ├── core/           # LLM, tools, context providers, config
 ├── gui/            # React sidebar (Vite)
-├── workbench/      # Quantum workbench integration (layout, hovers, browser)
-├── shared/         # extension + view IDs (workbench + host)
+├── workbench/      # Native Quantum workbench integration and runtime bridge
+├── shared/         # Agent view and protocol IDs
 ├── packages/       # shared libraries
 └── scripts/        # build helpers for the generated Agent runtime
 ```
 
-Quantum builds this source into `ide/out/agent` and loads that folder as a built-in system extension (`quantum.agent`). There is no `extensions/agent` symlink.
+Quantum builds the native runtime and GUI into `ide/out/agent`. The workbench owns the view, commands, autocomplete provider, and runtime lifecycle; this directory is not registered or loaded as an extension.
 
 ## Build (from `ide/` repo root)
 
@@ -37,7 +36,7 @@ npm run watch      # includes agent esbuild watch
 | `ensure-webview.js` | Build/copy GUI into `out/agent/webview/` |
 | `watch-gui.js` | Watch GUI; refresh `out/agent/webview/` (gulp `watch-agent`) |
 | `watch-packages.js` | Watch local packages (gulp `watch-agent`) |
-| `esbuild.js` | Bundle `src/` + `core/` → `out/agent/out/extension.js` |
+| `esbuild.js` | Bundle native runtime worker and runtime into `out/agent/runtime/` |
 | `copy-native-assets.js` | Copy onnxruntime/tokenizers/workers into `out/agent` |
 | `clean-artifacts.js` | `npm run clean` — local caches + `out/agent*` |
 
@@ -90,14 +89,14 @@ Host hooks **outside** this folder (edit only when changing how Agent is loaded 
 
 | Host file | Purpose |
 |-----------|---------|
-| `src/vs/platform/environment/common/environment.ts` | `builtinAgentExtensionPath` on `INativeEnvironmentService` |
-| `src/vs/platform/environment/common/environmentService.ts` | Resolves path → `{appRoot}/out/agent` |
-| `src/vs/platform/extensionManagement/common/extensionsScannerService.ts` | `scanBuiltinContribAgentExtension()` |
-| `src/vs/workbench/workbench.common.main.ts` | Layout, webview hover, browser bridge contributions |
+| `src/vs/platform/environment/common/environment.ts` | `agentRuntimePath` on `INativeEnvironmentService` |
+| `src/vs/platform/environment/common/environmentService.ts` | Resolves runtime assets → `{appRoot}/out/agent` |
+| `src/vs/platform/extensionManagement/common/extensionsScannerService.ts` | No Agent extension scanning; Agent is workbench-owned |
+| `src/vs/workbench/workbench.common.main.ts` | Native view, actions, webview hover, and browser contributions |
 | `build/gulpfile.agent.ts` | `compile-agent` / `watch-agent` |
 | `build/gulpfile.ts` | Wires agent into `compile` / `watch` |
 | `build/lib/preLaunch.ts` | Ensures `out/agent` exists before launch |
-| `src/tsconfig.json` | Excludes Agent runtime from workbench transpile |
+| `src/tsconfig.json` | Excludes separately built Agent runtime from workbench transpile |
 
 Integrate from the shell via **commands**, not deep imports into `core/` or `gui/`:
 
@@ -116,7 +115,7 @@ VSCODE_SKIP_PRELAUNCH=1 ./scripts/code.sh
 
 | Path | Role |
 |------|------|
-| `out/agent/out/extension.js` | Bundled extension entry |
+| `out/agent/runtime/agentRuntimeWorker.js` | Native Agent execution worker |
 | `out/agent/webview/` | Production sidebar UI |
 
 Tab autocomplete registers on startup (default on) without opening the sidebar.
@@ -126,7 +125,7 @@ Tab autocomplete registers on startup (default on) without opening the sidebar.
 After `npm run compile`, confirm:
 
 1. `@file`, `@folder`, `@search`, `@rules`, `@commit`, `@branch` work
-2. Chat, edit, and tab autocomplete after extension reload
+2. Chat, edit, and tab autocomplete after IDE relaunch
 3. Terminal tool captures `echo hello`
 4. Settings toggles persist after reload
 

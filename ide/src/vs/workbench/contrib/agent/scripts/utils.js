@@ -13,36 +13,6 @@ function agentDistPath(...parts) {
   return path.join(agentDistDir, ...parts);
 }
 
-function ensureGeneratedExtensionManifest() {
-  fs.mkdirSync(agentDistDir, { recursive: true });
-  const sourceManifest = JSON.parse(
-    fs.readFileSync(path.join(agentDir, "package.json"), "utf8"),
-  );
-  const runtimeManifest = {
-    name: sourceManifest.name,
-    displayName: sourceManifest.displayName,
-    description: sourceManifest.description,
-    version: sourceManifest.version,
-    publisher: sourceManifest.publisher,
-    author: sourceManifest.author,
-    license: sourceManifest.license,
-    repository: sourceManifest.repository,
-    bugs: sourceManifest.bugs,
-    homepage: sourceManifest.homepage,
-    extensionKind: sourceManifest.extensionKind,
-    engines: sourceManifest.engines,
-    categories: sourceManifest.categories,
-    keywords: sourceManifest.keywords,
-    activationEvents: sourceManifest.activationEvents,
-    main: sourceManifest.main,
-    contributes: sourceManifest.contributes,
-  };
-  fs.writeFileSync(
-    agentDistPath("package.json"),
-    `${JSON.stringify(runtimeManifest, null, 2)}\n`,
-  );
-}
-
 function copyTokenizers() {
   fs.mkdirSync(agentDistPath("out"), { recursive: true });
   const tokenizerFiles = [
@@ -79,7 +49,6 @@ function copyGuiDistToWebview() {
   fs.mkdirSync(webviewDir, { recursive: true });
   fs.cpSync(distDir, webviewDir, { recursive: true });
   copyQuantumFileIcons(webviewDir);
-  ensureGeneratedExtensionManifest();
   console.log("[info] Copied out/agent-gui to out/agent/webview/");
 }
 
@@ -165,7 +134,7 @@ async function copyNodeModules() {
   // Copy node_modules for pre-built binaries
   process.chdir(agentDir);
 
-  const NODE_MODULES_TO_COPY = ["@vscode/ripgrep", "workerpool"];
+  const NODE_MODULES_TO_COPY = ["workerpool"];
   fs.mkdirSync(agentDistPath("out", "node_modules"), { recursive: true });
 
   const resolveRuntimeModuleSource = (mod) => {
@@ -173,11 +142,6 @@ async function copyNodeModules() {
       path.join(agentDir, "node_modules", mod),
       path.join(repoRoot, "node_modules", mod),
     ];
-    if (mod === "@vscode/ripgrep") {
-      return candidates.find((candidate) =>
-        fs.existsSync(path.join(candidate, "bin", process.platform === "win32" ? "rg.exe" : "rg")),
-      );
-    }
     return candidates.find((candidate) => fs.existsSync(candidate));
   };
 
@@ -191,26 +155,21 @@ async function copyNodeModules() {
             resolve();
             return;
           }
-          fs.mkdirSync(agentDistPath("out", "node_modules", mod), { recursive: true });
-          ncp(
-            source,
-            agentDistPath("out", "node_modules", mod),
-            { dereference: true },
-            function (error) {
-              if (error) {
-                console.error(`[error] Error copying ${mod}`, error);
-                reject(error);
-              } else {
-                console.log(`[info] Copied ${mod}`);
-                resolve();
-              }
-            },
-          );
+          try {
+            const target = agentDistPath("out", "node_modules", mod);
+            fs.mkdirSync(target, { recursive: true });
+            fs.copyFileSync(path.join(source, "package.json"), path.join(target, "package.json"));
+            fs.cpSync(path.join(source, "src"), path.join(target, "src"), { recursive: true });
+            console.log(`[info] Copied runtime files for ${mod}`);
+            resolve();
+          } catch (error) {
+            console.error(`[error] Error copying ${mod}`, error);
+            reject(error);
+          }
         }),
     ),
   );
 
-  console.log(`[info] Copied ${NODE_MODULES_TO_COPY.join(", ")}`);
 }
 
 function copyRuntimeWorkerFiles() {
@@ -232,10 +191,9 @@ function copyRuntimeWorkerFiles() {
   }
 }
 
-async function copyExtensionOutAssets(target) {
+async function copyAgentRuntimeAssets(target) {
   process.chdir(agentDir);
-  ensureGeneratedExtensionManifest();
-  fs.mkdirSync(agentDistPath("out"), { recursive: true });
+  fs.mkdirSync(agentDistPath("runtime"), { recursive: true });
   await copyOnnxRuntimeFromNodeModules(target);
   copyTokenizers();
   await copyNodeModules();
@@ -257,11 +215,10 @@ module.exports = {
   agentDistDir,
   agentGuiDistDir,
   agentDistPath,
-  ensureGeneratedExtensionManifest,
   copyGuiDistToWebview,
   copyOnnxRuntimeFromNodeModules,
   copyNodeModules,
-  copyExtensionOutAssets,
+  copyAgentRuntimeAssets,
   copyRuntimeWorkerFiles,
   copyTokenizers,
   copyScripts,

@@ -1,3 +1,4 @@
+import fs from "fs";
 import path from "path";
 
 import workerpool from "workerpool";
@@ -54,5 +55,6 @@ export class GPTAsyncEncoder implements AsyncEncoder {
 }
 
 function workerCodeFilePath(workerFileName: string): string {
-  return path.join(__dirname, workerFileName);
+  const packagedPath = path.join(__dirname, "..", "out", workerFileName);
+  return fs.existsSync(packagedPath) ? packagedPath : path.join(__dirname, workerFileName);
 }

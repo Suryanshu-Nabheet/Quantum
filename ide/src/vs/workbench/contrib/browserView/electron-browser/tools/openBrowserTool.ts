@@ -114,6 +114,15 @@ export class OpenBrowserTool implements IToolImpl {
 				return { content: [{ kind: 'text', value: 'No browser pages are currently open.' }] };
 			}
 
+			// The native Agent has no Chat request carousel to collect sharing
+			// consent. Ask the user to share a page from its browser toolbar instead
+			// of falling through to openPage(undefined).
+			if (!invocation.context?.sessionResource) {
+				return {
+					content: [{ kind: 'text', value: 'Choose the browser page you want the Agent to access, then select “Share with Agent” in that page’s toolbar. No page was shared.' }],
+				};
+			}
+
 			const shareResult = await this._promptForUnsharedPages(invocation, allPages, params, token);
 			if (shareResult) {
 				return shareResult;

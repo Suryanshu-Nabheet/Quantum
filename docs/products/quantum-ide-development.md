@@ -45,7 +45,7 @@ npm run watch
 VSCODE_SKIP_PRELAUNCH=1 ./scripts/code.sh
 ```
 
-`npm run watch` includes client, extensions, and **agent** (extension bundle + GUI + packages). Use `./scripts/verify-watch.sh` if outputs look stale.
+`npm run watch` includes client, extensions, and the **native Agent** (runtime + GUI + packages). Use `./scripts/verify-watch.sh` if outputs look stale.
 
 ## TypeScript and validation
 
@@ -80,7 +80,7 @@ Release pipeline from pinned upstream: [`build/dev/build.sh`](../../build/dev/bu
 | `src/vs/workbench/contrib/chat/` | Upstream editor chat module (inactive; not used in Quantum) |
 | `src/vs/sessions/` | Upstream editor sessions module (inactive; not used in Quantum) |
 | `build/gulpfile.agent.ts` | Agent build integration |
-| `out/agent/` | Built-in `quantum.agent` extension output |
+| `out/agent/` | Generated native Agent runtime and GUI assets |
 | `product.json` | Branding, update endpoints, data folder names |
 
 ## Troubleshooting

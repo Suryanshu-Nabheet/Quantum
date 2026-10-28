@@ -23,7 +23,6 @@ import { IComposite } from '../../common/composite.js';
 import { CompositeDragAndDropData, CompositeDragAndDropObserver, IDraggedCompositeData, ICompositeDragAndDrop, Before2D, toggleDropEffect, ICompositeDragAndDropObserverCallbacks } from '../dnd.js';
 import { Gesture, EventType as TouchEventType, GestureEvent } from '../../../base/browser/touch.js';
 import { MutableDisposable } from '../../../base/common/lifecycle.js';
-import { IConfigurationService } from '../../../platform/configuration/common/configuration.js';
 import { canMoveViewContainerToLocation, isAgentView, isAuxiliaryBarReservedForAgent } from '../../contrib/agent/workbench/common/agentMode.js';
 
 export interface ICompositeBarItem {
@@ -40,7 +39,6 @@ export class CompositeDragAndDrop implements ICompositeDragAndDrop {
 
 	constructor(
 		private viewDescriptorService: IViewDescriptorService,
-		private configurationService: IConfigurationService,
 		private targetContainerLocation: ViewContainerLocation,
 		private orientation: ActionsOrientation,
 		private openComposite: (id: string, focus?: boolean) => Promise<IPaneComposite | null>,
@@ -49,14 +47,14 @@ export class CompositeDragAndDrop implements ICompositeDragAndDrop {
 	) { }
 
 	private isDropBlocked(dragData: { type: 'view' | 'composite'; id: string }): boolean {
-		if (!isAuxiliaryBarReservedForAgent(this.configurationService)) {
+		if (!isAuxiliaryBarReservedForAgent()) {
 			return false;
 		}
 		if (dragData.type === 'view') {
 			return isAgentView(dragData.id) || this.targetContainerLocation === ViewContainerLocation.AuxiliaryBar;
 		}
 		const container = this.viewDescriptorService.getViewContainerById(dragData.id);
-		return !container || !canMoveViewContainerToLocation(container, this.targetContainerLocation, this.configurationService);
+		return !container || !canMoveViewContainerToLocation(container, this.targetContainerLocation);
 	}
 
 	drop(data: CompositeDragAndDropData, targetCompositeId: string | undefined, originalEvent: DragEvent, before?: Before2D): void {
@@ -141,7 +139,7 @@ export class CompositeDragAndDrop implements ICompositeDragAndDrop {
 				return dragData.id !== targetCompositeId;
 			}
 
-			return canMoveViewContainerToLocation(currentContainer, this.targetContainerLocation, this.configurationService);
+			return canMoveViewContainerToLocation(currentContainer, this.targetContainerLocation);
 		} else {
 
 			// Dragging an individual view

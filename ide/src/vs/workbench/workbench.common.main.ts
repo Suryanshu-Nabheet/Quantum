@@ -30,6 +30,7 @@ import './browser/actions/helpActions.js';
 import './browser/actions/layoutActions.js';
 import './browser/parts/titlebar/layoutQuickMenuService.js';
 import './contrib/agent/workbench/browser/agentLayout.contribution.js';
+import './contrib/agent/workbench/browser/agentView.contribution.js';
 import './contrib/agent/workbench/browser/agentWebviewHover.contribution.js';
 import './contrib/agent/workbench/browser/agentBrowser.contribution.js';
 import './contrib/agent/workbench/browser/agentBrowserTools.contribution.js';

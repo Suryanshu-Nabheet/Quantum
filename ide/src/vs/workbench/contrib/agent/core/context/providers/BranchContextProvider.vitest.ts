@@ -4,7 +4,9 @@ import BranchContextProvider from "./BranchContextProvider";
 
 const mockIde = {
   getWorkspaceDirs: vi.fn(),
-  subprocess: vi.fn(),
+  getGitRefs: vi.fn(),
+  getBranch: vi.fn(),
+  getGitHistory: vi.fn(),
 };
 
 const mockExtras = {
@@ -28,9 +30,10 @@ describe("BranchContextProvider", () => {
   });
 
   it("loads local and remote branches", async () => {
-    mockIde.subprocess.mockResolvedValue([
-      "main\0abc123\nfeature/demo\0def456\norigin/main\0fed321",
-      "",
+    mockIde.getGitRefs.mockResolvedValue([
+      { id: "main", name: "main", revision: "abc123" },
+      { id: "feature/demo", name: "feature/demo", revision: "def456" },
+      { id: "origin/main", name: "origin/main", revision: "fed321" },
     ]);
 
     const provider = new BranchContextProvider({});
@@ -60,10 +63,13 @@ describe("BranchContextProvider", () => {
   });
 
   it("returns branch log and diff context", async () => {
-    mockIde.subprocess
-      .mockResolvedValueOnce(["main", ""])
-      .mockResolvedValueOnce(["abc123 commit message", ""])
-      .mockResolvedValueOnce([" src/file.ts | 2 +-", ""]);
+    mockIde.getGitRefs.mockResolvedValue([
+      { id: "feature/demo", name: "feature/demo", revision: "def456" },
+    ]);
+    mockIde.getBranch.mockResolvedValue("main");
+    mockIde.getGitHistory.mockResolvedValue([
+      { id: "abc123", subject: "commit message", message: "commit message" },
+    ]);
 
     const provider = new BranchContextProvider({});
     const items = await provider.getContextItems("feature/demo", mockExtras);
@@ -72,6 +78,5 @@ describe("BranchContextProvider", () => {
     expect(items[0].content).toContain("Branch: feature/demo");
     expect(items[0].content).toContain("Current branch: main");
     expect(items[0].content).toContain("abc123 commit message");
-    expect(items[0].content).toContain("src/file.ts");
   });
 });

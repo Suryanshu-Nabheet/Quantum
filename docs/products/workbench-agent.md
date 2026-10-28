@@ -24,16 +24,15 @@ Canonical technical README: [`contrib/agent/README.md`](../../ide/src/vs/workben
 
 ```
 contrib/agent/
-├── src/           # Extension host entry (bundled to out/agent/out/extension.js)
 ├── core/          # LLM clients, tools, context providers, config, indexing
 ├── gui/           # React sidebar (Vite → out/agent/webview/)
-├── workbench/     # Workbench integration (layout, browser bridge, hovers)
-├── shared/        # Shared IDs for workbench + host
+├── workbench/     # Native workbench view, services, runtime, browser bridge
+├── shared/        # Agent view and protocol IDs
 ├── packages/      # agent-config, fetch, llm-info, openai-adapters, terminal-security, …
 └── scripts/       # esbuild, ensure-webview, watch-gui, build-packages
 ```
 
-Quantum compiles this tree into **`ide/out/agent/`** and loads it as built-in extension **`quantum.agent`**. There is no `extensions/agent` symlink.
+Quantum compiles the native runtime and GUI into **`ide/out/agent/`**. The workbench owns the Agent view, actions, editor integrations, and runtime lifecycle. Agent is not loaded or displayed as an extension.
 
 ## Build
 
@@ -65,7 +64,8 @@ Generated artifacts (not committed):
 
 | Path | Role |
 | --- | --- |
-| `out/agent/out/extension.js` | Extension host bundle |
+| `out/agent/runtime/AgentRuntime.js` | Shared native Agent Core bundle |
+| `out/agent/runtime/agentRuntimeWorker.js` | Per-window native execution worker |
 | `out/agent/webview/` | Production sidebar UI |
 | `out/agent-packages/` | Built local packages |
 
@@ -85,13 +85,13 @@ Optional GUI HMR: enable **Agent: Use Vite Gui Dev Server**, then `npm run dev -
 
 ## Workbench host integration
 
-Host code **outside** `contrib/agent/` wires the built-in extension:
+Host code **outside** `contrib/agent/` wires the native workbench feature:
 
 | File | Role |
 | --- | --- |
-| `platform/environment/...` | `builtinAgentExtensionPath` → `{appRoot}/out/agent` |
-| `extensionManagement/.../extensionsScannerService.ts` | `scanBuiltinContribAgentExtension()` |
-| `workbench/workbench.common.main.ts` | Layout, webview, browser contributions |
+| `platform/environment/...` | `agentRuntimePath` → `{appRoot}/out/agent` |
+| `extensionManagement/.../extensionsScannerService.ts` | Agent is excluded from extension scanning |
+| `workbench/workbench.common.main.ts` | Native view, webview, browser contributions |
 | `build/gulpfile.agent.ts` | Gulp `compile-agent` / `watch-agent` |
 
 Prefer **commands** (`agent.openPanel`, `agent.focusAgentInput`, `agent.browser.*`) over deep imports from `core/` or `gui/` in workbench code.

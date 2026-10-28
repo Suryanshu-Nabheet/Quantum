@@ -110,7 +110,7 @@ export function transpileTask(src: string, out: string, esbuild?: boolean): task
 	const task = () => {
 
 		const transpile = createCompile(src, { build: false, emitError: true, transpileOnly: { esbuild: !!esbuild }, preserveEnglish: false });
-		const srcPipe = gulp.src([`${src}/**`, ...agentExtensionCompileExcludes(src)], { base: `${src}` });
+		const srcPipe = gulp.src([`${src}/**`, ...agentRuntimeCompileExcludes(src)], { base: `${src}` });
 
 		return srcPipe
 			.pipe(transpile())
@@ -130,7 +130,7 @@ export function compileTask(src: string, out: string, build: boolean, options: {
 		}
 
 		const compile = createCompile(src, { build, emitError: true, transpileOnly: false, preserveEnglish: !!options.preserveEnglish });
-		const srcPipe = gulp.src([`${src}/**`, ...agentExtensionCompileExcludes(src)], { base: `${src}` });
+		const srcPipe = gulp.src([`${src}/**`, ...agentRuntimeCompileExcludes(src)], { base: `${src}` });
 		const generator = new MonacoGenerator(false);
 		if (src === 'src') {
 			generator.execute();
@@ -151,7 +151,7 @@ export function watchTypeCheckTask(src: string): task.Task {
 		const projectPath = path.join(import.meta.dirname, '../../', src, 'tsconfig.json');
 		const generator = new MonacoGenerator(true);
 		generator.execute();
-		const watchInput = watch([`${src}/**`, ...agentExtensionCompileExcludes(src)], { base: src, readDelay: 200 });
+		const watchInput = watch([`${src}/**`, ...agentRuntimeCompileExcludes(src)], { base: src, readDelay: 200 });
 		const tsgoStream = watchInput.pipe(generator.stream).pipe(util.debounce(() => {
 			const stream = createTsgoStream(projectPath, { taskName: 'watch-client-noEmit', noEmit: true });
 			const result = es.through();
@@ -202,14 +202,14 @@ export const compileElectronPreloadsTask = task.define('compile-electron-preload
 	fancyLog(ansiColors.green('Finished compile-electron-preloads'));
 });
 
-/** Agent extension sources are built separately; match exclusions in src/tsconfig.json. */
-function agentExtensionCompileExcludes(src: string): string[] {
+/** Agent runtime sources are built separately; match exclusions in src/tsconfig.json. */
+function agentRuntimeCompileExcludes(src: string): string[] {
 	return [
-		`!${src}/vs/workbench/contrib/agent/src/**`,
 		`!${src}/vs/workbench/contrib/agent/core/**`,
 		`!${src}/vs/workbench/contrib/agent/gui/**`,
 		`!${src}/vs/workbench/contrib/agent/packages/**`,
 		`!${src}/vs/workbench/contrib/agent/scripts/**`,
+		`!${src}/vs/workbench/contrib/agent/workbench/runtime/**`,
 		`!${src}/vs/workbench/contrib/agent/node_modules/**`,
 		`!${src}/vs/workbench/contrib/agent/vitest.config.ts`,
 	];

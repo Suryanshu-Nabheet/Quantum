@@ -555,6 +555,30 @@ describe("constructMessages", () => {
     expect(appliedRules).toContainEqual(NORMAL_RULE);
   });
 
+  test("passes browser screenshot context to the model as an image", () => {
+    const screenshotUrl = "data:image/jpeg;base64,ZmFrZS1zY3JlZW5zaG90";
+    mockHistory = [
+      {
+        message: { role: "user", content: "Describe this browser page." },
+        contextItems: [createContextItem("browser-screenshot", screenshotUrl)],
+      },
+    ];
+
+    const { messages } = constructMessages(
+      mockHistory,
+      "Base System Message",
+      mockRules,
+      {},
+    );
+
+    const userMessage = messages.find((message) => message.role === "user");
+    expect(userMessage).toBeDefined();
+    expect(userMessage!.content as any[]).toContainEqual({
+      type: "imageUrl",
+      imageUrl: { url: screenshotUrl },
+    });
+  });
+
   test("system message should include rules triggered by context items from the last user message forward", () => {
     // Create context item that should trigger the CONTEXT_RULE
     const triggeringContextItem = createContextItem(

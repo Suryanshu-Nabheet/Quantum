@@ -21,7 +21,7 @@ User data directory: **`~/.quantum`** (see `ide/product.json` for product-specif
 Quantum IDE integrates a custom, first-party agent architecture designed specifically for local-first, autonomous engineering workflows:
 
 - **Quantum Workbench Agent ([`ide/src/vs/workbench/contrib/agent/`](../../ide/src/vs/workbench/contrib/agent/)):**
-  The sole engine powering all AI capabilities across Quantum IDE. This includes conversational chat, inline code generation and refactoring, multi-file editing, tab autocomplete, plan and to-do execution, Model Context Protocol (MCP) clients, and automated browser tools. It is packaged and loaded as the built-in system extension `quantum.agent`.
+  The sole engine powering all AI capabilities across Quantum IDE. This includes conversational chat, inline code generation and refactoring, multi-file editing, tab autocomplete, plan and to-do execution, Model Context Protocol (MCP) clients, and automated browser tools. It is built into the workbench and runs in a per-window native worker.
 
 - **Upstream VS Code Copilot Infrastructure (Unused):**
   The repository maintains an upstream Visual Studio Code codebase fork. Directories inherited from upstream Microsoft Copilot integrations — including `src/vs/workbench/contrib/chat/`, `src/vs/workbench/contrib/inlineChat/`, `src/vs/sessions/`, and `src/vs/platform/chat/` — are dormant upstream artifacts and are not utilized by Quantum IDE.
@@ -34,12 +34,12 @@ Quantum IDE integrates a custom, first-party agent architecture designed specifi
 
 ```
 ide/
-├── src/vs/workbench/contrib/agent/   # Workbench Agent (core, gui, extension host)
+├── src/vs/workbench/contrib/agent/   # Workbench Agent (core, gui, native runtime)
 ├── src/vs/workbench/contrib/browserView/
 ├── src/vs/platform/browserView/      # Electron / CDP / Playwright stack
 ├── extensions/                       # Built-in extensions (dev compile)
 ├── build/gulpfile.agent.ts           # compile-agent / watch-agent
-└── out/agent/                        # Generated built-in agent extension (not in git)
+└── out/agent/                        # Generated native Agent runtime and GUI (not in git)
 ```
 
 ```mermaid

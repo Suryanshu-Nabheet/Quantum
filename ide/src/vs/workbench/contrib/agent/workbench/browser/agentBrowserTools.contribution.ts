@@ -67,10 +67,9 @@ function formatBrowserToolResult(result: IToolResult): string {
 			parts.push(part.value);
 		} else if (part.kind === 'data') {
 			const b64 = encodeBase64(part.value.data);
-			parts.push(
-				`[Browser screenshot ${part.value.mimeType}]\n` +
-				`data:${part.value.mimeType};base64,${b64}`,
-			);
+			// The Agent prompt builder recognizes a leading data URL as an image
+			// context item. Prefixing prose here made screenshots plain text.
+			parts.push(`data:${part.value.mimeType};base64,${b64}`);
 		}
 	}
 

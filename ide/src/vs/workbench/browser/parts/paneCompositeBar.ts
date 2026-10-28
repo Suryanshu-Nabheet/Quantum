@@ -114,7 +114,7 @@ export class PaneCompositeBar extends Disposable {
 	) {
 		super();
 
-		this.dndHandler = new CompositeDragAndDrop(this.viewDescriptorService, this.configurationService, this.location, this.options.orientation,
+		this.dndHandler = new CompositeDragAndDrop(this.viewDescriptorService, this.location, this.options.orientation,
 			async (id: string, focus?: boolean) => { return await this.paneCompositePart.openPaneComposite(id, focus) ?? null; },
 			(from: string, to: string, before?: Before2D) => this.compositeBar.move(from, to, this.options.orientation === ActionsOrientation.VERTICAL ? before?.verticallyBefore : before?.horizontallyBefore),
 			() => this.compositeBar.getCompositeBarItems(),

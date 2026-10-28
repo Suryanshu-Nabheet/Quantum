@@ -3,7 +3,7 @@
  * Copies onnxruntime, tokenizers, and workers into out/agent after esbuild.
  */
 const { autodetectPlatformAndArch } = require("./util/index");
-const { copyExtensionOutAssets } = require("./utils");
+const { copyAgentRuntimeAssets } = require("./utils");
 
 void (async () => {
   const target =
@@ -11,11 +11,11 @@ void (async () => {
     process.env.AGENT_VSCODE_TARGET ||
     process.env.VSCODE_TARGET;
   if (target) {
-    await copyExtensionOutAssets(target);
+    await copyAgentRuntimeAssets(target);
     return;
   }
   const [os, arch] = autodetectPlatformAndArch();
-  await copyExtensionOutAssets(`${os}-${arch}`);
+  await copyAgentRuntimeAssets(`${os}-${arch}`);
 })().catch((e) => {
   console.error("[copy-native-assets] failed:", e);
   process.exit(1);

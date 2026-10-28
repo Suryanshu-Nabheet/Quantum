@@ -1,4 +1,4 @@
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useLayoutEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { CustomScrollbarDiv } from ".";
@@ -52,13 +52,12 @@ const Layout = () => {
 
   useNavigationListener();
 
-
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (location.pathname === ROUTES.CONFIG && !(window as any).isFullScreen) {
-      hostBridge.post("openConfigPage", undefined);
-      navigate(ROUTES.HOME);
+      hostBridge.post("openConfigPage", `${location.pathname}${location.search}`);
+      navigate(ROUTES.HOME, { replace: true });
     }
-  }, [location.pathname, hostBridge, navigate]);
+  }, [location.pathname, location.search, hostBridge, navigate]);
 
   // Lock full-screen mode to config/features only
   useEffect(() => {

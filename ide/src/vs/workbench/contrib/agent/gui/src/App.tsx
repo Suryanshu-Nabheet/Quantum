@@ -1,4 +1,4 @@
-import { lazy, Suspense, type ReactNode } from "react";
+import { lazy, Suspense, useContext, useEffect, type ReactNode } from "react";
 import { RouterProvider, createMemoryRouter } from "react-router-dom";
 import Layout from "./components/Layout";
 import { WorkbenchHoverHost } from "./components/gui/WorkbenchHoverHost";
@@ -7,6 +7,7 @@ import { SubmenuContextProvidersProvider } from "./context/SubmenuContextProvide
 import { VscThemeProvider } from "./context/VscTheme";
 import ParallelListeners from "./hooks/ParallelListeners";
 import ErrorPage from "./pages/error";
+import { HostBridgeContext } from "./context/HostBridge";
 
 import { ROUTES } from "./util/navigation";
 
@@ -16,6 +17,16 @@ const History = lazy(() => import("./pages/history"));
 
 function LazyRoute({ children }: { children: ReactNode }) {
   return <Suspense fallback={null}>{children}</Suspense>;
+}
+
+function AgentGuiReadySignal() {
+  const hostBridge = useContext(HostBridgeContext);
+  useEffect(() => {
+    if (!(window as any).isFullScreen) {
+      hostBridge.post("agentGuiReady", undefined);
+    }
+  }, [hostBridge]);
+  return null;
 }
 
 const router = createMemoryRouter(
@@ -64,6 +75,7 @@ function App() {
       </MainEditorProvider>
       <WorkbenchHoverHost />
       <ParallelListeners />
+      <AgentGuiReadySignal />
     </VscThemeProvider>
   );
 }

@@ -1,12 +1,7 @@
-const fs = require("fs");
 const path = require("path");
+const fs = require("fs");
 
-const {
-  copyTokenizers,
-  copyExtensionOutAssets,
-  agentDistPath,
-  ensureGeneratedExtensionManifest,
-} = require("./utils");
+const { agentDistPath } = require("./utils");
 
 const esbuild = require("esbuild");
 
@@ -34,12 +29,10 @@ const localPackageAliases = Object.fromEntries(
   ]),
 );
 
-const esbuildConfig = {
-  entryPoints: ["src/extension.ts"],
+const baseConfig = {
   bundle: true,
-  outfile: agentDistPath("out", "extension.js"),
   absWorkingDir: __dirname + "/..",
-  external: ["vscode", "esbuild", "./xhr-sync-worker.js"],
+  external: ["esbuild", "./xhr-sync-worker.js"],
   format: "cjs",
   platform: "node",
   // Deduplicate dependencies that each local package (openai-adapters, fetch,
@@ -71,49 +64,43 @@ const esbuildConfig = {
   inject: ["./scripts/importMetaUrl.js"],
   define: { "import.meta.url": "importMetaUrl" },
   supported: { "dynamic-import": false },
-  metafile: true,
-  plugins: [
-    {
-      name: "on-end-plugin",
-      setup(build) {
-        build.onEnd(async (result) => {
-          if (result.errors.length > 0) {
-            console.error("Build failed with errors:", result.errors);
-            throw new Error(result.errors);
-          }
-
-          try {
-            copyTokenizers();
-            const { autodetectPlatformAndArch } = require("./util/index");
-            const target =
-              process.env.AGENT_BUILD_TARGET ||
-              process.env.AGENT_VSCODE_TARGET ||
-              process.env.VSCODE_TARGET;
-            if (target) {
-              await copyExtensionOutAssets(target);
-            } else {
-              const [os, arch] = autodetectPlatformAndArch();
-              await copyExtensionOutAssets(`${os}-${arch}`);
-            }
-          } catch (e) {
-            console.error("Failed to copy extension runtime assets", e);
-            throw e;
-          }
-
-          console.log("Agent esbuild complete");
-        });
-      },
-    },
-  ],
+  plugins: [],
 };
 
+const nativeRuntimeConfig = {
+  ...baseConfig,
+  entryPoints: ["workbench/runtime/AgentRuntime.ts"],
+  outfile: agentDistPath("runtime", "AgentRuntime.js"),
+};
+
+const nativeRuntimeWorkerConfig = {
+  ...baseConfig,
+  entryPoints: ["workbench/runtime/agentRuntimeWorker.ts"],
+  outfile: agentDistPath("runtime", "agentRuntimeWorker.js"),
+  external: [...baseConfig.external, "./AgentRuntime"],
+  plugins: [],
+};
+
+// The IDE package is ESM, while esbuild emits this native Node worker as CJS.
+// Give the bundled runtime its own explicit package boundary so Node does not
+// reinterpret the worker and its shared runtime as ESM at startup.
+const runtimePackagePath = agentDistPath("runtime", "package.json");
+fs.mkdirSync(path.dirname(runtimePackagePath), { recursive: true });
+fs.writeFileSync(runtimePackagePath, JSON.stringify({ type: "commonjs" }, null, 2) + "\n");
+
 void (async () => {
-  ensureGeneratedExtensionManifest();
-  // Bundles the extension into one file
+  // Build the native workbench runtime only. Agent is not an extension host
+  // entry point and must never emit an extension.js or extension manifest.
   if (flags.includes("--watch")) {
-    const ctx = await esbuild.context(esbuildConfig);
-    await ctx.watch();
+    const contexts = await Promise.all([
+      esbuild.context(nativeRuntimeConfig),
+      esbuild.context(nativeRuntimeWorkerConfig),
+    ]);
+    await Promise.all(contexts.map((context) => context.watch()));
   } else {
-    await esbuild.build(esbuildConfig);
+    await Promise.all([
+      esbuild.build(nativeRuntimeConfig),
+      esbuild.build(nativeRuntimeWorkerConfig),
+    ]);
   }
 })();

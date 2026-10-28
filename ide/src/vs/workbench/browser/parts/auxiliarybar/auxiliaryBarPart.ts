@@ -275,7 +275,7 @@ export class AuxiliaryBarPart extends AbstractPaneCompositePart {
 
 	private fillExtraContextMenuActions(actions: IAction[]): void {
 		const currentPositionRight = this.layoutService.getSideBarPosition() === Position.LEFT;
-		const agentNativeMode = isAgentNativeMode(this.configurationService);
+		const agentNativeMode = isAgentNativeMode();
 
 		if (this.getCompositeBarPosition() === CompositeBarPosition.TITLE) {
 			const viewsSubmenuAction = this.getViewsSubmenuAction();
@@ -310,7 +310,7 @@ export class AuxiliaryBarPart extends AbstractPaneCompositePart {
 	}
 
 	protected shouldShowCompositeBar(): boolean {
-		if (isAgentNativeMode(this.configurationService)) {
+		if (isAgentNativeMode()) {
 			return false;
 		}
 		if (this.configuration.position === ActivityBarPosition.HIDDEN) {

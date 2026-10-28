@@ -17,6 +17,7 @@ import {
 } from "../";
 
 export type ToIdeFromWebviewProtocol = ToIdeFromWebviewOrCoreProtocol & {
+  agentGuiReady: [undefined, void];
   openUrl: [string, void];
   applyToFile: [ApplyToFilePayload, void];
   overwriteFile: [{ filepath: string; prevFileContent: string | null }, void];
@@ -34,7 +35,7 @@ export type ToIdeFromWebviewProtocol = ToIdeFromWebviewOrCoreProtocol & {
     void,
   ];
   hideWorkbenchHover: [undefined, void];
-  openConfigPage: [undefined, void];
+  openConfigPage: [string | undefined, void];
   openVscodeSettings: [undefined, void];
   "workbench/getAppearanceLayout": [
     undefined,

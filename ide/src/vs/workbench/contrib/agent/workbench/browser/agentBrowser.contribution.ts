@@ -9,11 +9,16 @@ import { localize2 } from '../../../../../nls.js';
 import { IEditorService } from '../../../../services/editor/common/editorService.js';
 import { BrowserViewSharingState, IBrowserViewWorkbenchService } from '../../../browserView/common/browserView.js';
 import { IPlaywrightService } from '../../../../../platform/browserView/common/playwrightService.js';
+import { IViewsService } from '../../../../services/views/common/viewsService.js';
+import { AGENT_GUI_VIEW_ID } from '../../shared/ids.js';
+import { IAgentNativeService } from '../electron-browser/agentNativeService.js';
 import {
+	AGENT_ATTACH_BROWSER_CONTEXT_COMMAND,
 	AGENT_BROWSER_ENSURE_SHARED_COMMAND,
 	AGENT_BROWSER_GET_OPEN_PAGES_COMMAND,
 	AGENT_BROWSER_GET_PAGE_CONTEXT_COMMAND,
 	AGENT_BROWSER_SESSION_ID,
+	type AgentAttachBrowserContextArgs,
 	type AgentBrowserPageSummary,
 } from '../common/agentBrowserBridge.js';
 import { IWorkbenchContribution, WorkbenchPhase, registerWorkbenchContribution2 } from '../../../../common/contributions.js';
@@ -47,6 +52,26 @@ function getOpenPageSummaries(editorService: IEditorService, browserViewService:
 
 	return pages;
 }
+
+registerAction2(class AgentAttachBrowserContextAction extends Action2 {
+	constructor() {
+		super({
+			id: AGENT_ATTACH_BROWSER_CONTEXT_COMMAND,
+			title: localize2('agentBrowser.attachContext', "Attach Browser Context to Agent"),
+			f1: false,
+		});
+	}
+
+	async run(accessor: ServicesAccessor, args?: AgentAttachBrowserContextArgs): Promise<{ attached: boolean }> {
+		if (!args || typeof args.name !== 'string' || typeof args.content !== 'string') {
+			return { attached: false };
+		}
+		const viewsService = accessor.get(IViewsService);
+		const agentService = accessor.get(IAgentNativeService);
+		await viewsService.openView(AGENT_GUI_VIEW_ID, true);
+		return await agentService.requestGui('attachBrowserContext', args) as { attached: boolean };
+	}
+});
 
 registerAction2(class AgentBrowserGetOpenPagesAction extends Action2 {
 	constructor() {

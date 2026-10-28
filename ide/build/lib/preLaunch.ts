@@ -47,15 +47,15 @@ async function ensureCompiled() {
 
 async function ensureAgentCompiled() {
 	const requiredFiles = [
-		'out/agent/package.json',
-		'out/agent/out/extension.js',
+		'out/agent/runtime/package.json',
+		'out/agent/runtime/AgentRuntime.js',
+		'out/agent/runtime/agentRuntimeWorker.js',
 		'out/agent/out/llamaTokenizerWorkerPool.mjs',
 		'out/agent/out/llamaTokenizer.mjs',
 		'out/agent/out/tiktokenWorkerPool.mjs',
 		'out/agent/webview/assets/index.js',
 		'out/agent/webview/assets/index.css',
-		'out/agent/webview/assets/indexConsole.js',
-		'out/agent/webview/assets/indexConsole.css',
+		'out/agent/out/node_modules/workerpool',
 	];
 	const needsCompile = await (async () => {
 		try {
@@ -65,8 +65,7 @@ async function ensureAgentCompiled() {
 			return true;
 		}
 	})();
-	const needsNativeAssets = !(await exists('out/agent/bin/napi-v3'));
-	if (needsCompile || needsNativeAssets) {
+	if (needsCompile) {
 		await runProcess(npm, ['run', 'gulp', 'compile-agent']);
 	}
 }

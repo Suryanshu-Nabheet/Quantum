@@ -34,7 +34,6 @@ export type ToIdeFromWebviewOrCoreProtocol = {
     { filepath: string; maxBytes?: number },
     string | undefined,
   ];
-  subprocess: [{ command: string; cwd?: string }, [string, string]];
   saveFile: [{ filepath: string }, void];
   fileExists: [{ filepath: string }, boolean];
   readFile: [{ filepath: string }, string];
@@ -88,6 +87,9 @@ export type ToIdeFromWebviewOrCoreProtocol = {
     Awaited<ReturnType<IDE["showToast"]>>,
   ];
   getGitRootPath: [{ dir: string }, string | undefined];
+  getGitRefs: [{ dir: string }, Array<{ id: string; name: string; revision?: string }>];
+  getGitHistory: [{ dir: string; ref: string; limit: number }, Array<{ id: string; displayId?: string; subject: string; message: string; author?: string; timestamp?: number }>];
+  getGitCommitContext: [{ dir: string; commitId: string }, string | undefined];
   listDir: [{ dir: string }, [string, FileType][]];
   getFileStats: [{ files: string[] }, FileStatsMap];
 

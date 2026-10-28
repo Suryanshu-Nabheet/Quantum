@@ -185,6 +185,7 @@ const AtMentionDropdown = forwardRef((props: AtMentionDropdownProps, ref) => {
   >(undefined);
 
   const [allItems, setAllItems] = useState<ComboBoxItem[]>([]);
+  const [queryValue, setQueryValue] = useState("");
 
   async function isItemTooBig(
     name: string,
@@ -295,6 +296,9 @@ const AtMentionDropdown = forwardRef((props: AtMentionDropdownProps, ref) => {
 
   const selectItem = (index: number) => {
     const item = allItems[index];
+    if (!item) {
+      return;
+    }
 
     if (item.type === "action" && item.action) {
       item.action();
@@ -323,6 +327,7 @@ const AtMentionDropdown = forwardRef((props: AtMentionDropdownProps, ref) => {
       );
 
       setSubMenuTitle(item.description);
+      setQueryValue("");
       setQuerySubmenuItem(item);
       return;
     }
@@ -425,6 +430,8 @@ const AtMentionDropdown = forwardRef((props: AtMentionDropdownProps, ref) => {
         <span className="flex items-center gap-x-1">
           <QueryInput
             wrap="off"
+            value={queryValue}
+            onChange={(event) => setQueryValue(event.currentTarget.value)}
             onClick={(e) => {
               e.stopPropagation();
             }}
@@ -437,13 +444,13 @@ const AtMentionDropdown = forwardRef((props: AtMentionDropdownProps, ref) => {
               }
               if (e.key === "Enter") {
                 if (e.shiftKey) {
-                  queryInputRef.current.innerText += "\n";
+                  setQueryValue((value) => `${value}\n`);
                 } else {
                   props.command({
                     ...querySubmenuItem,
                     itemType: querySubmenuItem.type,
-                    query: queryInputRef.current.value,
-                    label: `${querySubmenuItem.label}: ${queryInputRef.current.value}`,
+                    query: queryValue,
+                    label: `${querySubmenuItem.label}: ${queryValue}`,
                   });
                 }
               } else if (e.key === "Escape") {
@@ -456,13 +463,13 @@ const AtMentionDropdown = forwardRef((props: AtMentionDropdownProps, ref) => {
             variant="secondary"
             size="sm"
             className="m-0"
-            disabled={!queryInputRef.current}
+            disabled={!queryValue.trim()}
             onClick={() =>
               props.command({
                 ...querySubmenuItem,
                 itemType: querySubmenuItem.type,
-                query: queryInputRef.current!.value,
-                label: `${querySubmenuItem.label}: ${queryInputRef.current!.value}`,
+                query: queryValue,
+                label: `${querySubmenuItem.label}: ${queryValue}`,
               })
             }
           >

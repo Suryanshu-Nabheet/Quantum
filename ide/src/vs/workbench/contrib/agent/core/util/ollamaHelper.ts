@@ -89,7 +89,7 @@ export async function startLocalOllama(ide: IDE): Promise<any> {
       break;
 
     default: //Linux...
-      const start_script_path = path.resolve(__dirname, "./start_ollama.sh");
+      const start_script_path = path.resolve(__dirname, "../out/start_ollama.sh");
       if (await ide.fileExists(`file:/${start_script_path}`)) {
         startCommand = `set -e && chmod +x ${start_script_path} && ${start_script_path}\n`;
         console.log(`Ollama Linux startup script at : ${start_script_path}`);

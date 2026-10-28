@@ -70,6 +70,7 @@ export class BrowserViewWorkbenchService extends Disposable implements IBrowserV
 	readonly onDidChangeBrowserViews: Event<void> = this._onDidChangeBrowserViews.event;
 
 	private static readonly _sharingAvailableContext = ContextKeyExpr.or(
+		AgentNativeModeContext,
 		ContextKeyExpr.has(`config.${ChatConfiguration.AIDisabled}`),
 		ContextKeyExpr.and(
 			ChatContextKeys.enabled,
@@ -130,9 +131,12 @@ export class BrowserViewWorkbenchService extends Disposable implements IBrowserV
 		this._register(this.themeService.onDidColorThemeChange(() => this.sendTheme()));
 
 		this.sendConfiguration();
-		const chatEnabledKeys = new Set(ChatContextKeys.enabled.keys());
+		const agentFeatureKeys = new Set([
+			...ChatContextKeys.enabled.keys(),
+			...AgentNativeModeContext.keys(),
+		]);
 		this._register(this.contextKeyService.onDidChangeContext(e => {
-			if (e.affectsSome(chatEnabledKeys)) {
+			if (e.affectsSome(agentFeatureKeys)) {
 				this.sendConfiguration();
 			}
 		}));

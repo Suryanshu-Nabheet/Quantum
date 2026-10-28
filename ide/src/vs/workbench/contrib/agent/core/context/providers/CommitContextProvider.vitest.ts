@@ -4,7 +4,10 @@ import CommitContextProvider from "./CommitContextProvider";
 
 const mockIde = {
   getWorkspaceDirs: vi.fn(),
-  subprocess: vi.fn(),
+  getGitRefs: vi.fn(),
+  getBranch: vi.fn(),
+  getGitHistory: vi.fn(),
+  getGitCommitContext: vi.fn(),
 };
 
 const mockExtras = {
@@ -28,9 +31,11 @@ describe("CommitContextProvider", () => {
   });
 
   it("loads recent commit submenu items from git log", async () => {
-    mockIde.subprocess.mockResolvedValue([
-      'abc123\0Initial commit\n' + 'def456\0Second commit',
-      "",
+    mockIde.getBranch.mockResolvedValue("main");
+    mockIde.getGitRefs.mockResolvedValue([{ id: "main", name: "main" }]);
+    mockIde.getGitHistory.mockResolvedValue([
+      { id: "abc123", subject: "Initial commit", message: "Initial commit" },
+      { id: "def456", subject: "Second commit", message: "Second commit" },
     ]);
 
     const provider = new CommitContextProvider({});
@@ -42,11 +47,11 @@ describe("CommitContextProvider", () => {
 
     expect(items[0].title).toContain("last 10 commits");
     expect(items.some((item) => item.id === "abc123")).toBe(true);
-    expect(mockIde.subprocess).toHaveBeenCalled();
+    expect(mockIde.getGitHistory).toHaveBeenCalled();
   });
 
   it("returns commit show output for a selected hash", async () => {
-    mockIde.subprocess.mockResolvedValue(["commit metadata and diff", ""]);
+    mockIde.getGitCommitContext.mockResolvedValue("commit metadata and diff");
 
     const provider = new CommitContextProvider({});
     const items = await provider.getContextItems("abc123", mockExtras);
@@ -56,7 +61,7 @@ describe("CommitContextProvider", () => {
   });
 
   it("returns the recent commits shortcut when git is unavailable", async () => {
-    mockIde.subprocess.mockRejectedValue(new Error("not a git repository"));
+    mockIde.getBranch.mockRejectedValue(new Error("not a git repository"));
 
     const provider = new CommitContextProvider({});
     const items = await provider.loadSubmenuItems({
@@ -66,6 +71,6 @@ describe("CommitContextProvider", () => {
     });
 
     expect(items[0].title).toContain("last 10 commits");
-    expect(mockIde.subprocess).toHaveBeenCalled();
+    expect(mockIde.getBranch).toHaveBeenCalled();
   });
 });

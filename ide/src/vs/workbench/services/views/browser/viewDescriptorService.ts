@@ -25,7 +25,6 @@ import { Lazy } from '../../../../base/common/lazy.js';
 import { IViewsService } from '../common/viewsService.js';
 import { windowLogGroup } from '../../log/common/logConstants.js';
 import { IWorkbenchEnvironmentService } from '../../environment/common/environmentService.js';
-import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
 import { canMoveViewContainerToLocation, isAgentView, isAuxiliaryBarReservedForAgent } from '../../../contrib/agent/workbench/common/agentMode.js';
 
 interface IViewsCustomizations {
@@ -82,7 +81,6 @@ export class ViewDescriptorService extends Disposable implements IViewDescriptor
 		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@ILoggerService loggerService: ILoggerService,
 		@IWorkbenchEnvironmentService environmentService: IWorkbenchEnvironmentService,
-		@IConfigurationService private readonly configurationService: IConfigurationService,
 	) {
 		super();
 
@@ -368,7 +366,7 @@ export class ViewDescriptorService extends Disposable implements IViewDescriptor
 		if (!this.canMoveViews()) {
 			return;
 		}
-		if (!canMoveViewContainerToLocation(viewContainer, location, this.configurationService)) {
+		if (!canMoveViewContainerToLocation(viewContainer, location)) {
 			return;
 		}
 		this.logger.value.trace(`moveViewContainerToLocation: viewContainer:${viewContainer.id} location:${location} reason:${reason}`);
@@ -389,7 +387,7 @@ export class ViewDescriptorService extends Disposable implements IViewDescriptor
 		if (!this.canMoveViews()) {
 			return;
 		}
-		if (isAuxiliaryBarReservedForAgent(this.configurationService) && (location === ViewContainerLocation.AuxiliaryBar || isAgentView(view.id))) {
+		if (isAuxiliaryBarReservedForAgent() && (location === ViewContainerLocation.AuxiliaryBar || isAgentView(view.id))) {
 			return;
 		}
 		this.logger.value.trace(`moveViewToLocation: view:${view.id} location:${location} reason:${reason}`);

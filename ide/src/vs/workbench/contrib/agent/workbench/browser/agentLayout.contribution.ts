@@ -7,13 +7,10 @@ import { Disposable } from '../../../../../base/common/lifecycle.js';
 import { IConfigurationService } from '../../../../../platform/configuration/common/configuration.js';
 import { IContextKey, IContextKeyService } from '../../../../../platform/contextkey/common/contextkey.js';
 import { IWorkbenchContribution, WorkbenchPhase, registerWorkbenchContribution2 } from '../../../../common/contributions.js';
-import { ChatConfiguration } from '../../../chat/common/constants.js';
-import { IExtensionService } from '../../../../services/extensions/common/extensions.js';
 import { Parts, Position, positionToString, IWorkbenchLayoutService } from '../../../../services/layout/browser/layoutService.js';
 import { IViewDescriptorService, ViewContainer, ViewContainerLocation } from '../../../../common/views.js';
 import {
 	AGENT_LAYOUT_REASON,
-	isAgentNativeMode,
 	isAgentViewContainer,
 } from '../common/agentMode.js';
 import { AgentNativeModeContext } from '../common/agentNativeContext.js';
@@ -21,7 +18,7 @@ import { AgentNativeModeContext } from '../common/agentNativeContext.js';
 /**
  * Agent-native layout: the secondary sidebar is reserved for Agent only.
  * All other extension view containers belong on the primary activity bar.
- * Panel open/toggle/hide is handled by agent.* commands in contrib/agent/src.
+ * Panel commands are registered with the native Agent workbench contribution.
  */
 class AgentLayoutContribution extends Disposable implements IWorkbenchContribution {
 
@@ -33,25 +30,17 @@ class AgentLayoutContribution extends Disposable implements IWorkbenchContributi
 		@IConfigurationService private readonly configurationService: IConfigurationService,
 		@IViewDescriptorService private readonly viewDescriptorService: IViewDescriptorService,
 		@IWorkbenchLayoutService private readonly layoutService: IWorkbenchLayoutService,
-		@IExtensionService private readonly extensionService: IExtensionService,
 		@IContextKeyService contextKeyService: IContextKeyService,
 	) {
 		super();
 
 		this._agentNativeModeContext = AgentNativeModeContext.bindTo(contextKeyService);
-		this._syncAgentNativeModeContext();
-
-		if (!isAgentNativeMode(this.configurationService)) {
-			return;
-		}
+		this._agentNativeModeContext.set(true);
 
 		this.enforceAuxiliaryBarOwnership();
 		this.enforceAgentContainerLocation();
 
 		this._register(this.viewDescriptorService.onDidChangeViewContainers(({ added }) => {
-			if (!this.isActive()) {
-				return;
-			}
 			for (const { container, location } of added) {
 				if (location === ViewContainerLocation.AuxiliaryBar && !isAgentViewContainer(container)) {
 					this.moveContainerToPrimarySidebar(container);
@@ -61,9 +50,6 @@ class AgentLayoutContribution extends Disposable implements IWorkbenchContributi
 		}));
 
 		this._register(this.viewDescriptorService.onDidChangeContainerLocation(({ viewContainer, from, to }) => {
-			if (!this.isActive()) {
-				return;
-			}
 			if (to === ViewContainerLocation.AuxiliaryBar && !isAgentViewContainer(viewContainer)) {
 				this.moveContainerToPrimarySidebar(viewContainer);
 			}
@@ -73,7 +59,7 @@ class AgentLayoutContribution extends Disposable implements IWorkbenchContributi
 		}));
 
 		this._register(this.viewDescriptorService.onDidChangeLocation(({ views, to }) => {
-			if (!this.isActive() || to !== ViewContainerLocation.AuxiliaryBar) {
+			if (to !== ViewContainerLocation.AuxiliaryBar) {
 				return;
 			}
 			for (const view of views) {
@@ -84,41 +70,7 @@ class AgentLayoutContribution extends Disposable implements IWorkbenchContributi
 			}
 		}));
 
-		this._register(this.configurationService.onDidChangeConfiguration(e => {
-			if (e.affectsConfiguration(ChatConfiguration.AIDisabled)) {
-				this._syncAgentNativeModeContext();
-			}
-			if (e.affectsConfiguration(ChatConfiguration.AIDisabled) && this.isActive()) {
-				this.applyAgentLayout();
-				this.enforceAuxiliaryBarOwnership();
-				this.enforceAgentContainerLocation();
-			}
-		}));
-
-		this._register(this.extensionService.onDidRegisterExtensions(() => {
-			if (this.isActive()) {
-				this.enforceAuxiliaryBarOwnership();
-				this.enforceAgentContainerLocation();
-			}
-		}));
-
-		void this.extensionService.whenInstalledExtensionsRegistered().then(() => {
-			if (this.isActive()) {
-				this.applyAgentLayout();
-				this.enforceAuxiliaryBarOwnership();
-				this.enforceAgentContainerLocation();
-			}
-		});
-
 		this.applyAgentLayout();
-	}
-
-	private isActive(): boolean {
-		return isAgentNativeMode(this.configurationService);
-	}
-
-	private _syncAgentNativeModeContext(): void {
-		this._agentNativeModeContext.set(isAgentNativeMode(this.configurationService));
 	}
 
 	private moveContainerToPrimarySidebar(container: ViewContainer): void {
@@ -166,10 +118,6 @@ class AgentLayoutContribution extends Disposable implements IWorkbenchContributi
 	}
 
 	private applyAgentLayout(): void {
-		if (!this.isActive()) {
-			return;
-		}
-
 		if (this.configurationService.getValue<string>('workbench.sideBar.location') !== positionToString(Position.LEFT)) {
 			void this.configurationService.updateValue('workbench.sideBar.location', positionToString(Position.LEFT));
 		}

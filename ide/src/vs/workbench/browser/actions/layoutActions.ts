@@ -956,8 +956,7 @@ class MoveFocusedViewAction extends Action2 {
 		const contextKeyService = accessor.get(IContextKeyService);
 		const dialogService = accessor.get(IDialogService);
 		const paneCompositePartService = accessor.get(IPaneCompositePartService);
-		const configurationService = accessor.get(IConfigurationService);
-		const agentNativeMode = isAgentNativeMode(configurationService);
+		const agentNativeMode = isAgentNativeMode();
 
 		const focusedViewId = viewId || FocusedViewContext.getValue(contextKeyService);
 

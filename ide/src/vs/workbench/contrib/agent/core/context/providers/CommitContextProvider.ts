@@ -6,8 +6,6 @@ import {
   LoadSubmenuItemsArgs,
 } from "../../index.js";
 import { BaseContextProvider } from "../index.js";
-import { gitWorkingDirectory, runGitCommand } from "./git.js";
-
 class CommitContextProvider extends BaseContextProvider {
   static description: ContextProviderDescription = {
     title: "commit",
@@ -22,25 +20,20 @@ class CommitContextProvider extends BaseContextProvider {
   ): Promise<ContextItem[]> {
     const lastXCommitsDepth = this.options?.LastXCommitsDepth ?? 10;
     const workspaceDirs = await extras.ide.getWorkspaceDirs();
-    const cwd = gitWorkingDirectory(workspaceDirs);
-    if (!cwd) {
+    const dir = workspaceDirs[0];
+    if (!dir) {
       return [];
     }
 
     try {
       if (query.includes("last ")) {
-        const content = await runGitCommand(
-          extras.ide,
-          [
-            "--no-pager",
-            "log",
-            '--pretty=format:"%H,%h,%an,%ae,%ad,%P,%s,%b"',
-            "-p",
-            "-n",
-            String(lastXCommitsDepth),
-          ],
-          cwd,
-        );
+        const branch = await extras.ide.getBranch(dir);
+        const ref = (await extras.ide.getGitRefs(dir)).find(item => item.name === branch);
+        const commits = ref ? await extras.ide.getGitHistory(dir, ref.id, lastXCommitsDepth) : [];
+        const content = (await Promise.all(commits.map(async commit => {
+          const context = await extras.ide.getGitCommitContext(dir, commit.id);
+          return [`Commit: ${commit.id}`, commit.message, context].filter(Boolean).join("\n");
+        }))).join("\n\n");
         return [
           {
             name: query,
@@ -50,16 +43,8 @@ class CommitContextProvider extends BaseContextProvider {
         ];
       }
 
-      const content = await runGitCommand(
-        extras.ide,
-        [
-          "--no-pager",
-          "show",
-          '--pretty=format:"%H,%h,%an,%ae,%ad,%P,%s,%b"',
-          query,
-        ],
-        cwd,
-      );
+      const content = await extras.ide.getGitCommitContext(dir, query);
+      if (!content) { return []; }
       return [
         {
           name: query,
@@ -78,7 +63,7 @@ class CommitContextProvider extends BaseContextProvider {
     const depth = this.options?.Depth ?? 50;
     const lastXCommitsDepth = this.options?.LastXCommitsDepth ?? 10;
     const workspaceDirs = await args.ide.getWorkspaceDirs();
-    const cwd = gitWorkingDirectory(workspaceDirs);
+    const dir = workspaceDirs[0];
     const recentCommits: ContextSubmenuItem[] = [
       {
         id: `last ${lastXCommitsDepth} commits`,
@@ -86,39 +71,21 @@ class CommitContextProvider extends BaseContextProvider {
         description: "recent commits with diffs",
       },
     ];
-    if (!cwd) {
+    if (!dir) {
       return recentCommits;
     }
 
     try {
-      const gitResult = await runGitCommand(
-        args.ide,
-        [
-          "--no-pager",
-          "log",
-          '--pretty=format:"%H%x00%s"',
-          "-n",
-          String(depth),
-        ],
-        cwd,
-      );
+      const branch = await args.ide.getBranch(dir);
+      const ref = (await args.ide.getGitRefs(dir)).find(item => item.name === branch);
+      const commits = ref ? await args.ide.getGitHistory(dir, ref.id, depth) : [];
+      const items = commits.map(commit => ({
+        id: commit.id,
+        title: commit.subject,
+        description: commit.displayId ?? commit.id.slice(0, 8),
+      }));
 
-      const commits = gitResult
-        .trim()
-        .split("\n")
-        .filter(Boolean)
-        .map((line) => {
-          let [hash, message] = line.split("\0");
-          hash = hash.replace(/"/g, "");
-          message = message.replace(/"/g, "");
-          return {
-            id: hash,
-            title: message,
-            description: hash.slice(0, 8),
-          };
-        });
-
-      return recentCommits.concat(commits);
+      return recentCommits.concat(items);
     } catch {
       return recentCommits;
     }
