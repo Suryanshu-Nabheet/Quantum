@@ -28,7 +28,7 @@ import { QueryBuilder } from '../../../../services/search/common/queryBuilder.js
 import { IMarkerService } from '../../../../../platform/markers/common/markers.js';
 import { EditorsOrder } from '../../../../common/editor.js';
 import { IEditorGroupsService } from '../../../../services/editor/common/editorGroupsService.js';
-import { relativePath } from '../../../../../base/common/resources.js';
+import { extUri, relativePath } from '../../../../../base/common/resources.js';
 import { ITerminalService } from '../../../terminal/browser/terminal.js';
 import { IDebugService } from '../../../debug/common/debug.js';
 import { ISCMService, ISCMResource } from '../../../scm/common/scm.js';
@@ -276,15 +276,15 @@ export class AgentWorkbenchHost extends Disposable {
 			case 'isWorkspaceRemote':
 				return !!this.environmentService.remoteAuthority;
 			case 'getGitRootPath': {
-				const repository = this.scmService.getRepository(this.toResource(data?.dir));
+				const repository = this.getSCMRepository(data?.dir);
 				return repository?.provider.rootUri?.toString();
 			}
 			case 'getBranch': {
-				const repository = this.scmService.getRepository(this.toResource(data?.dir));
+				const repository = this.getSCMRepository(data?.dir);
 				return repository?.provider.historyProvider?.get()?.historyItemRef.get()?.name ?? 'NONE';
 			}
 			case 'getGitRefs': {
-				const repository = this.scmService.getRepository(this.toResource(data?.dir));
+				const repository = this.getSCMRepository(data?.dir);
 				const history = repository?.provider.historyProvider.get();
 				const refs = await history?.provideHistoryItemRefs() ?? [];
 				// SCM ref objects can carry ThemeIcon/URI instances. Keep the
@@ -294,13 +294,13 @@ export class AgentWorkbenchHost extends Disposable {
 				return refs.map(ref => ({ id: ref.id, name: ref.name, revision: ref.revision }));
 			}
 			case 'getGitHistory': {
-				const repository = this.scmService.getRepository(this.toResource(data?.dir));
+				const repository = this.getSCMRepository(data?.dir);
 				const history = repository?.provider.historyProvider.get();
 				const items = await history?.provideHistoryItems({ historyItemRefs: [String(data?.ref ?? 'HEAD')], limit: Math.max(1, Math.min(100, Number(data?.limit) || 20)) });
 				return (items ?? []).map(item => ({ id: item.id, displayId: item.displayId, subject: item.subject, message: item.message, author: item.author, timestamp: item.timestamp }));
 			}
 			case 'getGitCommitContext': {
-				const repository = this.scmService.getRepository(this.toResource(data?.dir));
+				const repository = this.getSCMRepository(data?.dir);
 				return repository?.provider.historyProvider.get()?.resolveHistoryItemChatContext(String(data?.commitId ?? ''));
 			}
 			case 'getRepoName': {
@@ -594,6 +594,12 @@ export class AgentWorkbenchHost extends Disposable {
 		}
 		const resource = URI.parse(value);
 		return resource.scheme ? resource : URI.file(value);
+	}
+
+	private getSCMRepository(resource: unknown) {
+		const uri = this.toResource(resource);
+		return this.scmService.getRepository(uri) ?? this.scmService.repositories.find(repository =>
+			repository.provider.isHidden !== true && extUri.isEqual(repository.provider.rootUri, uri));
 	}
 
 	private async getWorkspaceDiff(includeUnstaged: boolean): Promise<string[]> {
