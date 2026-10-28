@@ -29,7 +29,7 @@ class CommitContextProvider extends BaseContextProvider {
       if (query.includes("last ")) {
         const branch = await extras.ide.getBranch(dir);
         const ref = (await extras.ide.getGitRefs(dir)).find(item => item.name === branch);
-        const commits = ref ? await extras.ide.getGitHistory(dir, ref.id, lastXCommitsDepth) : [];
+        const commits = ref ? await extras.ide.getGitHistory(dir, ref.revision ?? ref.id, lastXCommitsDepth) : [];
         const content = (await Promise.all(commits.map(async commit => {
           const context = await extras.ide.getGitCommitContext(dir, commit.id);
           return [`Commit: ${commit.id}`, commit.message, context].filter(Boolean).join("\n");
@@ -78,7 +78,7 @@ class CommitContextProvider extends BaseContextProvider {
     try {
       const branch = await args.ide.getBranch(dir);
       const ref = (await args.ide.getGitRefs(dir)).find(item => item.name === branch);
-      const commits = ref ? await args.ide.getGitHistory(dir, ref.id, depth) : [];
+      const commits = ref ? await args.ide.getGitHistory(dir, ref.revision ?? ref.id, depth) : [];
       const items = commits.map(commit => ({
         id: commit.id,
         title: commit.subject,

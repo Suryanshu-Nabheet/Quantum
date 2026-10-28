@@ -33,7 +33,7 @@ class BranchContextProvider extends BaseContextProvider {
       const ref = refs.find((item) => item.name === branch || item.id === branch);
       if (!ref) { return []; }
       const currentBranch = await extras.ide.getBranch(dir);
-      const commits = await extras.ide.getGitHistory(dir, ref.id, MAX_BRANCH_LOG_COMMITS);
+      const commits = await extras.ide.getGitHistory(dir, ref.revision ?? ref.id, MAX_BRANCH_LOG_COMMITS);
 
       const content = [
         `Branch: ${branch}`,

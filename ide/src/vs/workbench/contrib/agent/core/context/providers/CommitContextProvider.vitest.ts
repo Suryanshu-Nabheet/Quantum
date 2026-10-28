@@ -32,7 +32,9 @@ describe("CommitContextProvider", () => {
 
   it("loads recent commit submenu items from git log", async () => {
     mockIde.getBranch.mockResolvedValue("main");
-    mockIde.getGitRefs.mockResolvedValue([{ id: "main", name: "main" }]);
+    mockIde.getGitRefs.mockResolvedValue([
+      { id: "refs/heads/main", name: "main", revision: "branch-head-sha" },
+    ]);
     mockIde.getGitHistory.mockResolvedValue([
       { id: "abc123", subject: "Initial commit", message: "Initial commit" },
       { id: "def456", subject: "Second commit", message: "Second commit" },
@@ -47,7 +49,11 @@ describe("CommitContextProvider", () => {
 
     expect(items[0].title).toContain("last 10 commits");
     expect(items.some((item) => item.id === "abc123")).toBe(true);
-    expect(mockIde.getGitHistory).toHaveBeenCalled();
+    expect(mockIde.getGitHistory).toHaveBeenCalledWith(
+      "file:///Users/me/project",
+      "branch-head-sha",
+      50,
+    );
   });
 
   it("returns commit show output for a selected hash", async () => {

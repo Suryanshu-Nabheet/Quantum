@@ -78,5 +78,10 @@ describe("BranchContextProvider", () => {
     expect(items[0].content).toContain("Branch: feature/demo");
     expect(items[0].content).toContain("Current branch: main");
     expect(items[0].content).toContain("abc123 commit message");
+    expect(mockIde.getGitHistory).toHaveBeenCalledWith(
+      "file:///Users/me/project",
+      "def456",
+      30,
+    );
   });
 });
