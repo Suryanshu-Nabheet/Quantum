@@ -31,7 +31,7 @@ import { IEditorGroupsService } from '../../../../services/editor/common/editorG
 import { extUri, relativePath } from '../../../../../base/common/resources.js';
 import { ITerminalService } from '../../../terminal/browser/terminal.js';
 import { IDebugService } from '../../../debug/common/debug.js';
-import { ISCMService, ISCMResource } from '../../../scm/common/scm.js';
+import { ISCMRepository, ISCMService, ISCMResource } from '../../../scm/common/scm.js';
 import { IUntitledTextResourceEditorInput } from '../../../../common/editor.js';
 import { linesDiffComputers } from '../../../../../editor/common/diff/linesDiffComputers.js';
 import { Codicon } from '../../../../../base/common/codicons.js';
@@ -596,10 +596,20 @@ export class AgentWorkbenchHost extends Disposable {
 		return resource.scheme ? resource : URI.file(value);
 	}
 
-	private getSCMRepository(resource: unknown) {
+	private getSCMRepository(resource: unknown): ISCMRepository | undefined {
 		const uri = this.toResource(resource);
-		return this.scmService.getRepository(uri) ?? this.scmService.repositories.find(repository =>
-			repository.provider.isHidden !== true && extUri.isEqual(repository.provider.rootUri, uri));
+		const repository = this.scmService.getRepository(uri);
+		if (repository) {
+			return repository;
+		}
+
+		for (const candidate of this.scmService.repositories) {
+			if (candidate.provider.isHidden !== true && extUri.isEqual(candidate.provider.rootUri, uri)) {
+				return candidate;
+			}
+		}
+
+		return undefined;
 	}
 
 	private async getWorkspaceDiff(includeUnstaged: boolean): Promise<string[]> {
