@@ -6,6 +6,11 @@ import {
   LoadSubmenuItemsArgs,
 } from "../../index.js";
 import { BaseContextProvider } from "../index.js";
+import {
+  makeGitContextId,
+  parseGitContextId,
+  workspaceLabel,
+} from "./gitContextUtils.js";
 class CommitContextProvider extends BaseContextProvider {
   static description: ContextProviderDescription = {
     title: "commit",
@@ -18,43 +23,83 @@ class CommitContextProvider extends BaseContextProvider {
     query: string,
     extras: ContextProviderExtras,
   ): Promise<ContextItem[]> {
+    const selected = parseGitContextId(query, "commit");
     const lastXCommitsDepth = this.options?.LastXCommitsDepth ?? 10;
     const workspaceDirs = await extras.ide.getWorkspaceDirs();
-    const dir = workspaceDirs[0];
-    if (!dir) {
+    if (workspaceDirs.length === 0) {
       return [];
     }
 
-    try {
-      if (query.includes("last ")) {
-        const branch = await extras.ide.getBranch(dir);
-        const ref = (await extras.ide.getGitRefs(dir)).find(item => item.name === branch);
-        const commits = ref ? await extras.ide.getGitHistory(dir, ref.revision ?? ref.id, lastXCommitsDepth) : [];
-        const content = (await Promise.all(commits.map(async commit => {
-          const context = await extras.ide.getGitCommitContext(dir, commit.id);
-          return [`Commit: ${commit.id}`, commit.message, context].filter(Boolean).join("\n");
-        }))).join("\n\n");
-        return [
-          {
-            name: query,
-            description: query,
+    const dirs = selected ? [selected.dir] : workspaceDirs;
+    const recentShortcut = selected?.id.startsWith("last ") ?? query.includes("last ");
+    const commitId = selected && !recentShortcut ? selected.id : query;
+    const results = await Promise.all(
+      dirs.map(async (dir) => {
+        try {
+          if (recentShortcut) {
+            const branch = await extras.ide.getBranch(dir);
+            const ref = (await extras.ide.getGitRefs(dir)).find(
+              (item) => item.name === branch,
+            );
+            const commits = ref
+              ? await extras.ide.getGitHistory(
+                  dir,
+                  ref.revision ?? ref.id,
+                  lastXCommitsDepth,
+                )
+              : [];
+            const content = (
+              await Promise.all(
+                commits.map(async (commit) => {
+                  const context = await extras.ide.getGitCommitContext(
+                    dir,
+                    commit.id,
+                  );
+                  return [
+                    `Commit: ${commit.id}`,
+                    commit.message,
+                    context,
+                  ]
+                    .filter(Boolean)
+                    .join("\n");
+                }),
+              )
+            ).join("\n\n");
+            if (!content) {
+              return undefined;
+            }
+            const label =
+              workspaceDirs.length > 1
+                ? ` (${workspaceLabel(dir, workspaceDirs)})`
+                : "";
+            return {
+              name: `last ${lastXCommitsDepth} commits${label}`,
+              description: `recent commits${label}`,
+              content,
+            };
+          }
+
+          const content = await extras.ide.getGitCommitContext(dir, commitId);
+          if (!content) {
+            return undefined;
+          }
+          const label =
+            workspaceDirs.length > 1
+              ? ` (${workspaceLabel(dir, workspaceDirs)})`
+              : "";
+          return {
+            name: `${commitId}${label}`,
+            description: `commit ${commitId}${label}`,
             content,
-          },
-        ];
-      }
-
-      const content = await extras.ide.getGitCommitContext(dir, query);
-      if (!content) { return []; }
-      return [
-        {
-          name: query,
-          description: `commit ${query}`,
-          content,
-        },
-      ];
-    } catch {
-      return [];
-    }
+          };
+        } catch {
+          return undefined;
+        }
+      }),
+    );
+    return results.filter(
+      (item): item is NonNullable<typeof item> => item !== undefined,
+    );
   }
 
   async loadSubmenuItems(
@@ -63,32 +108,57 @@ class CommitContextProvider extends BaseContextProvider {
     const depth = this.options?.Depth ?? 50;
     const lastXCommitsDepth = this.options?.LastXCommitsDepth ?? 10;
     const workspaceDirs = await args.ide.getWorkspaceDirs();
-    const dir = workspaceDirs[0];
-    const recentCommits: ContextSubmenuItem[] = [
-      {
-        id: `last ${lastXCommitsDepth} commits`,
-        title: `last ${lastXCommitsDepth} commits`,
-        description: "recent commits with diffs",
-      },
-    ];
-    if (!dir) {
-      return recentCommits;
+    if (workspaceDirs.length === 0) {
+      return [
+        {
+          id: `last ${lastXCommitsDepth} commits`,
+          title: `last ${lastXCommitsDepth} commits`,
+          description: "recent commits with diffs",
+        },
+      ];
     }
 
-    try {
-      const branch = await args.ide.getBranch(dir);
-      const ref = (await args.ide.getGitRefs(dir)).find(item => item.name === branch);
-      const commits = ref ? await args.ide.getGitHistory(dir, ref.revision ?? ref.id, depth) : [];
-      const items = commits.map(commit => ({
-        id: commit.id,
-        title: commit.subject,
-        description: commit.displayId ?? commit.id.slice(0, 8),
-      }));
-
-      return recentCommits.concat(items);
-    } catch {
-      return recentCommits;
-    }
+    const groups = await Promise.all(
+      workspaceDirs.map(async (dir) => {
+        const label =
+          workspaceDirs.length > 1
+            ? ` · ${workspaceLabel(dir, workspaceDirs)}`
+            : "";
+        const recent: ContextSubmenuItem = {
+          id: makeGitContextId(
+            "commit",
+            dir,
+            `last ${lastXCommitsDepth} commits`,
+          ),
+          title: `last ${lastXCommitsDepth} commits${label}`,
+          description: `recent commits with diffs${label}`,
+        };
+        try {
+          const branch = await args.ide.getBranch(dir);
+          const ref = (await args.ide.getGitRefs(dir)).find(
+            (item) => item.name === branch,
+          );
+          const commits = ref
+            ? await args.ide.getGitHistory(
+                dir,
+                ref.revision ?? ref.id,
+                depth,
+              )
+            : [];
+          return [
+            recent,
+            ...commits.map((commit) => ({
+              id: makeGitContextId("commit", dir, commit.id),
+              title: `${commit.subject}${label}`,
+              description: commit.displayId ?? commit.id.slice(0, 8),
+            })),
+          ];
+        } catch {
+          return [recent];
+        }
+      }),
+    );
+    return groups.flat();
   }
 }
 
