@@ -91,8 +91,9 @@ export class AgentRuntime {
 	invoke<T extends keyof ToCoreProtocol>(
 		messageType: T,
 		data: ToCoreProtocol[T][0],
+		messageId?: string,
 	): Promise<ToCoreProtocol[T][1]> {
-		return this.initialized.then(() => this.core.invoke(messageType, data));
+		return this.initialized.then(() => this.core.invoke(messageType, data, messageId));
 	}
 
 	complete(input: AutocompleteInput, signal: AbortSignal): Promise<AutocompleteOutcome | undefined> {

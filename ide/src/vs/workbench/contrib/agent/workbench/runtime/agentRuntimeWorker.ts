@@ -68,7 +68,7 @@ async function handleInvoke(request: WorkerRequest): Promise<void> {
 	try {
 		const messageType = request.messageType as keyof ToCoreProtocol;
 		const data = request.data as ToCoreProtocol[typeof messageType][0];
-		const result = await runtime.invoke(messageType, data);
+		const result = await runtime.invoke(messageType, data, id);
 		if (!isAsyncIterable(result)) {
 			port.postMessage({ kind: 'invokeResult', id, value: result });
 			return;

@@ -132,8 +132,9 @@ export class Core {
   invoke<T extends keyof ToCoreProtocol>(
     messageType: T,
     data: ToCoreProtocol[T][0],
+    messageId?: string,
   ): ToCoreProtocol[T][1] {
-    return this.messenger.invoke(messageType, data);
+    return this.messenger.invoke(messageType, data, messageId);
   }
 
   send<T extends keyof FromCoreProtocol>(

@@ -30,6 +30,10 @@ interface IAgentInvocation {
 	readonly data: unknown;
 }
 
+type IAgentInvocationRequest =
+	| { readonly kind: 'invoke'; readonly messageType: string; readonly data: unknown }
+	| { readonly kind: 'complete'; readonly data: unknown };
+
 interface IAgentWorker {
 	readonly worker: Worker;
 	readonly workbenchChannel: IChannel;
@@ -81,14 +85,10 @@ export class AgentRuntimeChannel extends Disposable implements IServerChannel<st
 	private async invoke(context: string, invocation: IAgentInvocation): Promise<unknown> {
 		const agent = await this.getOrCreateWorker(context);
 		const id = invocation.id || `invoke-${++this.nextInvocationId}`;
-		return new Promise((resolve, reject) => {
-			agent.pendingInvocations.set(id, { resolve, reject });
-			agent.worker.postMessage({
-				kind: 'invoke',
-				id,
-				messageType: invocation.messageType,
-				data: invocation.data,
-			});
+		return this.requestWorker(agent, id, {
+			kind: 'invoke',
+			messageType: invocation.messageType,
+			data: invocation.data,
 		});
 	}
 
@@ -103,9 +103,22 @@ export class AgentRuntimeChannel extends Disposable implements IServerChannel<st
 		const id = typeof requestedCompletionId === 'string' && requestedCompletionId.length > 0
 			? requestedCompletionId
 			: `completion-${++this.nextInvocationId}`;
+		return this.requestWorker(agent, id, { kind: 'complete', data });
+	}
+
+	private requestWorker(agent: IAgentWorker, id: string, request: IAgentInvocationRequest): Promise<unknown> {
+		if (agent.pendingInvocations.has(id)) {
+			return Promise.reject(new Error(`Duplicate Agent runtime request ID: ${id}`));
+		}
+
 		return new Promise((resolve, reject) => {
 			agent.pendingInvocations.set(id, { resolve, reject });
-			agent.worker.postMessage({ kind: 'complete', id, data });
+			try {
+				agent.worker.postMessage({ ...request, id });
+			} catch (error) {
+				agent.pendingInvocations.delete(id);
+				reject(error instanceof Error ? error : new Error(String(error)));
+			}
 		});
 	}
 
@@ -141,11 +154,13 @@ export class AgentRuntimeChannel extends Disposable implements IServerChannel<st
 			this.disposeWindow(context);
 		});
 		agent.worker.on('exit', code => {
-			if (code !== 0) {
-				const error = new Error(`Quantum Agent runtime worker exited with code ${code}`);
-				this.failPendingInvocations(agent, error);
+			if (this.workers.get(context) !== agent) {
+				return;
 			}
+
 			this.workers.delete(context);
+			const error = new Error(`Quantum Agent runtime worker exited unexpectedly with code ${code}`);
+			this.failPendingInvocations(agent, error);
 		});
 		return agent;
 	}
