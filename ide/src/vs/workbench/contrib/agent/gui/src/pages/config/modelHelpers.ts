@@ -56,3 +56,30 @@ export function groupModelsByProvider(
     })
     .sort((a, b) => a.displayName.localeCompare(b.displayName));
 }
+
+/** Preserve configured provider cards when live discovery returns no models. */
+export function includeEmptyConfiguredProviders(
+  groups: ConfiguredProviderGroup[],
+  configuredModels: ModelDescription[] = [],
+): ConfiguredProviderGroup[] {
+  const byProvider = new Map(groups.map((group) => [group.providerId, group]));
+  for (const model of configuredModels) {
+    const id = (model.underlyingProviderName || model.provider || "unknown")
+      .trim()
+      .toLowerCase();
+    if (byProvider.has(id)) {
+      continue;
+    }
+    byProvider.set(id, {
+      providerId: id,
+      displayName: getProviderDisplayName(
+        model.underlyingProviderName || model.provider,
+      ),
+      models: [],
+      credentialModel: model,
+    });
+  }
+  return Array.from(byProvider.values()).sort((a, b) =>
+    a.displayName.localeCompare(b.displayName),
+  );
+}

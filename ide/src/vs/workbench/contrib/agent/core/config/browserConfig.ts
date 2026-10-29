@@ -97,6 +97,7 @@ export async function finalToBrowserConfig(
         deduplicateModels(v.map(llmToSerializedModelDescription)),
       ]),
     ) as Record<ModelRole, ModelDescription[]>,
+    configuredModels: final.configuredModels ?? [],
     selectedModelByRole: Object.fromEntries(
       Object.entries(final.selectedModelByRole).map(([k, v]) => [
         k,

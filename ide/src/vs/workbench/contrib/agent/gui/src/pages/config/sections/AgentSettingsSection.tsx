@@ -36,7 +36,7 @@ import {
 import { updateSelectedModelByRole } from "../../../redux/thunks/updateSelectedModelByRole";
 import { updateUnifiedChatModel } from "../../../redux/thunks/updateUnifiedChatModel";
 import { getMetaKeyLabel } from "../../../util";
-import { DEFAULT_MAX_AGENT_STEPS } from "../../../util/agentLoopLimits";
+import { DEFAULT_MAX_AGENT_STEPS } from "workbench/common/agentTurnPolicy";
 import { buildConfigRoute, CONFIG_ROUTES } from "../../../util/navigation";
 import {
   AccessModeChoice,

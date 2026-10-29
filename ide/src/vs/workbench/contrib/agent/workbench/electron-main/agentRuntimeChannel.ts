@@ -11,18 +11,23 @@ import { Disposable } from '../../../../../base/common/lifecycle.js';
 import { IChannel, IServerChannel, IPCServer } from '../../../../../base/parts/ipc/common/ipc.js';
 import { ILogService } from '../../../../../platform/log/common/log.js';
 
-interface IAgentWorkerMessage {
-	kind: 'hostRequest' | 'coreMessage' | 'invokeChunk' | 'invokeResult';
-	id?: string;
-	requestKind?: 'ide' | 'core';
-	messageType?: string;
-	data?: unknown;
-	message?: unknown;
-	content?: unknown;
-	done?: boolean;
-	value?: unknown;
-	error?: { message: string; stack?: string };
-}
+type IAgentWorkerMessage =
+	| {
+		readonly kind: 'hostRequest';
+		readonly id: string;
+		readonly requestKind: 'ide' | 'core';
+		readonly messageType: string;
+		readonly data: unknown;
+	}
+	| { readonly kind: 'coreMessage'; readonly message: unknown }
+	| { readonly kind: 'invokeChunk'; readonly id: string; readonly contents: unknown[] }
+	| { readonly kind: 'disposed' }
+	| {
+		readonly kind: 'invokeResult';
+		readonly id: string;
+		readonly value?: unknown;
+		readonly error?: { message: string; stack?: string };
+	};
 
 interface IAgentInvocation {
 	readonly id: string;
@@ -38,6 +43,8 @@ interface IAgentWorker {
 	readonly worker: Worker;
 	readonly workbenchChannel: IChannel;
 	readonly pendingInvocations: Map<string, { resolve(value: unknown): void; reject(error: Error): void }>;
+	readonly pendingChunkDeliveries: Map<string, Promise<void>>;
+	disposeTimeout?: ReturnType<typeof setTimeout>;
 }
 
 export class AgentRuntimeChannel extends Disposable implements IServerChannel<string> {
@@ -145,15 +152,21 @@ export class AgentRuntimeChannel extends Disposable implements IServerChannel<st
 			}),
 			workbenchChannel: this.server.getChannel('agentWorkbench', client => client.ctx === context),
 			pendingInvocations: new Map(),
+			pendingChunkDeliveries: new Map(),
 		};
 		this.workers.set(context, agent);
 		agent.worker.on('message', message => this.handleWorkerMessage(context, agent, message as IAgentWorkerMessage));
 		agent.worker.on('error', error => {
 			this.logService.error('[Agent] Native runtime worker failed', error);
-			this.failPendingInvocations(agent, error);
-			this.disposeWindow(context);
+			if (this.workers.get(context) === agent) {
+				this.disposeWindow(context, false);
+			}
 		});
 		agent.worker.on('exit', code => {
+			if (agent.disposeTimeout) {
+				clearTimeout(agent.disposeTimeout);
+				agent.disposeTimeout = undefined;
+			}
 			if (this.workers.get(context) !== agent) {
 				return;
 			}
@@ -166,15 +179,26 @@ export class AgentRuntimeChannel extends Disposable implements IServerChannel<st
 	}
 
 	private handleWorkerMessage(context: string, agent: IAgentWorker, message: IAgentWorkerMessage): void {
-		if (message.kind === 'hostRequest' && message.id && message.requestKind && message.messageType) {
+		if (message.kind === 'disposed') {
+			if (agent.disposeTimeout) {
+				clearTimeout(agent.disposeTimeout);
+				agent.disposeTimeout = undefined;
+			}
+			void agent.worker.terminate();
+			return;
+		}
+		if (this.workers.get(context) !== agent) {
+			return;
+		}
+
+		if (message.kind === 'hostRequest') {
 			void agent.workbenchChannel.call('handleRuntimeRequest', {
-				requestId: message.id,
 				requestKind: message.requestKind,
 				messageType: message.messageType,
 				data: message.data,
 			}).then(
-				value => agent.worker.postMessage({ kind: 'hostResponse', id: message.id, value }),
-				error => agent.worker.postMessage({
+				value => this.postHostResponse(context, agent, { kind: 'hostResponse', id: message.id, value }),
+				error => this.postHostResponse(context, agent, {
 					kind: 'hostResponse',
 					id: message.id,
 					error: { message: error instanceof Error ? error.message : String(error) },
@@ -191,25 +215,50 @@ export class AgentRuntimeChannel extends Disposable implements IServerChannel<st
 		}
 
 		if (message.kind === 'invokeChunk') {
-			void agent.workbenchChannel.call('handleRuntimeChunk', {
-				messageId: message.id,
-				content: message.content,
-				done: false,
-			}).catch(error => this.logService.error('[Agent] Could not deliver stream chunk', error));
+			const previousDelivery = agent.pendingChunkDeliveries.get(message.id) ?? Promise.resolve();
+			const delivery = previousDelivery.then(() =>
+				agent.workbenchChannel.call<void>('handleRuntimeChunk', {
+					messageId: message.id,
+					contents: message.contents,
+				}),
+			);
+			agent.pendingChunkDeliveries.set(message.id, delivery);
+			void delivery.catch(error => this.logService.error('[Agent] Could not deliver stream chunk', error));
 			return;
 		}
 
-		if (message.kind === 'invokeResult' && message.id) {
+		if (message.kind === 'invokeResult') {
 			const pending = agent.pendingInvocations.get(message.id);
 			if (!pending) {
 				return;
 			}
 			agent.pendingInvocations.delete(message.id);
-			if (message.error) {
-				pending.reject(Object.assign(new Error(message.error.message), { stack: message.error.stack }));
-			} else {
-				pending.resolve(message.value);
-			}
+			const chunkDelivery = agent.pendingChunkDeliveries.get(message.id) ?? Promise.resolve();
+			agent.pendingChunkDeliveries.delete(message.id);
+			void chunkDelivery.then(() => {
+				if (message.error) {
+					pending.reject(
+						Object.assign(new Error(message.error.message), { stack: message.error.stack }),
+					);
+				} else {
+					pending.resolve(message.value);
+				}
+			}, error => pending.reject(error instanceof Error ? error : new Error(String(error))));
+		}
+	}
+
+	private postHostResponse(
+		context: string,
+		agent: IAgentWorker,
+		message: { kind: 'hostResponse'; id: string; value?: unknown; error?: { message: string } },
+	): void {
+		if (this.workers.get(context) !== agent) {
+			return;
+		}
+		try {
+			agent.worker.postMessage(message);
+		} catch (error) {
+			this.logService.error('[Agent] Could not return a host request to the runtime worker', error);
 		}
 	}
 
@@ -218,16 +267,31 @@ export class AgentRuntimeChannel extends Disposable implements IServerChannel<st
 			pending.reject(error);
 		}
 		agent.pendingInvocations.clear();
+		agent.pendingChunkDeliveries.clear();
 	}
 
-	private disposeWindow(context: string): void {
+	private disposeWindow(context: string, graceful = true): void {
 		const agent = this.workers.get(context);
 		if (!agent) {
 			return;
 		}
 		this.workers.delete(context);
 		this.failPendingInvocations(agent, new Error('Quantum Agent workbench window closed.'));
-		void agent.worker.terminate();
+		if (!graceful) {
+			void agent.worker.terminate();
+			return;
+		}
+		agent.disposeTimeout = setTimeout(() => {
+			agent.disposeTimeout = undefined;
+			void agent.worker.terminate();
+		}, 7000);
+		try {
+			agent.worker.postMessage({ kind: 'dispose' });
+		} catch {
+			clearTimeout(agent.disposeTimeout);
+			agent.disposeTimeout = undefined;
+			void agent.worker.terminate();
+		}
 	}
 
 	override dispose(): void {

@@ -118,15 +118,17 @@ export class Core {
     this.messageAbortControllers.get(messageId)?.abort();
   }
 
-  dispose(): void {
+	async dispose(): Promise<void> {
     for (const controller of this.messageAbortControllers.values()) {
       controller.abort();
     }
     this.messageAbortControllers.clear();
     this.configHandler.dispose();
-    void killAllRunningTerminalProcesses();
-    void MCPManagerSingleton.getInstance().shutdown();
-    void TTS.kill();
+		await Promise.allSettled([
+			killAllRunningTerminalProcesses(),
+			MCPManagerSingleton.getInstance().shutdown(),
+			TTS.kill(),
+		]);
   }
 
   invoke<T extends keyof ToCoreProtocol>(

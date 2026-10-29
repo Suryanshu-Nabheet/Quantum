@@ -11,7 +11,7 @@ import { BrowserViewSharingState, IBrowserViewWorkbenchService } from '../../../
 import { IPlaywrightService } from '../../../../../platform/browserView/common/playwrightService.js';
 import { IViewsService } from '../../../../services/views/common/viewsService.js';
 import { AGENT_GUI_VIEW_ID } from '../../shared/ids.js';
-import { IAgentNativeService } from '../electron-browser/agentNativeService.js';
+import { IAgentNativeService } from '../common/agentNativeService.js';
 import {
 	AGENT_ATTACH_BROWSER_CONTEXT_COMMAND,
 	AGENT_BROWSER_ENSURE_SHARED_COMMAND,

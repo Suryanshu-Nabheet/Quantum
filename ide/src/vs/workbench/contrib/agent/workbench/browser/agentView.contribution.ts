@@ -13,20 +13,19 @@ import { SyncDescriptor } from '../../../../../platform/instantiation/common/des
 import { Registry } from '../../../../../platform/registry/common/platform.js';
 import { registerIcon } from '../../../../../platform/theme/common/iconRegistry.js';
 import { ViewPaneContainer } from '../../../../browser/parts/views/viewPaneContainer.js';
-import { IViewContainersRegistry, IViewsRegistry, ViewContainerLocation, Extensions as ViewExtensions } from '../../../../common/views.js';
-import { AgentViewPane } from '../electron-browser/agentViewPane.js';
+import { IViewContainersRegistry, ViewContainerLocation, Extensions as ViewExtensions } from '../../../../common/views.js';
 import { AGENT_GUI_VIEW_ID, AGENT_VIEW_CONTAINER_ID, LEGACY_AGENT_VIEW_CONTAINER_STORAGE_ID } from '../../shared/ids.js';
 import { IViewsService } from '../../../../services/views/common/viewsService.js';
-import { IAgentNativeService } from '../electron-browser/agentNativeService.js';
+import { IAgentNativeService } from '../common/agentNativeService.js';
 import { KeyCode, KeyMod } from '../../../../../base/common/keyCodes.js';
 import { KeybindingsRegistry, KeybindingWeight } from '../../../../../platform/keybinding/common/keybindingsRegistry.js';
-import { IAgentWorkbenchHost } from '../electron-browser/agentWorkbenchHost.js';
+import { IAgentWorkbenchHost } from '../common/agentWorkbenchHost.js';
 import { ContextKeyExpr } from '../../../../../platform/contextkey/common/contextkey.js';
 
 const agentViewIcon = registerIcon('quantum-agent-view-icon', Codicon.commentDiscussion, localize('agentViewIcon', 'View icon of the Agent view.'));
 const quantumCategory = localize2('agent.commands.category', 'Quantum');
 
-const agentViewContainer = Registry.as<IViewContainersRegistry>(ViewExtensions.ViewContainersRegistry).registerViewContainer({
+export const agentViewContainer = Registry.as<IViewContainersRegistry>(ViewExtensions.ViewContainersRegistry).registerViewContainer({
 	id: AGENT_VIEW_CONTAINER_ID,
 	title: localize2('agent.viewContainer.label', "Agent"),
 	icon: agentViewIcon,
@@ -35,17 +34,6 @@ const agentViewContainer = Registry.as<IViewContainersRegistry>(ViewExtensions.V
 	storageId: LEGACY_AGENT_VIEW_CONTAINER_STORAGE_ID,
 	hideIfEmpty: true,
 }, ViewContainerLocation.AuxiliaryBar, { isDefault: true });
-
-Registry.as<IViewsRegistry>(ViewExtensions.ViewsRegistry).registerViews([{
-	id: AGENT_GUI_VIEW_ID,
-	name: localize2('agent.view.label', "Agent"),
-	containerIcon: agentViewIcon,
-	containerTitle: agentViewContainer.title.value,
-	singleViewPaneContainerTitle: agentViewContainer.title.value,
-	canToggleVisibility: true,
-	canMoveView: true,
-	ctorDescriptor: new SyncDescriptor(AgentViewPane),
-}], agentViewContainer);
 
 Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Configuration).registerConfiguration({
 	id: 'agent',

@@ -21,6 +21,7 @@ export const EMPTY_CONFIG: BrowserSerializedAgentConfig = {
     embed: [],
     subagent: [],
   },
+  configuredModels: [],
   selectedModelByRole: {
     chat: null,
     apply: null,

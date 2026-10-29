@@ -33,12 +33,15 @@ const createMockProcess = (
   const mockProcess = {
     pid,
     killed,
+    exitCode: killed ? 0 : null,
+    signalCode: null,
     kill: vi.fn(),
   } as unknown as Mocked<ChildProcess>;
 
   // Make kill() update the killed property
   mockProcess.kill.mockImplementation(() => {
     (mockProcess as any).killed = true;
+    (mockProcess as any).exitCode = 0;
     return true;
   });
 

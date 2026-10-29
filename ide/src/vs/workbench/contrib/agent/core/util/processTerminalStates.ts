@@ -67,31 +67,77 @@ export function removeRunningProcess(toolCallId: string): void {
   processTerminalForegroundStates.delete(toolCallId);
 }
 
-export async function killTerminalProcess(toolCallId: string): Promise<void> {
+export async function killTerminalProcess(
+  toolCallId: string,
+  waitForExit = false,
+): Promise<void> {
   const processInfo = processTerminalForegroundStates.get(toolCallId);
-  if (processInfo && !processInfo.process.killed) {
-    const { process } = processInfo;
+  if (!processInfo) {
+    return;
+  }
 
-    process.kill("SIGTERM");
+  const child = processInfo.process;
+  let forceKillTimeout: ReturnType<typeof setTimeout> | undefined;
+  let giveUpTimeout: ReturnType<typeof setTimeout> | undefined;
+  let resolveExit = () => {};
+  let settled = false;
+  const exited = new Promise<void>((resolve) => (resolveExit = resolve));
+  const finish = () => {
+    if (settled) {
+      return;
+    }
+    settled = true;
+    if (forceKillTimeout) {
+      clearTimeout(forceKillTimeout);
+    }
+    if (giveUpTimeout) {
+      clearTimeout(giveUpTimeout);
+    }
+    processTerminalForegroundStates.delete(toolCallId);
+    resolveExit();
+  };
 
-    const forceKillTimeout = setTimeout(() => {
-      if (!process.killed) {
-        process.kill("SIGKILL");
+  if (child.exitCode != null || child.signalCode != null) {
+    finish();
+    return;
+  }
+  const canObserveExit = typeof child.once === "function";
+  if (canObserveExit) {
+    child.once("exit", finish);
+  }
+
+  try {
+    child.kill("SIGTERM");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ESRCH") {
+      finish();
+      throw error;
+    }
+    finish();
+  }
+
+  processTerminalForegroundStates.delete(toolCallId);
+  if (!settled) {
+    forceKillTimeout = setTimeout(() => {
+      if (child.exitCode == null && child.signalCode == null) {
+        try {
+          child.kill("SIGKILL");
+        } catch {
+          finish();
+        }
       }
     }, 5000);
-
-    const clearForceKillTimeout = () => {
-      clearTimeout(forceKillTimeout);
-    };
-
-    if (process.killed) {
-      clearForceKillTimeout();
-    } else if (typeof process.once === "function") {
-      process.once("exit", clearForceKillTimeout);
-      process.once("close", clearForceKillTimeout);
-    }
-
-    processTerminalForegroundStates.delete(toolCallId);
+  }
+  if (waitForExit && !settled && canObserveExit) {
+    const waitLimit = new Promise<void>((resolve) => {
+      giveUpTimeout = setTimeout(resolve, 6000);
+    });
+    await Promise.race([exited, waitLimit]);
+    finish();
+  } else if (waitForExit && !settled) {
+    // Real ChildProcess instances are observable. Minimal test doubles may not
+    // expose EventEmitter methods, so don't hold shutdown open for them.
+    finish();
   }
 }
 
@@ -109,7 +155,7 @@ export async function killMultipleTerminalProcesses(
 export async function killAllRunningTerminalProcesses(): Promise<string[]> {
   const runningIds = getAllRunningProcessIds();
   if (runningIds.length > 0) {
-    await killMultipleTerminalProcesses(runningIds);
+    await Promise.all(runningIds.map((id) => killTerminalProcess(id, true)));
   }
   return runningIds; // Return the IDs that were cancelled
 }

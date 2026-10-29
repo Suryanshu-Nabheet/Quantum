@@ -9,14 +9,14 @@ import { URI } from '../../../../../base/common/uri.js';
 import { ITextResourceEditorInput } from '../../../../../platform/editor/common/editor.js';
 import { IWorkbenchEnvironmentService } from '../../../../services/environment/common/environmentService.js';
 import { IFileService } from '../../../../../platform/files/common/files.js';
-import { createDecorator } from '../../../../../platform/instantiation/common/instantiation.js';
 import { InstantiationType, registerSingleton } from '../../../../../platform/instantiation/common/extensions.js';
 import { INotificationService } from '../../../../../platform/notification/common/notification.js';
 import { IOpenerService } from '../../../../../platform/opener/common/opener.js';
 import { IProductService } from '../../../../../platform/product/common/productService.js';
 import { ISecretStorageService } from '../../../../../platform/secrets/common/secrets.js';
 import { IWorkspaceContextService } from '../../../../../platform/workspace/common/workspace.js';
-import { IAgentNativeService } from './agentNativeService.js';
+import { IAgentNativeService } from '../common/agentNativeService.js';
+import { IAgentWorkbenchHost } from '../common/agentWorkbenchHost.js';
 import { ICommandService } from '../../../../../platform/commands/common/commands.js';
 import { IClipboardService } from '../../../../../platform/clipboard/common/clipboardService.js';
 import { ICodeEditorService } from '../../../../../editor/browser/services/codeEditorService.js';
@@ -40,7 +40,7 @@ import { INativeEnvironmentService } from '../../../../../platform/environment/c
 import { ACTIVE_GROUP, IEditorService } from '../../../../services/editor/common/editorService.js';
 import { IWebviewWorkbenchService } from '../../../webviewPanel/browser/webviewWorkbenchService.js';
 import { WebviewInput } from '../../../webviewPanel/browser/webviewEditorInput.js';
-import { asWebviewUri, webviewGenericCspSource } from '../../../webview/common/webview.js';
+import { createAgentWebviewContent } from './agentWebviewContent.js';
 import {
 	AGENT_BROWSER_ENSURE_SHARED_COMMAND,
 	AGENT_BROWSER_GET_OPEN_PAGES_COMMAND,
@@ -48,14 +48,6 @@ import {
 	AGENT_BROWSER_INVOKE_TOOL_COMMAND,
 	AGENT_BROWSER_NOTIFY_SUBMIT_COMMAND,
 } from '../common/agentBrowserBridge.js';
-
-export interface IAgentWorkbenchHost {
-	readonly _serviceBrand: undefined;
-	handleGuiRequest(messageType: string, payload: unknown): { handled: boolean; value?: unknown };
-	openSettingsPage(route?: string): void;
-}
-
-export const IAgentWorkbenchHost = createDecorator<IAgentWorkbenchHost>('agentWorkbenchHost');
 
 const MAX_AGENT_DIFF_FILES = 100;
 const MAX_AGENT_DIFF_BYTES = 900 * 1024;
@@ -105,15 +97,17 @@ export class AgentWorkbenchHost extends Disposable {
 	) {
 		super();
 		this.queryBuilder = instantiationService.createInstance(QueryBuilder);
-		agentService.registerHostRequestHandler(request => this.handleRequest(request.requestKind, request.messageType, request.data));
+		this._register(agentService.registerHostRequestHandler(request => this.handleRequest(request.requestKind, request.messageType, request.data)));
 		this._register(agentService.onDidReceiveRuntimeChunk(chunk => {
 			const messageType = this.settingsInvocationTypes.get(chunk.messageId);
 			if (messageType && this.settingsEditor && !this.settingsEditor.isDisposed()) {
-				void this.settingsEditor.webview.postMessage({
-					messageType,
-					messageId: chunk.messageId,
-					data: { done: false, content: chunk.content, status: 'success' },
-				});
+				for (const content of chunk.contents) {
+					void this.settingsEditor.webview.postMessage({
+						messageType,
+						messageId: chunk.messageId,
+						data: { done: false, content, status: 'success' },
+					});
+				}
 			}
 		}));
 	}
@@ -153,34 +147,15 @@ export class AgentWorkbenchHost extends Disposable {
 
 	private createSettingsEditorHtml(guiRoot: URI, route: string): string {
 		const nonce = generateUuid();
-		const scriptUri = asWebviewUri(URI.joinPath(guiRoot, 'assets', 'index.js'));
-		const styleUri = asWebviewUri(URI.joinPath(guiRoot, 'assets', 'index.css'));
-		const mediaBaseUrl = `${asWebviewUri(guiRoot).toString()}/`;
 		const workspacePaths = this.workspaceContextService.getWorkspace().folders.map(folder => folder.uri.toString());
-		return `<!doctype html>
-<html lang="en">
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-${nonce}' ${webviewGenericCspSource} 'unsafe-eval'; style-src 'unsafe-inline' ${webviewGenericCspSource}; img-src ${webviewGenericCspSource} https: data: blob:; font-src ${webviewGenericCspSource} data:; connect-src https: http://localhost:5173 ws://localhost:5173;">
-	<link rel="stylesheet" href="${styleUri}">
-	<title>Quantum Settings</title>
-</head>
-<body class="full-screen">
-	<div id="root"></div>
-	<script nonce="${nonce}">
-		const vscode = acquireVsCodeApi();
-		window.vscMediaUrl = ${JSON.stringify(mediaBaseUrl)};
-		window.ide = 'vscode';
-		window.windowId = ${JSON.stringify(generateUuid())};
-		window.workspacePaths = ${JSON.stringify(workspacePaths)};
-		window.workbenchHoverDelay = 500;
-		window.isFullScreen = true;
-		window.initialRoute = ${JSON.stringify(route)};
-	</script>
-	<script type="module" nonce="${nonce}" src="${scriptUri}"></script>
-</body>
-</html>`;
+		return createAgentWebviewContent({
+			guiRoot,
+			nonce,
+			title: 'Quantum Settings',
+			workspacePaths,
+			page: 'settings',
+			initialRoute: route,
+		});
 	}
 
 	private async handleSettingsEditorMessage(input: WebviewInput, message: unknown): Promise<void> {

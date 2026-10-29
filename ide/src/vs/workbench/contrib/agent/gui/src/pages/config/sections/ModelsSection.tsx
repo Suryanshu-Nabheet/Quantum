@@ -17,6 +17,7 @@ import { CONFIG_PAGE_GAP } from "../configLayout";
 import {
   ConfiguredProviderGroup,
   groupModelsByProvider,
+  includeEmptyConfiguredProviders,
   uniqueModelsByTitle,
 } from "../modelHelpers";
 
@@ -34,8 +35,11 @@ export function ModelsSection() {
   const config = useAppSelector((state) => state.config.config);
   const configuredProviders = useMemo(() => {
     const models = uniqueModelsByTitle(config.modelsByRole);
-    return groupModelsByProvider(models);
-  }, [config.modelsByRole]);
+    return includeEmptyConfiguredProviders(
+      groupModelsByProvider(models),
+      config.configuredModels,
+    );
+  }, [config.configuredModels, config.modelsByRole]);
 
   const openConfigureModelDialog = useConfigureModelDialog();
 
@@ -65,7 +69,10 @@ export function ModelsSection() {
             try {
               await hostBridge.request("config/deleteModel", {
                 provider: group.credentialModel.provider,
-                titlesToClear: group.models.map((m) => m.title),
+                titlesToClear:
+                  group.models.length > 0
+                    ? group.models.map((m) => m.title)
+                    : [group.credentialModel.title],
               });
             } catch (error) {
               console.error("Failed to delete provider:", error);

@@ -54,10 +54,10 @@ export class MCPManagerSingleton {
     this.abortController.abort();
     if (this.connections.size > 0) {
       await Promise.allSettled(
-        Array.from(this.connections.entries()).map(([id, connection]) => {
+			Array.from(this.connections.entries()).map(async ([id, connection]) => {
           try {
             connection.abortController.abort();
-            void connection.client.close();
+					await connection.client.close();
           } finally {
             this.connections.delete(id);
           }

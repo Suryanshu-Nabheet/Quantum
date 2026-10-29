@@ -86,6 +86,8 @@ async function removeLegacyAgentBuildOutput(): Promise<void> {
 		path.join(root, 'out/agent/package.json'),
 		path.join(root, 'out/agent/out/extension.js'),
 		path.join(root, 'out/agent/out/extension.js.map'),
+		path.join(root, 'out/agent/runtime/AgentRuntime.js.map'),
+		path.join(root, 'out/agent/runtime/agentRuntimeWorker.js.map'),
 		path.join(root, 'out/agent/runtime/agentRuntime.js'),
 		path.join(root, 'out/agent/runtime/agentRuntime.js.map'),
 		path.join(root, 'out/agent/out/node_modules/@vscode/ripgrep'),
@@ -173,12 +175,12 @@ export async function compileAgentRuntime(): Promise<void> {
 		await runNodeScript('build-packages.js');
 	}
 	await runNodeScript('ensure-webview.js');
-	await runNodeScript('esbuild.js', ['--sourcemap'], { SKIP_INSTALLS: 'true' });
+	await runNodeScript('esbuild.js', ['--minify'], { SKIP_INSTALLS: 'true' });
 	await runNodeScript('copy-native-assets.js');
 	await cleanAgentSourceGeneratedArtifacts();
 }
 
-function watchAgentExtension(): NodeJS.ReadWriteStream {
+function watchAgentRuntime(): NodeJS.ReadWriteStream {
 	const stream = es.through();
 
 	void (async () => {
@@ -206,7 +208,7 @@ function watchAgentExtension(): NodeJS.ReadWriteStream {
 const compileAgentTask = task.define('compile-agent', () => compileAgentRuntime());
 gulp.task(compileAgentTask);
 
-const watchAgentTask = task.define('watch-agent', () => watchAgentExtension());
+const watchAgentTask = task.define('watch-agent', () => watchAgentRuntime());
 gulp.task(watchAgentTask);
 
 export { compileAgentTask, watchAgentTask };

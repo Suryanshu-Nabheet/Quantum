@@ -59,12 +59,13 @@ export default defineConfig({
       yaml: require.resolve("yaml"),
       // uri-js is CJS-only (no module/exports entry); core imports it directly.
       "uri-js": require.resolve("uri-js"),
+      workbench: resolve(__dirname, "../workbench"),
     },
   },
   build: {
     outDir: resolve(__dirname, "../../../../../../out/agent-gui"),
     emptyOutDir: !watching,
-    sourcemap: !watching,
+    sourcemap: watching,
     minify: watching ? false : "esbuild",
     reportCompressedSize: !watching,
     rollupOptions: {

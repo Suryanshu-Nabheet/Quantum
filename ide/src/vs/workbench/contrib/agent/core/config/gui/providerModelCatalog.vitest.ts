@@ -48,5 +48,7 @@ describe("catalogModelNamesForProvider", () => {
 
   it("returns empty for unknown provider", () => {
     expect(catalogModelNamesForProvider("not-a-real-provider")).toEqual([]);
+    expect(catalogModelNamesForProvider("ollama")).toEqual([]);
+    expect(catalogModelNamesForProvider("vllm")).toEqual([]);
   });
 });

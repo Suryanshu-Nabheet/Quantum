@@ -58,6 +58,13 @@ export function filterListedModelNames(
  * Uses llm-info catalogs shared with the rest of the stack.
  */
 export function catalogModelNamesForProvider(provider: string): string[] {
+  // These providers represent user managed servers. Their model list is the
+  // server's live /models response; bundled examples are never available
+  // models and make a stopped server look healthy.
+  if (["ollama", "vllm"].includes(provider.toLowerCase())) {
+    return [];
+  }
+
   const match = allModelProviders.find(
     (p) => p.id === provider || p.id.toLowerCase() === provider.toLowerCase(),
   );

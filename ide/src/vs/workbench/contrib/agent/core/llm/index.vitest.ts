@@ -169,14 +169,16 @@ describe("BaseLLM", () => {
           expect(llm.contextLength).toEqual(DEFAULT_CONTEXT_LENGTH);
         }
       };
-      describe(`${modelProvider.id}`, () => {
-        modelProvider.models.forEach((llmInfo) => {
-          test(
-            `should have correct context length for ${llmInfo.model}`,
-            testContextLength(llmInfo),
-          );
+      if (modelProvider.models.length > 0) {
+        describe(`${modelProvider.id}`, () => {
+          modelProvider.models.forEach((llmInfo) => {
+            test(
+              `should have correct context length for ${llmInfo.model}`,
+              testContextLength(llmInfo),
+            );
+          });
         });
-      });
+      }
     });
   });
 });

@@ -9,14 +9,19 @@ import type { AutocompleteInput } from '../../core/autocomplete/util/types';
 import type { Message } from '../../core/protocol/messenger';
 import { AgentRuntime } from './AgentRuntime';
 
-interface WorkerRequest {
-	kind: 'invoke' | 'complete' | 'acceptCompletion' | 'cancelCompletion' | 'ideEvent' | 'hostResponse' | 'dispose';
-	id?: string;
-	messageType?: string;
-	data?: unknown;
-	value?: unknown;
-	error?: { message: string; stack?: string };
-}
+type WorkerRequest =
+	| { kind: 'invoke'; id: string; messageType: string; data: unknown }
+	| { kind: 'complete'; id: string; data: unknown }
+	| { kind: 'acceptCompletion'; data: string }
+	| { kind: 'cancelCompletion'; data: string }
+	| { kind: 'ideEvent'; messageType: string; data: unknown }
+	| {
+		kind: 'hostResponse';
+		id: string;
+		value?: unknown;
+		error?: { message: string; stack?: string };
+	}
+	| { kind: 'dispose' };
 
 function getParentPort(): NonNullable<typeof parentPort> {
 	if (!parentPort) {
@@ -29,6 +34,7 @@ const port = getParentPort();
 let nextRequestId = 0;
 const pendingHostRequests = new Map<string, { resolve(value: unknown): void; reject(error: Error): void }>();
 const completionControllers = new Map<string, AbortController>();
+const MAX_INVOKE_CHUNK_BATCH_SIZE = 32;
 
 function requestHost(kind: 'ide' | 'core', messageType: string, data: unknown): Promise<unknown> {
 	const id = `host-${++nextRequestId}`;
@@ -60,15 +66,28 @@ function serializeError(error: unknown): { message: string; stack?: string } {
 }
 
 async function handleInvoke(request: WorkerRequest): Promise<void> {
-	const id = request.id;
-	if (!id || !request.messageType) {
+	if (request.kind !== 'invoke') {
 		throw new Error('Invalid Agent invocation message.');
 	}
+	const { id, messageType, data } = request;
 
+	let chunks: unknown[] = [];
+	let flushHandle: ReturnType<typeof setImmediate> | undefined;
+	const flushChunks = () => {
+		if (flushHandle) {
+			clearImmediate(flushHandle);
+			flushHandle = undefined;
+		}
+		if (chunks.length > 0) {
+			const contents = chunks;
+			chunks = [];
+			port.postMessage({ kind: 'invokeChunk', id, contents });
+		}
+	};
 	try {
-		const messageType = request.messageType as keyof ToCoreProtocol;
-		const data = request.data as ToCoreProtocol[typeof messageType][0];
-		const result = await runtime.invoke(messageType, data, id);
+		const runtimeMessageType = messageType as keyof ToCoreProtocol;
+		const runtimeData = data as ToCoreProtocol[typeof runtimeMessageType][0];
+		const result = await runtime.invoke(runtimeMessageType, runtimeData, id);
 		if (!isAsyncIterable(result)) {
 			port.postMessage({ kind: 'invokeResult', id, value: result });
 			return;
@@ -78,39 +97,62 @@ async function handleInvoke(request: WorkerRequest): Promise<void> {
 		while (true) {
 			const next = await iterator.next();
 			if (next.done) {
+				flushChunks();
 				port.postMessage({ kind: 'invokeResult', id, value: next.value });
 				return;
 			}
-			port.postMessage({ kind: 'invokeChunk', id, content: next.value, done: false });
+			chunks.push(next.value);
+			if (chunks.length >= MAX_INVOKE_CHUNK_BATCH_SIZE) {
+				flushChunks();
+				continue;
+			}
+			flushHandle ??= setImmediate(() => {
+				flushHandle = undefined;
+				flushChunks();
+			});
 		}
 	} catch (error) {
+		flushChunks();
 		port.postMessage({ kind: 'invokeResult', id, error: serializeError(error) });
 	}
 }
 
 async function handleCompletion(request: WorkerRequest): Promise<void> {
-	if (!request.id) {
+	if (request.kind !== 'complete') {
 		return;
 	}
+	const { id, data } = request;
 	const controller = new AbortController();
-	completionControllers.set(request.id, controller);
+	completionControllers.set(id, controller);
 	try {
-		const outcome = await runtime.complete(request.data as AutocompleteInput, controller.signal);
-		port.postMessage({ kind: 'invokeResult', id: request.id, value: outcome });
+		const outcome = await runtime.complete(data as AutocompleteInput, controller.signal);
+		port.postMessage({ kind: 'invokeResult', id, value: outcome });
 	} catch (error) {
-		port.postMessage({ kind: 'invokeResult', id: request.id, error: serializeError(error) });
+		port.postMessage({ kind: 'invokeResult', id, error: serializeError(error) });
 	} finally {
-		completionControllers.delete(request.id);
+		completionControllers.delete(id);
 	}
 }
 
 port.on('message', (request: WorkerRequest) => {
 	if (request.kind === 'dispose') {
-		runtime.dispose();
+		for (const controller of completionControllers.values()) {
+			controller.abort();
+		}
+		completionControllers.clear();
+		for (const pending of pendingHostRequests.values()) {
+			pending.reject(new Error('Quantum Agent runtime is shutting down.'));
+		}
+		pendingHostRequests.clear();
+		void runtime.dispose().catch(error => {
+			console.error('[Agent] Runtime cleanup failed', error);
+		}).finally(() => {
+			port.postMessage({ kind: 'disposed' });
+		});
 		return;
 	}
 
-	if (request.kind === 'hostResponse' && request.id) {
+	if (request.kind === 'hostResponse') {
 		const pending = pendingHostRequests.get(request.id);
 		if (pending) {
 			pendingHostRequests.delete(request.id);
@@ -123,7 +165,7 @@ port.on('message', (request: WorkerRequest) => {
 		return;
 	}
 
-	if (request.kind === 'ideEvent' && request.messageType) {
+	if (request.kind === 'ideEvent') {
 		const messageType = request.messageType as keyof FromIdeProtocol;
 		const data = request.data as FromIdeProtocol[typeof messageType][0];
 		runtime.acceptIdeEvent(messageType, data);
@@ -140,14 +182,12 @@ port.on('message', (request: WorkerRequest) => {
 		return;
 	}
 
-	if (request.kind === 'acceptCompletion' && typeof request.data === 'string') {
+	if (request.kind === 'acceptCompletion') {
 		runtime.acceptCompletion(request.data);
 		return;
 	}
 
 	if (request.kind === 'cancelCompletion') {
-		if (typeof request.data === 'string') {
-			completionControllers.get(request.data)?.abort();
-		}
+		completionControllers.get(request.data)?.abort();
 	}
 });

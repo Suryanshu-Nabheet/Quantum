@@ -1667,6 +1667,7 @@ export interface AgentConfig {
   rules: RuleWithSource[];
   modelsByRole: Record<ModelRole, ILLM[]>;
   selectedModelByRole: Record<ModelRole, ILLM | null>;
+  configuredModels?: ModelDescription[];
 
 }
 
@@ -1687,6 +1688,7 @@ export interface BrowserSerializedAgentConfig {
   rules: RuleWithSource[];
   tabAutocompleteOptions?: Partial<TabAutocompleteOptions>;
   modelsByRole: Record<ModelRole, ModelDescription[]>;
+  configuredModels?: ModelDescription[];
   selectedModelByRole: Record<ModelRole, ModelDescription | null>;
 }
 

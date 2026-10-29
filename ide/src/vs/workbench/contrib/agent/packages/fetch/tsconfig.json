@@ -14,6 +14,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmitOnError": false,
+    "rootDir": "src",
     "types": ["node"],
     "outDir": "../../../../../../../out/agent-packages/fetch",
     "declaration": true

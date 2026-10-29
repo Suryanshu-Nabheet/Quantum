@@ -123,6 +123,7 @@ export async function buildAgentConfigFromGui(options: {
       rerank: [],
       subagent: [],
     },
+    configuredModels: [],
     selectedModelByRole: {
       chat: null,
       edit: null,
@@ -137,6 +138,19 @@ export async function buildAgentConfigFromGui(options: {
   };
 
   const config = sanitizeAgentSettings(agentSettings);
+
+  // Keep provider configuration visible even when live model discovery finds
+  // nothing. In particular, a stopped local server should show zero available
+  // models, not disappear or acquire a bundled placeholder model.
+  agentConfig.configuredModels = (config.models ?? []).map((model) => ({
+    title: model.name,
+    provider: model.provider,
+    underlyingProviderName: model.provider,
+    model: model.model,
+    apiKey: model.apiKey,
+    apiBase: model.apiBase,
+    roles: model.roles,
+  }));
 
   for (const rule of config.rules ?? []) {
     agentConfig.rules.push(convertBlockRuleToAgentRule(rule));

@@ -21,10 +21,10 @@ import { ViewPane } from '../../../../browser/parts/views/viewPane.js';
 import { IViewletViewOptions } from '../../../../browser/parts/views/viewsViewlet.js';
 import { IViewDescriptorService } from '../../../../common/views.js';
 import { IOverlayWebview, IWebviewService, WebviewContentPurpose } from '../../../webview/browser/webview.js';
-import { asWebviewUri, webviewGenericCspSource } from '../../../webview/common/webview.js';
 import { AGENT_GUI_VIEW_ID } from '../../shared/ids.js';
-import { IAgentNativeService } from './agentNativeService.js';
-import { IAgentWorkbenchHost } from './agentWorkbenchHost.js';
+import { IAgentNativeService } from '../common/agentNativeService.js';
+import { IAgentWorkbenchHost } from '../common/agentWorkbenchHost.js';
+import { createAgentWebviewContent } from './agentWebviewContent.js';
 
 export class AgentViewPane extends ViewPane {
 	private webview: IOverlayWebview | undefined;
@@ -51,12 +51,12 @@ export class AgentViewPane extends ViewPane {
 		@IAgentWorkbenchHost private readonly agentWorkbenchHost: IAgentWorkbenchHost,
 	) {
 		super(options, keybindingService, contextMenuService, agentConfigurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, hoverService);
-		agentService.registerGuiRequestHandler((messageType, data) => this.requestGui(messageType, data));
-		agentService.registerGuiMessageSender((messageType, data) => {
+		this._register(agentService.registerGuiRequestHandler((messageType, data) => this.requestGui(messageType, data)));
+		this._register(agentService.registerGuiMessageSender((messageType, data) => {
 			const messageId = generateUuid();
 			this.trackMessageAck(this.pendingWorkbenchGuiAcks, messageId);
 			this.postOrQueueGuiMessage({ messageType, data, messageId });
-		});
+		}));
 		this._register(this.editorService.onDidActiveEditorChange(() => {
 			const resource = this.editorService.activeEditor?.resource;
 			if (this.runtimeStarted && resource) {
@@ -72,11 +72,13 @@ export class AgentViewPane extends ViewPane {
 		this._register(agentService.onDidReceiveRuntimeChunk(chunk => {
 			const messageType = this.invocationTypes.get(chunk.messageId);
 			if (messageType) {
-				this.postOrQueueGuiMessage({
-					messageType,
-					messageId: chunk.messageId,
-					data: { done: false, content: chunk.content, status: 'success' },
-				});
+				for (const content of chunk.contents) {
+					this.postOrQueueGuiMessage({
+						messageType,
+						messageId: chunk.messageId,
+						data: { done: false, content, status: 'success' },
+					});
+				}
 			}
 		}));
 		this._register(this.onDidChangeBodyVisibility(() => this.updateVisibility()));
@@ -127,8 +129,6 @@ export class AgentViewPane extends ViewPane {
 			return;
 		}
 		const guiRoot = URI.file(`${this.environmentService.agentRuntimePath}/webview`);
-		const scriptUri = asWebviewUri(URI.joinPath(guiRoot, 'assets', 'index.js'));
-		const styleUri = asWebviewUri(URI.joinPath(guiRoot, 'assets', 'index.css'));
 		const webview = this.webviewService.createWebviewOverlay({
 			providedViewType: AGENT_GUI_VIEW_ID,
 			title: this.title,
@@ -141,13 +141,13 @@ export class AgentViewPane extends ViewPane {
 		});
 		this.webview = this._register(webview);
 		this._register(webview.onMessage(event => void this.handleGuiMessage(event.message)));
-		webview.setHtml(`<!doctype html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-${this.nonce}' ${webviewGenericCspSource} 'unsafe-eval'; style-src 'unsafe-inline' ${webviewGenericCspSource}; img-src ${webviewGenericCspSource} https: data: blob:; font-src ${webviewGenericCspSource} data:; connect-src https: http://localhost:5173 ws://localhost:5173;">
-<link rel="stylesheet" href="${styleUri}"><title>Quantum Agent</title></head>
-<body class="sidebar"><div id="root"></div>
-<script nonce="${this.nonce}">const vscode = acquireVsCodeApi(); window.vscMediaUrl = ${JSON.stringify(asWebviewUri(guiRoot).toString() + '/')}; window.ide = 'vscode'; window.windowId = ${JSON.stringify(generateUuid())}; window.workspacePaths = ${JSON.stringify(this.workspaceContextService.getWorkspace().folders.map(folder => folder.uri.toString()))}; window.workbenchHoverDelay = 500;</script>
-<script type="module" nonce="${this.nonce}" src="${scriptUri}"></script></body></html>`);
+		webview.setHtml(createAgentWebviewContent({
+			guiRoot,
+			nonce: this.nonce,
+			title: 'Quantum Agent',
+			workspacePaths: this.workspaceContextService.getWorkspace().folders.map(folder => folder.uri.toString()),
+			page: 'sidebar',
+		}));
 		this.updateVisibility();
 	}
 

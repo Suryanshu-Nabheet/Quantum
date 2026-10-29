@@ -45,9 +45,12 @@ import { preprocessToolCalls } from "./preprocessToolCallArgs";
 import { canResumeAfterToolCall } from "./streamResponseAfterToolCall";
 import {
   agentStepLimitMessage,
+  filterToolsForTurn,
+  getAgentContinuationReason,
   isAgentStepLimitReached,
+  lastAssistantText,
   resolveMaxAgentSteps,
-} from "../../util/agentLoopLimits";
+} from "workbench/common/agentTurnPolicy";
 import { createStreamRenderBatcher } from "../util/streamRenderBatch";
 import { withAgentStreamLock } from "../util/agentStreamLock";
 import {
@@ -68,11 +71,8 @@ import {
 } from "../util/agentStreamContinuation";
 import { renderChatMessage } from "core/util/messageContent";
 import { BuiltInToolNames } from "core/tools/builtIn";
-import { BROWSER_TOOL_GROUP } from "core/tools/definitions/browserTools";
 import {
   assistantReplyIsUnfinished,
-  shouldResumeAgentAfterIdleReply,
-  userRequestedAutonomousCodebaseWork,
   withAgentIdleResumeNudge,
 } from "core/llm/streamContinuation";
 import { injectQueuedMessageIfReady } from "./drainMessageQueue";
@@ -83,13 +83,6 @@ let driverTail: Promise<void> = Promise.resolve();
 export function waitForAgentDriver(): Promise<void> {
   return driverTail;
 }
-
-/** A finished-looking short note may restart a few times. A lead-in may restart more. */
-const MAX_IDLE_RESUMES = 4;
-const MAX_UNFINISHED_RESUMES = 8;
-const MAX_FAILURE_RESUMES = 4;
-/** Autonomous request that has not completed a tool yet. */
-const MAX_UNSTARTED_RESUMES = 8;
 
 /**
  * Builds completion options with reasoning configuration based on session state and model capabilities.
@@ -171,119 +164,6 @@ async function runTurnWithOverloadRetry<T>(
       );
     }
   }
-}
-
-function userTurnHasSuccessfulTool(
-  history: RootState["session"]["history"],
-): boolean {
-  for (let i = history.length - 1; i >= 0; i--) {
-    const item = history[i];
-    if (item.message.role === "user") {
-      return false;
-    }
-    if (
-      (item.toolCallStates ?? []).some(
-        (call) =>
-          call.status === "done" &&
-          call.toolCall.function?.name !== BuiltInToolNames.CreatePlan,
-      )
-    ) {
-      return true;
-    }
-  }
-  return false;
-}
-
-function userTurnAlreadyUsedTools(
-  history: RootState["session"]["history"],
-): boolean {
-  for (let i = history.length - 1; i >= 0; i--) {
-    const item = history[i];
-    if (item.message.role === "user") {
-      return false;
-    }
-    const calls = item.toolCallStates ?? [];
-    if (
-      calls.some((call) => {
-        const name = call.toolCall.function?.name;
-        return !!name && name !== BuiltInToolNames.CreatePlan;
-      })
-    ) {
-      return true;
-    }
-  }
-  return false;
-}
-
-function lastAssistantToolsAllErrored(
-  history: RootState["session"]["history"],
-): boolean {
-  for (let i = history.length - 1; i >= 0; i--) {
-    const item = history[i];
-    if (item.message.role === "user") {
-      return false;
-    }
-    if (item.message.role !== "assistant") {
-      continue;
-    }
-    const calls = item.toolCallStates ?? [];
-    if (calls.length === 0) {
-      return false;
-    }
-    return calls.every((call) => call.status === "errored");
-  }
-  return false;
-}
-
-function lastAssistantText(history: RootState["session"]["history"]): string {
-  for (let i = history.length - 1; i >= 0; i--) {
-    if (history[i].message.role === "assistant") {
-      return renderChatMessage(history[i].message);
-    }
-    if (history[i].message.role === "user") {
-      break;
-    }
-  }
-  return "";
-}
-
-function turnWantsBrowser(history: RootState["session"]["history"]): boolean {
-  for (let i = history.length - 1; i >= 0; i--) {
-    const item = history[i];
-    if (item.message.role !== "user") {
-      continue;
-    }
-    if (/\b(browser|webpage|localhost|https?:\/\/)\b/i.test(renderChatMessage(item.message))) {
-      return true;
-    }
-    return (item.contextItems ?? []).some((entry) =>
-      /browser/i.test(entry.id.providerTitle),
-    );
-  }
-  return false;
-}
-
-function lastUserText(history: RootState["session"]["history"]): string {
-  for (let i = history.length - 1; i >= 0; i--) {
-    if (history[i].message.role === "user") {
-      return renderChatMessage(history[i].message);
-    }
-  }
-  return "";
-}
-
-function agentStoppedBeforeFinishing(state: RootState): boolean {
-  if (state.session.mode !== "agent") {
-    return false;
-  }
-  const history = state.session.history;
-  const todos = state.session.todos ?? [];
-  return shouldResumeAgentAfterIdleReply({
-    text: lastAssistantText(history),
-    lastUserText: lastUserText(history),
-    turnAlreadyUsedTools: userTurnAlreadyUsedTools(history),
-    hasOpenTodos: todos.some((todo) => todo.status !== "done"),
-  });
 }
 
 /**
@@ -393,43 +273,23 @@ export async function runAgentDriver({
       const state = getState();
       if (state.session.isStreaming && state.session.mode === "agent") {
         const history = state.session.history;
-        if (
-          lastAssistantToolsAllErrored(history) &&
-          failureResumes < MAX_FAILURE_RESUMES
-        ) {
-          failureResumes += 1;
+        const todos = state.session.todos ?? [];
+        const continuation = getAgentContinuationReason(history, todos, {
+          idle: idleResumes,
+          unfinished: unfinishedResumes,
+          failedTools: failureResumes,
+          unstarted: unstartedResumes,
+        });
+        if (continuation) {
+          switch (continuation) {
+            case "idle": idleResumes += 1; break;
+            case "unfinished": unfinishedResumes += 1; break;
+            case "failedTools": failureResumes += 1; break;
+            case "unstarted": unstartedResumes += 1; break;
+          }
           resumeAfterIdle = true;
           currentDepth += 1;
           continue;
-        }
-        if (
-          !userTurnHasSuccessfulTool(history) &&
-          userRequestedAutonomousCodebaseWork(lastUserText(history)) &&
-          unstartedResumes < MAX_UNSTARTED_RESUMES
-        ) {
-          unstartedResumes += 1;
-          resumeAfterIdle = true;
-          currentDepth += 1;
-          continue;
-        }
-        if (
-          !lastAssistantToolsAllErrored(history) &&
-          agentStoppedBeforeFinishing(state)
-        ) {
-          const text = lastAssistantText(state.session.history);
-          const unfinished = assistantReplyIsUnfinished(text);
-          if (unfinished && unfinishedResumes < MAX_UNFINISHED_RESUMES) {
-            unfinishedResumes += 1;
-            resumeAfterIdle = true;
-            currentDepth += 1;
-            continue;
-          }
-          if (!unfinished && idleResumes < MAX_IDLE_RESUMES) {
-            idleResumes += 1;
-            resumeAfterIdle = true;
-            currentDepth += 1;
-            continue;
-          }
         }
       }
 
@@ -494,9 +354,7 @@ async function runStreamModelTurnLocked({
       }
     }
   }
-  if (!turnWantsBrowser(state.session.history)) {
-    activeTools = activeTools.filter((tool) => tool.group !== BROWSER_TOOL_GROUP);
-  }
+  activeTools = filterToolsForTurn(activeTools, state.session.history);
 
   const useNativeTools = state.config.config.experimental
       ?.onlyUseSystemMessageTools

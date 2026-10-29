@@ -53,6 +53,7 @@ const baseConfig = {
     path.join(agentRoot, "packages"),
     ...packageNames.map((name) => path.join(agentRoot, "packages", name, "node_modules")),
   ],
+  minify: flags.includes("--minify"),
   sourcemap: flags.includes("--sourcemap"),
   loader: {
     // eslint-disable-next-line @typescript-eslint/naming-convention

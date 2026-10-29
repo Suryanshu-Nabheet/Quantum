@@ -119,8 +119,8 @@ export class AgentRuntime {
 		}
 	}
 
-	dispose(): void {
-		this.core.dispose();
+	async dispose(): Promise<void> {
 		this.ideEventHandlers.clear();
+		await this.core.dispose();
 	}
 }

@@ -12,7 +12,7 @@ import { ILanguageFeaturesService } from '../../../../../editor/common/services/
 import { InlineCompletion, InlineCompletions, InlineCompletionsProvider, InlineCompletionContext } from '../../../../../editor/common/languages.js';
 import { ITextModel } from '../../../../../editor/common/model.js';
 import { IWorkbenchContribution, WorkbenchPhase, registerWorkbenchContribution2 } from '../../../../common/contributions.js';
-import { IAgentNativeService } from './agentNativeService.js';
+import { IAgentNativeService } from '../common/agentNativeService.js';
 
 const PREFIX_LINES = 96;
 const SUFFIX_LINES = 48;
