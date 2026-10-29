@@ -48,9 +48,6 @@
     "core": "file:./core",
     "fetch": "file:./packages/fetch",
     "minisearch": "^7.0.0",
-    "monaco-vscode-textmate-theme-converter": "^0.1.7",
-    "ncp": "^2.0.0",
-    "svg-builder": "^2.0.0",
     "uuid": "^9.0.1"
   },
   "overrides": {

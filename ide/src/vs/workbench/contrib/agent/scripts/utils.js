@@ -1,7 +1,6 @@
 const fs = require("fs");
 const path = require("path");
 
-const ncp = require("ncp").ncp;
 const { rimrafSync } = require("rimraf");
 
 const agentDir = path.join(__dirname, "..");
@@ -80,17 +79,13 @@ async function copyOnnxRuntimeFromNodeModules(target) {
   const destBin = agentDistPath("bin");
   fs.mkdirSync(destBin, { recursive: true });
 
-  const copyPlatformArch = async (srcPath, destPath) => {
-    await new Promise((resolve, reject) => {
-      ncp(srcPath, destPath, { dereference: true }, (error) => {
-        if (error) {
-          console.warn("[info] Error copying onnxruntime-node files", error);
-          reject(error);
-        } else {
-          resolve();
-        }
-      });
-    });
+  const copyPlatformArch = (srcPath, destPath) => {
+    try {
+      fs.cpSync(srcPath, destPath, { recursive: true, dereference: true });
+    } catch (error) {
+      console.warn("[info] Error copying onnxruntime-node files", error);
+      throw error;
+    }
   };
 
   if (target) {
