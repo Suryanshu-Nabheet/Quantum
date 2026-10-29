@@ -276,6 +276,10 @@ class OpenIntegratedBrowserAction extends Action2 {
 			category: BrowserActionCategory,
 			icon: Codicon.globe,
 			f1: true,
+			keybinding: {
+				weight: KeybindingWeight.WorkbenchContrib,
+			mac: { primary: KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.KeyU }
+			},
 			menu: [
 				{
 					id: MenuId.EditorTitle,

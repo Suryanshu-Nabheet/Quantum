@@ -128,7 +128,10 @@ Registry.as<IViewsRegistry>(ViewContainerExtensions.ViewsRegistry).registerViews
 		mnemonicTitle: nls.localize({ key: 'miToggleIntegratedTerminal', comment: ['&& denotes a mnemonic'] }, "&&Terminal"),
 		keybindings: {
 			primary: KeyMod.CtrlCmd | KeyCode.Backquote,
-			mac: { primary: KeyMod.WinCtrl | KeyCode.Backquote }
+			mac: {
+				primary: KeyMod.CtrlCmd | KeyCode.KeyJ,
+				secondary: [KeyMod.WinCtrl | KeyCode.Backquote]
+			}
 		},
 		order: 3
 	}

@@ -70,6 +70,9 @@ export class OpenFolderAction extends Action2 {
 				},
 				win: {
 					primary: KeyChord(KeyMod.CtrlCmd | KeyCode.KeyK, KeyMod.CtrlCmd | KeyCode.KeyO)
+				},
+				mac: {
+					primary: KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.KeyA
 				}
 			}
 		});

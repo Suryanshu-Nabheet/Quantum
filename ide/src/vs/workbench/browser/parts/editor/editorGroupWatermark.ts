@@ -24,6 +24,7 @@ import { IHostService } from '../../../services/host/browser/host.js';
 interface WatermarkEntry {
 	readonly id: string;
 	readonly text: string;
+	readonly showWithoutKeybinding?: boolean;
 	readonly when?: {
 		native?: ContextKeyExpression;
 		web?: ContextKeyExpression;
@@ -42,6 +43,8 @@ const openRecent: WatermarkEntry = { text: localize('watermark.openRecent', "Ope
 const newUntitledFile: WatermarkEntry = { text: localize('watermark.newUntitledFile', "New Untitled Text File"), id: 'workbench.action.files.newUntitledFile' };
 const findInFiles: WatermarkEntry = { text: localize('watermark.findInFiles', "Find in Files"), id: 'workbench.action.findInFiles' };
 const toggleTerminal: WatermarkEntry = { text: localize({ key: 'watermark.toggleTerminal', comment: ['toggle is a verb here'] }, "Toggle Terminal"), id: 'workbench.action.terminal.toggleTerminal', when: { web: ContextKeyExpr.equals('terminalProcessSupported', true) } };
+const addRepository: WatermarkEntry = { text: localize('watermark.addRepository', "Add Repository"), id: 'workbench.action.files.openFolder' };
+const openBrowser: WatermarkEntry = { text: localize('watermark.openBrowser', "Open Browser"), id: 'workbench.action.browser.open', showWithoutKeybinding: true };
 const startDebugging: WatermarkEntry = { text: localize('watermark.startDebugging', "Start Debugging"), id: 'workbench.action.debug.start', when: { web: ContextKeyExpr.equals('terminalProcessSupported', true) } };
 const openSettings: WatermarkEntry = { text: localize('watermark.openSettings', "Open VS Code Settings"), id: 'workbench.action.openSettings' };
 
@@ -62,6 +65,8 @@ const workspaceEntries: WatermarkEntry[] = [
 	gotoFile,
 	findInFiles,
 	toggleTerminal,
+	addRepository,
+	openBrowser,
 ];
 
 const otherEntries: WatermarkEntry[] = [
@@ -307,7 +312,7 @@ export class EditorGroupWatermark extends Disposable {
 
 			for (const entry of entries) {
 				const keys = this.keybindingService.lookupKeybinding(entry.id);
-				if (!keys) {
+				if (!keys && !entry.showWithoutKeybinding) {
 					continue;
 				}
 
@@ -330,10 +335,11 @@ export class EditorGroupWatermark extends Disposable {
 				const dt = append(dl, $('dt'));
 				dt.textContent = entry.text;
 
-				const dd = append(dl, $('dd'));
-
-				const label = this.keybindingLabels.add(new KeybindingLabel(dd, OS, { renderUnboundKeybindings: true, ...defaultKeybindingLabelStyles }));
-				label.set(keys);
+				if (keys) {
+					const dd = append(dl, $('dd'));
+					const label = this.keybindingLabels.add(new KeybindingLabel(dd, OS, defaultKeybindingLabelStyles));
+					label.set(keys);
+				}
 			}
 		};
 
@@ -352,7 +358,7 @@ export class EditorGroupWatermark extends Disposable {
 				return !contextKey /* works without context */ || this.contextKeyService.contextMatchesRules(contextKey);
 			})
 			.filter(entry => !!CommandsRegistry.getCommand(entry.id))
-			.filter(entry => !!this.keybindingService.lookupKeybinding(entry.id));
+			.filter(entry => entry.showWithoutKeybinding || !!this.keybindingService.lookupKeybinding(entry.id));
 
 		return filteredEntries;
 	}
