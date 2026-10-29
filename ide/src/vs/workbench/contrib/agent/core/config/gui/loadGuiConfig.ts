@@ -104,8 +104,16 @@ export async function buildAgentConfigFromGui(options: {
   ideInfo: IdeInfo;
   uniqueId: string;
   llmLogger: ILLMLogger;
+  onProviderModelsChanged?: () => void;
 }): Promise<{ config: AgentConfig; errors: ConfigValidationError[] }> {
-  const { agentSettings, ide, ideInfo, uniqueId, llmLogger } = options;
+  const {
+    agentSettings,
+    ide,
+    ideInfo,
+    uniqueId,
+    llmLogger,
+    onProviderModelsChanged,
+  } = options;
 
   const localErrors: ConfigValidationError[] = [];
 
@@ -168,68 +176,93 @@ export async function buildAgentConfigFromGui(options: {
     }
   });
 
-  let warnAboutFreeTrial = false;
   const defaultModelRoles: ModelRole[] = [
     "chat",
     "apply",
     "edit",
     "autocomplete",
   ];
-  for (const model of config.models ?? []) {
-    model.roles = model.roles ?? defaultModelRoles;
-
-    if (model.provider === "free-trial") {
-      warnAboutFreeTrial = true;
+  const configuredModels = (config.models ?? []).map((model) => ({
+    ...model,
+    roles: model.roles ?? defaultModelRoles,
+  }));
+  const loadedModels: Array<{
+    model: (typeof configuredModels)[number];
+    llms: Awaited<ReturnType<typeof llmsFromModelConfig>>;
+    failed: boolean;
+    error?: unknown;
+  }> = new Array(configuredModels.length);
+  let nextModelIndex = 0;
+  const loadModelWorker = async () => {
+    while (nextModelIndex < configuredModels.length) {
+      const index = nextModelIndex++;
+      const model = configuredModels[index];
+      try {
+        loadedModels[index] = {
+          model,
+          llms: await llmsFromModelConfig({
+            model,
+            uniqueId,
+            llmLogger,
+            config: agentConfig,
+            onModelsChanged: onProviderModelsChanged,
+          }),
+          failed: false,
+        };
+      } catch (error) {
+        loadedModels[index] = { model, llms: [], error, failed: true };
+      }
     }
-    try {
-      const llms = await llmsFromModelConfig({
-        model,
-        uniqueId,
-        llmLogger,
-        config: agentConfig,
-      });
+  };
+  await Promise.all(
+    Array.from(
+      { length: Math.min(4, configuredModels.length) },
+      () => loadModelWorker(),
+    ),
+  );
 
-      if (model.roles?.includes("chat")) {
-        agentConfig.modelsByRole.chat.push(...llms);
-      }
-      if (model.roles?.includes("apply")) {
-        agentConfig.modelsByRole.apply.push(...llms);
-      }
-      if (model.roles?.includes("edit")) {
-        agentConfig.modelsByRole.edit.push(...llms);
-      }
-      if (model.roles?.includes("autocomplete")) {
-        agentConfig.modelsByRole.autocomplete.push(...llms);
-      }
-      if (model.roles?.includes("embed")) {
-        if (model.provider === "transformers.js") {
-          // Keep the ONNX/runtime dependency out of normal chat startup. It is
-          // only needed when a user explicitly configures local embeddings.
-          const { default: TransformersJsEmbeddingsProvider } = await import(
-            "../../llm/llms/TransformersJsEmbeddingsProvider"
-          );
-          agentConfig.modelsByRole.embed.push(
-            new TransformersJsEmbeddingsProvider(),
-          );
-        } else {
-          agentConfig.modelsByRole.embed.push(...llms);
-        }
-      }
-      if (model.roles?.includes("rerank")) {
-        agentConfig.modelsByRole.rerank.push(...llms);
-      }
-      if (model.roles?.includes("subagent")) {
-        agentConfig.modelsByRole.subagent.push(...llms);
-      }
-    } catch (e) {
+  for (const { model, llms, error, failed } of loadedModels) {
+    if (failed) {
       localErrors.push({
         fatal: false,
-        message: `Failed to load model:\nName: ${model.name}\nModel: ${model.model}\nProvider: ${model.provider}\n${e instanceof Error ? e.message : e}`,
+        message: `Failed to load model:\nName: ${model.name}\nModel: ${model.model}\nProvider: ${model.provider}\n${error instanceof Error ? error.message : error}`,
       });
+    }
+    if (model.roles?.includes("chat")) {
+      agentConfig.modelsByRole.chat.push(...llms);
+    }
+    if (model.roles?.includes("apply")) {
+      agentConfig.modelsByRole.apply.push(...llms);
+    }
+    if (model.roles?.includes("edit")) {
+      agentConfig.modelsByRole.edit.push(...llms);
+    }
+    if (model.roles?.includes("autocomplete")) {
+      agentConfig.modelsByRole.autocomplete.push(...llms);
+    }
+    if (model.roles?.includes("embed")) {
+      if (model.provider === "transformers.js") {
+        // Keep the ONNX/runtime dependency out of normal chat startup. It is
+        // only needed when a user explicitly configures local embeddings.
+        const { default: TransformersJsEmbeddingsProvider } = await import(
+          "../../llm/llms/TransformersJsEmbeddingsProvider"
+        );
+        agentConfig.modelsByRole.embed.push(
+          new TransformersJsEmbeddingsProvider(),
+        );
+      } else {
+        agentConfig.modelsByRole.embed.push(...llms);
+      }
+    }
+    if (model.roles?.includes("rerank")) {
+      agentConfig.modelsByRole.rerank.push(...llms);
+    }
+    if (model.roles?.includes("subagent")) {
+      agentConfig.modelsByRole.subagent.push(...llms);
     }
   }
 
-  if (warnAboutFreeTrial) {
+  if (config.models?.some((model) => model.provider === "free-trial")) {
     localErrors.push({
       fatal: false,
       message:
@@ -261,8 +294,16 @@ export async function loadAgentConfigFromGui(options: {
   uniqueId: string;
   llmLogger: ILLMLogger;
   overrideAgentSettings?: AgentSettings;
+  onProviderModelsChanged?: () => void;
 }): Promise<ConfigResult<AgentConfig>> {
-  const { ide, ideInfo, uniqueId, llmLogger, overrideAgentSettings } = options;
+  const {
+    ide,
+    ideInfo,
+    uniqueId,
+    llmLogger,
+    overrideAgentSettings,
+    onProviderModelsChanged,
+  } = options;
 
   if (!overrideAgentSettings) {
     await migrateLegacyGuiConfigIfNeeded(ide);
@@ -285,6 +326,7 @@ export async function loadAgentConfigFromGui(options: {
       ideInfo,
       uniqueId,
       llmLogger,
+      onProviderModelsChanged,
     });
 
   const sharedConfig = new GlobalContext().getSharedConfig();

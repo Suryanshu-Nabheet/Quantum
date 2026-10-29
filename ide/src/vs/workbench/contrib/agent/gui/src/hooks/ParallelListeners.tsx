@@ -1,4 +1,10 @@
-import { useCallback, useContext, useEffect, useRef } from "react";
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+} from "react";
 import { HostBridgeContext } from "../context/HostBridge";
 
 import { FromCoreProtocol } from "core/protocol";
@@ -119,7 +125,7 @@ function ParallelListeners() {
   );
 
   // Load config from the IDE
-  useEffect(() => {
+  useLayoutEffect(() => {
     let cancelled = false;
 
     async function initialLoadConfig() {

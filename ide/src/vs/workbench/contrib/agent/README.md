@@ -34,7 +34,7 @@ npm run watch      # includes agent esbuild watch
 |--------|---------|
 | `build-packages.js` | Build `packages/*` in dependency order → `out/agent-packages` |
 | `ensure-webview.js` | Build/copy GUI into `out/agent/webview/` |
-| `watch-gui.js` | Watch GUI; refresh `out/agent/webview/` (gulp `watch-agent`) |
+| `watch-gui.js` | Typecheck and rebuild GUI changes, then refresh `out/agent/webview/` under gulp `watch-agent` |
 | `watch-packages.js` | Watch local packages (gulp `watch-agent`) |
 | `esbuild.js` | Bundle native runtime worker and runtime into `out/agent/runtime/` |
 | `copy-native-assets.js` | Copy onnxruntime/tokenizers/workers into `out/agent` |
@@ -42,17 +42,11 @@ npm run watch      # includes agent esbuild watch
 
 Production agent build from here: `npm run build:agent`.
 
-## GUI live reload
+## GUI development and builds
 
-Default: `npm run watch` at the `ide/` root rebuilds the GUI into `out/agent/webview/` (no second terminal).
+Use the IDE's normal `npm run watch` command. Its `watch-agent` task watches the Agent GUI and copies completed bundles into `out/agent/webview/`, which the workbench loads. Reopen the Agent webview after a GUI rebuild to load the updated local bundle.
 
-Optional Vite HMR: set **Agent: Use Vite Gui Dev Server** to `true`, then from this directory:
-
-```bash
-npm run dev --prefix gui
-```
-
-GUI production build: `npm run build --prefix gui` → `out/agent-gui/`, copied by `ensure-webview.js` during `compile-agent`.
+`npm run compile-agent` checks GUI source timestamps and rebuilds stale output before copying it into the workbench webview. The GUI production build is `npm run build --prefix gui` → `out/agent-gui/`.
 
 ## Configuration
 

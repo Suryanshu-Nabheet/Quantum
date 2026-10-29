@@ -43,26 +43,38 @@ export default async function doLoadConfig(options: {
   llmLogger: ILLMLogger;
   overrideAgentSettings?: AgentSettings;
   profileId: string;
+  onProviderModelsChanged?: () => void;
 }): Promise<ConfigResult<AgentConfig>> {
-  const { ide, llmLogger, overrideAgentSettings, profileId } = options;
+  const {
+    ide,
+    llmLogger,
+    overrideAgentSettings,
+    profileId,
+    onProviderModelsChanged,
+  } = options;
 
-  const ideInfo = await ide.getIdeInfo();
-  const uniqueId = await ide.getUniqueId();
-  const ideSettings = await ide.getIdeSettings();
-
+  const [ideInfo, uniqueId, ideSettings] = await Promise.all([
+    ide.getIdeInfo(),
+    ide.getUniqueId(),
+    ide.getIdeSettings(),
+  ]);
 
   let newConfig: AgentConfig | undefined;
   let errors: ConfigValidationError[] | undefined;
   let configLoadInterrupted = false;
 
-  const result = await loadAgentConfigFromGui({
-    ide,
-    ideSettings,
-    ideInfo,
-    uniqueId,
-    llmLogger,
-    overrideAgentSettings,
-  });
+  const [result, { rules, errors: rulesErrors }] = await Promise.all([
+    loadAgentConfigFromGui({
+      ide,
+      ideSettings,
+      ideInfo,
+      uniqueId,
+      llmLogger,
+      overrideAgentSettings,
+      onProviderModelsChanged,
+    }),
+    loadRules(ide),
+  ]);
   newConfig = result.config;
   errors = result.errors;
   configLoadInterrupted = result.configLoadInterrupted;
@@ -75,7 +87,6 @@ export default async function doLoadConfig(options: {
   errors = [...(errors ?? [])];
 
   // Load rules and always include the RulesContextProvider
-  const { rules, errors: rulesErrors } = await loadRules(ide);
   errors.push(...rulesErrors);
   newConfig.rules.unshift(...rules);
 

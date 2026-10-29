@@ -41,8 +41,8 @@ function quantumFileIconsPlugin(): Plugin {
 function agentCopyWebviewPlugin(): Plugin {
   return {
     name: "agent-copy-webview",
-    closeBundle() {
-      if (process.env.AGENT_COPY_WEBVIEW !== "1") {
+    closeBundle(error) {
+      if (process.env.AGENT_COPY_WEBVIEW !== "1" || error) {
         return;
       }
       require("../scripts/utils").copyGuiDistToWebview();

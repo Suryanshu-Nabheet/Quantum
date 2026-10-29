@@ -15,6 +15,10 @@ const root = path.dirname(import.meta.dirname);
 const agentRoot = path.join(root, 'src/vs/workbench/contrib/agent');
 const agentPackagesOutRoot = path.join(root, 'out/agent-packages');
 const requiredAgentPackages = ['config-types', 'fetch', 'llm-info', 'agent-config', 'openai-adapters', 'terminal-security'];
+const agentChildProcesses = new Set<cp.ChildProcess>();
+const agentWatchRestartTimers = new Set<NodeJS.Timeout>();
+let agentWatchStopping = false;
+let agentWatchShutdownCode: number | undefined;
 
 function newestMtime(pathToCheck: string): number {
 	const stat = fs.statSync(pathToCheck);
@@ -110,8 +114,13 @@ function runNodeScript(scriptName: string, args: string[] = [], env: NodeJS.Proc
 			stdio: 'inherit',
 			env: { ...process.env, ...env },
 		});
+		agentChildProcesses.add(child);
 
 		child.on('error', reject);
+		child.once('close', () => {
+			agentChildProcesses.delete(child);
+			finishAgentWatchShutdown();
+		});
 		child.on('exit', code => {
 			if (code === 0) {
 				resolve();
@@ -132,38 +141,95 @@ function spawnWatchProcess(scriptName: string, label: string, args: string[] = [
 	});
 }
 
+function finishAgentWatchShutdown(): void {
+	if (agentWatchShutdownCode !== undefined && agentChildProcesses.size === 0) {
+		process.exit(agentWatchShutdownCode);
+	}
+}
+
+function stopAgentWatchers(signal: NodeJS.Signals, exitCode?: number): void {
+	if (agentWatchStopping) {
+		if (exitCode !== undefined) {
+			agentWatchShutdownCode = exitCode;
+			finishAgentWatchShutdown();
+		}
+		return;
+	}
+
+	agentWatchStopping = true;
+	agentWatchShutdownCode = exitCode;
+	for (const timer of agentWatchRestartTimers) {
+		clearTimeout(timer);
+	}
+	agentWatchRestartTimers.clear();
+	for (const child of agentChildProcesses) {
+		if (child.exitCode === null && child.signalCode === null) {
+			child.kill(signal);
+		}
+	}
+
+	const forceStopTimer = setTimeout(() => {
+		for (const child of agentChildProcesses) {
+			if (child.exitCode === null && child.signalCode === null) {
+				child.kill('SIGKILL');
+			}
+		}
+		finishAgentWatchShutdown();
+	}, 4_000);
+	forceStopTimer.unref();
+	finishAgentWatchShutdown();
+}
+
+process.once('SIGINT', () => stopAgentWatchers('SIGINT', 130));
+process.once('SIGTERM', () => stopAgentWatchers('SIGTERM', 143));
+
 /**
- * Keep agent sub-watchers alive. A single child exit must not fail the gulp
- * stream — that previously made npm-run-all abort transpile/client/extensions
- * and left orphaned esbuild/vite processes with a stale out/.
+ * Keep Agent build watchers alive with backoff, and retain ownership of their
+ * processes so the IDE watch task can shut them down cleanly.
  */
 function keepWatchProcessAlive(scriptName: string, label: string, args: string[] = []): void {
 	let delayMs = 1_000;
 	const maxDelayMs = 30_000;
 
 	const launch = () => {
+		if (agentWatchStopping) {
+			return;
+		}
+
 		const child = spawnWatchProcess(scriptName, label, args);
+		agentChildProcesses.add(child);
+		let stableTimer: NodeJS.Timeout | undefined;
 		child.on('error', err => {
 			fancyLog.error(`[agent] ${label} watch failed to start: ${err}`);
-			scheduleRestart();
 		});
-		child.on('exit', (code, signal) => {
+		child.once('close', (code, signal) => {
+			agentChildProcesses.delete(child);
+			if (agentWatchStopping) {
+				finishAgentWatchShutdown();
+				return;
+			}
+			if (stableTimer) {
+				clearTimeout(stableTimer);
+			}
 			const reason = signal ? `signal ${signal}` : `code ${code ?? 'unknown'}`;
 			fancyLog.warn(`[agent] ${label} watch exited (${reason}); restarting in ${delayMs}ms`);
 			scheduleRestart();
 		});
+		stableTimer = setTimeout(() => {
+			delayMs = 1_000;
+		}, 15_000);
+		stableTimer.unref();
 	};
 
 	const scheduleRestart = () => {
 		const wait = delayMs;
 		delayMs = Math.min(maxDelayMs, Math.round(delayMs * 1.5));
-		setTimeout(() => {
+		const timer = setTimeout(() => {
+			agentWatchRestartTimers.delete(timer);
 			launch();
-			// Reset backoff after a stable run.
-			setTimeout(() => {
-				delayMs = 1_000;
-			}, 15_000);
 		}, wait);
+		timer.unref();
+		agentWatchRestartTimers.add(timer);
 	};
 
 	launch();
@@ -182,6 +248,9 @@ export async function compileAgentRuntime(): Promise<void> {
 
 function watchAgentRuntime(): NodeJS.ReadWriteStream {
 	const stream = es.through();
+	agentWatchStopping = false;
+	agentWatchShutdownCode = undefined;
+	stream.once('close', () => stopAgentWatchers('SIGTERM'));
 
 	void (async () => {
 		try {
@@ -192,7 +261,7 @@ function watchAgentRuntime(): NodeJS.ReadWriteStream {
 			await runNodeScript('ensure-webview.js');
 			await runNodeScript('copy-native-assets.js');
 
-			fancyLog('[agent] watching native runtime (esbuild) + GUI (vite) + packages + native assets');
+			fancyLog('[agent] watching native runtime (esbuild) + GUI (typecheck and Vite build) + packages + native assets');
 
 			keepWatchProcessAlive('esbuild.js', 'native runtime', ['--sourcemap', '--watch']);
 			keepWatchProcessAlive('watch-gui.js', 'GUI');

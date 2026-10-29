@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import {
   mergeRequestOptions,
   ModelConfig,
@@ -15,6 +17,122 @@ import {
 // Model discovery is optional enrichment. It must never hold the whole agent
 // startup hostage when a local server is down or a remote endpoint is slow.
 const MODEL_DISCOVERY_TIMEOUT_MS = 1_500;
+const LOCAL_MODEL_PROVIDERS = new Set(["ollama", "vllm"]);
+const MAX_CONCURRENT_MODEL_DISCOVERIES = 4;
+const discoveredModelNames = new Map<string, string[]>();
+const modelDiscoveryInFlight = new Map<string, Promise<void>>();
+const modelDiscoveryQueue: Array<() => void> = [];
+let activeModelDiscoveries = 0;
+
+async function acquireModelDiscoverySlot(): Promise<void> {
+  if (activeModelDiscoveries >= MAX_CONCURRENT_MODEL_DISCOVERIES) {
+    await new Promise<void>((resolve) => modelDiscoveryQueue.push(resolve));
+    return;
+  }
+  activeModelDiscoveries++;
+}
+
+function releaseModelDiscoverySlot(): void {
+  const next = modelDiscoveryQueue.shift();
+  if (next) {
+    next();
+  } else {
+    activeModelDiscoveries--;
+  }
+}
+
+function modelDiscoveryKey(model: ModelConfig, config: AgentConfig): string {
+  return createHash("sha256")
+    .update(
+      JSON.stringify({
+        provider: model.provider.toLowerCase(),
+        apiBase: model.apiBase,
+        apiKey: model.apiKey,
+        env: model.env,
+        modelRequestOptions: model.requestOptions,
+        requestOptions: config.requestOptions,
+      }),
+    )
+    .digest("hex");
+}
+
+function sameModelNames(left: string[], right: string[]): boolean {
+  return (
+    left.length === right.length &&
+    left.every((name, index) => name === right[index])
+  );
+}
+
+function refreshModelNamesInBackground({
+  key,
+  llm,
+  model,
+  fallbackNames,
+  onModelsChanged,
+}: {
+  key: string;
+  llm: BaseLLM;
+  model: ModelConfig;
+  fallbackNames: string[];
+  onModelsChanged?: () => void;
+}): void {
+  if (modelDiscoveryInFlight.has(key)) {
+    return;
+  }
+
+  const isLocalProvider = LOCAL_MODEL_PROVIDERS.has(
+    model.provider.toLowerCase(),
+  );
+  const refresh = (async () => {
+    await acquireModelDiscoverySlot();
+    try {
+      let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+      const timeout = new Promise<never>((_, reject) => {
+        timeoutHandle = setTimeout(
+          () => reject(new Error("Model discovery timed out")),
+          MODEL_DISCOVERY_TIMEOUT_MS,
+        );
+      });
+
+      let modelNames: string[];
+      try {
+        modelNames = filterListedModelNames(
+          model.provider,
+          await Promise.race([llm.listModels(), timeout]),
+        );
+      } catch (error) {
+        console.debug("Model discovery unavailable: ", error);
+        if (isLocalProvider && discoveredModelNames.delete(key)) {
+          onModelsChanged?.();
+        }
+        return;
+      } finally {
+        if (timeoutHandle) {
+          clearTimeout(timeoutHandle);
+        }
+      }
+
+      if (modelNames.length === 0) {
+        if (isLocalProvider && discoveredModelNames.delete(key)) {
+          onModelsChanged?.();
+        }
+        return;
+      }
+
+      const previousNames = discoveredModelNames.get(key) ?? fallbackNames;
+      discoveredModelNames.set(key, modelNames);
+      if (!sameModelNames(previousNames, modelNames)) {
+        onModelsChanged?.();
+      }
+    } finally {
+      releaseModelDiscoverySlot();
+    }
+  })().finally(() => {
+    modelDiscoveryInFlight.delete(key);
+  });
+
+  modelDiscoveryInFlight.set(key, refresh);
+}
 
 async function modelConfigToBaseLLM({
   model,
@@ -192,41 +310,28 @@ async function autodetectModels({
   uniqueId,
   llmLogger,
   config,
+  onModelsChanged,
 }: {
   llm: BaseLLM;
   model: ModelConfig;
   uniqueId: string;
   llmLogger: ILLMLogger;
   config: AgentConfig;
+  onModelsChanged?: () => void;
 }): Promise<BaseLLM[]> {
-  let modelNames: string[] = [];
-  try {
-    let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
-    const timeout = new Promise<never>((_, reject) => {
-      timeoutHandle = setTimeout(
-        () => reject(new Error("Model discovery timed out")),
-        MODEL_DISCOVERY_TIMEOUT_MS,
-      );
-    });
-    try {
-      modelNames = filterListedModelNames(
-        model.provider,
-        await Promise.race([llm.listModels(), timeout]),
-      );
-    } finally {
-      if (timeoutHandle) {
-        clearTimeout(timeoutHandle);
-      }
-    }
-  } catch (e) {
-    // Keep configuration responsive. The catalog below still provides known
-    // models, while an explicit model-list request can retry discovery later.
-    console.debug("Model discovery unavailable: ", e);
-  }
+  const key = modelDiscoveryKey(model, config);
+  const fallbackNames = catalogModelNamesForProvider(model.provider);
+  const modelNames = discoveredModelNames.get(key) ?? fallbackNames;
 
-  if (modelNames.length === 0) {
-    modelNames = catalogModelNamesForProvider(model.provider);
-  }
+  // Live provider discovery is optional enrichment. Return saved/catalog data
+  // immediately, then reload config only if the live list changes.
+  refreshModelNamesInBackground({
+    key,
+    llm,
+    model,
+    fallbackNames,
+    onModelsChanged,
+  });
 
   if (modelNames.length === 0) {
     return [];
@@ -246,11 +351,13 @@ export async function llmsFromModelConfig({
   uniqueId,
   llmLogger,
   config,
+  onModelsChanged,
 }: {
   model: ModelConfig;
   uniqueId: string;
   llmLogger: ILLMLogger;
   config: AgentConfig;
+  onModelsChanged?: () => void;
 }): Promise<BaseLLM[]> {
   const baseLlm = await modelConfigToBaseLLM({
     model,
@@ -269,6 +376,7 @@ export async function llmsFromModelConfig({
       uniqueId,
       llmLogger,
       config,
+      onModelsChanged,
     });
     return models;
   } else {

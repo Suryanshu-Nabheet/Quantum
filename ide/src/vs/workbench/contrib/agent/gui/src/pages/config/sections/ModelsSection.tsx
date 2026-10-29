@@ -1,6 +1,6 @@
 import { ModelRole } from "agent-config";
 import { ModelDescription } from "core";
-import { useContext, useMemo } from "react";
+import { useContext, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ConfirmationDialog from "../../../components/dialogs/ConfirmationDialog";
 import { HostBridgeContext } from "../../../context/HostBridge";
@@ -33,13 +33,16 @@ export function ModelsSection() {
   const hostBridge = useContext(HostBridgeContext);
   const navigate = useNavigate();
   const config = useAppSelector((state) => state.config.config);
+  const [pendingConfiguredModels, setPendingConfiguredModels] = useState<
+    ModelDescription[]
+  >([]);
   const configuredProviders = useMemo(() => {
     const models = uniqueModelsByTitle(config.modelsByRole);
     return includeEmptyConfiguredProviders(
       groupModelsByProvider(models),
-      config.configuredModels,
+      [...(config.configuredModels ?? []), ...pendingConfiguredModels],
     );
-  }, [config.configuredModels, config.modelsByRole]);
+  }, [config.configuredModels, config.modelsByRole, pendingConfiguredModels]);
 
   const openConfigureModelDialog = useConfigureModelDialog();
 
@@ -50,7 +53,10 @@ export function ModelsSection() {
         <AddModelForm
           roles={DEFAULT_CHAT_MODEL_ROLES}
           formTitle="Add provider"
-          onDone={() => {
+          onDone={(addedModel) => {
+            if (addedModel) {
+              setPendingConfiguredModels((current) => [...current, addedModel]);
+            }
             dispatch(setShowDialog(false));
           }}
         />,
@@ -74,6 +80,14 @@ export function ModelsSection() {
                     ? group.models.map((m) => m.title)
                     : [group.credentialModel.title],
               });
+              setPendingConfiguredModels((current) =>
+                current.filter(
+                  (model) =>
+                    (model.underlyingProviderName || model.provider || "unknown")
+                      .trim()
+                      .toLowerCase() !== group.providerId,
+                ),
+              );
             } catch (error) {
               console.error("Failed to delete provider:", error);
             }

@@ -28,6 +28,21 @@ type ConfigUpdateFunction = (payload: ConfigResult<AgentConfig>) => void;
 
 export class ConfigHandler {
   private readonly globalContext = new GlobalContext();
+  private isDisposed = false;
+  private providerModelsReloadTimer: ReturnType<typeof setTimeout> | undefined;
+  private readonly onProviderModelsChanged = () => {
+    if (this.isDisposed || this.providerModelsReloadTimer) {
+      return;
+    }
+    this.providerModelsReloadTimer = setTimeout(() => {
+      this.providerModelsReloadTimer = undefined;
+      void this.reloadConfig("Provider model discovery updated").catch(
+        (error) => {
+          Logger.error("Failed to reload config after model discovery:", error);
+        },
+      );
+    }, 50);
+  };
   private globalLocalProfileManager: ProfileLifecycleManager;
 
   public profiles: ProfileLifecycleManager[] = [];
@@ -56,10 +71,7 @@ export class ConfigHandler {
   ) {
 
     // This profile manager will always be available
-    this.globalLocalProfileManager = new ProfileLifecycleManager(
-      new LocalProfileLoader(ide, this.llmLogger),
-      this.ide,
-    );
+    this.globalLocalProfileManager = this.createGlobalLocalProfileManager();
 
     this.currentProfile = null;
     this.profiles = [];
@@ -73,6 +85,18 @@ export class ConfigHandler {
   }
 
   private workspaceDirs: string[] | null = null;
+
+  private createGlobalLocalProfileManager(): ProfileLifecycleManager {
+    return new ProfileLifecycleManager(
+      new LocalProfileLoader(
+        this.ide,
+        this.llmLogger,
+        undefined,
+        this.onProviderModelsChanged,
+      ),
+      this.ide,
+    );
+  }
 
   async getWorkspaceId() {
     if (!this.workspaceDirs) {
@@ -99,10 +123,7 @@ export class ConfigHandler {
     const signal = this.cascadeAbortController.signal;
     this.workspaceDirs = null; 
 
-    this.globalLocalProfileManager = new ProfileLifecycleManager(
-      new LocalProfileLoader(this.ide, this.llmLogger),
-      this.ide,
-    );
+    this.globalLocalProfileManager = this.createGlobalLocalProfileManager();
 
     try {
       const localProfiles = await this.getLocalProfiles({
@@ -296,6 +317,11 @@ export class ConfigHandler {
   }
 
   dispose(): void {
+    this.isDisposed = true;
+    if (this.providerModelsReloadTimer) {
+      clearTimeout(this.providerModelsReloadTimer);
+      this.providerModelsReloadTimer = undefined;
+    }
     this.abortCascade();
     this.initializationPromise = undefined;
     this.pendingReload = undefined;

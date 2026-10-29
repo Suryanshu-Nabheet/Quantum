@@ -4,8 +4,8 @@
  *
  * Why this exists:
  * - npm-run-all2 aborts *all* parallel scripts when one exits non-zero.
- * - gulp watch-agent can fail/exit while leaving orphan esbuild/vite children,
- *   which leaves `npm run watch` looking "alive" while out/ stops updating.
+ * - The Agent gulp task owns and shuts down its esbuild/Vite/package children,
+ *   so a restarted watch-agent does not compete with orphaned stale watchers.
  *
  * This supervisor:
  * - Runs transpile / typecheck / extensions / agent watches in parallel

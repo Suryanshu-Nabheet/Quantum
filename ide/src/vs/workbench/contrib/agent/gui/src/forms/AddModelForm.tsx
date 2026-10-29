@@ -18,7 +18,7 @@ import {
 import { CONFIG_ROUTES } from "../util/navigation";
 
 export interface AddModelFormProps {
-  onDone: () => void;
+  onDone: (addedModel?: ModelDescription) => void;
   roles?: ModelRole[];
   formTitle?: string;
   existingModel?: ModelDescription;
@@ -216,7 +216,7 @@ export function AddModelForm({
       await hostBridge.request("config/addModel", { model, roles });
     }
 
-    onDone();
+    onDone(existingModel ? undefined : (model as ModelDescription));
   }
 
   function onClickDownloadProvider() {

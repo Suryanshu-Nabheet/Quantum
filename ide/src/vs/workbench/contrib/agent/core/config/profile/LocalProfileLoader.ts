@@ -18,6 +18,7 @@ export default class LocalProfileLoader implements IProfileLoader {
     private overrideSettingsFile?:
       | { path: string; content: string }
       | undefined,
+    private onProviderModelsChanged?: () => void,
   ) {
     const description: ProfileDescription = {
       id: overrideSettingsFile?.path ?? LocalProfileLoader.ID,
@@ -40,6 +41,7 @@ export default class LocalProfileLoader implements IProfileLoader {
       ide: this.ide,
       llmLogger: this.llmLogger,
       profileId: this.description.id,
+      onProviderModelsChanged: this.onProviderModelsChanged,
     });
 
     this.description.errors = result.errors;

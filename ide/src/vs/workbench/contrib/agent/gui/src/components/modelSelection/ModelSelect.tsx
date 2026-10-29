@@ -170,7 +170,6 @@ function ModelSelect() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const optionElsRef = useRef<Map<number, HTMLElement>>(new Map());
   const pickerOpenRef = useRef(false);
-  const [options, setOptions] = useState<Option[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [highlightIndex, setHighlightIndex] = useState(0);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -190,8 +189,8 @@ function ModelSelect() {
     allModels = config.modelsByRole.chat;
   }
 
-  useEffect(() => {
-    setOptions(
+  const options = useMemo(
+    () =>
       allModels.map((model) => {
         const providerLabel = getModelPickerProviderLabel(model);
         const modelId = getModelDisplayId(model);
@@ -206,8 +205,8 @@ function ModelSelect() {
           rawModelSlug,
         };
       }),
-    );
-  }, [allModels]);
+    [allModels],
+  );
 
   const sortedOptions = useMemo(() => {
     const alphaSort = [...options].sort((a, b) =>
@@ -499,6 +498,7 @@ function ModelSelect() {
   }
 
   const hasNoModels = allModels?.length === 0;
+  const hasConfiguredProviders = (config.configuredModels?.length ?? 0) > 0;
   const meta = getMetaKeyLabel();
 
   return (
@@ -583,7 +583,9 @@ function ModelSelect() {
                 </div>
               ) : hasNoModels ? (
                 <div className="text-description-muted px-2 py-4 text-center text-sm">
-                  No providers configured
+                  {hasConfiguredProviders
+                    ? "No models available from configured providers"
+                    : "No providers configured"}
                 </div>
               ) : filteredOptions.length === 0 ? (
                 <div className="text-description-muted px-2 py-4 text-center text-sm">
