@@ -11,7 +11,8 @@ import {
 } from '../../../../base/browser/dom.js';
 import { mainWindow } from '../../../../base/browser/window.js';
 import { localize } from '../../../../nls.js';
-import { IOnboardingService, IOnboardingStep } from '../common/onboardingTypes.js';
+import { IOnboardingService } from '../common/onboardingTypes.js';
+import { IOnboardingStep } from './onboardingStep.js';
 import { WelcomeStep } from './components/WelcomeStep.js';
 import { IWorkbenchLayoutService } from '../../../services/layout/browser/layoutService.js';
 import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';

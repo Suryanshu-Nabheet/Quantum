@@ -9,7 +9,7 @@ import { localize } from '../../../../../nls.js';
 import { OS, OperatingSystem } from '../../../../../base/common/platform.js';
 import { UILabelProvider } from '../../../../../base/common/keybindingLabels.js';
 import { IProductService } from '../../../../../platform/product/common/productService.js';
-import { IOnboardingStep } from '../../common/onboardingTypes.js';
+import { IOnboardingStep } from '../onboardingStep.js';
 import {
 	TabFeaturePreview,
 	AgentFeaturePreview,

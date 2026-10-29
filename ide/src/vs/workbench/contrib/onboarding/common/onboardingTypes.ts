@@ -5,7 +5,6 @@
 
 
 import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
-import { IDisposable } from '../../../../base/common/lifecycle.js';
 import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
 
 export const QUANTUM_ONBOARDING_CONFIGURATION_KEY = 'workbench.welcomePage.experimentalOnboarding';
@@ -37,15 +36,6 @@ export interface IOnboardingState {
 	theme?: 'light' | 'dark';
 	layout?: 'sidebar' | 'floating';
 	density?: 'compact' | 'comfortable';
-}
-
-export interface IOnboardingStep extends IDisposable {
-	readonly element: HTMLElement;
-	readonly title?: string;
-	readonly canProceed?: boolean;
-	updateState?(state: IOnboardingState): void;
-	onEnter?(): void;
-	onExit?(): void;
 }
 
 export interface IFeatureCard {

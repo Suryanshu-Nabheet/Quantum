@@ -6,7 +6,7 @@
 import { Disposable } from '../../../../../base/common/lifecycle.js';
 import { $, append, addDisposableListener } from '../../../../../base/browser/dom.js';
 import { localize } from '../../../../../nls.js';
-import { IOnboardingStep } from '../../common/onboardingTypes.js';
+import { IOnboardingStep } from '../onboardingStep.js';
 import { IWorkbenchThemeService } from '../../../../services/themes/common/workbenchThemeService.js';
 
 interface IThemeOption {
