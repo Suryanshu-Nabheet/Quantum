@@ -1,40 +1,30 @@
-import { DocumentTextIcon } from "@heroicons/react/24/outline";
-import { ToolCallState } from "core";
+import { ArrowDownTrayIcon } from "@heroicons/react/24/outline";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import type { AgentPlanViewData, ToolCallState } from "core";
 import { BuiltInToolNames } from "core/tools/builtIn";
 import {
-  AgentPlan,
   formatPlanBuildMessage,
   formatPlanDocument,
-  formatStreamingPlan,
   historyHasResearch,
   normalizePlan,
   planFileName,
   planToTodos,
 } from "core/tools/implementations/createPlan";
-import { CSSProperties, useContext } from "react";
-import StyledMarkdownPreview from "../../../components/StyledMarkdownPreview";
+import type { AgentPlan } from "core/tools/implementations/createPlan";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { HostBridgeContext } from "../../../context/HostBridge";
+import { getMetaKeyLabel, isMetaEquivalentKeyPressed } from "../../../util";
 import { useAppDispatch, useAppSelector } from "../../../redux/hooks";
-import { setMode, setPlanBrief, setTodos } from "../../../redux/slices/sessionSlice";
+import {
+  setMode,
+  setPlanBrief,
+  setTodos,
+} from "../../../redux/slices/sessionSlice";
 import { streamResponseThunk } from "../../../redux/thunks/streamResponse";
-
-const planActionStyle: CSSProperties = {
-  boxSizing: "border-box",
-  width: 72,
-  height: 28,
-  margin: 0,
-  padding: 0,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: 12,
-  lineHeight: "16px",
-  fontWeight: 500,
-  fontFamily: "system-ui, -apple-system, sans-serif",
-  borderRadius: 6,
-  borderWidth: 1,
-  borderStyle: "solid",
-};
+import { ShinyLoading } from "../../../components/mainInput/ShinyLoading";
+import { TodoStatusIcon } from "../../../components/ui/task-list";
+import { Button } from "../../../components/ui/Button";
 
 function BuildButton({
   disabled,
@@ -44,23 +34,160 @@ function BuildButton({
   onClick: () => void;
 }) {
   return (
-    <button
+    <Button
       type="button"
+      variant="primary"
+      size="lg"
       disabled={disabled}
       onClick={onClick}
-      style={{
-        ...planActionStyle,
-        width: "auto",
-        padding: "0 12px",
-        cursor: disabled ? "default" : "pointer",
-        opacity: disabled ? 0.5 : 1,
-        background: "var(--vscode-button-background, #2c5aa0)",
-        color: "var(--vscode-button-foreground, #ffffff)",
-        borderColor: "var(--vscode-button-background, #2c5aa0)",
+      aria-keyshortcuts={`${getMetaKeyLabel() === "⌘" ? "Meta" : "Control"}+Enter`}
+      onKeyDown={(event) => {
+        if (
+          event.key === "Enter" &&
+          isMetaEquivalentKeyPressed(event) &&
+          !event.altKey &&
+          !event.shiftKey
+        ) {
+          event.preventDefault();
+          event.stopPropagation();
+          onClick();
+        }
       }}
+      className="my-0 inline-flex h-7 items-center gap-2 px-3 py-1 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
     >
-      Build
-    </button>
+      <span>Build</span>
+      <span className="whitespace-nowrap text-[10px] font-normal opacity-80">
+        {getMetaKeyLabel()}↵
+      </span>
+    </Button>
+  );
+}
+
+function PlanMarkdown({
+  source,
+  compact = false,
+}: {
+  source: string;
+  compact?: boolean;
+}) {
+  return (
+    <div
+      className={`${compact ? "text-[13px] leading-5" : "text-foreground text-sm leading-relaxed"} min-w-0`}
+    >
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          p: ({ children }) => (
+            <p className={compact ? "m-0" : "my-2 first:mt-0 last:mb-0"}>
+              {children}
+            </p>
+          ),
+          h1: ({ children }) => (
+            <h1 className="text-foreground mb-1 mt-2 text-base font-semibold leading-6">
+              {children}
+            </h1>
+          ),
+          h2: ({ children }) => (
+            <h2 className="text-foreground mb-1 mt-2 text-sm font-semibold leading-5">
+              {children}
+            </h2>
+          ),
+          h3: ({ children }) => (
+            <h3 className="text-foreground mb-1 mt-2 text-sm font-medium leading-5">
+              {children}
+            </h3>
+          ),
+          ul: ({ children }) => (
+            <ul className="my-1 list-disc space-y-0.5 pl-5">{children}</ul>
+          ),
+          ol: ({ children }) => (
+            <ol className="my-1 list-decimal space-y-0.5 pl-5">{children}</ol>
+          ),
+          blockquote: ({ children }) => (
+            <blockquote className="my-2 border-l-2 border-command-border pl-3">
+              {children}
+            </blockquote>
+          ),
+          pre: ({ children }) => (
+            <pre
+              className="my-2 max-w-full overflow-x-auto rounded-md px-3 py-2"
+              style={{
+                backgroundColor: "var(--vscode-textCodeBlock-background)",
+              }}
+            >
+              {children}
+            </pre>
+          ),
+          code: ({ children }) => (
+            <code className="rounded-sm px-1 font-mono text-[0.9em]">
+              {children}
+            </code>
+          ),
+          a: ({ href, children }) => (
+            <a
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-link hover:underline"
+            >
+              {children}
+            </a>
+          ),
+        }}
+      >
+        {source}
+      </ReactMarkdown>
+    </div>
+  );
+}
+
+async function findAvailablePlanPath(
+  root: string,
+  fileName: string,
+  fileExists: (path: string) => Promise<boolean>,
+): Promise<{ path: string; fileName: string }> {
+  const suffix = ".plan.md";
+  const stem = fileName.endsWith(suffix)
+    ? fileName.slice(0, -suffix.length)
+    : fileName;
+  const normalizedRoot = root.replace(/\/+$/, "");
+  const separator = normalizedRoot.endsWith(":") ? "///" : "/";
+  for (let index = 0; index < 1000; index++) {
+    const candidateName =
+      index === 0 ? fileName : `${stem}-${index + 1}${suffix}`;
+    const path = `${normalizedRoot}${separator}${candidateName}`;
+    if (!(await fileExists(path))) {
+      return { path, fileName: candidateName };
+    }
+  }
+  throw new Error(
+    "Could not find an available plan filename in the workspace.",
+  );
+}
+
+function PlanTask({
+  text,
+  status,
+}: {
+  text: string;
+  status: AgentPlanViewData["todos"][number]["status"];
+}) {
+  const statusClass =
+    status === "done"
+      ? "tdl-done"
+      : status === "in_progress"
+        ? "tdl-active"
+        : "";
+  return (
+    <li
+      className={`tdl-item ${statusClass}`}
+      style={{ color: "var(--vscode-foreground, #e6e6e6)" }}
+    >
+      <TodoStatusIcon status={status} />
+      <div className="tdl-label min-w-0 flex-1">
+        <PlanMarkdown source={text} compact />
+      </div>
+    </li>
   );
 }
 
@@ -74,7 +201,9 @@ function readPlan(toolCallState: ToolCallState): AgentPlan | undefined {
     // Arguments are still streaming or invalid.
   }
   try {
-    return normalizePlan(JSON.parse(toolCallState.toolCall.function.arguments || "{}"));
+    return normalizePlan(
+      JSON.parse(toolCallState.toolCall.function.arguments || "{}"),
+    );
   } catch {
     return undefined;
   }
@@ -82,15 +211,17 @@ function readPlan(toolCallState: ToolCallState): AgentPlan | undefined {
 
 export function PlanCard({
   toolCallState,
-  historyIndex,
   alongsideResearch,
 }: {
   toolCallState: ToolCallState;
-  historyIndex: number;
   alongsideResearch: boolean;
 }) {
   const dispatch = useAppDispatch();
   const hostBridge = useContext(HostBridgeContext);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const sessionId = useAppSelector((state) => state.session.id);
+  const planBrief = useAppSelector((state) => state.session.planBrief);
+  const todos = useAppSelector((state) => state.session.todos);
   const isStreaming = useAppSelector((state) => state.session.isStreaming);
   const researched = useAppSelector((state) =>
     historyHasResearch(
@@ -122,26 +253,101 @@ export function PlanCard({
     }
     return lastId === toolCallState.toolCallId;
   });
-  const plan = readPlan(toolCallState);
+  const plan = useMemo(() => readPlan(toolCallState), [toolCallState]);
   const ready = toolCallState.status === "done" && !!plan && isLastReadyPlan;
-  const streaming =
-    toolCallState.status === "generating" && !alongsideResearch && researched
-      ? formatStreamingPlan(toolCallState.parsedArgs)
-      : "";
-  if (!ready && !streaming) {
+  const isPlanning =
+    (toolCallState.status === "generating" ||
+      toolCallState.status === "calling") &&
+    !alongsideResearch &&
+    researched;
+  const planData = useMemo<AgentPlanViewData | undefined>(() => {
+    if (!plan || !isLastReadyPlan) return undefined;
+    const isCurrentPlan = planBrief?.sourceToolCallId
+      ? planBrief.sourceToolCallId === toolCallState.toolCallId
+      : planBrief?.title === plan.title;
+    const sourceTodos =
+      isCurrentPlan && todos.length
+        ? todos
+        : planToTodos(plan).map((todo) => ({
+            ...todo,
+            status: "pending" as const,
+          }));
+    return {
+      sessionId,
+      title: plan.title,
+      overview: plan.overview,
+      approach: plan.approach,
+      todos: sourceTodos.map((todo) => ({
+        id: todo.id,
+        text: todo.text,
+        status: todo.status,
+      })),
+      isBuilding: isCurrentPlan && isStreaming,
+    };
+  }, [
+    isLastReadyPlan,
+    isStreaming,
+    plan,
+    planBrief,
+    sessionId,
+    todos,
+    toolCallState.toolCallId,
+  ]);
+
+  useEffect(() => {
+    if (planData) {
+      void hostBridge.ide.updateAgentPlan?.(planData);
+    }
+  }, [hostBridge.ide, planData]);
+
+  if (!ready && !isPlanning) {
     return null;
   }
-  const title = plan?.title ?? "Plan";
 
   const view = () => {
-    if (!plan) {
+    if (!planData) {
       return;
     }
-    void hostBridge.ide.showVirtualFile(
-      planFileName(plan.title),
-      formatPlanDocument(plan),
-      true,
-    );
+    void hostBridge.ide.openAgentPlan?.(planData);
+  };
+
+  const download = async () => {
+    if (!plan || !planData || isDownloading) {
+      return;
+    }
+    setIsDownloading(true);
+    try {
+      const workspaceDirs = await hostBridge.ide.getWorkspaceDirs();
+      const workspaceRoot = workspaceDirs[0];
+      if (!workspaceRoot) {
+        await hostBridge.ide.showToast(
+          "warning",
+          "Open a project folder before saving this plan.",
+        );
+        return;
+      }
+      const target = await findAvailablePlanPath(
+        workspaceRoot,
+        planFileName(plan.title),
+        (path) => hostBridge.ide.fileExists(path),
+      );
+      await hostBridge.ide.writeFile(
+        target.path,
+        formatPlanDocument(plan, planData.todos),
+      );
+      await hostBridge.ide.showToast(
+        "info",
+        `Plan saved to ${target.fileName}`,
+      );
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      await hostBridge.ide.showToast(
+        "error",
+        `Could not save the plan: ${detail}`,
+      );
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const build = () => {
@@ -151,6 +357,7 @@ export function PlanCard({
     dispatch(setMode("agent"));
     dispatch(
       setPlanBrief({
+        sourceToolCallId: toolCallState.toolCallId,
         title: plan.title,
         overview: plan.overview,
         approach: plan.approach,
@@ -174,65 +381,75 @@ export function PlanCard({
   };
 
   if (!ready) {
-    return (
-      <div className="mt-2 min-w-0">
-        <StyledMarkdownPreview
-          isRenderingInStepContainer
-          disableManualApply
-          source={streaming}
-          itemIndex={historyIndex}
-        />
-      </div>
-    );
+    return <ShinyLoading status="Creating plan..." />;
   }
-
+  if (!plan || !planData) {
+    return null;
+  }
   return (
-    <div className="mt-2 flex min-w-0 flex-col gap-1.5">
-      <div className="text-description text-xs">Prepared plan</div>
-    <div className="border-command-border bg-input flex min-w-0 flex-col gap-2 rounded-default border border-solid px-3 py-2.5">
-      <div className="text-description flex min-w-0 items-center gap-1.5 text-xs">
-        <DocumentTextIcon className="h-3.5 w-3.5 flex-shrink-0" />
-        <span className="min-w-0 truncate">
-          {plan ? planFileName(plan.title) : "plan.md"}
-        </span>
+    <div
+      className="border-command-border bg-input text-foreground mt-2 flex min-w-0 flex-col gap-2 rounded-default border border-solid px-3 py-3"
+      style={{
+        borderColor:
+          "var(--vscode-widget-border, var(--vscode-panel-border, rgba(128, 128, 128, 0.24)))",
+      }}
+    >
+      <div className="flex min-w-0 items-start justify-between gap-2">
+        <div className="text-foreground min-w-0 break-words text-base font-semibold leading-6">
+          {plan.title}
+        </div>
+        <button
+          type="button"
+          disabled={isDownloading}
+          onClick={() => void download()}
+          title={isDownloading ? "Saving plan…" : "Save plan to project"}
+          aria-label={isDownloading ? "Saving plan" : "Save plan to project"}
+          className="text-description hover:text-foreground -mr-1 -mt-1 inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded border-0 bg-transparent p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus disabled:opacity-50"
+        >
+          <ArrowDownTrayIcon className="h-4 w-4" />
+        </button>
       </div>
-      <div className="text-foreground text-sm font-medium leading-5">{title}</div>
-      {plan && (
-        <p className="text-description m-0 text-sm leading-relaxed">{plan.overview}</p>
-      )}
+      <div className="min-w-0">
+        <PlanMarkdown source={plan.overview} />
+      </div>
       <button
         type="button"
-        disabled={!ready}
         onClick={view}
-        className="m-0 w-fit border-0 bg-transparent p-0 text-left text-xs"
+        className="m-0 w-fit border-0 bg-transparent p-0 text-left text-xs focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-border-focus"
         style={{
-          color: ready ? "var(--vscode-textLink-foreground, #3794ff)" : "var(--vscode-disabledForeground, #666)",
-          cursor: ready ? "pointer" : "default",
+          color: "var(--vscode-textLink-foreground, #3794ff)",
+          cursor: "pointer",
         }}
       >
-        Read detailed plan
+        View full plan
       </button>
-      {plan && (
-        <div className="border-command-border flex flex-col gap-1.5 rounded-md border border-solid px-2.5 py-2">
-          <div className="text-description text-xs">
-            {plan.todos.length} {plan.todos.length === 1 ? "todo" : "todos"}
+      <div
+        className="mt-1 min-w-0 rounded-md border border-solid px-2 py-2"
+        style={{
+          backgroundColor: "var(--vscode-editor-background)",
+          borderColor:
+            "var(--vscode-widget-border, var(--vscode-panel-border, rgba(128, 128, 128, 0.24)))",
+        }}
+      >
+        <div className="mb-1 flex items-baseline justify-between gap-3">
+          <div className="text-foreground text-xs font-medium">
+            {planData.todos.length}{" "}
+            {planData.todos.length === 1 ? "To-do" : "To-dos"}
           </div>
-          {plan.todos.map((step, index) => (
-            <div key={`${index}:${step}`} className="flex min-w-0 items-start gap-2">
-              <span
-                aria-hidden
-                className="mt-0.5 inline-block h-3.5 w-3.5 flex-shrink-0 rounded-full border border-solid"
-                style={{ borderColor: "var(--vscode-descriptionForeground, #8a8a8a)" }}
-              />
-              <span className="text-foreground min-w-0 text-sm leading-5">{step}</span>
-            </div>
-          ))}
+          <div className="text-description text-xs">
+            {planData.todos.filter((todo) => todo.status === "done").length}/
+            {planData.todos.length}
+          </div>
         </div>
-      )}
-      <div className="flex justify-end">
+        <ul className="m-0 list-none p-0">
+          {planData.todos.map((todo) => (
+            <PlanTask key={todo.id} text={todo.text} status={todo.status} />
+          ))}
+        </ul>
+      </div>
+      <div className="flex justify-end pt-1">
         <BuildButton disabled={!ready || isStreaming} onClick={build} />
       </div>
-    </div>
     </div>
   );
 }

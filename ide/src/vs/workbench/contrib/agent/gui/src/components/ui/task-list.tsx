@@ -87,6 +87,18 @@ function DashedIcon({ on }: { on?: boolean }) {
   );
 }
 
+export function TodoStatusIcon({ status }: { status: TodoItem["status"] }) {
+  const done = status === "done";
+  const active = status === "in_progress";
+  return (
+    <span className={styles.todoIconWrap} aria-hidden="true">
+      <DashedIcon on={!done && !active} />
+      <ArrowIcon on={active} />
+      <CheckIcon on={done} />
+    </span>
+  );
+}
+
 function RollDigit({ char }: { char: string }) {
   const prev = useRef(char);
   const [roll, setRoll] = useState<{ from: string; to: string } | null>(null);
@@ -274,11 +286,7 @@ export function TaskList({
                     (done ? ` ${styles.done}` : active ? ` ${styles.active}` : "")
                   }
                 >
-                  <span className={styles.todoIconWrap}>
-                    <DashedIcon on={!done && !active} />
-                    <ArrowIcon on={active} />
-                    <CheckIcon on={done} />
-                  </span>
+                  <TodoStatusIcon status={item.status} />
                   <span className={styles.todoLabel}>{item.text}</span>
                 </li>
               );

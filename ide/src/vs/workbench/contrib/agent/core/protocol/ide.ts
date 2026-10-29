@@ -3,6 +3,7 @@ import type {
   FileStatsMap,
   FileType,
   IDE,
+  AgentPlanViewData,
   IdeInfo,
   IdeSettings,
   Location,
@@ -22,6 +23,8 @@ export type ToIdeFromWebviewOrCoreProtocol = {
   writeFile: [{ path: string; contents: string }, void];
   removeFile: [{ path: string }, void];
   showVirtualFile: [{ name: string; content: string; preview?: boolean }, void];
+  openAgentPlan: [AgentPlanViewData, void];
+  updateAgentPlan: [AgentPlanViewData, void];
   openFile: [{ path: string }, void];
   openUrl: [string, void];
   runCommand: [{ command: string; options?: TerminalOptions }, void];

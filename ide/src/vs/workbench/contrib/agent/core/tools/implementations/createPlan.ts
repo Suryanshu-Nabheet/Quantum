@@ -127,8 +127,13 @@ export function planFileName(title: string): string {
   return `${slug || "plan"}.plan.md`;
 }
 
-export function formatPlanDocument(plan: AgentPlan): string {
-  const todos = plan.todos.map((step) => `- [ ] ${step}`).join("\n");
+export function formatPlanDocument(
+  plan: AgentPlan,
+  todoProgress?: readonly Pick<TodoItem, "status">[],
+): string {
+  const todos = plan.todos
+    .map((step, index) => `- [${todoProgress?.[index]?.status === "done" ? "x" : " "}] ${step}`)
+    .join("\n");
   return `# ${plan.title}\n\n${plan.overview}\n\n${plan.approach}\n\n## Todos\n\n${todos}\n`;
 }
 

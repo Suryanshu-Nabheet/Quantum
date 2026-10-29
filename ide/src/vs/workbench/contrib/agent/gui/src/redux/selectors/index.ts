@@ -62,7 +62,7 @@ export const selectStreamingStatus = createSelector(
       return `Executing ${researchTool.toolCall.function?.name || "action"}...`;
     }
     if (activeTools.length > 0) {
-      return "Writing plan...";
+      return "Creating plan...";
     }
 
     if (

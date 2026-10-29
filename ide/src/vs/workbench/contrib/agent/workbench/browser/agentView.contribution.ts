@@ -21,6 +21,7 @@ import { KeyCode, KeyMod } from '../../../../../base/common/keyCodes.js';
 import { KeybindingsRegistry, KeybindingWeight } from '../../../../../platform/keybinding/common/keybindingsRegistry.js';
 import { IAgentWorkbenchHost } from '../common/agentWorkbenchHost.js';
 import { ContextKeyExpr } from '../../../../../platform/contextkey/common/contextkey.js';
+import './agentPlanEditor.contribution.js';
 
 const agentViewIcon = registerIcon('quantum-agent-view-icon', Codicon.commentDiscussion, localize('agentViewIcon', 'View icon of the Agent view.'));
 const quantumCategory = localize2('agent.commands.category', 'Quantum');

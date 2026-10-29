@@ -17,6 +17,8 @@ import { ISecretStorageService } from '../../../../../platform/secrets/common/se
 import { IWorkspaceContextService } from '../../../../../platform/workspace/common/workspace.js';
 import { IAgentNativeService } from '../common/agentNativeService.js';
 import { IAgentWorkbenchHost } from '../common/agentWorkbenchHost.js';
+import { IAgentPlanEditorService } from '../common/agentPlanEditorService.js';
+import type { IAgentPlanViewData } from '../common/agentPlanEditorService.js';
 import { ICommandService } from '../../../../../platform/commands/common/commands.js';
 import { IClipboardService } from '../../../../../platform/clipboard/common/clipboardService.js';
 import { ICodeEditorService } from '../../../../../editor/browser/services/codeEditorService.js';
@@ -62,6 +64,7 @@ const NATIVE_IDE_OPERATIONS = new Set([
 	'showVirtualFile', 'runCommand', 'readFileAsDataUrl', 'getDiff', 'getTerminalContents',
 	'getDebugLocals', 'getTopLevelCallStackSources', 'getAvailableThreads', 'getBranch', 'getRepoName', 'getGitRootPath',
 	'getGitRefs', 'getGitHistory', 'getGitCommitContext',
+	'openAgentPlan', 'updateAgentPlan',
 	'gotoDefinition', 'gotoTypeDefinition', 'getSignatureHelp', 'getReferences', 'getDocumentSymbols',
 	'getBrowserPages', 'getBrowserPageContext', 'ensureBrowserPageShared', 'invokeBrowserTool', 'notifyAgentBrowserSubmit',
 	'reportError', 'closeSidebar',
@@ -94,6 +97,7 @@ export class AgentWorkbenchHost extends Disposable {
 		@IDebugService private readonly debugService: IDebugService,
 		@ISCMService private readonly scmService: ISCMService,
 		@IWebviewWorkbenchService private readonly webviewWorkbenchService: IWebviewWorkbenchService,
+		@IAgentPlanEditorService private readonly agentPlanEditorService: IAgentPlanEditorService,
 	) {
 		super();
 		this.queryBuilder = instantiationService.createInstance(QueryBuilder);
@@ -237,6 +241,11 @@ export class AgentWorkbenchHost extends Disposable {
 	private async handleRequest(requestKind: 'ide' | 'core', messageType: string, payload: unknown): Promise<unknown> {
 		const data = payload as Record<string, any> | undefined;
 		switch (messageType) {
+			case 'openAgentPlan':
+				return this.agentPlanEditorService.openPlan(data as IAgentPlanViewData);
+			case 'updateAgentPlan':
+				this.agentPlanEditorService.updatePlan(data as IAgentPlanViewData);
+				return undefined;
 			case 'getIdeInfo':
 				return {
 					ideType: 'vscode',

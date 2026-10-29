@@ -1,0 +1,197 @@
+.agent-plan-editor {
+	height: 100%;
+	overflow: auto;
+	background: var(--vscode-editor-background);
+	color: var(--vscode-editor-foreground);
+	outline: none;
+	container-type: inline-size;
+}
+
+.agent-plan-editor-content {
+	box-sizing: border-box;
+	min-height: 100%;
+	padding: 36px 48px 56px;
+}
+
+.agent-plan-editor-main {
+	max-width: 900px;
+	margin: 0 auto;
+}
+
+.agent-plan-editor-heading {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 20px;
+	margin-bottom: 30px;
+}
+
+.agent-plan-editor-title {
+	margin: 0;
+	font-size: 24px;
+	font-weight: 600;
+	line-height: 1.3;
+	overflow-wrap: anywhere;
+}
+
+.agent-plan-editor-status {
+	flex: 0 0 auto;
+	margin-top: 5px;
+	color: var(--vscode-descriptionForeground);
+	font-size: 12px;
+	line-height: 1.5;
+	white-space: nowrap;
+}
+
+.agent-plan-editor-status.is-building {
+	color: var(--vscode-progressBar-background);
+}
+
+.agent-plan-editor-section {
+	margin-top: 28px;
+}
+
+.agent-plan-editor-section-title {
+	margin: 0 0 10px;
+	color: var(--vscode-editor-foreground);
+	font-size: 16px;
+	font-weight: 600;
+	line-height: 1.4;
+}
+
+.agent-plan-editor-markdown {
+	margin: 0;
+	max-width: 80ch;
+	color: var(--vscode-editor-foreground);
+	font-size: 14px;
+	line-height: 1.65;
+	overflow-wrap: anywhere;
+}
+
+
+.agent-plan-editor-markdown > :first-child { margin-top: 0; }
+.agent-plan-editor-markdown > :last-child { margin-bottom: 0; }
+.agent-plan-editor-markdown p,
+.agent-plan-editor-markdown ul,
+.agent-plan-editor-markdown ol,
+.agent-plan-editor-markdown blockquote,
+.agent-plan-editor-markdown pre,
+.agent-plan-editor-markdown table { margin-block: 10px; }
+.agent-plan-editor-markdown h1,
+.agent-plan-editor-markdown h2,
+.agent-plan-editor-markdown h3,
+.agent-plan-editor-markdown h4 {
+	margin: 18px 0 8px;
+	color: var(--vscode-editor-foreground);
+	font-weight: 600;
+}
+.agent-plan-editor-markdown h1 { font-size: 20px; }
+.agent-plan-editor-markdown h2 { font-size: 17px; }
+.agent-plan-editor-markdown h3,
+.agent-plan-editor-markdown h4 { font-size: 14px; }
+.agent-plan-editor-markdown a { color: var(--vscode-textLink-foreground); }
+.agent-plan-editor-markdown ul,
+.agent-plan-editor-markdown ol { padding-left: 24px; }
+.agent-plan-editor-markdown img { max-width: 100%; }
+.agent-plan-editor-markdown pre {
+	max-width: 100%;
+	overflow: auto;
+	padding: 12px 14px;
+	border-radius: 6px;
+	background: var(--vscode-textCodeBlock-background);
+}
+.agent-plan-editor-markdown code {
+	font-family: var(--vscode-editor-font-family);
+	font-size: 0.95em;
+}
+.agent-plan-editor-markdown table { border-collapse: collapse; }
+.agent-plan-editor-markdown th,
+.agent-plan-editor-markdown td {
+	padding: 6px 10px;
+	border: 1px solid var(--vscode-widget-border, var(--vscode-panel-border));
+}
+
+.agent-plan-editor-task-text {
+	min-width: 0;
+	flex: 1;
+	overflow-wrap: anywhere;
+}
+
+.agent-plan-editor-task-text .agent-plan-editor-markdown {
+	max-width: none;
+	color: inherit;
+	font-size: inherit;
+	line-height: inherit;
+}
+
+.agent-plan-editor-task-text .agent-plan-editor-markdown > * { margin-block: 0; }
+
+.agent-plan-editor-task-heading {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 16px;
+	margin-bottom: 10px;
+}
+
+.agent-plan-editor-task-heading .agent-plan-editor-section-title { margin: 0; }
+
+.agent-plan-editor-task-count {
+	color: var(--vscode-descriptionForeground);
+	font-size: 12px;
+}
+
+.agent-plan-editor-task-list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	border-top: 1px solid var(--vscode-widget-border, var(--vscode-panel-border));
+}
+
+.agent-plan-editor-task {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	padding: 11px 2px;
+	border-bottom: 1px solid var(--vscode-widget-border, var(--vscode-panel-border));
+	color: var(--vscode-editor-foreground);
+	font-size: 13px;
+	line-height: 20px;
+}
+
+.agent-plan-editor-task.is-in-progress {
+	color: var(--vscode-editor-foreground);
+}
+
+.agent-plan-editor-task-icon {
+	display: grid;
+	flex: 0 0 16px;
+	width: 16px;
+	height: 16px;
+	margin-top: 2px;
+}
+
+.agent-plan-editor-task-status-icon {
+	grid-area: 1 / 1;
+	width: 16px;
+	height: 16px;
+	opacity: 0;
+}
+
+.agent-plan-editor-task.is-pending .agent-plan-editor-task-status-icon.is-pending,
+.agent-plan-editor-task.is-in-progress .agent-plan-editor-task-status-icon.is-in-progress,
+.agent-plan-editor-task.is-done .agent-plan-editor-task-status-icon.is-done {
+	opacity: 1;
+}
+
+.agent-plan-editor-task.is-done .agent-plan-editor-task-text {
+	text-decoration: line-through;
+	opacity: 0.72;
+}
+
+@container (max-width: 700px) {
+	.agent-plan-editor-content { padding: 28px 24px 40px; }
+	.agent-plan-editor-heading { gap: 12px; margin-bottom: 24px; }
+	.agent-plan-editor-title { font-size: 21px; }
+	.agent-plan-editor-status { white-space: normal; text-align: right; }
+}

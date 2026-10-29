@@ -173,6 +173,10 @@ export class MessageIde implements IDE {
     });
   }
 
+  openAgentPlan: IDE["openAgentPlan"] = (plan) => this.request("openAgentPlan", plan);
+
+  updateAgentPlan: IDE["updateAgentPlan"] = (plan) => this.request("updateAgentPlan", plan);
+
   async openFile(fileUri: string): Promise<void> {
     await this.request("openFile", { path: fileUri });
   }

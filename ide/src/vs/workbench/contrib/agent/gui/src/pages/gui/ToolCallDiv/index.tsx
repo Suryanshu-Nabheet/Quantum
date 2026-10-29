@@ -120,7 +120,6 @@ export function ToolCallDiv({
     <PlanCard
       key={toolCallState.toolCallId}
       toolCallState={toolCallState}
-      historyIndex={historyIndex}
       alongsideResearch={otherCalls.length > 0}
     />
   ));

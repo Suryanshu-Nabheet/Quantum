@@ -234,6 +234,7 @@ export interface PlanBrief {
   title: string;
   overview: string;
   approach: string;
+  sourceToolCallId?: string;
 }
 
 export type TodoStatus = "pending" | "in_progress" | "done";
@@ -807,6 +808,10 @@ export interface IDE {
 
   showVirtualFile(title: string, contents: string, preview?: boolean): Promise<void>;
 
+  openAgentPlan?(plan: AgentPlanViewData): Promise<void>;
+
+  updateAgentPlan?(plan: AgentPlanViewData): Promise<void>;
+
   openFile(path: string): Promise<void>;
 
   openUrl(url: string): Promise<void>;
@@ -897,6 +902,15 @@ export interface IDE {
     toolId: string,
     parameters: Record<string, unknown>,
   ): Promise<string>;
+}
+
+export interface AgentPlanViewData {
+  sessionId: string;
+  title: string;
+  overview: string;
+  approach: string;
+  todos: Array<{ id: string; text: string; status: "pending" | "in_progress" | "done" }>;
+  isBuilding: boolean;
 }
 
 // Slash Commands
