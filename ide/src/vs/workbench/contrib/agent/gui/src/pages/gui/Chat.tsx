@@ -9,6 +9,7 @@ import {
   memo,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -62,6 +63,7 @@ import {
 import { EmptyChatBody } from "./EmptyChatBody";
 import { useAutoScroll } from "./useAutoScroll";
 import { editorPreview } from "../../redux/util/messageQueue";
+import { scheduleDebouncedSessionSave } from "../../redux/util/debouncedSessionSave";
 import { v4 as uuidv4 } from "uuid";
 
 // Helper function to find the index of the latest conversation summary
@@ -205,6 +207,15 @@ export function Chat() {
     (state) => state.config.config.ui?.showChatScrollbar,
   );
   const isInEdit = useAppSelector((store) => store.session.isInEdit);
+
+  // Persist partial turns while they stream. The stream wrapper only saves
+  // after a model/tool stage returns, which can be too late if the window is
+  // refreshed during a long response.
+  useEffect(() => {
+    if (isStreaming && !isInEdit && history.length > 0) {
+      scheduleDebouncedSessionSave(dispatch);
+    }
+  }, [dispatch, history, isInEdit, isStreaming]);
 
   const lastSessionId = useAppSelector((state) => state.session.lastSessionId);
   useAutoScroll(stepsDivRef, history);

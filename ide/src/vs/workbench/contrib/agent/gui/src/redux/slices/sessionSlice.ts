@@ -782,7 +782,18 @@ export const sessionSlice = createSlice({
       state.agentStepDepth = 0;
 
       if (payload) {
-        state.history = payload.history as any;
+        // In-flight model/tool work cannot resume after the workbench reloads.
+        // Keep its recorded call and output visible, but do not leave a spinner
+        // running forever in a restored transcript.
+        state.history = payload.history.map((item) => ({
+          ...item,
+          toolCallStates: item.toolCallStates?.map((toolCallState) =>
+            toolCallState.status === "generating" ||
+            toolCallState.status === "calling"
+              ? { ...toolCallState, status: "canceled" }
+              : toolCallState,
+          ),
+        })) as any;
         state.title = payload.title;
         state.id = payload.sessionId;
         if (payload.mode) {

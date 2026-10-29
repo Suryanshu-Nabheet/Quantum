@@ -48,9 +48,10 @@ export function ToolCallDiv({
   const pendingCalls = otherCalls.filter((call) => call.status !== "done");
 
   const renderToolCall = (toolCallState: ToolCallState) => {
-    const tool = availableTools.find(
-      (tool) => toolCallState.toolCall.function?.name === tool.function.name,
-    );
+    const tool =
+      availableTools.find(
+        (tool) => toolCallState.toolCall.function?.name === tool.function.name,
+      ) ?? toolCallState.tool;
     const functionName = toolCallState.toolCall.function?.name;
     const icon =
       functionName && tool?.toolCallIcon

@@ -192,11 +192,18 @@ function getChatTitleFromMessage(message: ChatMessage) {
 
 export const saveCurrentSession = createAsyncThunk<
   void,
-  { openNewSession: boolean; generateTitle: boolean },
+  {
+    openNewSession: boolean;
+    generateTitle: boolean;
+    refreshMetadata?: boolean;
+  },
   ThunkApiType
 >(
   "session/saveCurrent",
-  async ({ openNewSession, generateTitle }, { dispatch, extra, getState }) => {
+  async (
+    { openNewSession, generateTitle, refreshMetadata = true },
+    { dispatch, extra, getState },
+  ) => {
     const session = getState().session; // assign to a variable so that even when current session changes, we have the reference to the old session
     if (session.history.length === 0) {
       return;
@@ -265,7 +272,17 @@ export const saveCurrentSession = createAsyncThunk<
       planBrief: session.planBrief,
     };
 
-    const result = await dispatch(updateSession(updatedSession));
-    unwrapResult(result);
+    if (refreshMetadata) {
+      const result = await dispatch(updateSession(updatedSession));
+      unwrapResult(result);
+    } else {
+      const result = await extra.hostBridge.request(
+        "history/save",
+        updatedSession,
+      );
+      if (result.status === "error") {
+        throw new Error(result.error);
+      }
+    }
   },
 );
