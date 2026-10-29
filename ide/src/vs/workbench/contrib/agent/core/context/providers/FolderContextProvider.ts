@@ -6,6 +6,7 @@ import {
   LoadSubmenuItemsArgs,
 } from "../../index.js";
 import {
+  findUriInDirs,
   getShortestUniqueRelativeUriPaths,
   getUriPathBasename,
   joinPathsToUri,
@@ -15,6 +16,57 @@ import { BaseContextProvider } from "../index.js";
 const MAX_FOLDER_CONTEXT_ITEMS = 300;
 const MAX_FOLDER_SUBMENU_ITEMS = 500;
 const MAX_FOLDER_SOURCE_FILES = 2000;
+
+export function getWorkspaceFolderUris(
+  fileResults: string[],
+  workspaceDirs: string[],
+  maxItems = MAX_FOLDER_SUBMENU_ITEMS,
+): string[] {
+  const seen = new Set<string>();
+  const folderUris: string[] = [];
+  for (const root of workspaceDirs) {
+    if (!seen.has(root) && folderUris.length < maxItems) {
+      seen.add(root);
+      folderUris.push(root);
+    }
+  }
+
+  for (const result of fileResults) {
+    const fileUri = result.includes("://")
+      ? result
+      : workspaceDirs[0]
+        ? joinPathsToUri(workspaceDirs[0], result)
+        : undefined;
+    if (!fileUri) {
+      continue;
+    }
+
+    const { foundInDir, relativePathOrBasename } = findUriInDirs(
+      fileUri,
+      workspaceDirs,
+    );
+    if (!foundInDir) {
+      continue;
+    }
+
+    const pathParts = relativePathOrBasename.split("/").filter(Boolean);
+    let relativeFolder = "";
+    for (const part of pathParts.slice(0, -1)) {
+      relativeFolder = relativeFolder ? `${relativeFolder}/${part}` : part;
+      const folderUri = joinPathsToUri(foundInDir, relativeFolder);
+      if (seen.has(folderUri)) {
+        continue;
+      }
+      seen.add(folderUri);
+      folderUris.push(folderUri);
+      if (folderUris.length >= maxItems) {
+        return folderUris;
+      }
+    }
+  }
+
+  return folderUris;
+}
 
 class FolderContextProvider extends BaseContextProvider {
   static description: ContextProviderDescription = {
@@ -62,34 +114,11 @@ class FolderContextProvider extends BaseContextProvider {
       return [];
     }
 
-    const seen = new Set<string>();
-    const folderUris: string[] = [];
-    for (const root of workspaceDirs) {
-      if (seen.has(root) || folderUris.length >= MAX_FOLDER_SUBMENU_ITEMS) {
-        continue;
-      }
-      seen.add(root);
-      folderUris.push(root);
-    }
-
-    for (const file of files) {
-      const parts = file.replace(/\\/g, "/").split("/");
-      let acc = "";
-      for (let i = 0; i < parts.length - 1; i++) {
-        acc = acc ? `${acc}/${parts[i]}` : parts[i];
-        if (seen.has(acc)) {
-          continue;
-        }
-        seen.add(acc);
-        folderUris.push(joinPathsToUri(workspaceDirs[0], acc));
-        if (folderUris.length >= MAX_FOLDER_SUBMENU_ITEMS) {
-          break;
-        }
-      }
-      if (folderUris.length >= MAX_FOLDER_SUBMENU_ITEMS) {
-        break;
-      }
-    }
+    const folderUris = getWorkspaceFolderUris(
+      files,
+      workspaceDirs,
+      MAX_FOLDER_SUBMENU_ITEMS,
+    );
 
     const withUniquePaths = getShortestUniqueRelativeUriPaths(
       folderUris,

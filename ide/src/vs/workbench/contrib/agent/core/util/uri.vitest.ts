@@ -55,6 +55,32 @@ describe("uri utils", () => {
       });
     });
 
+    it("prefers the most specific root for nested workspace folders", () => {
+      expect(
+        findUriInDirs("file:///workspace/packages/app/src/index.ts", [
+          "file:///workspace",
+          "file:///workspace/packages/app",
+        ]),
+      ).toEqual({
+        uri: "file:///workspace/packages/app/src/index.ts",
+        relativePathOrBasename: "src/index.ts",
+        foundInDir: "file:///workspace/packages/app",
+      });
+    });
+
+    it("does not match remote folders from a different authority", () => {
+      expect(
+        findUriInDirs(
+          "vscode-remote://ssh-remote+two/workspace/src/index.ts",
+          ["vscode-remote://ssh-remote+one/workspace"],
+        ),
+      ).toEqual({
+        uri: "vscode-remote://ssh-remote+two/workspace/src/index.ts",
+        relativePathOrBasename: "index.ts",
+        foundInDir: null,
+      });
+    });
+
     it("should return basename when URI not in directories", () => {
       const result = findUriInDirs("file:///other/location/file.ts", dirUris);
       expect(result).toEqual({
@@ -120,6 +146,39 @@ describe("uri utils", () => {
           uri: "file:///workspace/project1/src/utils/Button.tsx",
           uniquePath: "utils/Button.tsx",
         },
+      ]);
+    });
+
+    it("qualifies identical relative paths with their workspace roots", () => {
+      const uris = [
+        "file:///workspace/app/src/index.ts",
+        "file:///workspace/shared/src/index.ts",
+      ];
+
+      expect(
+        getShortestUniqueRelativeUriPaths(uris, [
+          "file:///workspace/app",
+          "file:///workspace/shared",
+        ]),
+      ).toEqual([
+        { uri: uris[0], uniquePath: "app/src/index.ts" },
+        { uri: uris[1], uniquePath: "shared/src/index.ts" },
+      ]);
+    });
+
+    it("uses the full root URI when workspace folder names are identical", () => {
+      const uris = [
+        "file:///workspace/apps/web/src/index.ts",
+        "file:///workspace/packages/web/src/index.ts",
+      ];
+      const results = getShortestUniqueRelativeUriPaths(uris, [
+        "file:///workspace/apps/web",
+        "file:///workspace/packages/web",
+      ]);
+
+      expect(results.map((result) => result.uniquePath)).toEqual([
+        "file:///workspace/apps/web/src/index.ts",
+        "file:///workspace/packages/web/src/index.ts",
       ]);
     });
   });

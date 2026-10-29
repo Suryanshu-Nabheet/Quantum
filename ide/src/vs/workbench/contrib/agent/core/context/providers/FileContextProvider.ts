@@ -27,7 +27,7 @@ function fileExtension(uriOrPath: string): string {
   return dot >= 0 ? base.slice(dot + 1).toLowerCase() : "";
 }
 
-function resolveWorkspaceFileUris(
+export function resolveWorkspaceFileUris(
   fileResults: string[],
   workspaceDirs: string[],
 ): string[] {

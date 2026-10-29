@@ -1,15 +1,16 @@
 import { ToolImpl } from ".";
 import { ContextItem } from "../..";
 import { getStringArg } from "../parseArgs";
+import { getShortestUniqueRelativeUriPaths } from "../../util/uri";
 
 const MAX_AGENT_GLOB_RESULTS = 100;
 
 export const fileGlobSearchImpl: ToolImpl = async (args, extras) => {
   const pattern = getStringArg(args, "pattern");
-  const results = await extras.ide.getFileResults(
-    pattern,
-    MAX_AGENT_GLOB_RESULTS,
-  );
+  const [results, workspaceDirs] = await Promise.all([
+    extras.ide.getFileResults(pattern, MAX_AGENT_GLOB_RESULTS),
+    extras.ide.getWorkspaceDirs(),
+  ]);
 
   if (results.length === 0) {
     return [
@@ -20,11 +21,16 @@ export const fileGlobSearchImpl: ToolImpl = async (args, extras) => {
       },
     ];
   }
+  const displayResults = results.every((result) => result.includes("://"))
+    ? getShortestUniqueRelativeUriPaths(results, workspaceDirs).map(
+        (result) => result.uniquePath,
+      )
+    : results;
   const contextItems: ContextItem[] = [
     {
       name: "File results",
       description: "glob search",
-      content: results.join("\n"),
+      content: displayResults.join("\n"),
     },
   ];
 

@@ -509,10 +509,10 @@ export class AgentWorkbenchHost extends Disposable {
 					maxResults: typeof data?.maxResults === 'number' ? data.maxResults : undefined,
 				});
 				const result = await this.searchService.fileSearch(query);
-				return result.results.map(match => {
-					const root = roots.find(folder => relativePath(folder, match.resource) !== undefined);
-					return root ? relativePath(root, match.resource) ?? match.resource.toString() : match.resource.toString();
-				});
+				// Preserve the owning workspace root. Returning root-relative paths
+				// makes results from secondary roots indistinguishable from files in
+				// the first root to Agent context providers and glob tools.
+				return result.results.map(match => match.resource.toString());
 			}
 			case 'getSearchResults': {
 				const roots = this.workspaceContextService.getWorkspace().folders.map(folder => folder.uri);

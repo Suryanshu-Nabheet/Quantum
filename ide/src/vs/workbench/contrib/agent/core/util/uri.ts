@@ -35,6 +35,11 @@ export function findUriInDirs(
     throw new Error(`Invalid uri: ${uri}`);
   }
   const uriPathParts = getCleanUriPath(uri).split("/");
+  let bestMatch: {
+    dir: string;
+    relativePath: string;
+    segmentCount: number;
+  } | undefined;
 
   for (const dir of dirUriCandidates) {
     const dirComps = URI.parse(dir);
@@ -43,7 +48,12 @@ export function findUriInDirs(
       throw new Error(`Invalid uri: ${dir}`);
     }
 
-    if (uriComps.scheme !== dirComps.scheme) {
+    if (
+      uriComps.scheme !== dirComps.scheme ||
+      uriComps.host !== dirComps.host ||
+      uriComps.port !== dirComps.port ||
+      uriComps.userinfo !== dirComps.userinfo
+    ) {
       continue;
     }
     // Can't just use startsWith because e.g.
@@ -66,12 +76,21 @@ export function findUriInDirs(
         .slice(dirPathParts.length)
         .map(decodeURIComponent)
         .join("/");
-      return {
-        uri,
-        relativePathOrBasename: relativePath,
-        foundInDir: dir,
-      };
+      if (!bestMatch || dirPathParts.length > bestMatch.segmentCount) {
+        bestMatch = {
+          dir,
+          relativePath,
+          segmentCount: dirPathParts.length,
+        };
+      }
     }
+  }
+  if (bestMatch) {
+    return {
+      uri,
+      relativePathOrBasename: bestMatch.relativePath,
+      foundInDir: bestMatch.dir,
+    };
   }
   // Not found
   return {
@@ -144,8 +163,16 @@ export function getShortestUniqueRelativeUriPaths(
 }[] {
   // Split all URIs into segments and count occurrences of each suffix combination
   const segmentCombinationsMap = new Map<string, number>();
+  const relativePathCounts = new Map<string, number>();
   const segmentsInfo = uris.map((uri) => {
-    const { relativePathOrBasename } = findUriInDirs(uri, dirUriCandidates);
+    const { relativePathOrBasename, foundInDir } = findUriInDirs(
+      uri,
+      dirUriCandidates,
+    );
+    relativePathCounts.set(
+      relativePathOrBasename,
+      (relativePathCounts.get(relativePathOrBasename) ?? 0) + 1,
+    );
     const segments = relativePathOrBasename.split("/");
     const suffixes: string[] = [];
 
@@ -160,17 +187,35 @@ export function getShortestUniqueRelativeUriPaths(
       );
     }
 
-    return { uri, segments, suffixes, relativePathOrBasename };
+    return { uri, segments, suffixes, relativePathOrBasename, foundInDir };
   });
+  const rootQualifiedCounts = new Map<string, number>();
+  for (const { relativePathOrBasename, foundInDir } of segmentsInfo) {
+    if (relativePathCounts.get(relativePathOrBasename)! > 1 && foundInDir) {
+      const qualifiedPath = `${getUriPathBasename(foundInDir)}/${relativePathOrBasename}`;
+      rootQualifiedCounts.set(
+        qualifiedPath,
+        (rootQualifiedCounts.get(qualifiedPath) ?? 0) + 1,
+      );
+    }
+  }
   // Find shortest unique path for each URI
-  return segmentsInfo.map(({ uri, suffixes, relativePathOrBasename }) => {
-    // Since suffixes are now ordered from shortest to longest,
-    // the first unique one we find will be the shortest
-    const uniquePath =
-      suffixes.find((suffix) => segmentCombinationsMap.get(suffix) === 1) ??
-      relativePathOrBasename; // fallback to full path if no unique suffix found
-    return { uri, uniquePath };
-  });
+  return segmentsInfo.map(
+    ({ uri, suffixes, relativePathOrBasename, foundInDir }) => {
+      // Since suffixes are ordered from shortest to longest, the first
+      // unique one is the shortest useful label.
+      let uniquePath =
+        suffixes.find((suffix) => segmentCombinationsMap.get(suffix) === 1) ??
+        relativePathOrBasename;
+      if (relativePathCounts.get(relativePathOrBasename)! > 1 && foundInDir) {
+        const rootQualifiedPath = `${getUriPathBasename(foundInDir)}/${relativePathOrBasename}`;
+        uniquePath = rootQualifiedCounts.get(rootQualifiedPath) === 1
+          ? rootQualifiedPath
+          : joinPathsToUri(foundInDir, relativePathOrBasename);
+      }
+      return { uri, uniquePath };
+    },
+  );
 }
 
 // Only used when working with system paths and relative paths
