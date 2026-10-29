@@ -19,10 +19,9 @@ function quantumFileIconsPlugin(): Plugin {
     name: "quantum-file-icons",
     configureServer(server) {
       server.middlewares.use("/quantum-file-icons", (req, res, next) => {
-        const urlPath = decodeURIComponent((req.url ?? "/").split("?")[0]).replace(
-          /^\/+/,
-          "",
-        );
+        const urlPath = decodeURIComponent(
+          (req.url ?? "/").split("?")[0],
+        ).replace(/^\/+/, "");
         const file = normalize(join(quantumFileIconsRoot, urlPath));
         const rootWithSep = quantumFileIconsRoot.endsWith(sep)
           ? quantumFileIconsRoot
@@ -100,6 +99,11 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "jsdom",
+    environmentOptions: {
+      jsdom: {
+        url: "http://localhost",
+      },
+    },
     setupFiles: "./src/util/test/setupTests.ts",
     include: ["src/**/*.{test,spec}.?(c|m)[jt]s?(x)"],
     onConsoleLog(log, type) {

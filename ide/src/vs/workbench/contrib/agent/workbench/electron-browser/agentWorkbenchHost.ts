@@ -304,7 +304,7 @@ export class AgentWorkbenchHost extends Disposable {
 				return repository?.provider.historyProvider.get()?.resolveHistoryItemChatContext(String(data?.commitId ?? ''));
 			}
 			case 'getRepoName': {
-				const repository = this.scmService.getRepository(this.toResource(data?.dir));
+				const repository = this.getSCMRepository(data?.dir);
 				const root = repository?.provider.rootUri;
 				if (!root) {
 					return undefined;

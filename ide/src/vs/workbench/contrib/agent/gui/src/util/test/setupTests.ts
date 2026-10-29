@@ -1,5 +1,37 @@
 import "@testing-library/jest-dom";
 
+// Node 22 exposes a global localStorage getter that is undefined unless
+// --localstorage-file is set. Keep GUI tests on jsdom's storage and provide an
+// in-memory fallback for opaque-origin test environments.
+function createTestStorage(): Storage {
+  const values = new Map<string, string>();
+  return {
+    get length() {
+      return values.size;
+    },
+    clear: () => values.clear(),
+    getItem: (key) => values.get(key) ?? null,
+    key: (index) => Array.from(values.keys())[index] ?? null,
+    removeItem: (key) => values.delete(key),
+    setItem: (key, value) => values.set(key, String(value)),
+  };
+}
+
+let testStorage: Storage;
+try {
+  testStorage = window.localStorage ?? createTestStorage();
+} catch {
+  testStorage = createTestStorage();
+}
+Object.defineProperty(window, "localStorage", {
+  configurable: true,
+  value: testStorage,
+});
+Object.defineProperty(globalThis, "localStorage", {
+  configurable: true,
+  value: testStorage,
+});
+
 afterEach(() => {
   vi.clearAllMocks();
 });
