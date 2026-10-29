@@ -1,4 +1,4 @@
-import { providers } from "../pages/AddNewModel/configs/providers";
+import { getProviderPresentationExact } from "./providerPresentation";
 
 interface ErrorAnalysis {
   parsedError: string;
@@ -53,14 +53,12 @@ export function analyzeError(
 
     // If there's a matching provider from add model form provider info
     // We can get more info
-    const foundProvider = Object.values(providers).find(
-      (p) => p?.provider === selectedModel.underlyingProviderName,
+    const foundProvider = getProviderPresentationExact(
+      selectedModel.underlyingProviderName,
     );
     if (foundProvider) {
       providerName = foundProvider.title;
-      if (foundProvider.apiKeyUrl) {
-        apiKeyUrl = foundProvider.apiKeyUrl;
-      }
+      apiKeyUrl = foundProvider.apiKeyUrl;
     }
   }
 

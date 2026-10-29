@@ -1,7 +1,7 @@
 import { ctxItemToRifWithContents } from "core/commands/util";
+import type { Root } from "hast";
 import { memo, useEffect, useMemo, useRef } from "react";
-import { useRemark } from "react-remark";
-import rehypeKatex from "rehype-katex";
+import { useRemark, type UseRemarkOptions } from "react-remark";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import styled from "styled-components";
@@ -25,6 +25,7 @@ import "./katex.css";
 import "./markdown.css";
 import MermaidBlock from "./MermaidBlock";
 import { rehypeHighlightPlugin } from "./rehypeHighlightPlugin";
+import { rehypeKatexOnDemand } from "./rehypeKatexOnDemand";
 import { SecureImageComponent } from "./SecureImageComponent";
 import { StepContainerPreToolbar } from "./StepContainerPreToolbar";
 import SymbolLink from "./SymbolLink";
@@ -311,21 +312,19 @@ const StyledMarkdownPreview = memo(function StyledMarkdownPreview(
         });
       },
     ],
-    rehypePlugins: [
-      rehypeKatex as any,
-      {},
+    rehypePlugins: ([
+      rehypeKatexOnDemand(),
       rehypeHighlightPlugin(),
       () => {
         let codeBlockIndex = 0;
-        return (tree) => {
+        return (tree: Root) => {
           visit(tree, { tagName: "pre" }, (node: any) => {
             node.properties = { "data-codeblockindex": codeBlockIndex };
             codeBlockIndex++;
           });
         };
       },
-      {},
-    ],
+    ] as unknown) as UseRemarkOptions["rehypePlugins"],
     rehypeReactOptions: {
       components: {
         a: ({ ...aProps }) => {

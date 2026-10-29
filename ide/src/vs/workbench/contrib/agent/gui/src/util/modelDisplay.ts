@@ -1,5 +1,5 @@
 import { ModelDescription } from "core";
-import { providers } from "../pages/AddNewModel/configs/providers";
+import { getProviderPresentation } from "./providerPresentation";
 
 const AUTODETECT = "autodetect";
 
@@ -162,14 +162,9 @@ export function getProviderDisplayName(
   if (!id) {
     return "Provider";
   }
-  const match = Object.values(providers).find(
-    (p) =>
-      p?.provider === id ||
-      p?.provider?.toLowerCase() === id.toLowerCase() ||
-      p?.title?.toLowerCase() === id.toLowerCase(),
-  );
-  if (match?.title) {
-    return match.title;
+  const provider = getProviderPresentation(id);
+  if (provider) {
+    return provider.title;
   }
   return formatSlugSegment(id.replace(/\//g, "-")) || id;
 }

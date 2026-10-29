@@ -7,7 +7,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AddModelForm } from "../../forms/AddModelForm";
+import { LazyAddModelForm } from "../../forms/LazyAddModelForm";
 import { useWebviewListener } from "../../hooks/useWebviewListener";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { selectSelectedProfile } from "../../redux/slices/profilesSlice";
@@ -446,7 +446,7 @@ function ModelSelect() {
     dispatch(setShowDialog(true));
     dispatch(
       setDialogMessage(
-        <AddModelForm
+        <LazyAddModelForm
           formTitle="Add provider"
           onDone={() => {
             dispatch(setShowDialog(false));

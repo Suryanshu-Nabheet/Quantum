@@ -37,7 +37,6 @@ import {
   renderChatMessage,
   renderContextItems,
 } from "core/util/messageContent";
-import { findLastIndex } from "lodash";
 import { v4 as uuidv4 } from "uuid";
 import { QueuedMessage } from "../util/messageQueue";
 import { type InlineErrorMessageType } from "../../components/mainInput/InlineErrorMessage";
@@ -307,10 +306,14 @@ export const sessionSlice = createSlice({
         return;
       }
 
-      const lastUserOrToolIdx = findLastIndex(
-        state.history,
-        (item) => item.message.role === "tool" || item.message.role === "user",
-      );
+      let lastUserOrToolIdx = state.history.length - 1;
+      while (
+        lastUserOrToolIdx >= 0 &&
+        state.history[lastUserOrToolIdx].message.role !== "tool" &&
+        state.history[lastUserOrToolIdx].message.role !== "user"
+      ) {
+        lastUserOrToolIdx--;
+      }
 
       let validAssistantMessageIdx = -1;
       for (let i = state.history.length - 1; i > lastUserOrToolIdx; i--) {

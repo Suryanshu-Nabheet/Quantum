@@ -17,7 +17,7 @@ import {
 } from "../pages/AddNewModel/configs/providers";
 import { CONFIG_ROUTES } from "../util/navigation";
 
-interface AddModelFormProps {
+export interface AddModelFormProps {
   onDone: () => void;
   roles?: ModelRole[];
   formTitle?: string;

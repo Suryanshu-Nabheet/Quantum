@@ -1,5 +1,5 @@
 import { ModelDescription } from "core";
-import { AddModelForm } from "../forms/AddModelForm";
+import { LazyAddModelForm } from "../forms/LazyAddModelForm";
 import { useAppDispatch } from "../redux/hooks";
 import { setDialogMessage, setShowDialog } from "../redux/slices/uiSlice";
 
@@ -10,7 +10,7 @@ export function useConfigureModelDialog() {
     dispatch(setShowDialog(true));
     dispatch(
       setDialogMessage(
-        <AddModelForm
+        <LazyAddModelForm
           existingModel={model}
           formTitle="Configure provider"
           onDone={() => {
