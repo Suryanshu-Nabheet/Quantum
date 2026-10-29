@@ -7,14 +7,24 @@ import {
 import { flushDebouncedSessionSave } from "../util/debouncedSessionSave";
 import { ThunkApiType } from "../store";
 
-export const cancelStream = createAsyncThunk<void, undefined, ThunkApiType>(
+export const cancelStream = createAsyncThunk<
+  void,
+  string | undefined,
+  ThunkApiType
+>(
   "chat/cancelStream",
-  async (messages, { dispatch, extra, getState }) => {
+  async (sessionId, { dispatch, getState }) => {
+    // A session switch aborts the previous stream. Its rejection can arrive
+    // after the new transcript is loaded, so never clean up another session.
+    if (sessionId && getState().session.id !== sessionId) {
+      return;
+    }
+
     dispatch(setInactive());
     dispatch(abortStream());
 
     // Clear any dangling incomplete tool calls, thinking messages, etc.
     dispatch(clearDanglingMessages());
-    flushDebouncedSessionSave(dispatch);
+    await flushDebouncedSessionSave(dispatch, { generateTitle: false });
   },
 );

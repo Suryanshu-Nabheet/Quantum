@@ -21,19 +21,34 @@ export const streamThunkWrapper = createAsyncThunk<
   () => Promise<void>,
   ThunkApiType
 >("chat/streamWrapper", async (runStream, { dispatch, getState }) => {
+  const streamSessionId = getState().session.id;
+
   for (let attempt = 0; attempt <= OVERLOADED_RETRIES; attempt++) {
+    if (getState().session.id !== streamSessionId) {
+      return;
+    }
+
     try {
       await runStream();
       const state = getState();
+      if (state.session.id !== streamSessionId) {
+        return;
+      }
       if (!state.session.isInEdit) {
         if (state.session.isStreaming) {
           scheduleDebouncedSessionSave(dispatch);
         } else {
-          flushDebouncedSessionSave(dispatch);
+          await flushDebouncedSessionSave(dispatch);
         }
       }
       return;
     } catch (e) {
+      // Loading another chat aborts this stream. Ignore its late rejection;
+      // canceling here would otherwise truncate the newly loaded transcript.
+      if (getState().session.id !== streamSessionId) {
+        return;
+      }
+
       // Get the selected model from the state for error analysis
       const state = getState();
       const selectedModel = selectSelectedChatModel(state);
@@ -47,11 +62,14 @@ export const streamThunkWrapper = createAsyncThunk<
         !overloadRetriesWereExhausted(e);
 
       if (shouldRetry) {
-        await dispatch(cancelStream());
+        await dispatch(cancelStream(streamSessionId));
+        if (getState().session.id !== streamSessionId) {
+          return;
+        }
         const delayMs = overloadRetryDelayMs(attempt);
         await new Promise((resolve) => setTimeout(resolve, delayMs));
       } else {
-        await dispatch(cancelStream());
+        await dispatch(cancelStream(streamSessionId));
         dispatch(setDialogMessage(<StreamErrorDialog error={e} />));
         dispatch(setShowDialog(true));
         return;

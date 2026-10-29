@@ -7,6 +7,31 @@ const SESSION_SAVE_MAX_WAIT_MS = 2000;
 let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 let maxWaitTimer: ReturnType<typeof setTimeout> | undefined;
 let pendingDispatch: AppDispatch | undefined;
+let saveQueue: Promise<void> = Promise.resolve();
+
+function enqueueSessionSave(
+  dispatch: AppDispatch,
+  generateTitle: boolean,
+  refreshMetadata: boolean,
+): Promise<void> {
+  const queuedSave = saveQueue
+    .catch(() => undefined)
+    .then(async () => {
+      await dispatch(
+        saveCurrentSession({
+          openNewSession: false,
+          generateTitle,
+          refreshMetadata,
+        }),
+      ).unwrap();
+    });
+
+  saveQueue = queuedSave;
+  void queuedSave.catch((error) => {
+    console.error("Failed to save Agent chat history", error);
+  });
+  return queuedSave;
+}
 
 function savePendingSession(): void {
   if (debounceTimer) {
@@ -20,13 +45,7 @@ function savePendingSession(): void {
   const run = pendingDispatch;
   pendingDispatch = undefined;
   if (run) {
-    void run(
-      saveCurrentSession({
-        openNewSession: false,
-        generateTitle: false,
-        refreshMetadata: false,
-      }),
-    );
+    void enqueueSessionSave(run, false, false);
   }
 }
 
@@ -42,7 +61,10 @@ export function scheduleDebouncedSessionSave(dispatch: AppDispatch): void {
   }
 }
 
-export function flushDebouncedSessionSave(dispatch: AppDispatch): void {
+export async function flushDebouncedSessionSave(
+  dispatch: AppDispatch,
+  options: { generateTitle?: boolean } = {},
+): Promise<void> {
   if (debounceTimer) {
     clearTimeout(debounceTimer);
   }
@@ -52,10 +74,9 @@ export function flushDebouncedSessionSave(dispatch: AppDispatch): void {
   debounceTimer = undefined;
   maxWaitTimer = undefined;
   pendingDispatch = undefined;
-  void dispatch(
-    saveCurrentSession({
-      openNewSession: false,
-      generateTitle: true,
-    }),
+  await enqueueSessionSave(
+    dispatch,
+    options.generateTitle ?? true,
+    true,
   );
 }

@@ -15,6 +15,7 @@ import {
 } from "../slices/sessionSlice";
 import { ThunkApiType } from "../store";
 import { updateSelectedModelByRole } from "../thunks/updateSelectedModelByRole";
+import { flushDebouncedSessionSave } from "../util/debouncedSessionSave";
 
 const MAX_TITLE_LENGTH = 100;
 
@@ -99,15 +100,16 @@ export const loadSession = createAsyncThunk<
   ThunkApiType
 >(
   "session/load",
-  async ({ sessionId, saveCurrentSession: save }, { extra, dispatch }) => {
+  async (
+    { sessionId, saveCurrentSession: save },
+    { extra, dispatch },
+  ) => {
     if (save) {
-      // save the session in the background
-      void dispatch(
-        saveCurrentSession({
-          openNewSession: false,
-          generateTitle: true,
-        }),
-      );
+      // Finish any queued checkpoint and persist the outgoing session before
+      // changing Redux state to the session being opened.
+      await flushDebouncedSessionSave(dispatch, {
+        generateTitle: false,
+      });
     }
     const session = await getSession(extra.hostBridge, sessionId);
     dispatch(newSession(session));
