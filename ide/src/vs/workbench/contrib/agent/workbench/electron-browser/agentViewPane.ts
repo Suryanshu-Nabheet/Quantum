@@ -64,9 +64,7 @@ export class AgentViewPane extends ViewPane {
 				void this.agentService.invoke({ id: generateUuid(), messageType: 'config/ideSettingsUpdate', data: {} });
 			}
 		}));
-		this._register(agentService.onDidReceiveCoreMessage(message => {
-			this.postOrQueueGuiMessage(message);
-		}));
+		this._register(agentService.onDidReceiveCoreMessage(message => this.postCoreMessageToGui(message)));
 		this._register(agentService.onDidReceiveRuntimeChunk(chunk => {
 			const messageType = this.invocationTypes.get(chunk.messageId);
 			if (messageType) {
@@ -81,6 +79,7 @@ export class AgentViewPane extends ViewPane {
 	}
 
 	private readonly invocationTypes = new Map<string, string>();
+	private readonly pendingCoreMessageAcks = new Set<string>();
 	private readonly queuedGuiMessages: unknown[] = [];
 	private runtimeStarted = false;
 	private readonly pendingGuiRequests = new Map<string, { resolve(value: unknown): void; reject(error: Error): void; timeout: ReturnType<typeof setTimeout> }>();
@@ -109,6 +108,7 @@ export class AgentViewPane extends ViewPane {
 		}
 		this.pendingGuiRequests.clear();
 		this.invocationTypes.clear();
+		this.pendingCoreMessageAcks.clear();
 		this.guiReady = false;
 		this.webview?.release(this);
 		this.webview?.dispose();
@@ -172,6 +172,9 @@ export class AgentViewPane extends ViewPane {
 			}
 			return;
 		}
+		if (this.pendingCoreMessageAcks.delete(request.messageId)) {
+			return;
+		}
 		this.invocationTypes.set(request.messageId, request.messageType);
 		try {
 			const nativeRequest = this.agentWorkbenchHost.handleGuiRequest(request.messageType, request.data);
@@ -189,6 +192,20 @@ export class AgentViewPane extends ViewPane {
 		} finally {
 			this.invocationTypes.delete(request.messageId);
 		}
+	}
+
+	private postCoreMessageToGui(message: unknown): void {
+		const messageId = (message as { messageId?: unknown } | undefined)?.messageId;
+		if (typeof messageId === 'string') {
+			if (this.pendingCoreMessageAcks.size >= 256) {
+				const oldest = this.pendingCoreMessageAcks.values().next().value;
+				if (oldest) {
+					this.pendingCoreMessageAcks.delete(oldest);
+				}
+			}
+			this.pendingCoreMessageAcks.add(messageId);
+		}
+		this.postOrQueueGuiMessage(message);
 	}
 
 	private requestGui(messageType: string, data: unknown): Promise<unknown> {
