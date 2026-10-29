@@ -691,7 +691,7 @@ class Ollama extends BaseLLM implements ModelInstaller {
     }
   }
 
-  private async fetchModelTags(): Promise<OllamaModelTag[]> {
+  private async fetchModelTags(signal?: AbortSignal): Promise<OllamaModelTag[]> {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
@@ -706,6 +706,7 @@ class Ollama extends BaseLLM implements ModelInstaller {
       {
         method: "GET",
         headers: headers,
+        signal,
       },
     );
     const data = await response.json();
@@ -718,8 +719,8 @@ class Ollama extends BaseLLM implements ModelInstaller {
     return (data.models ?? []) as OllamaModelTag[];
   }
 
-  async listModels(): Promise<string[]> {
-    const tags = sortOllamaModelTagsLocalFirst(await this.fetchModelTags());
+  async listModels(signal?: AbortSignal): Promise<string[]> {
+    const tags = sortOllamaModelTagsLocalFirst(await this.fetchModelTags(signal));
     return tags.map((tag) => tag.name);
   }
 

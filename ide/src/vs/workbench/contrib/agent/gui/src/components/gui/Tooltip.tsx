@@ -48,19 +48,6 @@ function isEmptyContent(content: ReactNode): boolean {
   return content === null || content === undefined || content === "";
 }
 
-function extractTooltipText(content: ReactNode): string | undefined {
-  if (typeof content === "string" || typeof content === "number") {
-    return String(content);
-  }
-  if (isValidElement(content)) {
-    const child = content.props.children;
-    if (typeof child === "string" || typeof child === "number") {
-      return String(child);
-    }
-  }
-  return undefined;
-}
-
 function mergeHandlers<E>(
   existing: ((event: E) => void) | undefined,
   next: (event: E) => void,
@@ -115,11 +102,6 @@ export function ToolTip({
     return children;
   }
 
-  const tooltipText = extractTooltipText(content);
-  if (!tooltipText) {
-    return children;
-  }
-
   const delay =
     delayShow ??
     window.workbenchHoverDelay ??
@@ -143,7 +125,7 @@ export function ToolTip({
       }
       workbenchHoverManager.show(
         hoverId,
-        tooltipText,
+        content,
         target.getBoundingClientRect(),
         normalizePlacement(place),
       );

@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useSyncExternalStore } from "react";
 
@@ -6,7 +6,7 @@ export type WorkbenchHoverPlacement = "top" | "bottom" | "left" | "right";
 
 type HoverState = {
   id: number;
-  content: string;
+  content: ReactNode;
   anchor: DOMRect;
   placement: WorkbenchHoverPlacement;
 } | null;
@@ -29,7 +29,7 @@ class WorkbenchHoverManager {
 
   show(
     id: number,
-    content: string,
+    content: ReactNode,
     anchor: DOMRect,
     placement: WorkbenchHoverPlacement,
   ) {

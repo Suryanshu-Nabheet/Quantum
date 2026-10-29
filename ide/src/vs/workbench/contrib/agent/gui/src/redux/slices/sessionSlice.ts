@@ -13,6 +13,7 @@ import {
   ChatHistoryItem,
   ChatMessage,
   ContextItem,
+  ContextWindowUsage,
   ContextItemWithId,
   FileSymbolMap,
   McpUiState,
@@ -226,6 +227,9 @@ type SessionState = {
   hasReasoningEnabled?: boolean;
   isPruned?: boolean;
   contextPercentage?: number;
+  contextUsage?: ContextWindowUsage;
+  contextOutputTokens?: number;
+  contextOutputIsEstimated?: boolean;
   inlineErrorMessage?: InlineErrorMessageType;
   compactionLoading: Record<number, boolean>; // Track compaction loading by message index
   /** Tool/LLM rounds in the current user turn (for step limits + manual tool approval). */
@@ -420,6 +424,9 @@ export const sessionSlice = createSlice({
       }
 
       state.isStreaming = true;
+      state.contextUsage = undefined;
+      state.contextOutputTokens = undefined;
+      state.contextOutputIsEstimated = undefined;
       state.agentStepDepth = 0;
     },
     truncateHistoryToMessage: (
@@ -445,6 +452,9 @@ export const sessionSlice = createSlice({
         state.inlineErrorMessage = undefined;
         state.isPruned = false;
         state.contextPercentage = undefined;
+        state.contextUsage = undefined;
+        state.contextOutputTokens = undefined;
+        state.contextOutputIsEstimated = undefined;
         state.agentStepDepth = 0;
       }
     },
@@ -454,6 +464,9 @@ export const sessionSlice = createSlice({
       state.inlineErrorMessage = undefined;
       state.isPruned = false;
       state.contextPercentage = undefined;
+      state.contextUsage = undefined;
+      state.contextOutputTokens = undefined;
+      state.contextOutputIsEstimated = undefined;
     },
     deleteCompaction: (state, action: PayloadAction<number>) => {
       // Removes the conversation summary from the specified message
@@ -596,6 +609,43 @@ export const sessionSlice = createSlice({
     streamUpdate: (state, action: PayloadAction<ChatMessage[]>) => {
       if (state.history.length) {
         for (const message of action.payload) {
+          const outputUsage =
+            message.role === "assistant"
+              ? message.metadata?.contextOutputUsage
+              : undefined;
+          if (
+            outputUsage &&
+            typeof outputUsage === "object" &&
+            "tokens" in outputUsage &&
+            typeof outputUsage.tokens === "number" &&
+            Number.isFinite(outputUsage.tokens) &&
+            outputUsage.tokens >= 0
+          ) {
+            state.contextOutputTokens = outputUsage.tokens;
+            state.contextOutputIsEstimated =
+              "estimated" in outputUsage && outputUsage.estimated === true;
+            if (
+              message.role === "assistant" &&
+              !message.content &&
+              !message.toolCalls?.length
+            ) {
+              continue;
+            }
+          }
+
+          if (
+            message.role === "assistant" &&
+            !message.content &&
+            !message.toolCalls?.length &&
+            typeof message.usage?.completionTokens === "number" &&
+            Number.isFinite(message.usage.completionTokens) &&
+            message.usage.completionTokens >= 0
+          ) {
+            state.contextOutputTokens = message.usage.completionTokens;
+            state.contextOutputIsEstimated = false;
+            continue;
+          }
+
           let lastItem = state.history[state.history.length - 1];
           let lastMessage = lastItem.message;
 
@@ -779,6 +829,9 @@ export const sessionSlice = createSlice({
       state.inlineErrorMessage = undefined;
       state.isPruned = false;
       state.contextPercentage = undefined;
+      state.contextUsage = undefined;
+      state.contextOutputTokens = undefined;
+      state.contextOutputIsEstimated = undefined;
       state.agentStepDepth = 0;
 
       if (payload) {
@@ -1103,6 +1156,14 @@ export const sessionSlice = createSlice({
     setContextPercentage: (state, action: PayloadAction<number>) => {
       state.contextPercentage = action.payload;
     },
+    setContextUsage: (
+      state,
+      action: PayloadAction<ContextWindowUsage | undefined>,
+    ) => {
+      state.contextUsage = action.payload;
+      state.contextOutputTokens = undefined;
+      state.contextOutputIsEstimated = undefined;
+    },
   },
   selectors: {
     selectIsGatheringContext: (state) => {
@@ -1199,6 +1260,7 @@ export const {
   setInlineErrorMessage,
   setIsPruned,
   setContextPercentage,
+  setContextUsage,
   setCompactionLoading,
 } = sessionSlice.actions;
 

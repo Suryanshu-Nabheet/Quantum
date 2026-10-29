@@ -6,6 +6,7 @@ import { FromCoreProtocol, ToCoreProtocol } from "../protocol";
 import { IMessenger, Message } from "../protocol/messenger";
 
 import { TTS } from "../util/tts";
+import { renderChatMessage } from "../util/messageContent";
 import {
   buildStreamContinuationMessages,
   MAX_STREAM_CHAT_CONTINUATIONS,
@@ -118,6 +119,8 @@ export async function* llmStreamChat(
 
     let chatMessages = messages;
     let combinedPromptLog: PromptLog | undefined;
+    let outputTokens = 0;
+    let outputTokenCountIsEstimated = false;
 
     for (
       let continuation = 0;
@@ -125,6 +128,7 @@ export async function* llmStreamChat(
       continuation++
     ) {
       let partialAssistant: ChatMessage | undefined;
+      const thinkingMessages: ChatMessage[] = [];
       const gen = model.streamChat(
         chatMessages,
         abortController.signal,
@@ -141,6 +145,8 @@ export async function* llmStreamChat(
         const chunk = next.value;
         if (chunk.role === "assistant") {
           partialAssistant = mergeAssistantStreamChunk(partialAssistant, chunk);
+        } else if (chunk.role === "thinking") {
+          thinkingMessages.push(chunk);
         }
         yield chunk;
         next = await gen.next();
@@ -151,6 +157,35 @@ export async function* llmStreamChat(
       }
 
       const segmentLog = next.value;
+      const providerReportedOutputTokens =
+        partialAssistant?.role === "assistant"
+          ? partialAssistant.usage?.completionTokens
+          : undefined;
+      if (
+        typeof providerReportedOutputTokens === "number" &&
+        Number.isFinite(providerReportedOutputTokens) &&
+        providerReportedOutputTokens >= 0
+      ) {
+        outputTokens += providerReportedOutputTokens;
+      } else {
+        outputTokenCountIsEstimated = true;
+        const assistantMessage = partialAssistant
+          ? renderChatMessage(partialAssistant)
+          : segmentLog.completion;
+        outputTokens += model.countTokens(assistantMessage);
+        if (
+          partialAssistant?.role === "assistant" &&
+          partialAssistant.toolCalls?.length
+        ) {
+          outputTokens += model.countTokens(
+            JSON.stringify(partialAssistant.toolCalls),
+          );
+        }
+        for (const thinkingMessage of thinkingMessages) {
+          outputTokens += model.countTokens(renderChatMessage(thinkingMessage));
+        }
+      }
+
       combinedPromptLog = combinedPromptLog
         ? {
             ...segmentLog,
@@ -169,6 +204,16 @@ export async function* llmStreamChat(
         if (getReadResponseTTS(config) && combinedPromptLog.completion) {
           void TTS.read(combinedPromptLog.completion);
         }
+        yield {
+          role: "assistant",
+          content: "",
+          metadata: {
+            contextOutputUsage: {
+              tokens: outputTokens,
+              estimated: outputTokenCountIsEstimated,
+            },
+          },
+        };
         return combinedPromptLog;
       }
 

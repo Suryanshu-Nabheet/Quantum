@@ -541,6 +541,10 @@ function assembleChatMessages({
     compiledChatMessages: reassembled,
     didPrune,
     contextPercentage,
+    contextUsage: {
+      inputTokens,
+      contextLength,
+    },
   };
 }
 

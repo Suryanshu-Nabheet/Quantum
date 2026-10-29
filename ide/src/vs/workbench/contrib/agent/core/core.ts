@@ -49,12 +49,13 @@ import { getSymbolsForManyFiles } from "./util/symbols";
 import { TTS } from "./util/tts";
 
 import {
+  type AgentConfig,
   ContextItemWithId,
   ContextSubmenuItem,
   ModelDescription,
   ToolCall,
   type ContextItem,
-  type IDE
+  type IDE,
 } from ".";
 
 import { GitDiffCache } from "./autocomplete/snippets/gitDiffCache";
@@ -81,6 +82,9 @@ import { AgentError, AgentErrorReason } from "./util/errors";
 import { shareSession } from "./util/historyUtils";
 import { Logger } from "./util/Logger.js";
 
+const OLLAMA_DISCOVERY_INTERVAL_MS = 10_000;
+const OLLAMA_DISCOVERY_TIMEOUT_MS = 1_500;
+
 export class Core {
   configHandler: ConfigHandler;
   completionProvider: CompletionProvider;
@@ -88,6 +92,10 @@ export class Core {
   llmLogger = new LLMLogger();
 
   private messageAbortControllers = new Map<string, AbortController>();
+  private ollamaDiscoveryTimer: ReturnType<typeof setTimeout> | undefined;
+  private ollamaDiscoveryAbortController: AbortController | undefined;
+  private ollamaDiscoveryInFlight = false;
+  private isDisposed = false;
   private addMessageAbortController(id: string): AbortController {
     const controller = new AbortController();
     this.messageAbortControllers.set(id, controller);
@@ -101,6 +109,95 @@ export class Core {
     if (this.messageAbortControllers.get(id) === controller) {
       this.messageAbortControllers.delete(id);
     }
+  }
+
+  /** Retry local Ollama discovery while a configured server has no live models. */
+  private scheduleOllamaModelDiscovery(config: AgentConfig | undefined): void {
+    if (
+      this.isDisposed ||
+      !config ||
+      this.ollamaDiscoveryTimer ||
+      this.ollamaDiscoveryInFlight
+    ) {
+      return;
+    }
+
+    const configuredOllama = config.configuredModels?.find(
+      (model) =>
+        (model.underlyingProviderName || model.provider).toLowerCase() ===
+          "ollama" &&
+        model.model === "AUTODETECT",
+    );
+    if (!configuredOllama) {
+      return;
+    }
+
+    const liveOllamaModels = Object.values(config.modelsByRole)
+      .flat()
+      .some(
+        (model) => model.underlyingProviderName.toLowerCase() === "ollama",
+      );
+    if (liveOllamaModels) {
+      return;
+    }
+
+    this.ollamaDiscoveryTimer = setTimeout(() => {
+      this.ollamaDiscoveryTimer = undefined;
+      this.ollamaDiscoveryInFlight = true;
+      const abortController = new AbortController();
+      this.ollamaDiscoveryAbortController = abortController;
+      void (async () => {
+        try {
+          const ollama = new Ollama({
+            model: "AUTODETECT",
+            apiBase: configuredOllama.apiBase,
+            apiKey: configuredOllama.apiKey,
+          });
+          let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+          const timeout = new Promise<never>((_, reject) => {
+            timeoutHandle = setTimeout(
+              () => {
+                abortController.abort();
+                reject(new Error("Ollama discovery timed out"));
+              },
+              OLLAMA_DISCOVERY_TIMEOUT_MS,
+            );
+          });
+          let models: string[];
+          try {
+            models = await Promise.race([
+              ollama.listModels(abortController.signal),
+              timeout,
+            ]);
+          } finally {
+            if (timeoutHandle) {
+              clearTimeout(timeoutHandle);
+            }
+          }
+          if (!this.isDisposed && models.length > 0) {
+            await this.configHandler.reloadConfig(
+              "Ollama server became available",
+            );
+          }
+        } catch {
+          // The local server is still unavailable; retry without disturbing chat.
+        } finally {
+          this.ollamaDiscoveryInFlight = false;
+          if (this.ollamaDiscoveryAbortController === abortController) {
+            this.ollamaDiscoveryAbortController = undefined;
+          }
+          if (!this.isDisposed) {
+            try {
+              const { config: currentConfig } =
+                await this.configHandler.loadConfig();
+              this.scheduleOllamaModelDiscovery(currentConfig);
+            } catch {
+              // Config reload failures are handled by the config lifecycle.
+            }
+          }
+        }
+      })();
+    }, OLLAMA_DISCOVERY_INTERVAL_MS);
   }
 
   private async *streamWithAbortCleanup<T, R>(
@@ -119,6 +216,13 @@ export class Core {
   }
 
 	async dispose(): Promise<void> {
+    this.isDisposed = true;
+    this.ollamaDiscoveryAbortController?.abort();
+    this.ollamaDiscoveryAbortController = undefined;
+    if (this.ollamaDiscoveryTimer) {
+      clearTimeout(this.ollamaDiscoveryTimer);
+      this.ollamaDiscoveryTimer = undefined;
+    }
     for (const controller of this.messageAbortControllers.values()) {
       controller.abort();
     }
@@ -180,6 +284,7 @@ export class Core {
       };
 
       this.configHandler.onConfigUpdate((result) => {
+        this.scheduleOllamaModelDiscovery(result.config);
         void (async () => {
           const serializedResult =
             await this.configHandler.getSerializedConfig();

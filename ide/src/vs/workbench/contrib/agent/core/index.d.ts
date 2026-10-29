@@ -1785,6 +1785,13 @@ export interface CompiledMessagesResult {
   compiledChatMessages: ChatMessage[];
   didPrune: boolean;
   contextPercentage: number;
+  contextUsage?: ContextWindowUsage;
+}
+
+/** Token counts used to show a model's current context window usage. */
+export interface ContextWindowUsage {
+  inputTokens: number;
+  contextLength: number;
 }
 
 export interface AddToChatPayload {

@@ -16,7 +16,7 @@
     "jsx": "react-jsx",
     "noEmit": true,
     "noEmitOnError": false,
-    "types": ["jest", "node"],
+    "types": ["vitest/globals", "node"],
     "declaration": true,
     "declarationMap": true
   },

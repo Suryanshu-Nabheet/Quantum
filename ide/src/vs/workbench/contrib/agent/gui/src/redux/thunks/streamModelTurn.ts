@@ -17,6 +17,7 @@ import {
   setAgentStepDepth,
   setAppliedRulesAtIndex,
   setContextPercentage,
+  setContextUsage,
   setInactive,
   setInlineErrorMessage,
   completeOpenTodos,
@@ -443,11 +444,17 @@ async function runStreamModelTurnLocked({
     }
   }
 
-  const { compiledChatMessages, didPrune, contextPercentage } =
+  const {
+    compiledChatMessages,
+    didPrune,
+    contextPercentage,
+    contextUsage,
+  } =
     precompiledRes.content;
 
   dispatch(setIsPruned(didPrune));
   dispatch(setContextPercentage(contextPercentage));
+  dispatch(setContextUsage(contextUsage));
 
   const streamAborter = getState().session.streamAborter;
   try {
