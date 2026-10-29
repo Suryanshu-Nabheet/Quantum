@@ -41,16 +41,20 @@ export const refreshSessionMetadata = createAsyncThunk<
   },
   ThunkApiType
 >("session/refreshMetadata", async ({ offset, limit }, { dispatch, extra }) => {
-  const result = await extra.hostBridge.request("history/list", {
-    limit,
-    offset,
-  });
-  if (result.status === "error") {
-    throw new Error(result.error);
+  dispatch(setIsSessionMetadataLoading(true));
+  try {
+    const result = await extra.hostBridge.request("history/list", {
+      limit,
+      offset,
+    });
+    if (result.status === "error") {
+      throw new Error(result.error);
+    }
+    dispatch(setAllSessionMetadata(result.content));
+    return result.content;
+  } finally {
+    dispatch(setIsSessionMetadataLoading(false));
   }
-  dispatch(setIsSessionMetadataLoading(false));
-  dispatch(setAllSessionMetadata(result.content));
-  return result.content;
 });
 
 export const deleteSession = createAsyncThunk<void, string, ThunkApiType>(

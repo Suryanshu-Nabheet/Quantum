@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { Codicon } from '../../../../../base/common/codicons.js';
-import { Action2, registerAction2 } from '../../../../../platform/actions/common/actions.js';
+import { Action2, MenuId, registerAction2 } from '../../../../../platform/actions/common/actions.js';
 import { IConfigurationService } from '../../../../../platform/configuration/common/configuration.js';
 import { Extensions as ConfigurationExtensions, IConfigurationRegistry } from '../../../../../platform/configuration/common/configurationRegistry.js';
 import { localize, localize2 } from '../../../../../nls.js';
@@ -21,6 +21,7 @@ import { IAgentNativeService } from '../electron-browser/agentNativeService.js';
 import { KeyCode, KeyMod } from '../../../../../base/common/keyCodes.js';
 import { KeybindingsRegistry, KeybindingWeight } from '../../../../../platform/keybinding/common/keybindingsRegistry.js';
 import { IAgentWorkbenchHost } from '../electron-browser/agentWorkbenchHost.js';
+import { ContextKeyExpr } from '../../../../../platform/contextkey/common/contextkey.js';
 
 const agentViewIcon = registerIcon('quantum-agent-view-icon', Codicon.commentDiscussion, localize('agentViewIcon', 'View icon of the Agent view.'));
 const quantumCategory = localize2('agent.commands.category', 'Quantum');
@@ -140,7 +141,21 @@ registerAction2(class OpenAgentSettingsAction extends Action2 {
 for (const guiAction of guiActions) {
 	registerAction2(class extends Action2 {
 		constructor() {
-			super({ id: guiAction.id, title: localize2(guiAction.id, guiAction.title), category: quantumCategory, f1: true });
+			super({
+				id: guiAction.id,
+				title: localize2(guiAction.id, guiAction.title),
+				category: quantumCategory,
+				f1: guiAction.id !== 'agent.newSession',
+				...((guiAction.id === 'agent.newSession' || guiAction.id === 'agent.viewHistory') ? {
+					icon: guiAction.id === 'agent.newSession' ? Codicon.add : Codicon.history,
+					menu: {
+						id: MenuId.ViewTitle,
+						group: 'navigation',
+						order: guiAction.id === 'agent.newSession' ? 0 : 1,
+						when: ContextKeyExpr.equals('view', AGENT_GUI_VIEW_ID),
+					},
+				} : {}),
+			});
 		}
 		async run(accessor: ServicesAccessor): Promise<void> {
 			const viewsService = accessor.get(IViewsService);
@@ -155,6 +170,12 @@ KeybindingsRegistry.registerKeybindingRule({
 	id: 'agent.focusAgentInput',
 	weight: KeybindingWeight.WorkbenchContrib,
 	primary: KeyMod.CtrlCmd | KeyCode.KeyL,
+});
+KeybindingsRegistry.registerKeybindingRule({
+	id: 'agent.newSession',
+	weight: KeybindingWeight.WorkbenchContrib + 1,
+	primary: KeyMod.CtrlCmd | KeyCode.KeyN,
+	when: ContextKeyExpr.equals('view', AGENT_GUI_VIEW_ID),
 });
 KeybindingsRegistry.registerKeybindingRule({
 	id: 'agent.focusAgentInputWithoutClear',

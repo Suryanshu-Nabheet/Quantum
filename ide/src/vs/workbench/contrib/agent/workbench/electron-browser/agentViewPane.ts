@@ -52,7 +52,11 @@ export class AgentViewPane extends ViewPane {
 	) {
 		super(options, keybindingService, contextMenuService, agentConfigurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, hoverService);
 		agentService.registerGuiRequestHandler((messageType, data) => this.requestGui(messageType, data));
-		agentService.registerGuiMessageSender((messageType, data) => this.postOrQueueGuiMessage({ messageType, data, messageId: generateUuid() }));
+		agentService.registerGuiMessageSender((messageType, data) => {
+			const messageId = generateUuid();
+			this.trackMessageAck(this.pendingWorkbenchGuiAcks, messageId);
+			this.postOrQueueGuiMessage({ messageType, data, messageId });
+		});
 		this._register(this.editorService.onDidActiveEditorChange(() => {
 			const resource = this.editorService.activeEditor?.resource;
 			if (this.runtimeStarted && resource) {
@@ -80,6 +84,7 @@ export class AgentViewPane extends ViewPane {
 
 	private readonly invocationTypes = new Map<string, string>();
 	private readonly pendingCoreMessageAcks = new Set<string>();
+	private readonly pendingWorkbenchGuiAcks = new Set<string>();
 	private readonly queuedGuiMessages: unknown[] = [];
 	private runtimeStarted = false;
 	private readonly pendingGuiRequests = new Map<string, { resolve(value: unknown): void; reject(error: Error): void; timeout: ReturnType<typeof setTimeout> }>();
@@ -109,6 +114,7 @@ export class AgentViewPane extends ViewPane {
 		this.pendingGuiRequests.clear();
 		this.invocationTypes.clear();
 		this.pendingCoreMessageAcks.clear();
+		this.pendingWorkbenchGuiAcks.clear();
 		this.guiReady = false;
 		this.webview?.release(this);
 		this.webview?.dispose();
@@ -175,6 +181,9 @@ export class AgentViewPane extends ViewPane {
 		if (this.pendingCoreMessageAcks.delete(request.messageId)) {
 			return;
 		}
+		if (this.pendingWorkbenchGuiAcks.delete(request.messageId)) {
+			return;
+		}
 		this.invocationTypes.set(request.messageId, request.messageType);
 		try {
 			const nativeRequest = this.agentWorkbenchHost.handleGuiRequest(request.messageType, request.data);
@@ -197,15 +206,19 @@ export class AgentViewPane extends ViewPane {
 	private postCoreMessageToGui(message: unknown): void {
 		const messageId = (message as { messageId?: unknown } | undefined)?.messageId;
 		if (typeof messageId === 'string') {
-			if (this.pendingCoreMessageAcks.size >= 256) {
-				const oldest = this.pendingCoreMessageAcks.values().next().value;
-				if (oldest) {
-					this.pendingCoreMessageAcks.delete(oldest);
-				}
-			}
-			this.pendingCoreMessageAcks.add(messageId);
+			this.trackMessageAck(this.pendingCoreMessageAcks, messageId);
 		}
 		this.postOrQueueGuiMessage(message);
+	}
+
+	private trackMessageAck(pending: Set<string>, messageId: string): void {
+		if (pending.size >= 256) {
+			const oldest = pending.values().next().value;
+			if (oldest) {
+				pending.delete(oldest);
+			}
+		}
+		pending.add(messageId);
 	}
 
 	private requestGui(messageType: string, data: unknown): Promise<unknown> {

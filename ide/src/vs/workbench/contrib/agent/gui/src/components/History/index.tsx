@@ -35,6 +35,7 @@ export function History() {
   const hostBridge = useContext(HostBridgeContext);
 
   const [searchTerm, setSearchTerm] = useState("");
+  const [loadError, setLoadError] = useState<string | undefined>();
 
   const minisearch = useRef<MiniSearch>(
     new MiniSearch({
@@ -52,7 +53,22 @@ export function History() {
 
   // Always refresh the list when History opens — Redux metadata is not persisted.
   useEffect(() => {
-    void dispatch(refreshSessionMetadata({}));
+    let isCurrent = true;
+    void dispatch(refreshSessionMetadata({})).unwrap().then(
+      () => {
+        if (isCurrent) {
+          setLoadError(undefined);
+        }
+      },
+      (error: unknown) => {
+        if (isCurrent) {
+          setLoadError(error instanceof Error ? error.message : String(error));
+        }
+      },
+    );
+    return () => {
+      isCurrent = false;
+    };
   }, [dispatch]);
 
   useEffect(() => {
@@ -181,11 +197,13 @@ export function History() {
           <div className="m-3 text-center">
             {isSessionMetadataLoading ? (
               "Loading Sessions..."
+            ) : loadError ? (
+              <>Could not load session history: {loadError}</>
             ) : (
               <>
-                No past sessions found. To start a new session, either click the
-                "+" button or use the keyboard shortcut:{" "}
-                <Shortcut>meta L</Shortcut>
+                No past sessions found. To start a new session, click the "+"
+                button or use the keyboard shortcut:{" "}
+                <Shortcut>meta N</Shortcut>
               </>
             )}
           </div>

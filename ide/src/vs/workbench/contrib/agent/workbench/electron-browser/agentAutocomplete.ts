@@ -21,7 +21,7 @@ const SUFFIX_LIMIT = 6_000;
 
 class AgentInlineCompletionProvider extends Disposable implements InlineCompletionsProvider {
 	constructor(
-		@IInstantiationService private readonly instantiationService: IInstantiationService,
+		@IAgentNativeService private readonly agentService: IAgentNativeService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
 	) {
 		super();
@@ -40,11 +40,10 @@ class AgentInlineCompletionProvider extends Disposable implements InlineCompleti
 		const suffix = model.getValueInRange({ startLineNumber: position.lineNumber, startColumn: position.column, endLineNumber: endLine + 1, endColumn: model.getLineMaxColumn(endLine + 1) }).slice(0, SUFFIX_LIMIT);
 		const selected = context.selectedSuggestionInfo;
 		const completionId = context.requestUuid;
-		const agentService = this.instantiationService.invokeFunction(accessor => accessor.get(IAgentNativeService));
 
-		const cancellation = token.onCancellationRequested(() => void agentService.cancelCompletion(completionId));
+		const cancellation = token.onCancellationRequested(() => void this.agentService.cancelCompletion(completionId));
 		try {
-			const outcome = await agentService.complete({
+			const outcome = await this.agentService.complete({
 				isUntitledFile: model.uri.scheme === 'untitled',
 				completionId,
 				filepath: model.uri.toString(),
