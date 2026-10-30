@@ -257,9 +257,6 @@ export function assistantMessageHasIncompleteToolCalls(
   });
 }
 
-/** Reply shorter than this, after tools already ran, is a mid-task stop. */
-const IDLE_REPLY_MAX_CHARS = 500;
-
 /** Empty, a promise to keep working, or a lead-in with no findings after it. */
 export function assistantReplyIsUnfinished(text: string): boolean {
   const trimmed = text.trim();
@@ -276,13 +273,12 @@ export const AGENT_IDLE_RESUME_NUDGE =
   "You stopped before using a tool. Call a tool in this turn. Do not write a status line and do not end with a colon.";
 
 export const AGENT_FINISH_RESUME_NUDGE =
-  "You stopped before the task was finished. Do not repeat the status line. If a file is still unread, call the tool now. If the tool results are already above, write the complete findings in full sentences and end the task.";
+  "Continue from the current todo list and prior tool results. Do not repeat completed work or successful tool calls. If the in-progress item is complete, call write_todos with the full list: mark that item done and move the next unfinished item to in_progress. Keep at most one item in_progress; when implementation is complete, mark every implementation item done. Then perform one final review, fix any issue you find, and give a concise final summary. Do not claim unfinished work is complete.";
 
 /**
  * Agent mode stopped on prose. Resume when the model handed the work back,
- * stalled a codebase request, promised more work, left todos open, or stopped
- * short after tools already ran. A finished answer to an ordinary question
- * does not resume.
+ * has not started requested autonomous work, promised more work, or left todos
+ * open. A concise, complete answer after successful tools is allowed to end.
  */
 export function shouldResumeAgentAfterIdleReply(input: {
   text: string;
@@ -300,6 +296,7 @@ export function shouldResumeAgentAfterIdleReply(input: {
     return true;
   }
   if (
+    !input.turnAlreadyUsedTools &&
     looksLikeStalledAutonomousTask({
       lastUserText: input.lastUserText ?? "",
       lastAssistantText: input.text,
@@ -326,7 +323,7 @@ export function shouldResumeAgentAfterIdleReply(input: {
   ) {
     return true;
   }
-  return trimmed.length < IDLE_REPLY_MAX_CHARS;
+  return false;
 }
 
 /** Request-only nudge. Not written into chat history, so it does not split the turn. */
@@ -337,7 +334,16 @@ export function withAgentIdleResumeNudge(
   if (!last || last.role !== "assistant" || last.toolCalls?.length) {
     return messages;
   }
-  const toolsAlreadyRan = messages.some((message) => message.role === "tool");
+  let lastUserMessageIndex = -1;
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    if (messages[i].role === "user") {
+      lastUserMessageIndex = i;
+      break;
+    }
+  }
+  const toolsAlreadyRan = messages
+    .slice(lastUserMessageIndex + 1)
+    .some((message) => message.role === "tool");
   return [
     ...messages,
     {

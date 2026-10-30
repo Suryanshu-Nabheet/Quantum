@@ -20,7 +20,6 @@ import {
   setContextUsage,
   setInactive,
   setInlineErrorMessage,
-  completeOpenTodos,
   setIsPruned,
   setToolGenerated,
   recoverMarkdownJsonToolCallOnLastAssistant,
@@ -45,11 +44,11 @@ import { evaluateToolPolicies } from "./evaluateToolPolicies";
 import { preprocessToolCalls } from "./preprocessToolCallArgs";
 import { canResumeAfterToolCall } from "./streamResponseAfterToolCall";
 import {
+  agentStoppedBeforeFinishing,
   agentStepLimitMessage,
   filterToolsForTurn,
   getAgentContinuationReason,
   isAgentStepLimitReached,
-  lastAssistantText,
   resolveMaxAgentSteps,
 } from "workbench/common/agentTurnPolicy";
 import { createStreamRenderBatcher } from "../util/streamRenderBatch";
@@ -73,7 +72,6 @@ import {
 import { renderChatMessage } from "core/util/messageContent";
 import { BuiltInToolNames } from "core/tools/builtIn";
 import {
-  assistantReplyIsUnfinished,
   withAgentIdleResumeNudge,
 } from "core/llm/streamContinuation";
 import { injectQueuedMessageIfReady } from "./drainMessageQueue";
@@ -311,10 +309,17 @@ export async function runAgentDriver({
       const finished = getState();
       if (
         (finished.session.streamEpoch ?? 0) === streamEpoch &&
-        selectPendingToolCalls(finished).length === 0 &&
-        !assistantReplyIsUnfinished(lastAssistantText(finished.session.history))
+        finished.session.isStreaming &&
+        finished.session.mode === "agent" &&
+        finished.session.todos.some((todo) => todo.status !== "done") &&
+        agentStoppedBeforeFinishing(
+          finished.session.history,
+          finished.session.todos,
+        )
       ) {
-        dispatch(completeOpenTodos());
+        // Keep unfinished tasks visible and resumable instead of silently
+        // marking the whole checklist complete when continuation is exhausted.
+        dispatch(setInlineErrorMessage("max-agent-steps"));
       }
       ensureAgentTurnInactive(dispatch, getState);
       return;

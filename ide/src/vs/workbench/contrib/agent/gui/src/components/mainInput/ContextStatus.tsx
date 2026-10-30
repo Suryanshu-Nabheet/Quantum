@@ -91,19 +91,39 @@ function ContextUsageTooltip({ status }: { status: ContextStatusInfo }) {
         </span>
       </div>
       <div
-        className="bg-vsc-input-background h-1.5 overflow-hidden rounded-full"
+        className="w-full overflow-hidden rounded-full"
         role="progressbar"
         aria-label="Context window used"
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={Math.round(progress)}
+        style={{
+          display: "block",
+          width: "100%",
+          height: 6,
+          borderRadius: 9999,
+          backgroundColor: "rgba(128, 128, 128, 0.24)",
+        }}
       >
         <div
-          className={`h-full rounded-full ${status.warning ? "bg-warning" : "bg-border-focus"}`}
-          style={{ width: `${progress}%` }}
+          style={{
+            display: "block",
+            width: `${progress}%`,
+            minWidth: progress > 0 ? 2 : 0,
+            height: "100%",
+            borderRadius: 9999,
+            backgroundColor: status.warning ? "#e5a94c" : "#83a9cb",
+          }}
         />
       </div>
-      <div className="border-command-border space-y-1 border-t border-solid pt-2">
+      <div
+        className="space-y-1 pt-2"
+        style={{
+          border: 0,
+          borderTop:
+            "1px solid var(--command-border-preferred, var(--vscode-sideBar-border, rgba(128, 128, 128, 0.22)))",
+        }}
+      >
         <div className="flex justify-between gap-4">
           <span className="text-description-muted">Input</span>
           <span className="tabular-nums">{status.inputTokens.toLocaleString()} tokens</span>

@@ -61,7 +61,7 @@ function ToggleDiv({
         className={
           open
             ? "thin-scrollbar mt-2 max-h-40 min-w-0 overflow-y-auto overscroll-contain opacity-100"
-            : "mt-2 max-h-0 min-w-0 overflow-hidden opacity-0"
+            : "max-h-0 min-w-0 overflow-hidden opacity-0"
         }
       >
         {children}

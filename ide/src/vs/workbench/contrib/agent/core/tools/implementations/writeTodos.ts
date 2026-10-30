@@ -54,10 +54,13 @@ export function normalizeTodos(raw: unknown): TodoItem[] {
 }
 
 export function todosSystemBlock(items: TodoItem[]): string {
-  if (!items.length || items.every((item) => item.status === "done")) {
+  if (!items.length) {
     return "";
   }
-  return `\n\n<todos>\n${summarizeTodos(items)}\nWork the in-progress item with tools. When its status changes, call write_todos with the complete list. Keep exactly one item in_progress.\n</todos>`;
+  if (items.every((item) => item.status === "done")) {
+    return "\n\n<todos>\nAll implementation todos are complete. Review the completed changes and relevant tool results once. If you find an issue, fix it and update the todo list to reflect the remaining work. Otherwise provide a concise final summary and stop.\n</todos>";
+  }
+  return `\n\n<todos>\n${summarizeTodos(items)}\nWork only on the in-progress item. Do not repeat completed work or successful tool calls. Mark an item done as soon as its work and verification are complete, then call write_todos with the complete list and move the next unfinished item to in_progress. Keep at most one item in_progress; when all implementation work is complete, mark every item done.\n</todos>`;
 }
 
 /** Compact, model-readable summary of the list so the agent sees its plan. */

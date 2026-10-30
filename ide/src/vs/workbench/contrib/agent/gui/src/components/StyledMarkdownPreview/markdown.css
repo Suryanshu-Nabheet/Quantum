@@ -203,6 +203,13 @@ body[data-color-mode*="light"] {
   color: var(--color-fg-default);
   background-color: var(--color-canvas-default);
 }
+
+/* Keep rendered replies on the same configured type scale as chat status and
+   thinking text instead of overriding the Agent's font size with the upstream
+   Markdown stylesheet's fixed 16px default. */
+.agent-markdown .wmde-markdown {
+  font-size: inherit;
+}
 .wmde-markdown details,
 .wmde-markdown figcaption,
 .wmde-markdown figure {

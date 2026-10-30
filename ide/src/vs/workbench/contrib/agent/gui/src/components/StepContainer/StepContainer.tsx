@@ -39,15 +39,15 @@ function StepContainer(props: StepContainerProps) {
   const historyItemAfterThis = useAppSelector(
     (state) => state.session.history[props.index + 1],
   );
-  const showResponseActions =
-    (props.isLast || historyItemAfterThis?.message.role === "user") &&
-    !(props.isLast && (inProgress || props.item.toolCallStates));
-
   const messageText = useMemo(
     () => renderChatMessage(props.item.message).trim(),
     [props.item.message],
   );
   const hasMessageBody = messageText.length > 0;
+  const showResponseActions =
+    hasMessageBody &&
+    (props.isLast || historyItemAfterThis?.message.role === "user") &&
+    !(props.isLast && (inProgress || props.item.toolCallStates));
   const hasReasoning = !!props.item.reasoning?.text;
   // Only reserve body chrome when there is real content — never for tool-only turns.
   const showAssistantBody =

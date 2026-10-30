@@ -44,10 +44,10 @@ describe("normalizeTodos", () => {
 });
 
 describe("todosSystemBlock", () => {
-  it("omits a finished list so the next turn is not steered by it", () => {
+  it("asks for one final review after all implementation todos are done", () => {
     expect(
       todosSystemBlock([{ id: "1", text: "Read", status: "done" }]),
-    ).toBe("");
+    ).toContain("Review the completed changes");
   });
 
   it("includes an open list", () => {

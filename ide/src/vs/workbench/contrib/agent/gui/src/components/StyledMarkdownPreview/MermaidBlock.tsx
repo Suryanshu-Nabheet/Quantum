@@ -85,6 +85,7 @@ async function getMermaid() {
 export default function MermaidDiagram({ code }: { code: string }) {
   const reactId = useId().replace(/:/g, "");
   const mermaidRenderContainerRef = useRef<HTMLDivElement>(null);
+  const renderGenerationRef = useRef(0);
   const panzoomRef = useRef<{ destroy?: () => void; zoomIn: (o?: object) => void; zoomOut: (o?: object) => void; reset: () => void; zoomWithWheel: (e: WheelEvent) => void } | null>(null);
   const wheelHandlerRef = useRef<((event: WheelEvent) => void) | null>(null);
 
@@ -93,8 +94,10 @@ export default function MermaidDiagram({ code }: { code: string }) {
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
+    renderGenerationRef.current++;
     setIsLoading(true);
     setPending(looksIncomplete(code));
+    setError("");
   }, [code]);
 
   useDebouncedEffect(
@@ -103,6 +106,7 @@ export default function MermaidDiagram({ code }: { code: string }) {
       if (!container) {
         return;
       }
+      const renderGeneration = renderGenerationRef.current;
 
       // Tear down previous panzoom / wheel listener before re-render.
       if (wheelHandlerRef.current && container.parentElement) {
@@ -124,7 +128,7 @@ export default function MermaidDiagram({ code }: { code: string }) {
       }
 
       setPending(false);
-      const diagramId = `mermaid-${reactId}-${Math.random().toString(36).slice(2, 9)}`;
+      const diagramId = `mermaid-${reactId}-${renderGeneration}`;
 
       void (async () => {
         try {
@@ -132,6 +136,12 @@ export default function MermaidDiagram({ code }: { code: string }) {
             import("@panzoom/panzoom"),
             getMermaid(),
           ]);
+          if (
+            renderGeneration !== renderGenerationRef.current ||
+            !container.isConnected
+          ) {
+            return;
+          }
 
           mermaid.initialize({
             startOnLoad: false,
@@ -141,19 +151,22 @@ export default function MermaidDiagram({ code }: { code: string }) {
           });
 
           await mermaid.parse(code);
+          if (renderGeneration !== renderGenerationRef.current) {
+            return;
+          }
           const rendered = await mermaid.render(diagramId, code);
+          if (renderGeneration !== renderGenerationRef.current) {
+            return;
+          }
           const sanitized = DOMPurify.sanitize(rendered.svg, {
             USE_PROFILES: { svg: true, svgFilters: true },
             ADD_TAGS: ["foreignObject"],
             ADD_ATTR: ["dominant-baseline", "text-anchor", "style", "class"],
           });
-          if (!mermaidRenderContainerRef.current) {
-            return;
-          }
-          mermaidRenderContainerRef.current.innerHTML = sanitized;
+          container.innerHTML = sanitized;
           setError("");
 
-          const panzoom = Panzoom(mermaidRenderContainerRef.current, {
+          const panzoom = Panzoom(container, {
             step: MINIMUM_ZOOM_STEP,
           });
           panzoomRef.current = panzoom;
@@ -165,25 +178,23 @@ export default function MermaidDiagram({ code }: { code: string }) {
             panzoom.zoomWithWheel(event);
           };
           wheelHandlerRef.current = onWheel;
-          mermaidRenderContainerRef.current.parentElement?.addEventListener(
-            "wheel",
-            onWheel,
-            { passive: false },
-          );
+          container.parentElement?.addEventListener("wheel", onWheel, {
+            passive: false,
+          });
         } catch (err: unknown) {
+          if (renderGeneration !== renderGenerationRef.current) {
+            return;
+          }
           const message =
             err instanceof Error
               ? err.message
               : "Unknown error when parsing or rendering the Mermaid diagram.";
-          // Soft-fail during stream-like parse errors
-          if (/Expecting|Lexical error|Parse error/i.test(message)) {
-            setPending(true);
-            setError("");
-          } else {
-            setError(message);
-          }
+          setPending(false);
+          setError(message);
         } finally {
-          setIsLoading(false);
+          if (renderGeneration === renderGenerationRef.current) {
+            setIsLoading(false);
+          }
         }
       })();
     },
@@ -193,6 +204,7 @@ export default function MermaidDiagram({ code }: { code: string }) {
 
   useEffect(() => {
     return () => {
+      renderGenerationRef.current++;
       const container = mermaidRenderContainerRef.current;
       if (wheelHandlerRef.current && container?.parentElement) {
         container.parentElement.removeEventListener(

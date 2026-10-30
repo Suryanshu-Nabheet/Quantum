@@ -409,10 +409,9 @@ export function UnifiedTerminalCommand({
   return (
     <StyledTerminalContainer
       fontSize={getFontSize()}
-      className="mb-4"
       data-testid="terminal-container"
     >
-      <div className="outline-command-border rounded-default bg-editor !my-2 flex min-w-0 flex-col outline outline-1">
+      <div className="outline-command-border rounded-default bg-editor flex min-w-0 flex-col outline outline-1">
         {/* Toolbar */}
         <div
           className={`find-widget-skip bg-editor sticky -top-2 z-10 m-0 flex items-center justify-between gap-3 px-1.5 py-1 ${
@@ -448,7 +447,7 @@ export function UnifiedTerminalCommand({
             <pre className="bg-editor">
               <code>
                 {/* Command is always visible */}
-                <div className="text-terminal pb-2">{command}</div>
+                <div className="text-terminal pb-1">{command}</div>
 
                 {/* Running state with cursor */}
                 {isRunning && !hasOutput && (
@@ -459,7 +458,7 @@ export function UnifiedTerminalCommand({
 
                 {/* Output with optional collapsible functionality */}
                 {hasOutput && (
-                  <div className="mt-1">
+                  <div>
                     {/* Expand/Collapse indicator positioned between command and output */}
                     {processedTerminalContent.isLimited && (
                       <IndicatorOnly
@@ -471,7 +470,7 @@ export function UnifiedTerminalCommand({
                       />
                     )}
 
-                    <div className="pt-2">
+                    <div className="pt-1">
                       {processedTerminalContent.isLimited ? (
                         <CollapsibleOutputContainer
                           limitedContent={
@@ -498,7 +497,7 @@ export function UnifiedTerminalCommand({
         {/* Status information */}
         {(statusMessage || isRunning) && (
           <div
-            className="text-description flex items-center px-2 pb-2 pt-2 text-xs"
+            className="text-description flex items-center px-2 py-1.5 text-xs"
             style={{
               borderTop:
                 "1px solid var(--vscode-commandCenter-inactiveBorder, #555555)",

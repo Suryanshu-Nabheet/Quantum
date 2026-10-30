@@ -1,5 +1,5 @@
 import {
-
+  ArrowDownIcon,
   ChatBubbleOvalLeftIcon,
 } from "@heroicons/react/24/outline";
 import { Editor, JSONContent } from "@tiptap/react";
@@ -218,7 +218,11 @@ export function Chat() {
   }, [dispatch, history, isInEdit, isStreaming]);
 
   const lastSessionId = useAppSelector((state) => state.session.lastSessionId);
-  useAutoScroll(stepsDivRef, history);
+  const { showScrollToBottom, scrollToBottom } = useAutoScroll(
+    stepsDivRef,
+    history,
+    lastSessionId,
+  );
 
   const { widget, highlights } = useFindWidget(
     stepsDivRef,
@@ -520,6 +524,45 @@ export function Chat() {
   );
 
   const showScrollbar = showChatScrollbar ?? window.innerHeight > 5000;
+  const hasVisibleStreamingOutput = useMemo(() => {
+    if (!isStreaming) {
+      return false;
+    }
+
+    let lastUserMessageIndex = -1;
+    for (let index = history.length - 1; index >= 0; index--) {
+      if (history[index].message.role === "user") {
+        lastUserMessageIndex = index;
+        break;
+      }
+    }
+
+    const latestModelOutput = history
+      .slice(lastUserMessageIndex + 1)
+      .findLast(
+        (item) =>
+          item.message.role === "assistant" ||
+          item.message.role === "thinking",
+      );
+
+    if (!latestModelOutput) {
+      return false;
+    }
+
+    // A tool call is not streamed response text. Keep the status visible while
+    // tools run and between the tool result and the next model response.
+    if (
+      latestModelOutput.message.role === "assistant" &&
+      latestModelOutput.toolCallStates?.length
+    ) {
+      return false;
+    }
+
+    return (
+      renderChatMessage(latestModelOutput.message).trim().length > 0 ||
+      !!latestModelOutput.reasoning?.text
+    );
+  }, [history, isStreaming]);
 
   return (
     <div className={`${CHAT_SURFACE_CLASS} flex min-h-0 flex-1 flex-col`}>
@@ -565,7 +608,7 @@ export function Chat() {
               </div>
             );
           })}
-          {isStreaming && (
+          {isStreaming && !hasVisibleStreamingOutput && (
             <div className="min-w-0 max-w-full">
               <ShinyLoading status={streamingStatus ?? undefined} />
             </div>
@@ -573,6 +616,18 @@ export function Chat() {
         </div>
       </StepsDiv>
       <div className="relative min-w-0 max-w-full shrink-0">
+        {showScrollToBottom && (
+          <button
+            type="button"
+            aria-label="Scroll to latest"
+            title="Scroll to latest"
+            onClick={scrollToBottom}
+            className="absolute -top-11 right-4 z-10 flex h-9 w-9 items-center justify-center rounded-full border-0 bg-vsc-input-background text-foreground shadow-none transition-colors hover:bg-list-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
+            style={{ boxShadow: "inset 0 0 0 1px rgba(160, 160, 160, 0.24)" }}
+          >
+            <ArrowDownIcon className="h-5 w-5" />
+          </button>
+        )}
         <AgentInputBox
           isMainInput
           isLastUserInput={false}

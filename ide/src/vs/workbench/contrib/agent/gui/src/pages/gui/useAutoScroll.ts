@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChatHistoryItemWithMessageId } from "../../redux/slices/sessionSlice";
 
+const BOTTOM_THRESHOLD_PX = 2;
+
 /**
- * Only reset scroll state when a new user message is added to the chat.
- * We don't want to auto-scroll on new tool response messages.
+ * Resume following when a new user turn or session begins, but preserve a
+ * reader's position as assistant and tool messages stream into the thread.
  */
 function getNumUserMsgs(history: ChatHistoryItemWithMessageId[]) {
   return history.filter((msg) => msg.message.role === "user").length;
@@ -12,50 +14,108 @@ function getNumUserMsgs(history: ChatHistoryItemWithMessageId[]) {
 export const useAutoScroll = (
   ref: React.RefObject<HTMLDivElement>,
   history: ChatHistoryItemWithMessageId[],
+  sessionId?: string,
 ) => {
-  const [userHasScrolled, setUserHasScrolled] = useState(false);
-  const numUserMsgs = useMemo(() => getNumUserMsgs(history), [history.length]);
+  const shouldFollowRef = useRef(true);
+  const isJumpingToBottomRef = useRef(false);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const numUserMsgs = useMemo(() => getNumUserMsgs(history), [history]);
 
   useEffect(() => {
-    setUserHasScrolled(false);
-  }, [numUserMsgs]);
+    shouldFollowRef.current = true;
+    isJumpingToBottomRef.current = false;
+    setIsAtBottom(true);
+    const element = ref.current;
+    if (!element || numUserMsgs === 0) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      if (shouldFollowRef.current) {
+        element.scrollTop = element.scrollHeight;
+      }
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [numUserMsgs, ref, sessionId]);
+
+  const scrollToBottom = useCallback(() => {
+    const element = ref.current;
+    if (!element) return;
+
+    shouldFollowRef.current = true;
+    isJumpingToBottomRef.current = true;
+    element.scrollTo({ top: element.scrollHeight, behavior: "smooth" });
+  }, [ref]);
 
   useEffect(() => {
     if (!ref.current || history.length === 0) return;
+    const element = ref.current;
+    let scrollFrame = 0;
 
     const handleScroll = () => {
-      const elem = ref.current;
-      if (!elem) return;
+      const distanceFromBottom =
+        element.scrollHeight - element.scrollTop - element.clientHeight;
+      const atBottom = distanceFromBottom <= BOTTOM_THRESHOLD_PX;
+      if (atBottom) {
+        isJumpingToBottomRef.current = false;
+        shouldFollowRef.current = true;
+      } else if (!isJumpingToBottomRef.current) {
+        shouldFollowRef.current = false;
+      }
+      setIsAtBottom(atBottom);
+    };
 
-      const isAtBottom =
-        Math.abs(elem.scrollHeight - elem.scrollTop - elem.clientHeight) < 1;
-
-      /**
-       * We stop auto scrolling if a user manually scrolled up.
-       * We resume auto scrolling if a user manually scrolled to the bottom.
-       */
-      setUserHasScrolled(!isAtBottom);
+    const handleWheel = (event: WheelEvent) => {
+      const hasOverflow = element.scrollHeight > element.clientHeight;
+      if (event.deltaY < 0 && hasOverflow) {
+        isJumpingToBottomRef.current = false;
+        shouldFollowRef.current = false;
+        setIsAtBottom(false);
+      } else if (
+        element.scrollHeight - element.scrollTop - element.clientHeight <=
+        BOTTOM_THRESHOLD_PX
+      ) {
+        shouldFollowRef.current = true;
+        setIsAtBottom(true);
+      }
     };
 
     const resizeObserver = new ResizeObserver(() => {
-      const elem = ref.current;
-      if (!elem || userHasScrolled) return;
-      elem.scrollTop = elem.scrollHeight;
+      if (!shouldFollowRef.current || scrollFrame) return;
+      scrollFrame = window.requestAnimationFrame(() => {
+        scrollFrame = 0;
+        // Re-check after scheduling so a user's upward scroll always wins.
+        if (shouldFollowRef.current) {
+          if (isJumpingToBottomRef.current) {
+            element.scrollTo({ top: element.scrollHeight, behavior: "smooth" });
+          } else {
+            element.scrollTop = element.scrollHeight;
+            setIsAtBottom(true);
+          }
+        }
+      });
     });
 
-    ref.current.addEventListener("scroll", handleScroll);
+    element.addEventListener("scroll", handleScroll, { passive: true });
+    element.addEventListener("wheel", handleWheel, { passive: true });
 
-    // Observe the container
-    resizeObserver.observe(ref.current);
+    resizeObserver.observe(element);
 
-    // Observe all immediate children
-    Array.from(ref.current.children).forEach((child) => {
+    // Observe the history stack so streaming Markdown and loaded media can
+    // extend the thread without moving the reader unless they were at the end.
+    Array.from(element.children).forEach((child) => {
       resizeObserver.observe(child);
     });
 
     return () => {
+      if (scrollFrame) window.cancelAnimationFrame(scrollFrame);
       resizeObserver.disconnect();
-      ref.current?.removeEventListener("scroll", handleScroll);
+      element.removeEventListener("scroll", handleScroll);
+      element.removeEventListener("wheel", handleWheel);
     };
-  }, [ref, history.length, userHasScrolled]);
+  }, [ref, history.length]);
+
+  return {
+    showScrollToBottom: !isAtBottom,
+    scrollToBottom,
+  };
 };

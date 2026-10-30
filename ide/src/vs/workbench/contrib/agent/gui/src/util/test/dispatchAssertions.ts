@@ -37,9 +37,7 @@ export function expectStreamResponseLifecycle(
 	expect(types).toContain("chat/streamModelTurn/pending");
 	expect(types).toContain("session/setAgentStepDepth");
 	expect(types).toContain("session/setActive");
-	if (!options.aborted) {
-		expect(types).toContain("session/completeOpenTodos");
-	}
+	expect(types).not.toContain("session/completeOpenTodos");
 	expect(types).toContain("session/setInactive");
 	if (!options.aborted) {
 		expect(types).toContain("chat/streamModelTurn/fulfilled");

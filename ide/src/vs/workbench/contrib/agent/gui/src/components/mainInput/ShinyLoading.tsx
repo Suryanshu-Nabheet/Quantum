@@ -1,4 +1,5 @@
 import { CHAT_STATUS_LINE_CLASS } from "../../styles/chatLayout";
+import { getFontSize } from "../../util";
 import { TextShimmer } from "../core/text-shimmer";
 
 interface ShinyLoadingProps {
@@ -18,6 +19,7 @@ export const ShinyLoading = ({ status }: ShinyLoadingProps) => {
       className={`${CHAT_STATUS_LINE_CLASS} animate-in fade-in duration-300`}
       role="status"
       aria-live="polite"
+      style={{ fontSize: getFontSize() }}
     >
       <TextShimmer duration={2.4}>{displayStatus}</TextShimmer>
     </div>

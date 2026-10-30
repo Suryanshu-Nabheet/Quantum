@@ -1,6 +1,6 @@
 /**
  * Shared Agent chat column spacing.
- * One scale: 10px between turns, 6px inside a turn, 4px between tool rows.
+ * One scale: 8px between turns, 6px inside a turn, 4px between tool rows.
  * Clearance under the last line lives on the scroll container, not this stack.
  */
 
@@ -15,7 +15,7 @@ const CHAT_MESSAGE_INSET_CLASS = "px-2";
 
 /** Vertical gap between history turns. No top padding — the first line stays flush. */
 export const CHAT_HISTORY_STACK_CLASS =
-  "flex w-full min-w-0 max-w-full flex-col gap-2.5";
+  "flex w-full min-w-0 max-w-full flex-col gap-2";
 
 /** Spacing inside a single assistant turn (message + tools). */
 export const CHAT_TURN_GAP_CLASS =
@@ -23,8 +23,10 @@ export const CHAT_TURN_GAP_CLASS =
 
 /** Streaming / tool status line under the last user bubble. */
 export const CHAT_STATUS_LINE_CLASS = [
-  "text-description flex min-h-[1.125rem] items-center",
-  "mt-1 mb-0",
+  "text-description flex min-h-[1.125rem] items-center leading-[1.5]",
+  // The history stack already supplies the turn gap. Keep the pending status
+  // on the same baseline as the assistant body instead of adding a second gap.
+  "mb-0",
   CHAT_MESSAGE_INSET_CLASS,
   "select-none",
 ].join(" ");

@@ -138,7 +138,7 @@ export function SimpleToolCallUI({
           className={
             shouldShowContent
               ? "mt-2 min-w-0 opacity-100"
-              : "mt-2 max-h-0 overflow-hidden opacity-0"
+              : "max-h-0 overflow-hidden opacity-0"
           }
         >
           {shownContextItems.length > 0 ? (

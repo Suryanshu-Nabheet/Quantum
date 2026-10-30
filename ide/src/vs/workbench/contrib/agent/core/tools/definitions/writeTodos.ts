@@ -12,7 +12,7 @@ export const writeTodosTool: GetTool = async () => ({
   function: {
     name: BuiltInToolNames.WriteTodos,
     description:
-      "Maintain the task list for a multi-step job. Call this with the COMPLETE list every time: it replaces the previous list. Mark exactly one item in_progress at a time, and mark items done as soon as they are finished. Use it to plan long tasks and to stay on track across many steps.",
+      "Maintain the task list for a multi-step job. Call this with the COMPLETE list every time: it replaces the previous list. Keep at most one item in_progress; mark each item done as soon as its work and verification are complete, and mark all items done when the list is finished. Use it to plan long tasks and stay on track across many steps.",
     parameters: {
       type: "object",
       required: ["todos"],
@@ -39,7 +39,7 @@ export const writeTodosTool: GetTool = async () => ({
     },
   },
   systemMessageDescription: {
-    prefix: `To track multi-step work, call ${BuiltInToolNames.WriteTodos} with the complete ordered task list as an array of { text, status } objects, where status is pending, in_progress, or done. Keep exactly one item in_progress and mark items done when finished.`,
+    prefix: `To track multi-step work, call ${BuiltInToolNames.WriteTodos} with the complete ordered task list as an array of { text, status } objects, where status is pending, in_progress, or done. Keep at most one item in_progress. Mark an item done when its work and verification are complete, then move the next unfinished item to in_progress. When all work is complete, mark every item done.`,
     exampleArgs: [["todos", "[{\"text\":\"Read the config\",\"status\":\"in_progress\"}]"]],
   },
   defaultToolPolicy: "allowedWithoutPermission",

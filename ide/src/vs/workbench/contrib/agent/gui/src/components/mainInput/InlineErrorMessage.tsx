@@ -21,7 +21,7 @@ export default function InlineErrorMessage() {
         className={`border-border relative m-2 flex flex-col rounded-md border border-solid bg-transparent p-4`}
       >
         <p className={`thread-message text-error text-center`}>
-          Agent paused after reaching the step limit for this turn.
+          Agent paused before completing this turn.
           {hasOpenTodos
             ? " Open todos remain."
             : " Send another message to continue the task."}

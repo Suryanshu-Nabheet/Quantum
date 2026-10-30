@@ -157,7 +157,7 @@ export function planBriefBlock(brief: {
   if (!brief) {
     return "";
   }
-  return `\n\n<plan>\n# ${brief.title}\n\n${brief.overview}\n\n${brief.approach}\n\nImplement this plan. The todos are the build checklist.\n</plan>`;
+  return `\n\n<plan>\n# ${brief.title}\n\n${brief.overview}\n\n${brief.approach}\n\nImplement this plan one todo at a time. Update the complete todo list after each item is finished, and do not repeat completed work. After all implementation items are complete, review the changes once, fix any issues found, then provide a concise final summary and stop.\n</plan>`;
 }
 
 export const createPlanImpl: ToolImpl = async (args) => {
