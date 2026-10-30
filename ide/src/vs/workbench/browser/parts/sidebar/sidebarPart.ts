@@ -44,7 +44,8 @@ export class SidebarPart extends AbstractPaneCompositePart {
 
 	//#region IView
 
-	readonly minimumWidth: number = 170;
+	// Keep the horizontal Activity Bar actions from being squeezed out of the sidebar.
+	readonly minimumWidth: number = 224;
 	readonly maximumWidth: number = Number.POSITIVE_INFINITY;
 	readonly minimumHeight: number = 0;
 	readonly maximumHeight: number = Number.POSITIVE_INFINITY;

@@ -270,9 +270,11 @@ export class HorizontalActivityBarToggleActionViewItem extends CompositeBarActio
 			pin.classList.toggle('not-pinned', !item.pinned);
 			pin.setAttribute('role', 'button');
 			pin.tabIndex = 0;
-			pin.title = item.pinned
+			const pinLabel = item.pinned
 				? localize('horizontalActivityBar.unpin', "Unpin '{0}'", item.name)
 				: localize('horizontalActivityBar.pin', "Pin '{0}'", item.name);
+			pin.title = pinLabel;
+			pin.setAttribute('aria-label', pinLabel);
 
 			if (item.pinned && pinnedCount <= 1) {
 				pin.classList.add('disabled');

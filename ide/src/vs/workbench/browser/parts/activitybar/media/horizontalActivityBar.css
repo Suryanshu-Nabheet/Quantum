@@ -252,15 +252,32 @@
 }
 
 .monaco-workbench .horizontal-activitybar-views-panel .horizontal-activitybar-views-item-pin {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	margin-left: 8px;
 	cursor: pointer;
-	padding: 2px;
-	border-radius: 5px;
-	font-size: 14px;
+	padding: 0;
+	border-radius: 4px;
+	font-size: 16px;
+	line-height: 1;
 	flex-shrink: 0;
+}
+
+.monaco-workbench .horizontal-activitybar-views-panel .horizontal-activitybar-views-item-pin::before {
+	transform: rotate(-45deg);
+}
+
+.monaco-workbench .horizontal-activitybar-views-panel .horizontal-activitybar-views-item:hover .horizontal-activitybar-views-item-pin.not-pinned,
+.monaco-workbench .horizontal-activitybar-views-panel .horizontal-activitybar-views-item:focus-within .horizontal-activitybar-views-item-pin.not-pinned {
+	opacity: 0.7;
 }
 
 .monaco-workbench .horizontal-activitybar-views-panel .horizontal-activitybar-views-item-pin:hover:not(.disabled) {
 	background-color: var(--vscode-toolbar-activeBackground);
+	opacity: 1;
 }
 
 .monaco-workbench .horizontal-activitybar-views-panel .horizontal-activitybar-views-item-pin.disabled {
@@ -269,5 +286,5 @@
 }
 
 .monaco-workbench .horizontal-activitybar-views-panel .horizontal-activitybar-views-item-pin.not-pinned {
-	opacity: 0.5;
+	opacity: 0;
 }
