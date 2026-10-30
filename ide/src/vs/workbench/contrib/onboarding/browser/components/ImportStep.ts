@@ -5,14 +5,11 @@
 
 import { Disposable } from '../../../../../base/common/lifecycle.js';
 import { $, append, clearNode, addDisposableListener } from '../../../../../base/browser/dom.js';
+import { isWeb } from '../../../../../base/common/platform.js';
 import { IOnboardingStep } from '../onboardingStep.js';
-import { IFileService } from '../../../../../platform/files/common/files.js';
-import { INativeEnvironmentService } from '../../../../../platform/environment/common/environment.js';
+import { ICommandService } from '../../../../../platform/commands/common/commands.js';
 import { INotificationService, Severity } from '../../../../../platform/notification/common/notification.js';
 import { ILogService } from '../../../../../platform/log/common/log.js';
-import { joinPath } from '../../../../../base/common/resources.js';
-import { URI } from '../../../../../base/common/uri.js';
-import { isMacintosh, isLinux, isWindows } from '../../../../../base/common/platform.js';
 import { localize } from '../../../../../nls.js';
 
 interface ISetupOption {
@@ -66,8 +63,7 @@ export class ImportStep extends Disposable implements IOnboardingStep {
 	}
 
 	constructor(
-		@IFileService private readonly fileService: IFileService,
-		@INativeEnvironmentService private readonly environmentService: INativeEnvironmentService,
+		@ICommandService private readonly commandService: ICommandService,
 		@INotificationService private readonly notificationService: INotificationService,
 		@ILogService private readonly logService: ILogService,
 	) {
@@ -226,8 +222,7 @@ export class ImportStep extends Disposable implements IOnboardingStep {
 
 		const id = this._selectedId;
 		try {
-			const sources = this.getSourcePaths(id);
-			if (!sources) {
+			if (isWeb) {
 				throw new Error(
 					localize(
 						'onboarding.setup.errorPlatform',
@@ -236,8 +231,10 @@ export class ImportStep extends Disposable implements IOnboardingStep {
 				);
 			}
 
-			await this.migrateUserData(sources.userData);
-			await this.migrateExtensions(sources.extensions);
+			await this.commandService.executeCommand(
+				'workbench.action.importEditorSetup',
+				id,
+			);
 
 			this.notificationService.notify({
 				severity: Severity.Info,
@@ -254,95 +251,6 @@ export class ImportStep extends Disposable implements IOnboardingStep {
 				localize('onboarding.setup.failedMsg', 'Migration failed: {0}', message),
 			);
 			throw e;
-		}
-	}
-
-	private getSourcePaths(
-		id: string,
-	): { userData: URI; extensions: URI } | undefined {
-		const home = this.environmentService.userHome;
-
-		if (isMacintosh) {
-			const appSupport = joinPath(home, 'Library', 'Application Support');
-			switch (id) {
-				case 'vscode':
-					return {
-						userData: joinPath(appSupport, 'Code', 'User'),
-						extensions: joinPath(home, '.vscode', 'extensions'),
-					};
-				case 'cursor':
-					return {
-						userData: joinPath(appSupport, 'Cursor', 'User'),
-						extensions: joinPath(home, '.cursor', 'extensions'),
-					};
-				case 'windsurf':
-					return {
-						userData: joinPath(appSupport, 'Windsurf', 'User'),
-						extensions: joinPath(home, '.windsurf', 'extensions'),
-					};
-			}
-		} else if (isLinux) {
-			const config = joinPath(home, '.config');
-			switch (id) {
-				case 'vscode':
-					return {
-						userData: joinPath(config, 'Code', 'User'),
-						extensions: joinPath(home, '.vscode', 'extensions'),
-					};
-				case 'cursor':
-					return {
-						userData: joinPath(config, 'Cursor', 'User'),
-						extensions: joinPath(home, '.cursor', 'extensions'),
-					};
-				case 'windsurf':
-					return {
-						userData: joinPath(config, 'Windsurf', 'User'),
-						extensions: joinPath(home, '.windsurf', 'extensions'),
-					};
-			}
-		} else if (isWindows) {
-			const roaming = joinPath(home, 'AppData', 'Roaming');
-			switch (id) {
-				case 'vscode':
-					return {
-						userData: joinPath(roaming, 'Code', 'User'),
-						extensions: joinPath(home, '.vscode', 'extensions'),
-					};
-				case 'cursor':
-					return {
-						userData: joinPath(roaming, 'Cursor', 'User'),
-						extensions: joinPath(home, '.cursor', 'extensions'),
-					};
-				case 'windsurf':
-					return {
-						userData: joinPath(roaming, 'Windsurf', 'User'),
-						extensions: joinPath(home, '.windsurf', 'extensions'),
-					};
-			}
-		}
-		return undefined;
-	}
-
-	private async migrateUserData(source: URI) {
-		const target = this.environmentService.appSettingsHome;
-		const filesToCopy = ['settings.json', 'keybindings.json', 'snippets'];
-
-		for (const file of filesToCopy) {
-			const sourceFile = joinPath(source, file);
-			const targetFile = joinPath(target, file);
-
-			if (await this.fileService.exists(sourceFile)) {
-				this.logService.info(`[Migration] Copying ${file} from ${sourceFile.fsPath}`);
-				await this.fileService.copy(sourceFile, targetFile, true);
-			}
-		}
-	}
-
-	private async migrateExtensions(source: URI) {
-		const target = URI.file(this.environmentService.extensionsPath);
-		if (await this.fileService.exists(source)) {
-			this.logService.info(`[Migration] Copying extensions from ${source.fsPath}`);
-			await this.fileService.copy(source, target, true);
 		}
 	}
 
