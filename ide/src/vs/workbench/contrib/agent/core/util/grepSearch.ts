@@ -1,3 +1,5 @@
+import { isSecurityConcern } from "../indexing/ignore";
+
 /*
   Formats the output of a grep search to reduce unnecessary indentation, lines, etc
   Assumes a command with these params
@@ -5,15 +7,24 @@
   
   Also can truncate the output to a specified number of characters
 */
+export function isGrepSearchFileHeader(line: string): boolean {
+  return (
+    line.startsWith("./") ||
+    /^(?:file|vscode-[a-z\d-]+):\/\/\S+$/i.test(line)
+  );
+}
+
 export function formatGrepSearchResults(
   results: string,
   maxChars?: number,
 ): {
   formatted: string;
   numResults: number;
+  numFiles: number;
   truncated: boolean;
 } {
   let numResults = 0;
+  let numFiles = 0;
   const keepLines: string[] = [];
 
   function countLeadingSpaces(line: string) {
@@ -21,13 +32,18 @@ export function formatGrepSearchResults(
   }
 
   const processResult = (lines: string[]) => {
-    // Skip results in which only the file path was kept
     const resultPath = lines[0];
     const resultContent = lines.slice(1);
-    if (resultContent.length === 0) {
+    if (!resultPath || resultContent.length === 0) {
       return;
     }
 
+    numFiles++;
+    if (isSecurityConcern(resultPath)) {
+      return;
+    }
+
+    numResults++;
     // Add path
     keepLines.push(resultPath);
 
@@ -57,10 +73,13 @@ export function formatGrepSearchResults(
 
   let resultLines: string[] = [];
   for (const line of results.split("\n").filter((l) => !!l)) {
-    if (line.startsWith("./") || line === "--") {
-      processResult(resultLines); // process previous result
+    if (line === "--") {
+      // Ripgrep uses this to separate distant match groups in the same file.
+      continue;
+    }
+    if (isGrepSearchFileHeader(line)) {
+      processResult(resultLines);
       resultLines = [line];
-      numResults++;
       continue;
     }
 
@@ -78,12 +97,14 @@ export function formatGrepSearchResults(
     return {
       formatted: formatted.substring(0, maxChars),
       numResults,
+      numFiles,
       truncated: true,
     };
   } else {
     return {
       formatted,
       numResults,
+      numFiles,
       truncated: false,
     };
   }

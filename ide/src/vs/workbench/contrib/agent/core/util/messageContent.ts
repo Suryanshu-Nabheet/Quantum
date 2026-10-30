@@ -1,10 +1,10 @@
-import {
+import type {
   ChatMessage,
   ContextItem,
   MessageContent,
   MessagePart,
   TextMessagePart,
-} from "../index";
+} from "../index.js";
 
 export function stripImages(messageContent: MessageContent): string {
   if (typeof messageContent === "string") {
@@ -61,5 +61,9 @@ export function normalizeToMessageParts(message: ChatMessage): MessagePart[] {
         : [{ type: "text", text: message.content }];
     case "tool":
       return [{ type: "text", text: message.content }];
+    default: {
+      const exhaustiveCheck: never = message;
+      return exhaustiveCheck;
+    }
   }
 }

@@ -137,6 +137,12 @@ describe("isSecurityConcern", () => {
         true,
       );
       expect(isSecurityConcern("backend/certs/server.key")).toBe(true);
+      expect(isSecurityConcern("src/secrets/nested/notes.txt")).toBe(true);
+      expect(
+        isSecurityConcern(
+          "vscode-remote://ssh-remote+host/workspace/.aws/nested/config",
+        ),
+      ).toBe(true);
     });
 
     // it("should handle Windows-style paths", () => {
@@ -203,6 +209,10 @@ describe("isSecurityConcern", () => {
 
     it("should handle paths with only separators", () => {
       expect(isSecurityConcern("/")).toBe(false);
+    });
+
+    it("treats paths that escape the workspace as unsafe", () => {
+      expect(isSecurityConcern("../.env")).toBe(true);
     });
 
     it("should handle paths with multiple extensions", () => {

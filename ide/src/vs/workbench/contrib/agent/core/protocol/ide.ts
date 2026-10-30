@@ -28,7 +28,10 @@ export type ToIdeFromWebviewOrCoreProtocol = {
   openFile: [{ path: string }, void];
   openUrl: [string, void];
   runCommand: [{ command: string; options?: TerminalOptions }, void];
-  getSearchResults: [{ query: string; maxResults?: number }, string];
+  getSearchResults: [
+    { query: string; maxResults?: number; isRegExp?: boolean },
+    string,
+  ];
   getFileResults: [
     { pattern: string; maxResults?: number; includeMedia?: boolean },
     string[],

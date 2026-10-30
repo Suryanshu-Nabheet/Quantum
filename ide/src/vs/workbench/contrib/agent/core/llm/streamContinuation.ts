@@ -1,5 +1,5 @@
-import { ChatMessage, PromptLog, ToolCall, ToolCallDelta } from "..";
-import { renderChatMessage } from "../util/messageContent";
+import type { ChatMessage, PromptLog, ToolCall, ToolCallDelta } from "../index.js";
+import { renderChatMessage } from "../util/messageContent.js";
 
 export const MAX_STREAM_CHAT_CONTINUATIONS = 8;
 

@@ -2,15 +2,15 @@ import type {
   AgentUIConfig,
   ChatHistoryItem,
   TodoItem,
-} from "../../core";
-import { BuiltInToolNames } from "../../core/tools/builtIn";
-import { BROWSER_TOOL_GROUP } from "../../core/tools/definitions/browserTools";
-import { renderChatMessage } from "../../core/util/messageContent";
+} from "../../core/index.js";
+import { BuiltInToolNames } from "../../core/tools/builtIn.js";
+import { BROWSER_TOOL_GROUP } from "../../core/tools/definitions/browserTools.js";
+import { renderChatMessage } from "../../core/util/messageContent.js";
 import {
   assistantReplyIsUnfinished,
   shouldResumeAgentAfterIdleReply,
   userRequestedAutonomousCodebaseWork,
-} from "../../core/llm/streamContinuation";
+} from "../../core/llm/streamContinuation.js";
 
 /** Default cap for tool and model rounds in one user turn. */
 export const DEFAULT_MAX_AGENT_STEPS = 500;
@@ -54,11 +54,11 @@ export function resolveMaxAgentSteps(ui: AgentUIConfig | undefined): number {
 export function isAgentStepLimitReached(
   depth: number,
   ui: AgentUIConfig | undefined,
+  isTestEnvironment = false,
 ): boolean {
-  const maxSteps =
-    process.env.NODE_ENV === "test"
-      ? TEST_MAX_AGENT_STEPS
-      : resolveMaxAgentSteps(ui);
+  const maxSteps = isTestEnvironment
+    ? TEST_MAX_AGENT_STEPS
+    : resolveMaxAgentSteps(ui);
   return depth >= maxSteps;
 }
 

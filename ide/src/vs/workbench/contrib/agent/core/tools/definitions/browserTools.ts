@@ -1,5 +1,5 @@
-import { Tool } from "../..";
-import { ToolPolicy } from "terminal-security";
+import type { Tool } from "../../index.js";
+import type { ToolPolicy } from "terminal-security";
 
 export const BROWSER_TOOL_GROUP = "Browser";
 

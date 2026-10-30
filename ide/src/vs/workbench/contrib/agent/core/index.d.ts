@@ -841,7 +841,11 @@ export interface IDE {
 
   getPinnedFiles(): Promise<string[]>;
 
-  getSearchResults(query: string, maxResults?: number): Promise<string>;
+  getSearchResults(
+    query: string,
+    maxResults?: number,
+    isRegExp?: boolean,
+  ): Promise<string>;
 
   getFileResults(
     pattern: string,

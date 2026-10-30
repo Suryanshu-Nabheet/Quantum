@@ -11,6 +11,10 @@ import {
   getUriPathBasename,
   joinPathsToUri,
 } from "../../util/uri.js";
+import {
+  isSecurityConcern,
+  throwIfFileIsSecurityConcern,
+} from "../../indexing/ignore.js";
 import { BaseContextProvider } from "../index.js";
 
 const MAX_FOLDER_CONTEXT_ITEMS = 300;
@@ -81,9 +85,19 @@ class FolderContextProvider extends BaseContextProvider {
     extras: ContextProviderExtras,
   ): Promise<ContextItem[]> {
     const folderUri = query.trim();
+    throwIfFileIsSecurityConcern(
+      folderUri.endsWith("/") ? folderUri : `${folderUri}/`,
+    );
     let entries: string[] = [];
     try {
-      entries = (await extras.ide.listDir(folderUri))
+      const children = await extras.ide.listDir(folderUri);
+      entries = children
+        .filter(([name, type]) => {
+          const childUri = joinPathsToUri(folderUri, name);
+          return !isSecurityConcern(
+            (type & 2) !== 0 ? `${childUri}/` : childUri,
+          );
+        })
         .slice(0, MAX_FOLDER_CONTEXT_ITEMS)
         .map(([name, type]) => `${name}${(type & 2) !== 0 ? "/" : ""}`);
     } catch {
@@ -115,9 +129,11 @@ class FolderContextProvider extends BaseContextProvider {
     }
 
     const folderUris = getWorkspaceFolderUris(
-      files,
+      files.filter((file) => !isSecurityConcern(file)),
       workspaceDirs,
       MAX_FOLDER_SUBMENU_ITEMS,
+    ).filter((folder) =>
+      !isSecurityConcern(folder.endsWith("/") ? folder : `${folder}/`),
     );
 
     const withUniquePaths = getShortestUniqueRelativeUriPaths(

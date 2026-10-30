@@ -216,7 +216,13 @@ export async function runAgentDriver({
         ensureAgentTurnInactive(dispatch, getState);
         return;
       }
-      if (isAgentStepLimitReached(currentDepth, getState().config.config.ui)) {
+      if (
+        isAgentStepLimitReached(
+          currentDepth,
+          getState().config.config.ui,
+          process.env.NODE_ENV === "test",
+        )
+      ) {
         const maxSteps = resolveMaxAgentSteps(getState().config.config.ui);
         const message = agentStepLimitMessage(maxSteps);
         if (process.env.NODE_ENV === "test") {

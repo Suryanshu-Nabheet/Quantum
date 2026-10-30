@@ -92,7 +92,7 @@ puts "Result: #{calc.get_result}"
 test("formats grep search results correctly", () => {
   const result = formatGrepSearchResults(sampleGrepOutput);
 
-  expect(result.numResults).toBe(13); // 4 file paths in the sample
+  expect(result.numResults).toBe(9); // Files with at least one matching line
   expect(result.truncated).toBe(false);
 
   // Check that all file paths are preserved
@@ -123,8 +123,51 @@ test("handles input with only file paths (no content) - lines should be skipped"
     "./empty-file.ts\n./another-empty.js\n./has-content.ts\n searchMatch";
   const result = formatGrepSearchResults(input);
 
-  expect(result.numResults).toBe(3);
+  expect(result.numResults).toBe(1);
+  expect(result.numFiles).toBe(1);
   expect(result.formatted).toBe("./has-content.ts\n  searchMatch");
+});
+
+test("formats native workbench URI headings as separate search results", () => {
+  const input = [
+    "file:///workspace/app/src/first.ts",
+    "12: first match",
+    "https://docs.example.test/search",
+    "--",
+    "18: another match in the same file",
+    "vscode-remote://ssh-remote+host/workspace/app/src/second.ts",
+    "3: second file match",
+  ].join("\n");
+
+  const result = formatGrepSearchResults(input);
+
+  expect(result.numResults).toBe(2);
+  expect(result.formatted).toContain("file:///workspace/app/src/first.ts");
+  expect(result.formatted).toContain("12: first match");
+  expect(result.formatted).toContain("https://docs.example.test/search");
+  expect(result.formatted).toContain("18: another match in the same file");
+  expect(result.formatted).toContain(
+    "vscode-remote://ssh-remote+host/workspace/app/src/second.ts",
+  );
+  expect(result.formatted).toContain("3: second file match");
+  expect(result.formatted).not.toContain("--");
+});
+
+test("omits sensitive file contents from formatted search results", () => {
+  const input = [
+    "file:///workspace/app/secrets/nested/credentials.txt",
+    "1: private-value",
+    "file:///workspace/app/src/app.ts",
+    "1: safe-result",
+  ].join("\n");
+
+  const result = formatGrepSearchResults(input);
+
+  expect(result.numResults).toBe(1);
+  expect(result.numFiles).toBe(2);
+  expect(result.formatted).not.toContain("private-value");
+  expect(result.formatted).not.toContain("credentials.txt");
+  expect(result.formatted).toContain("safe-result");
 });
 
 test("truncates output when exceeding maxChars", () => {
@@ -183,9 +226,9 @@ class Test {
 
   const result = formatGrepSearchResults(input);
 
-  expect(result.numResults).toBe(3);
+  expect(result.numResults).toBe(2);
   expect(result.formatted).toContain("./file1.ts");
-  expect(result.formatted).toContain("--");
+  expect(result.formatted).not.toContain("--");
   expect(result.formatted).toContain("function two() {");
   expect(result.formatted).toContain("./file2.ts");
 });

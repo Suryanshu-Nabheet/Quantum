@@ -9,6 +9,8 @@ import {
 import {
   INLINE_IMAGE_MIME_BY_EXT,
   PATH_ONLY_ATTACH_EXTS,
+  isSecurityConcern,
+  throwIfFileIsSecurityConcern,
 } from "../../indexing/ignore.js";
 import {
   getShortestUniqueRelativeUriPaths,
@@ -70,6 +72,7 @@ class FileContextProvider extends BaseContextProvider {
     extras: ContextProviderExtras,
   ): Promise<ContextItem[]> {
     const fileUri = query.trim();
+    throwIfFileIsSecurityConcern(fileUri);
     const { relativePathOrBasename, last2Parts, baseName } = getUriDescription(
       fileUri,
       await extras.ide.getWorkspaceDirs(),
@@ -179,7 +182,7 @@ class FileContextProvider extends BaseContextProvider {
     const workspaceFiles = [
       ...openFiles,
       ...resolveWorkspaceFileUris(indexed, workspaceDirs),
-    ];
+    ].filter((fileUri) => !isSecurityConcern(fileUri));
 
     const seen = new Set<string>();
     const merged: ContextSubmenuItem[] = [];

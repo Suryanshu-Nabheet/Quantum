@@ -1,6 +1,5 @@
 import ignore from "ignore";
 
-import path from "path";
 import { fileURLToPath } from "url";
 import { AgentError, AgentErrorReason } from "../util/errors";
 
@@ -314,16 +313,52 @@ export function isSecurityConcern(filePathOrUri: string) {
   let filepath = filePathOrUri;
   try {
     filepath = fileURLToPath(filePathOrUri);
-  } catch {}
-  if (path.isAbsolute(filepath)) {
-    const dir = path.dirname(filepath).split(/\/|\\/).at(-1) ?? "";
-    const basename = path.basename(filepath);
-    filepath = `${dir ? dir + "/" : ""}${basename}`;
+  } catch {
+    // Workbench search can return non-file workspace URIs such as
+    // vscode-remote://. URL.pathname gives us their path without the authority.
+    try {
+      const uri = new URL(filePathOrUri);
+      if (uri.protocol) {
+        filepath = decodeURIComponent(uri.pathname);
+      }
+    } catch {
+      // The input is already a plain filesystem or workspace-relative path.
+    }
   }
-  if (!filepath) {
+
+  // The ignore library expects a workspace-relative, slash-separated path.
+  // Keep every path segment: reducing this to the filename and immediate
+  // parent misses files nested below protected directories.
+  filepath = filepath.replace(/\\/g, "/").replace(/^\/+/, "");
+  filepath = filepath.replace(/^[A-Za-z]:\//, "");
+  const isDirectory = filepath.endsWith("/");
+  const rawSegments = filepath.split("/").filter(Boolean);
+  if (rawSegments.includes("..")) {
+    return true;
+  }
+  const segments = rawSegments.filter((segment) => segment !== ".");
+  if (segments.length === 0) {
     return false;
   }
-  return defaultFileAndFolderSecurityIgnores.ignores(filepath);
+
+  const normalizedPath = segments.join("/");
+  if (defaultFileAndFolderSecurityIgnores.ignores(normalizedPath)) {
+    return true;
+  }
+
+  // Evaluate every parent as a directory so sensitive directory patterns
+  // still match when the path is several levels below the protected folder.
+  for (let end = 1; end < segments.length; end++) {
+    const directory = `${segments.slice(0, end).join("/")}/`;
+    if (defaultFileAndFolderSecurityIgnores.ignores(directory)) {
+      return true;
+    }
+  }
+
+  return (
+    isDirectory &&
+    defaultFileAndFolderSecurityIgnores.ignores(`${normalizedPath}/`)
+  );
 }
 
 export function throwIfFileIsSecurityConcern(filepath: string) {

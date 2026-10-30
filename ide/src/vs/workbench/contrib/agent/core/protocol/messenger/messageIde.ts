@@ -209,8 +209,12 @@ export class MessageIde implements IDE {
     return this.request("getPinnedFiles", undefined);
   }
 
-  getSearchResults(query: string, maxResults?: number): Promise<string> {
-    return this.request("getSearchResults", { query, maxResults });
+  getSearchResults(
+    query: string,
+    maxResults?: number,
+    isRegExp?: boolean,
+  ): Promise<string> {
+    return this.request("getSearchResults", { query, maxResults, isRegExp });
   }
 
   getFileResults(

@@ -500,7 +500,7 @@ export class AgentWorkbenchHost extends Disposable {
 			}
 			case 'getSearchResults': {
 				const roots = this.workspaceContextService.getWorkspace().folders.map(folder => folder.uri);
-				const query = this.queryBuilder.text({ pattern: String(data?.query ?? ''), isRegExp: false, isCaseSensitive: false, isWordMatch: false }, roots, {
+				const query = this.queryBuilder.text({ pattern: String(data?.query ?? ''), isRegExp: data?.isRegExp === true, isCaseSensitive: false, isWordMatch: false }, roots, {
 					maxResults: typeof data?.maxResults === 'number' ? data.maxResults : undefined,
 				});
 				const result = await this.searchService.textSearch(query);

@@ -1,7 +1,10 @@
 import { ToolImpl } from ".";
 import { ContextItem } from "../..";
 import { AgentError, AgentErrorReason } from "../../util/errors";
-import { formatGrepSearchResults } from "../../util/grepSearch";
+import {
+  formatGrepSearchResults,
+  isGrepSearchFileHeader,
+} from "../../util/grepSearch";
 import { prepareQueryForRipgrep } from "../../util/regexValidator";
 import { getStringArg } from "../parseArgs";
 
@@ -9,24 +12,13 @@ const DEFAULT_GREP_SEARCH_RESULTS_LIMIT = 100;
 const DEFAULT_GREP_SEARCH_CHAR_LIMIT = 7500; // ~1500 tokens, will keep truncation simply for now
 
 function splitGrepResultsByFile(content: string): ContextItem[] {
-  const matches = [...content.matchAll(/^\.\/([^\n]+)$/gm)];
-
   const contextItems: ContextItem[] = [];
+  let filepath: string | undefined;
+  let fileLines: string[] = [];
 
-  for (let i = 0; i < matches.length; i++) {
-    const match = matches[i];
-    const filepath = match[1];
-    const startIndex = match.index!;
-    const endIndex =
-      i < matches.length - 1 ? matches[i + 1].index! : content.length;
-
-    // Extract grepped content for this file
-    const fileContent = content
-      .substring(startIndex, endIndex)
-      .replace(/^\.\/[^\n]+\n/, "") // remove the line with file path
-      .trim();
-
-    if (fileContent) {
+  const flushFile = () => {
+    const fileContent = fileLines.join("\n").trim();
+    if (filepath && fileContent) {
       contextItems.push({
         name: `Search results in ${filepath}`,
         description: `Grep search results from ${filepath}`,
@@ -34,7 +26,18 @@ function splitGrepResultsByFile(content: string): ContextItem[] {
         uri: { type: "file", value: filepath },
       });
     }
+  };
+
+  for (const line of content.split("\n")) {
+    if (isGrepSearchFileHeader(line)) {
+      flushFile();
+      filepath = line;
+      fileLines = [];
+    } else if (line !== "--" && filepath) {
+      fileLines.push(line);
+    }
   }
+  flushFile();
 
   return contextItems;
 }
@@ -49,6 +52,7 @@ export const grepSearchImpl: ToolImpl = async (args, extras) => {
     results = await extras.ide.getSearchResults(
       query,
       DEFAULT_GREP_SEARCH_RESULTS_LIMIT,
+      true,
     );
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -70,25 +74,36 @@ export const grepSearchImpl: ToolImpl = async (args, extras) => {
     );
   }
 
-  const { formatted, numResults, truncated } = formatGrepSearchResults(
-    results,
-    DEFAULT_GREP_SEARCH_CHAR_LIMIT,
-  );
+  const {
+    formatted,
+    numResults,
+    numFiles,
+    truncated,
+  } = formatGrepSearchResults(results, DEFAULT_GREP_SEARCH_CHAR_LIMIT);
 
   if (numResults === 0) {
-    return [
+    const contextItems: ContextItem[] = [
       {
         name: "Search results",
         description: "Results from grep search",
-        content: "The search returned no results.",
+        content:
+          "The search returned no accessible results. Protected files are excluded from Agent search context.",
       },
     ];
+    if (numFiles === DEFAULT_GREP_SEARCH_RESULTS_LIMIT) {
+      contextItems.push({
+        name: "Truncation warning",
+        description: "",
+        content: `The search returned the maximum ${DEFAULT_GREP_SEARCH_RESULTS_LIMIT} file results before protected files were filtered. Additional matching files may have been omitted; refine the query to find more accessible matches.`,
+      });
+    }
+    return contextItems;
   }
 
   const truncationReasons: string[] = [];
-  if (numResults === DEFAULT_GREP_SEARCH_RESULTS_LIMIT) {
+  if (numFiles === DEFAULT_GREP_SEARCH_RESULTS_LIMIT) {
     truncationReasons.push(
-      `the number of results exceeded ${DEFAULT_GREP_SEARCH_RESULTS_LIMIT}`,
+      `the search returned the maximum ${DEFAULT_GREP_SEARCH_RESULTS_LIMIT} file results, so additional matching files may have been omitted`,
     );
   }
   if (truncated) {
