@@ -141,14 +141,14 @@ Full workflow rules: `ide/AGENTS.md`.
 
 ## Quality checks
 
-From `ide/` root:
+From the IDE root (`ide/`):
 
 ```bash
 npm run compile-agent
 npm run compile
 ```
 
-From this directory:
+From this directory (`ide/src/vs/workbench/contrib/agent/`):
 
 ```bash
 npm run tsc:check
@@ -158,7 +158,7 @@ npm run verify   # full matrix (core, gui, packages)
 npm run eval:harness   # monorepo eval cases (or: cd ../../../../../eval && bun run eval)
 ```
 
-Known test baselines (do not increase failure count): core — 1 failure in `runTerminalCommand.vitest.ts`; gui — 14 failures in `streamResponse*.test.ts`.
+Verification must finish with zero failures. Historical failure counts are not accepted as a baseline; investigate and resolve failures before merging.
 
 ## License
 

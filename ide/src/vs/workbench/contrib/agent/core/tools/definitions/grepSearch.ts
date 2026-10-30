@@ -23,6 +23,11 @@ export const grepSearchTool: Tool = {
           description:
             "The regex pattern to search for within file contents. Use regex with alternation (e.g., 'word1|word2|word3') or character classes to find multiple potential words in a single search.",
         },
+        splitByFile: {
+          type: "boolean",
+          description:
+            "When true, return matching lines as separate context items grouped by file.",
+        },
       },
     },
   },

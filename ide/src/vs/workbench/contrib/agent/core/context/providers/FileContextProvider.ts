@@ -181,7 +181,7 @@ class FileContextProvider extends BaseContextProvider {
 
     const workspaceFiles = [
       ...openFiles,
-      ...resolveWorkspaceFileUris(indexed, workspaceDirs),
+      ...resolveWorkspaceFileUris(indexed.results, workspaceDirs),
     ].filter((fileUri) => !isSecurityConcern(fileUri));
 
     const seen = new Set<string>();

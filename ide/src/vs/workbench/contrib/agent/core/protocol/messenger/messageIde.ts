@@ -213,7 +213,7 @@ export class MessageIde implements IDE {
     query: string,
     maxResults?: number,
     isRegExp?: boolean,
-  ): Promise<string> {
+  ) {
     return this.request("getSearchResults", { query, maxResults, isRegExp });
   }
 
@@ -221,7 +221,7 @@ export class MessageIde implements IDE {
     pattern: string,
     maxResults?: number,
     options?: { includeMedia?: boolean },
-  ): Promise<string[]> {
+  ) {
     return this.request("getFileResults", {
       pattern,
       maxResults,

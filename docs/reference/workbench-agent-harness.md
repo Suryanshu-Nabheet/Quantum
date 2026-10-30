@@ -44,30 +44,29 @@ Use ` ```tool ` system-message tools (not native `tool_calls`). Post-stream reco
 
 ## Verification (before commit)
 
-From `ide/`:
+From `ide/` (native IDE typecheck):
+
+```bash
+npm run compile-check-ts-native
+```
+
+From `ide/src/vs/workbench/contrib/agent/` (Agent host, core, and GUI):
 
 ```bash
 npm run tsc:check
 npm test
-npm --prefix src/vs/workbench/contrib/agent/core run vitest
-npm --prefix src/vs/workbench/contrib/agent/gui run tsc:check
-npm --prefix src/vs/workbench/contrib/agent/gui test
-```
-
-From `contrib/agent/`:
-
-```bash
+npm --prefix gui run tsc:check
+npm --prefix gui test
 npm run verify
 ```
 
+`npm test` runs the core Vitest suite. `npm run verify` also runs the package and agent-config suites.
+
 **Desktop smoke** after harness changes: launch `./scripts/code.sh`, exercise multi-tool prompt, optional terminal tool — see [`ide/AGENTS.md`](../../ide/AGENTS.md).
 
-## Known test baselines
+## Verification expectation
 
-Do not increase failure counts:
-
-- **core:** 1 failure in `core/tools/implementations/runTerminalCommand.vitest.ts`
-- **gui:** 14 failures across `gui/src/redux/thunks/streamResponse*.test.ts`
+Verification must complete with zero failures. Historical failure counts are not a baseline; investigate and resolve current failures before merging.
 
 ## See also
 

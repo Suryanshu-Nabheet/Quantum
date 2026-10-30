@@ -23,13 +23,11 @@ Monorepo documentation: [docs/for-agents.md](../docs/for-agents.md) · [Workbenc
 These rules apply to **every** change. Do not skip them.
 
 1. **Verify before you commit.** Never commit a change to the agent harness (`src/vs/workbench/contrib/agent/**`) until it passes the verification loop:
-   - `npm run tsc:check` (host) is green
-   - `npm test` (host vitest) is green
-   - `npm --prefix core run vitest` (core) has no **new** failures vs the known baseline
-   - `npm --prefix gui run tsc:check` (GUI) is green
-   - `npm --prefix gui test` (GUI) has no **new** failures vs the known baseline
+   - From `src/vs/workbench/contrib/agent/`: `npm run tsc:check` (host) is green
+   - From `src/vs/workbench/contrib/agent/`: `npm test` (core Vitest suite) is green
+   - From `src/vs/workbench/contrib/agent/`: `npm --prefix gui run tsc:check` and `npm --prefix gui test` are green
    - For any local package you touch, its `npm run build` (tsc) is green
-   Known pre-existing baselines (do not "fix" these by accident, and do not introduce new ones): core has 1 failing test in `core/tools/implementations/runTerminalCommand.vitest.ts`; GUI has 14 failing tests across `gui/src/redux/thunks/streamResponse*.test.ts`. A change is only safe if the failure count does not increase.
+   Do not carry forward historical failure baselines. The required state is zero failures; investigate and resolve failures before treating verification as complete.
 
 2. **Test in the desktop before you commit.** After the build/test loop is green, launch Code OSS and smoke-test the affected feature in the desktop before pushing. Use the launch skill (`.agents/skills/launch/SKILL.md`): build, launch with `./scripts/code.sh --remote-debugging-port=9224`, attach with `@playwright/cli`, exercise the changed feature, and take a screenshot as proof. If the desktop environment is genuinely unavailable (no display / build infeasible in the current run), say so explicitly and rely on the build+test loop above — do not silently skip it. Always kill Code OSS when done.
 
@@ -51,4 +49,4 @@ Production agent turns flow through: `streamModelTurn` → tool policy → `runP
 - **IPC:** `HostBridge` long timeouts for `tools/call` and `llm/assembleChat`; LLM stream idle 600s.
 - **Gateway models:** non–api.openai.com OpenAI-compatible APIs use `parallel_tool_calls: true` (core + openai-adapters).
 
-Before changing the harness: `npm --prefix gui run tsc:check`, then desktop smoke (multi-tool prompt + optional long terminal command). Settings: Agent Access **Full**, Terminal **Auto** for autonomous runs.
+Before changing the harness, run the Agent checks above and desktop smoke (multi-tool prompt + optional long terminal command). Settings: Agent Access **Full**, Terminal **Auto** for autonomous runs.

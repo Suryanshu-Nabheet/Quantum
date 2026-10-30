@@ -26,11 +26,14 @@ class SearchContextProvider extends BaseContextProvider {
       false,
     );
     // Note, search context provider will not truncate result chars, but will limit number of results
-    const { formatted } = formatGrepSearchResults(results);
+    const { formatted } = formatGrepSearchResults(results.content);
+    const truncationNote = results.limitHit
+      ? "\n\nSearch results were limited by the workbench search result cap; refine the query to inspect additional matches."
+      : "";
     return [
       {
         description: "Search results",
-        content: `Results of searching codebase for "${query}":\n\n${formatted}`,
+        content: `Results of searching codebase for "${query}":\n\n${formatted}${truncationNote}`,
         name: "Search results",
       },
     ];

@@ -21,6 +21,7 @@ export function formatGrepSearchResults(
   formatted: string;
   numResults: number;
   numFiles: number;
+  numExcludedFiles: number;
   truncated: boolean;
 } {
   let numResults = 0;
@@ -98,6 +99,7 @@ export function formatGrepSearchResults(
       formatted: formatted.substring(0, maxChars),
       numResults,
       numFiles,
+      numExcludedFiles: numFiles - numResults,
       truncated: true,
     };
   } else {
@@ -105,6 +107,7 @@ export function formatGrepSearchResults(
       formatted,
       numResults,
       numFiles,
+      numExcludedFiles: numFiles - numResults,
       truncated: false,
     };
   }

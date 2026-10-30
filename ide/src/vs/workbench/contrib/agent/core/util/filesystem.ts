@@ -277,16 +277,16 @@ class FileSystemIde implements IDE {
     query: string,
     maxResults?: number,
     _isRegExp?: boolean,
-  ): Promise<string> {
-    return "";
+  ): Promise<{ content: string; limitHit: boolean }> {
+    return { content: "", limitHit: false };
   }
 
   async getFileResults(
     pattern: string,
     maxResults?: number,
     _options?: { includeMedia?: boolean },
-  ): Promise<string[]> {
-    return [];
+  ): Promise<{ results: string[]; limitHit: boolean }> {
+    return { results: [], limitHit: false };
   }
 
   async readFileAsDataUrl(

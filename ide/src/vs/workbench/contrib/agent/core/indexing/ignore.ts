@@ -9,12 +9,14 @@ export const DEFAULT_SECURITY_IGNORE_FILETYPES = [
   "*.env",
   "*.env.*",
   ".env*",
-  "config.json",
-  "config.yaml",
-  "config.yml",
-  "settings.json",
   "appsettings.json",
   "appsettings.*.json",
+  "credentials.json",
+  "credentials.yaml",
+  "credentials.yml",
+  "secrets.json",
+  "secrets.yaml",
+  "secrets.yml",
 
   // Certificate and key files
   "*.key",
@@ -63,6 +65,7 @@ export const DEFAULT_SECURITY_IGNORE_DIRS = [
   // Environment and configuration directories
   ".env/",
   "env/",
+  ".agent/",
 
   // Cloud provider credential directories
   ".aws/",
@@ -174,6 +177,12 @@ export const MEDIA_ATTACHABLE_FILETYPES = MEDIA_ATTACHABLE_EXTS.map(
 export const MEDIA_ATTACH_FIND_GLOB = `**/*.{${MEDIA_ATTACHABLE_EXTS.join(",")}}`;
 
 export const ADDITIONAL_INDEXING_IGNORE_FILETYPES = [
+  // Keep generic project configuration out of automatic indexing. Explicit
+  // file attachment and targeted searches remain available to the user.
+  "config.json",
+  "config.yaml",
+  "config.yml",
+  "settings.json",
   "*.DS_Store",
   "*-lock.json",
   "*.lock",
@@ -306,23 +315,60 @@ export const defaultIgnoreFileAndDir = ignore()
   .add(defaultIgnoreFile)
   .add(defaultIgnoreDir);
 
+function getDecodedUriPath(uriString: string): string | undefined {
+  const schemeSeparator = uriString.indexOf("://");
+  if (schemeSeparator < 0) {
+    return undefined;
+  }
+
+  const authorityStart = schemeSeparator + 3;
+  const pathStart = uriString.indexOf("/", authorityStart);
+  if (pathStart < 0) {
+    return "";
+  }
+
+  const rawPath = uriString.slice(pathStart).split(/[?#]/, 1)[0];
+  const decodedSegments: string[] = [];
+  try {
+    for (const rawSegment of rawPath.split(/[\\/]/)) {
+      const decodedSegment = decodeURIComponent(rawSegment);
+      // Encoded separators are separators after URI decoding and must not
+      // conceal a parent traversal segment from the policy check.
+      for (const segment of decodedSegment.split(/[\\/]/)) {
+        if (segment === "..") {
+          return "..";
+        }
+        if (segment && segment !== ".") {
+          decodedSegments.push(segment);
+        }
+      }
+    }
+  } catch {
+    // A malformed resource URI cannot be safely classified. Fail closed.
+    return "..";
+  }
+
+  return `${rawPath.startsWith("/") ? "/" : ""}${decodedSegments.join("/")}${rawPath.endsWith("/") ? "/" : ""}`;
+}
+
 export function isSecurityConcern(filePathOrUri: string) {
   if (!filePathOrUri) {
     return false;
   }
   let filepath = filePathOrUri;
-  try {
-    filepath = fileURLToPath(filePathOrUri);
-  } catch {
-    // Workbench search can return non-file workspace URIs such as
-    // vscode-remote://. URL.pathname gives us their path without the authority.
-    try {
-      const uri = new URL(filePathOrUri);
-      if (uri.protocol) {
-        filepath = decodeURIComponent(uri.pathname);
+  const decodedUriPath = getDecodedUriPath(filePathOrUri);
+  if (decodedUriPath !== undefined) {
+    if (decodedUriPath === "..") {
+      return true;
+    }
+    if (/^file:\/\//i.test(filePathOrUri)) {
+      try {
+        filepath = fileURLToPath(filePathOrUri);
+      } catch {
+        return true;
       }
-    } catch {
-      // The input is already a plain filesystem or workspace-relative path.
+    } else {
+      filepath = decodedUriPath;
     }
   }
 
@@ -365,7 +411,7 @@ export function throwIfFileIsSecurityConcern(filepath: string) {
   if (isSecurityConcern(filepath)) {
     throw new AgentError(
       AgentErrorReason.FileIsSecurityConcern,
-      `Reading or Editing ${filepath} is not allowed because it is a security concern. Do not attempt to read or edit this file in any way.`,
+      "Reading or editing this path is not allowed because it may contain sensitive information. Do not attempt to access it again.",
     );
   }
 }

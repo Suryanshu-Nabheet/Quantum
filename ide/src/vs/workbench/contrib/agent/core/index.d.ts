@@ -773,6 +773,16 @@ export type FileStatsMap = {
   [path: string]: FileStats;
 };
 
+export interface TextSearchResults {
+  content: string;
+  limitHit: boolean;
+}
+
+export interface FileSearchResults {
+  results: string[];
+  limitHit: boolean;
+}
+
 export interface IDE {
   getIdeInfo(): Promise<IdeInfo>;
 
@@ -845,13 +855,13 @@ export interface IDE {
     query: string,
     maxResults?: number,
     isRegExp?: boolean,
-  ): Promise<string>;
+  ): Promise<TextSearchResults>;
 
   getFileResults(
     pattern: string,
     maxResults?: number,
     options?: { includeMedia?: boolean },
-  ): Promise<string[]>;
+  ): Promise<FileSearchResults>;
 
   /** Read a file as a data URL for multimodal attach (images). Optional. */
   readFileAsDataUrl?(

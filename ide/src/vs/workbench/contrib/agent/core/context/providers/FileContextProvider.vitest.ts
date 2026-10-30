@@ -25,7 +25,7 @@ describe("FileContextProvider security boundaries", () => {
     const ide = {
       getWorkspaceDirs: async () => ["file:///workspace"],
       getOpenFiles: async () => [secureFile, "file:///workspace/src/app.ts"],
-      getFileResults: async () => [secureFile, "file:///workspace/src/app.ts"],
+      getFileResults: async () => ({ results: [secureFile, "file:///workspace/src/app.ts"], limitHit: false }),
     };
 
     const items = await provider.loadSubmenuItems({ ide } as never);
@@ -34,6 +34,6 @@ describe("FileContextProvider security boundaries", () => {
     ]);
     await expect(
       provider.getContextItems(secureFile, {} as never),
-    ).rejects.toThrow("security concern");
+    ).rejects.toThrow("sensitive information");
   });
 });

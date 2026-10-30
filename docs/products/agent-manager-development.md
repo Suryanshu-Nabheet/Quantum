@@ -37,7 +37,7 @@ Monorepo verify: `../scripts/verify.sh` (includes `agent/scripts/verify.sh`).
 ## Architecture notes
 
 - **Codex-first:** server spawns `codex app-server` (JSON-RPC over stdio) per provider session; events stream to the browser via WebSocket (`orchestration.domainEvent`, etc.).
-- Key server modules (indicative): `codexAppServerManager.ts`, `providerManager.ts`, `wsServer.ts`.
+- Key server modules (indicative): `codexAppServerManager.ts`, `provider/Services/ProviderService.ts`, `provider/Layers/ProviderAdapterRegistry.ts`, and `wsRpc.ts`.
 - **Contracts** define the wire format — change schemas in `packages/contracts` and update server + web together.
 
 ## Local dev isolation

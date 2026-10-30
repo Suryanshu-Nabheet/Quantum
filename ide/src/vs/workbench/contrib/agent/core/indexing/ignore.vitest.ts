@@ -7,6 +7,7 @@ import {
   MEDIA_ATTACHABLE_FILETYPES,
   defaultFileAndFolderSecurityIgnores,
   isSecurityConcern,
+  throwIfFileIsSecurityConcern,
 } from "./ignore";
 
 describe("isSecurityConcern", () => {
@@ -20,11 +21,13 @@ describe("isSecurityConcern", () => {
       expect(isSecurityConcern("file:///path/to/.env")).toBe(true);
     });
 
-    it("should detect configuration files as security concerns", () => {
-      expect(isSecurityConcern("config.json")).toBe(true);
-      expect(isSecurityConcern("config.yaml")).toBe(true);
-      expect(isSecurityConcern("config.yml")).toBe(true);
-      expect(isSecurityConcern("settings.json")).toBe(true);
+    it("should detect credential-named configuration files as security concerns", () => {
+      expect(isSecurityConcern("credentials.json")).toBe(true);
+      expect(isSecurityConcern("credentials.yaml")).toBe(true);
+      expect(isSecurityConcern("credentials.yml")).toBe(true);
+      expect(isSecurityConcern("secrets.json")).toBe(true);
+      expect(isSecurityConcern("secrets.yaml")).toBe(true);
+      expect(isSecurityConcern("secrets.yml")).toBe(true);
       expect(isSecurityConcern("appsettings.json")).toBe(true);
       expect(isSecurityConcern("appsettings.development.json")).toBe(true);
       expect(isSecurityConcern("appsettings.production.json")).toBe(true);
@@ -145,10 +148,26 @@ describe("isSecurityConcern", () => {
       ).toBe(true);
     });
 
-    // it("should handle Windows-style paths", () => {
-    //   expect(isSecurityConcern("C:\\Users\\user\\.env")).toBe(true);
-    //   expect(isSecurityConcern("D:\\projects\\app\\secrets\\")).toBe(true);
-    // });
+    it("should handle Windows-style paths", () => {
+      expect(isSecurityConcern("C:\\Users\\user\\.env")).toBe(true);
+      expect(
+        isSecurityConcern("D:\\projects\\app\\secrets\\nested\\notes.txt"),
+      ).toBe(true);
+      expect(isSecurityConcern("C:\\Users\\user\\project\\config.json")).toBe(false);
+    });
+
+    it("detects encoded traversal and sensitive URI path segments", () => {
+      expect(isSecurityConcern("file:///workspace/%2e%2e/.env")).toBe(true);
+      expect(
+        isSecurityConcern(
+          "vscode-remote://ssh-remote+host/workspace/%2E%2E/.aws/credentials",
+        ),
+      ).toBe(true);
+      expect(
+        isSecurityConcern("file:///workspace/secrets%2Fcredentials.json"),
+      ).toBe(true);
+      expect(isSecurityConcern("file:///workspace/%ZZ/.env")).toBe(true);
+    });
   });
 
   describe("Non-security files", () => {
@@ -160,7 +179,11 @@ describe("isSecurityConcern", () => {
       expect(isSecurityConcern("styles/main.css")).toBe(false);
     });
 
-    it("should not flag regular configuration files", () => {
+    it("should allow generic project configuration files", () => {
+      expect(isSecurityConcern("config.json")).toBe(false);
+      expect(isSecurityConcern("config.yaml")).toBe(false);
+      expect(isSecurityConcern("config.yml")).toBe(false);
+      expect(isSecurityConcern("settings.json")).toBe(false);
       expect(isSecurityConcern("package.json")).toBe(false);
       expect(isSecurityConcern("tsconfig.json")).toBe(false);
       expect(isSecurityConcern("webpack.config.js")).toBe(false);
@@ -226,6 +249,13 @@ describe("isSecurityConcern", () => {
       expect(isSecurityConcern("project/.env")).toBe(true);
       expect(isSecurityConcern("deeply/nested/path/.env")).toBe(true);
     });
+
+    it("keeps generic config files out of indexing without blocking explicit attach", () => {
+      expect(DEFAULT_IGNORES).toContain("config.json");
+      expect(DEFAULT_IGNORES).toContain("settings.json");
+      expect(DEFAULT_FILE_ATTACH_IGNORES).not.toContain("config.json");
+      expect(DEFAULT_FILE_ATTACH_IGNORES).not.toContain("settings.json");
+    });
   });
 
   describe("Pattern matching consistency", () => {
@@ -274,6 +304,19 @@ describe("isSecurityConcern", () => {
         expect(functionResult).toBe(ignoreResult);
       });
     });
+  });
+
+  it("does not disclose sensitive path fragments in policy errors", () => {
+    let message = "";
+    try {
+      throwIfFileIsSecurityConcern("workspace/private/customer-api-token.env");
+    } catch (error) {
+      message = error instanceof Error ? error.message : String(error);
+    }
+
+    expect(message).toContain("sensitive information");
+    expect(message).not.toContain("customer-api-token.env");
+    expect(message).not.toContain("private");
   });
 });
 

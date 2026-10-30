@@ -129,7 +129,7 @@ class FolderContextProvider extends BaseContextProvider {
     }
 
     const folderUris = getWorkspaceFolderUris(
-      files.filter((file) => !isSecurityConcern(file)),
+      files.results.filter((file) => !isSecurityConcern(file)),
       workspaceDirs,
       MAX_FOLDER_SUBMENU_ITEMS,
     ).filter((folder) =>

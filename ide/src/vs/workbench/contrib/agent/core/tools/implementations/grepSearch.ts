@@ -47,7 +47,7 @@ export const grepSearchImpl: ToolImpl = async (args, extras) => {
 
   const { query, warning } = prepareQueryForRipgrep(rawQuery);
 
-  let results: string;
+  let results: Awaited<ReturnType<typeof extras.ide.getSearchResults>>;
   try {
     results = await extras.ide.getSearchResults(
       query,
@@ -63,7 +63,7 @@ export const grepSearchImpl: ToolImpl = async (args, extras) => {
         {
           name: "Search error",
           description: "The search query could not be processed",
-          content: `The search failed due to an invalid regex pattern.\n\nOriginal query: ${rawQuery}\nProcessed query: ${query}\n\nError: ${errorMessage}\n\nTip: If you're searching for literal text with special characters, the query was automatically escaped. If you need regex patterns, ensure they use proper regex syntax.`,
+          content: `The search failed due to an invalid regex pattern.\n\nOriginal query: ${rawQuery}\nProcessed query: ${query}\n\nError: ${errorMessage}\n\nTip: Grep Search interprets the query as a regular expression. Escape regex metacharacters when searching for them literally.`,
         },
       ];
     }
@@ -77,9 +77,9 @@ export const grepSearchImpl: ToolImpl = async (args, extras) => {
   const {
     formatted,
     numResults,
-    numFiles,
+    numExcludedFiles,
     truncated,
-  } = formatGrepSearchResults(results, DEFAULT_GREP_SEARCH_CHAR_LIMIT);
+  } = formatGrepSearchResults(results.content, DEFAULT_GREP_SEARCH_CHAR_LIMIT);
 
   if (numResults === 0) {
     const contextItems: ContextItem[] = [
@@ -87,23 +87,32 @@ export const grepSearchImpl: ToolImpl = async (args, extras) => {
         name: "Search results",
         description: "Results from grep search",
         content:
-          "The search returned no accessible results. Protected files are excluded from Agent search context.",
+          numExcludedFiles > 0
+            ? `All ${numExcludedFiles} matching files were excluded because they are protected. No file contents were provided to the Agent.`
+            : "The search returned no matches.",
       },
     ];
-    if (numFiles === DEFAULT_GREP_SEARCH_RESULTS_LIMIT) {
+    if (results.limitHit) {
       contextItems.push({
         name: "Truncation warning",
         description: "",
-        content: `The search returned the maximum ${DEFAULT_GREP_SEARCH_RESULTS_LIMIT} file results before protected files were filtered. Additional matching files may have been omitted; refine the query to find more accessible matches.`,
+        content: `The workbench search reached its ${DEFAULT_GREP_SEARCH_RESULTS_LIMIT}-file limit. Additional matching files may have been omitted; refine the query to search a narrower set.`,
+      });
+    }
+    if (warning) {
+      contextItems.push({
+        name: "Search note",
+        description: "",
+        content: warning,
       });
     }
     return contextItems;
   }
 
   const truncationReasons: string[] = [];
-  if (numFiles === DEFAULT_GREP_SEARCH_RESULTS_LIMIT) {
+  if (results.limitHit) {
     truncationReasons.push(
-      `the search returned the maximum ${DEFAULT_GREP_SEARCH_RESULTS_LIMIT} file results, so additional matching files may have been omitted`,
+      `the workbench search reached its ${DEFAULT_GREP_SEARCH_RESULTS_LIMIT}-file limit, so additional matching files may have been omitted`,
     );
   }
   if (truncated) {
@@ -127,22 +136,27 @@ export const grepSearchImpl: ToolImpl = async (args, extras) => {
     ];
   }
 
-  // Add warnings about query modifications or truncation
-  const warnings: string[] = [];
-  if (warning) {
-    warnings.push(warning);
+  if (numExcludedFiles > 0) {
+    contextItems.push({
+      name: "Protected files excluded",
+      description: "",
+      content: `${numExcludedFiles} matching file${numExcludedFiles === 1 ? " was" : "s were"} excluded because they are protected.`,
+    });
   }
-  if (truncationReasons.length > 0) {
-    warnings.push(
-      `Results were truncated because ${truncationReasons.join(" and ")}`,
-    );
+
+  if (warning) {
+    contextItems.push({
+      name: "Search note",
+      description: "",
+      content: warning,
+    });
   }
 
   if (truncationReasons.length > 0) {
     contextItems.push({
       name: "Truncation warning",
       description: "",
-      content: `The above search results were truncated because ${truncationReasons.join(" and ")}. If the results are not satisfactory, try refining your search query.`,
+      content: `The above search results were truncated because ${truncationReasons.join(" and ")}. Refine the search query to inspect a narrower result set.`,
     });
   }
   return contextItems;

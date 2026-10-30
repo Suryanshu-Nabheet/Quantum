@@ -12,10 +12,16 @@ export const fileGlobSearchImpl: ToolImpl = async (args, extras) => {
     extras.ide.getFileResults(pattern, MAX_AGENT_GLOB_RESULTS),
     extras.ide.getWorkspaceDirs(),
   ]);
-  const results = fileResults.filter((result) => !isSecurityConcern(result));
+  const results = fileResults.results.filter(
+    (result) => !isSecurityConcern(result),
+  );
+  const excludedCount = fileResults.results.length - results.length;
   let formattedResults: string;
   if (results.length === 0) {
-    formattedResults = "The glob search returned no results.";
+    formattedResults =
+      excludedCount > 0
+        ? `All ${excludedCount} matching paths were excluded because they are protected.`
+        : "The glob search returned no results.";
   } else if (results.every((result) => result.includes("://"))) {
     formattedResults = getShortestUniqueRelativeUriPaths(
       results,
@@ -36,11 +42,19 @@ export const fileGlobSearchImpl: ToolImpl = async (args, extras) => {
   ];
 
   // In case of truncation, add a warning
-  if (fileResults.length === MAX_AGENT_GLOB_RESULTS) {
+  if (fileResults.limitHit) {
     contextItems.push({
       name: "Truncation warning",
       description: "",
       content: `The search returned the maximum ${MAX_AGENT_GLOB_RESULTS} file results, so additional matches may have been omitted. Refine the pattern if you need a narrower result set.`,
+    });
+  }
+
+  if (excludedCount > 0) {
+    contextItems.push({
+      name: "Protected files excluded",
+      description: "",
+      content: `${excludedCount} matching path${excludedCount === 1 ? " was" : "s were"} excluded because ${excludedCount === 1 ? "it is" : "they are"} protected.`,
     });
   }
 

@@ -88,4 +88,6 @@ jobs:
         run: npm run compile
 
       - name: Compile agent
-        run: npm run compile-agent
+        run: |
+          npm run valid-layers-check
+          npm run compile-agent

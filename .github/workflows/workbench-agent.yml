@@ -1,0 +1,35 @@
+name: Workbench Agent
+
+on:
+  pull_request:
+    paths:
+      - "ide/src/vs/workbench/contrib/agent/**"
+      - "ide/src/vs/workbench/contrib/agent/package-lock.json"
+      - "ide/package.json"
+      - "ide/.npmrc"
+      - ".github/workflows/workbench-agent.yml"
+  push:
+    branches: [main]
+    paths:
+      - "ide/src/vs/workbench/contrib/agent/**"
+      - "ide/src/vs/workbench/contrib/agent/package-lock.json"
+      - "ide/package.json"
+      - "ide/.npmrc"
+      - ".github/workflows/workbench-agent.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ide/src/vs/workbench/contrib/agent/package-lock.json
+      - run: npm ci --prefix ide/src/vs/workbench/contrib/agent
+      - run: npm run verify --prefix ide/src/vs/workbench/contrib/agent
