@@ -1,0 +1,105 @@
+name: Quantum IDE
+
+# Monorepo entrypoint for the IDE checks. The product's original workflows
+# remain under ide/.github, but GitHub only discovers workflows at repository
+# root .github/workflows.
+on:
+  push:
+    branches: [main, "release/*"]
+    paths:
+      - "ide/**"
+      - ".github/workflows/quantum-ide-ci.yml"
+  pull_request:
+    branches: [main, "release/*"]
+    paths:
+      - "ide/**"
+      - ".github/workflows/quantum-ide-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quantum-ide-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ELECTRON_SKIP_BINARY_DOWNLOAD: 1
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+
+jobs:
+  compile:
+    name: Compile IDE and Workbench Agent
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+        with:
+          lfs: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: ide/.nvmrc
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y build-essential pkg-config libx11-dev libx11-xcb-dev \
+            libxkbfile-dev libsecret-1-dev libkrb5-dev libnotify-bin
+
+      - name: Compute IDE node modules cache key
+        id: node-modules-key
+        working-directory: ide
+        run: echo "value=$(node build/azure-pipelines/common/computeNodeModulesCacheKey.ts)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache IDE node modules
+        id: node-modules-cache
+        uses: actions/cache@v5
+        with:
+          path: ide/node_modules
+          key: ${{ runner.os }}-nm21-${{ steps.node-modules-key.outputs.value }}
+          restore-keys: ${{ runner.os }}-nm21-
+
+      - name: Install IDE dependencies
+        if: steps.node-modules-cache.outputs.cache-hit != 'true'
+        working-directory: ide
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for attempt in 1 2 3 4 5; do
+            npm ci && break
+            if [ "$attempt" -eq 5 ]; then exit 1; fi
+            echo "npm ci failed (attempt $attempt), retrying..."
+            sleep 15
+          done
+
+      - name: Restore nested IDE dependencies
+        if: steps.node-modules-cache.outputs.cache-hit == 'true'
+        working-directory: ide
+        env:
+          VSCODE_FORCE_INSTALL: 1
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node --experimental-strip-types build/npm/postinstall.ts
+
+      - name: Download built-in extensions
+        working-directory: ide
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node build/lib/builtInExtensions.ts
+
+      - name: Compile IDE
+        working-directory: ide
+        run: npm run compile
+
+      - name: Check layers and compile Workbench Agent
+        working-directory: ide
+        run: |
+          npm run valid-layers-check
+          npm run compile-agent

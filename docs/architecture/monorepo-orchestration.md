@@ -48,6 +48,19 @@ Turbo runs the `eval` workspace: `npx turbo run eval`
 - Cross-imports between product trees
 - Extra manifests or JS layers that mirror `verify-repo-config.sh`
 
+## GitHub Actions in the monorepo
+
+GitHub discovers workflows only from the repository-root `.github/workflows/` directory. The product trees retain their own `.github/` configuration, but workflow files under `agent/.github/workflows/` and `ide/.github/workflows/` do not run directly in this monorepo checkout.
+
+The active root workflows provide the monorepo entrypoints:
+
+- `monorepo-ci.yml` checks shared repository configuration and layout.
+- `agent-manager-ci.yml` runs the Agent Manager Bun format, lint, typecheck, test, and release-integrity checks.
+- `quantum-ide-ci.yml` runs the IDE compile and Workbench Agent compile/layer checks using the IDE's Node and npm toolchain.
+- `workbench-agent.yml` installs the Agent's independently locked npm packages, runs its full verification suite, then runs the fixture and transcript harness.
+
+Changes to product-local CI definitions still trigger their corresponding root pipeline through the product path filters. Keep release and deployment workflows explicit at the repository root before enabling them; they require their own permission and secret review.
+
 Commit policy paths: `scripts/verify-repo-config.sh` (source of truth).
 
 ## Related

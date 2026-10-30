@@ -215,7 +215,7 @@ function verifyReleaseWorkflowSafety(): void {
   );
   assertContains(
     workflow,
-    "node scripts/verify-release-source-provenance.ts",
+    "bun run scripts/verify-release-source-provenance.ts",
     "Expected preflight to bind release source provenance before artifact jobs.",
   );
   assertContains(
@@ -245,7 +245,7 @@ function verifyReleaseWorkflowSafety(): void {
   );
   assertContains(
     workflow,
-    "node scripts/write-release-artifact-provenance.ts",
+    "bun run scripts/write-release-artifact-provenance.ts",
     "Expected every platform lane to prove collected artifacts before upload.",
   );
   assertContains(
@@ -275,7 +275,7 @@ function verifyReleaseWorkflowSafety(): void {
   );
   assertContains(
     workflow,
-    "node scripts/verify-packaged-desktop-startup.ts",
+    "bun run scripts/verify-packaged-desktop-startup.ts",
     "Expected every native payload to pass isolated packaged startup before upload.",
   );
 

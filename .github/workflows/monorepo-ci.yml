@@ -1,0 +1,64 @@
+name: Monorepo
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "AGENTS.md"
+      - "CONTRIBUTING.md"
+      - ".github/**"
+      - "Quantum.code-workspace"
+      - "docs/**"
+      - "eval/**"
+      - "mise.toml"
+      - "package.json"
+      - "package-lock.json"
+      - "scripts/**"
+      - "turbo.json"
+  pull_request:
+    branches: [main]
+    paths:
+      - "AGENTS.md"
+      - "CONTRIBUTING.md"
+      - ".github/**"
+      - "Quantum.code-workspace"
+      - "docs/**"
+      - "eval/**"
+      - "mise.toml"
+      - "package.json"
+      - "package-lock.json"
+      - "scripts/**"
+      - "turbo.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monorepo-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  repository:
+    name: Repository configuration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.22.1
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install root orchestration dependencies
+        run: npm ci
+
+      - name: Verify shared repository configuration
+        run: npm run verify:repo
+
+      - name: Check monorepo layout and toolchain manifests
+        run: npm run doctor

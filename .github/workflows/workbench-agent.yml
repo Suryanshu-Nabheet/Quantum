@@ -4,17 +4,27 @@ on:
   pull_request:
     paths:
       - "ide/src/vs/workbench/contrib/agent/**"
-      - "ide/src/vs/workbench/contrib/agent/package-lock.json"
+      - "ide/build/gulpfile.agent.ts"
       - "ide/package.json"
+      - "ide/package-lock.json"
       - "ide/.npmrc"
+      - "eval/**"
+      - "package.json"
+      - "package-lock.json"
+      - "turbo.json"
       - ".github/workflows/workbench-agent.yml"
   push:
     branches: [main]
     paths:
       - "ide/src/vs/workbench/contrib/agent/**"
-      - "ide/src/vs/workbench/contrib/agent/package-lock.json"
+      - "ide/build/gulpfile.agent.ts"
       - "ide/package.json"
+      - "ide/package-lock.json"
       - "ide/.npmrc"
+      - "eval/**"
+      - "package.json"
+      - "package-lock.json"
+      - "turbo.json"
       - ".github/workflows/workbench-agent.yml"
 
 permissions:
@@ -23,13 +33,49 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 22.22.1
           cache: npm
-          cache-dependency-path: ide/src/vs/workbench/contrib/agent/package-lock.json
-      - run: npm ci --prefix ide/src/vs/workbench/contrib/agent
-      - run: npm run verify --prefix ide/src/vs/workbench/contrib/agent
+          cache-dependency-path: |
+            package-lock.json
+            ide/src/vs/workbench/contrib/agent/package-lock.json
+            ide/src/vs/workbench/contrib/agent/core/package-lock.json
+            ide/src/vs/workbench/contrib/agent/gui/package-lock.json
+            ide/src/vs/workbench/contrib/agent/packages/config-types/package-lock.json
+            ide/src/vs/workbench/contrib/agent/packages/terminal-security/package-lock.json
+            ide/src/vs/workbench/contrib/agent/packages/agent-config/package-lock.json
+            ide/src/vs/workbench/contrib/agent/packages/fetch/package-lock.json
+            ide/src/vs/workbench/contrib/agent/packages/llm-info/package-lock.json
+            ide/src/vs/workbench/contrib/agent/packages/openai-adapters/package-lock.json
+      - name: Set up Bun for the eval harness
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.12
+      - name: Install root orchestration dependencies
+        run: npm ci
+      - name: Install Workbench Agent package dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          agent_dir="ide/src/vs/workbench/contrib/agent"
+          npm ci --prefix "$agent_dir"
+          for package_dir in \
+            core \
+            gui \
+            packages/config-types \
+            packages/terminal-security \
+            packages/agent-config \
+            packages/fetch \
+            packages/llm-info \
+            packages/openai-adapters
+          do
+            npm ci --prefix "$agent_dir/$package_dir"
+          done
+      - name: Verify Workbench Agent packages
+        run: npm run verify --prefix ide/src/vs/workbench/contrib/agent
+      - name: Run Workbench Agent harness and fixtures
+        run: npm run eval
