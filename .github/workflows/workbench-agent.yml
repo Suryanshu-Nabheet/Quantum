@@ -75,6 +75,10 @@ jobs:
           do
             npm ci --ignore-scripts --prefix "$agent_dir/$package_dir"
           done
+      - name: Build Workbench Agent packages
+        env:
+          CI: true
+        run: node ide/src/vs/workbench/contrib/agent/scripts/build-packages.js
       - name: Verify Workbench Agent packages
         run: npm run verify --prefix ide/src/vs/workbench/contrib/agent
       - name: Run Workbench Agent harness and fixtures
