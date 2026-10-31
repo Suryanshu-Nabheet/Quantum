@@ -12,7 +12,6 @@ Quick reference for top-level directories in [Suryanshu-Nabheet/Quantum](https:/
 | [`build/`](../../build/) | Source yes | Release packaging from upstream VS Code |
 | [`docs/`](../../docs/) | Yes | Documentation hub (this tree) |
 | [`scripts/`](../../scripts/) | Yes | `setup.sh`, `verify.sh`, `e2e.sh`, `verify-repo-config.sh` |
-| [`web/`](../../web/) | Source yes | Public website (scaffold) |
 | [`.vscode/`](../../.vscode/) | Partial | Root workspace tasks/settings (whitelist) |
 | [`.idea/`](../../.idea/) | Partial | Shared JetBrains config (whitelist) |
 | `node_modules/`, `out/`, `dist/` | **No** | Generated / installed |

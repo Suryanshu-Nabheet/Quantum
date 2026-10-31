@@ -9,7 +9,6 @@ Thank you for your interest in contributing to the Quantum ecosystem.
 | `ide/` | Quantum IDE (AI-native editor based on VS Code) |
 | `agent/` | Quantum Agent Manager — parallel agents, one workspace |
 | `docs/` | Architecture and ecosystem documentation |
-| `web/` | Public website (in progress) |
 | `build/` | Release packaging (upstream VS Code → Quantum binaries) |
 
 ## Development setup
