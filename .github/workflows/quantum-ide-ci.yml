@@ -94,6 +94,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node build/lib/builtInExtensions.ts
 
+      - name: Build Workbench Agent package declarations
+        working-directory: ide/src/vs/workbench/contrib/agent
+        env:
+          CI: true
+        run: node scripts/build-packages.js
+
       - name: Compile IDE
         working-directory: ide
         run: npm run compile

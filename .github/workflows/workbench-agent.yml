@@ -73,7 +73,7 @@ jobs:
             packages/llm-info \
             packages/openai-adapters
           do
-            npm ci --prefix "$agent_dir/$package_dir"
+            npm ci --ignore-scripts --prefix "$agent_dir/$package_dir"
           done
       - name: Verify Workbench Agent packages
         run: npm run verify --prefix ide/src/vs/workbench/contrib/agent
