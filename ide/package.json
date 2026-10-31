@@ -20,7 +20,7 @@
     "check-cyclic-dependencies": "node build/lib/checkCyclicDependencies.ts out",
     "preinstall": "node build/npm/preinstall.ts",
     "postinstall": "node build/npm/postinstall.ts",
-    "compile": "npm run gulp compile",
+    "compile": "node src/vs/workbench/contrib/agent/scripts/build-packages.js && npm run gulp compile",
     "compile-agent": "npm run gulp compile-agent",
     "compile-check-ts-native": "tsgo --project ./src/tsconfig.json --noEmit --skipLibCheck",
     "watch": "node ./scripts/watch-supervisor.mjs",

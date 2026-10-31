@@ -3,12 +3,10 @@ const path = require("path");
 const fs = require("fs");
 const fsPromises = require("fs/promises");
 
-// --ignore-scripts: nested packages sit under agent/, so npm prepends
-// agent/node_modules/.bin (esbuild@0.17.19) to lifecycle PATH. Newer
-// transitive esbuild (via vitest) then fails postinstall version checks.
-// Package builds only need tsc — no install scripts required.
-const npmInstallCmd =
-  process.env.CI === "true" ? "npm ci --ignore-scripts" : "npm install --ignore-scripts";
+// Use each package lockfile in local builds and CI. --ignore-scripts avoids
+// invoking nested lifecycle binaries from the parent Agent installation; the
+// package builds only need TypeScript and must not depend on esbuild hooks.
+const npmInstallCmd = "npm ci --ignore-scripts";
 const repoRoot = path.resolve(__dirname, "../../../../../..");
 const agentPackagesOutRoot = path.join(repoRoot, "out", "agent-packages");
 
