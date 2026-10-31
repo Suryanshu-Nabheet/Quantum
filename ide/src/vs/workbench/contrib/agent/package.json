@@ -19,7 +19,7 @@
     "tsc:check": "tsc -p ./ --noEmit",
     "test": "npm --prefix core run vitest",
     "eval:harness": "npm run eval:harness --prefix gui",
-    "verify": "npm run tsc:check && npm test && node scripts/verify-packages.js",
+    "verify": "npm run tsc:check && npm test && npm --prefix packages/fetch test && npm --prefix packages/terminal-security test && npm --prefix packages/openai-adapters test && npm --prefix gui run tsc:check && npm --prefix gui test && npm --prefix packages/agent-config test",
     "build:webview": "npm run build --prefix gui && node scripts/ensure-webview.js",
     "build:agent": "node scripts/build-packages.js && npm run build:webview && npm run esbuild-base -- --minify",
     "predev": "node scripts/ensure-webview.js",
