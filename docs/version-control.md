@@ -2,15 +2,14 @@
 
 This monorepo keeps **product code** and **shared team tooling config** in git. **Machine-local state**, **secrets**, and **build artifacts** stay out.
 
-## Three ignore files (do not confuse them)
+## Two ignore files (do not confuse them)
 
 | File | Purpose |
 | --- | --- |
 | [`.gitignore`](../.gitignore) | **Commits** — what `git add` includes |
-| [`.cursorignore`](../.cursorignore) | **Cursor index only** — search/agent context; never blocks git |
 | [`.idea/.gitignore`](../.idea/.gitignore) | **JetBrains local state** inside an otherwise shared `.idea/` tree |
 
-If something “won’t commit”, check `git check-ignore -v <path>`. A global `~/.gitignore` may ignore `.cursor/` or `.idea/`; this repo **re-whitelists** shared paths in `.gitignore` with `!.cursor/` and `!.idea/` first, then explicit `!` rules.
+If something “won’t commit”, check `git check-ignore -v <path>`. A global `~/.gitignore` may ignore `.idea/`; this repo **re-whitelists** shared paths in `.gitignore` with `!.idea/` first, then explicit `!` rules.
 
 ## Always commit (repository root)
 
@@ -20,16 +19,13 @@ If something “won’t commit”, check `git check-ignore -v <path>`. A global 
 | [`Quantum.code-workspace`](../Quantum.code-workspace) | Multi-root VS Code / Cursor workspace |
 | [`.editorconfig`](../.editorconfig) | Cross-editor formatting baseline |
 | [`.gitattributes`](../.gitattributes) | Line endings and binary marking |
-| [`.cursorignore`](../.cursorignore) | Cursor index policy (team-aligned) |
-| [`.cursor/rules/`](../.cursor/rules/) | Project Cursor rules |
-| [`.cursor/mcp.json`](../.cursor/mcp.json) | Shared MCP server map (no secrets) |
 | [`.vscode/settings.json`](../.vscode/settings.json) | Monorepo editor defaults |
 | [`.vscode/tasks.json`](../.vscode/tasks.json) | Setup / verify / dev tasks |
 | [`.vscode/launch.json`](../.vscode/launch.json) | Shared launch configs |
 | [`.vscode/extensions.json`](../.vscode/extensions.json) | Recommended extensions |
 | [`.idea/`](../.idea/) (whitelisted files) | JetBrains modules, code style, run configs |
-| [`package.json`](../package.json), [`package-lock.json`](../package-lock.json) | Root orchestration (Turbo); not product deps |
-| [`turbo.json`](../turbo.json), [`mise.toml`](../mise.toml), [`.npmrc`](../.npmrc) | Task graph and toolchain pins |
+| [`package.json`](../package.json) | Root command entrypoints; not product deps |
+| [`mise.toml`](../mise.toml), [`.npmrc`](../.npmrc) | Toolchain pins and npm settings |
 | [`scripts/monorepo-doctor.sh`](../scripts/monorepo-doctor.sh) | Monorepo health check |
 | [`scripts/`](../scripts/) | Setup, verify, E2E |
 | [`agent/`](../agent/), [`ide/`](../ide/), [`build/`](../build/), [`docs/`](../docs/) | Product and release sources |

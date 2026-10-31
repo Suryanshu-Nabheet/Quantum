@@ -64,10 +64,9 @@ quantum/
 │   ├── extensions/        # Built-in developer extensions
 │   └── build/             # Microsoft gulp toolchain (daily dev compile)
 │
-├── eval/                  # Workbench Agent regression (npm run eval)
 │
-├── package.json           # Root orchestration (@quantum/root)
-├── turbo.json / mise.toml # Task graph + toolchain pins
+├── package.json           # Root command entrypoints
+├── mise.toml              # Toolchain pins
 ├── scripts/               # Monorepo setup, verify, doctor (./scripts/setup.sh)
 │
 ├── LICENCE                # MIT License
@@ -91,7 +90,6 @@ quantum/
 One command sets up both products (Agent Manager + IDE):
 
 ```bash
-npm ci               # root Turbo orchestration (committed lockfile)
 ./scripts/setup.sh
 ```
 
@@ -106,7 +104,6 @@ npm ci               # root Turbo orchestration (committed lockfile)
 # Verify after setup
 ./scripts/verify.sh
 ./scripts/e2e.sh
-npm run eval               # Agent prompt/driver regression (no API keys)
 
 # Launch individual products
 cd agent && bun run dev        # Agent Manager

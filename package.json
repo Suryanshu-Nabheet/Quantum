@@ -8,18 +8,12 @@
     "type": "git",
     "url": "https://github.com/Suryanshu-Nabheet/Quantum.git"
   },
-  "workspaces": [
-    "eval"
-  ],
   "scripts": {
     "setup": "bash scripts/setup.sh",
     "verify": "bash scripts/verify.sh",
     "verify:repo": "bash scripts/verify-repo-config.sh",
     "e2e": "bash scripts/e2e.sh",
     "mise:install": "mise install",
-    "eval": "turbo run eval",
-    "eval:harness": "turbo run eval:harness",
-    "eval:fixture": "turbo run eval:fixture",
     "build:agent": "bun run --cwd agent build",
     "build:agent:desktop": "bun run --cwd agent build:desktop",
     "dev:agent": "bun run --cwd agent dev",
@@ -30,11 +24,7 @@
     "doctor": "bash scripts/monorepo-doctor.sh",
     "doctor:strict": "bash scripts/monorepo-doctor.sh --strict"
   },
-  "devDependencies": {
-    "turbo": "^2.9.14"
-  },
   "engines": {
     "node": ">=22.22.1"
-  },
-  "packageManager": "npm@10.9.2"
+  }
 }

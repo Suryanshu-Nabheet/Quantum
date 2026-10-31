@@ -29,8 +29,7 @@
   "exclude": [
     "**/*.test.ts",
     "**/*.test.tsx",
-    "**/test/**",
-    "src/eval/**"
+    "**/test/**"
   ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

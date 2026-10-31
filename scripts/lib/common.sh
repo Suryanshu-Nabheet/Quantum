@@ -10,8 +10,6 @@ readonly QUANTUM_IDE_NODE_VERSION="22.22.1"
 readonly QUANTUM_AGENT_NODE_VERSION="24.13.1"
 readonly QUANTUM_NODE_MIN_MAJOR=24
 readonly QUANTUM_BUN_MIN_VERSION="1.3.9"
-readonly QUANTUM_ROOT_NPM_MAX_MAJOR=11
-readonly QUANTUM_ROOT_NPM_MAX_MINOR=2
 
 # Colors (disabled when NO_COLOR is set)
 if [[ -z "${NO_COLOR:-}" ]]; then
@@ -153,7 +151,6 @@ ensure_repo_layout() {
 	[[ -f "$root/ide/package.json" ]] || die "Missing ide/package.json."
 	[[ -f "$root/agent/package.json" ]] || die "Missing agent/package.json."
 	[[ -f "$root/package.json" ]] || die "Missing package.json (monorepo orchestration)."
-	[[ -f "$root/turbo.json" ]] || die "Missing turbo.json."
 	[[ -f "$root/mise.toml" ]] || die "Missing mise.toml (toolchain pins)."
 	log_ok "Monorepo layout (root orchestration, ide/, agent/)"
 }
@@ -171,50 +168,6 @@ ensure_mise_toolchain() {
 		mise install -y 2>/dev/null || mise install 2>/dev/null || true
 	)
 	log_ok "mise toolchain (mise.toml)"
-}
-
-ensure_root_npm_version() {
-	if ! command -v npm >/dev/null 2>&1; then
-		die "npm is required for root orchestration (install Node.js or run mise install)."
-	fi
-
-	local npm_user_agent
-	npm_user_agent="$(npm --version 2>/dev/null || true)"
-	[[ -n "$npm_user_agent" ]] || die "Unable to read npm version."
-
-	local major="${npm_user_agent%%.*}"
-	local rest="${npm_user_agent#*.}"
-	local minor="${rest%%.*}"
-
-	if (( major > QUANTUM_ROOT_NPM_MAX_MAJOR )) || \
-		(( major == QUANTUM_ROOT_NPM_MAX_MAJOR && minor >= QUANTUM_ROOT_NPM_MAX_MINOR )); then
-		die "Root orchestration requires npm < ${QUANTUM_ROOT_NPM_MAX_MAJOR}.${QUANTUM_ROOT_NPM_MAX_MINOR}.0 (IDE upstream constraint). Current: v${npm_user_agent}"
-	fi
-}
-
-ensure_root_orchestration() {
-	local root="$1"
-	local lock="${root}/package-lock.json"
-	local turbo_bin="${root}/node_modules/.bin/turbo"
-
-	if [[ ! -f "$lock" ]]; then
-		log_warn "Missing package-lock.json — run: (cd \"${root}\" && npm install)"
-		return 0
-	fi
-
-	ensure_root_npm_version
-
-	if [[ -x "$turbo_bin" ]]; then
-		log_ok "Root orchestration (turbo)"
-		return 0
-	fi
-
-	log_step "Installing root orchestration dependencies (npm ci)"
-	(
-		cd "$root"
-		npm ci --no-audit --no-fund
-	)
-	log_ok "Root orchestration (turbo)"
 }
 
 run_subsystem_setup() {
@@ -257,7 +210,6 @@ print_setup_complete() {
 	echo "  IDE:    cd ide && ./scripts/code.sh"
 	echo ""
 	echo "  Verify: ${root}/scripts/verify.sh  (or: npm run verify)"
-	echo "  Eval:   npm run eval"
 	echo "  Docs:   ${root}/docs/architecture/monorepo-orchestration.md"
 	echo ""
 }

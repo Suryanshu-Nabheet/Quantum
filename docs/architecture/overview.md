@@ -24,7 +24,7 @@ graph TD
   AM --> DISK3[Local Quantum home / SQLite]
 ```
 
-Root **orchestration** (Turbo, mise, `npm run` at repo root) is documented in [Monorepo orchestration](monorepo-orchestration.md). Product installs stay in `ide/` (npm) and `agent/` (Bun).
+Root **orchestration** (bash scripts and mise tool pins) is documented in [Monorepo orchestration](monorepo-orchestration.md). Product installs stay in `ide/` (npm) and `agent/` (Bun); `agent/` keeps its own Turbo task graph.
 
 ## Product boundaries
 

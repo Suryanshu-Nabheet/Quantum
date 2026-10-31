@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Monorepo health: layout pins, root turbo, product lockfiles, optional install state.
+# Monorepo health: layout pins, product lockfiles, optional install state.
 #
 # Usage:
 #   ./scripts/monorepo-doctor.sh
@@ -21,11 +21,9 @@ cd "$ROOT"
 layout_ok=1
 agent_deps=0
 ide_deps=0
-turbo_ok=0
 
-[[ -f package.json && -f package-lock.json && -f turbo.json && -f mise.toml ]] || layout_ok=0
+[[ -f package.json && -f mise.toml ]] || layout_ok=0
 [[ -f agent/bun.lock && -f ide/package-lock.json ]] || layout_ok=0
-[[ -x node_modules/.bin/turbo ]] && turbo_ok=1
 [[ -d agent/node_modules ]] && agent_deps=1
 [[ -d ide/node_modules ]] && ide_deps=1
 
@@ -41,7 +39,6 @@ fi
 log_step "Monorepo doctor"
 
 echo "  Layout (root + lockfiles):  $([[ $layout_ok -eq 1 ]] && echo OK || echo FAIL)"
-echo "  Root Turbo (npm ci):        $([[ $turbo_ok -eq 1 ]] && echo yes || echo 'no (run npm ci)')"
 echo "  agent/node_modules:         $([[ $agent_deps -eq 1 ]] && echo yes || echo 'no (run ./scripts/setup.sh)')"
 echo "  ide/node_modules:           $([[ $ide_deps -eq 1 ]] && echo yes || echo 'no (run ./scripts/setup.sh)')"
 if [[ -n "$git_total" ]]; then
@@ -55,7 +52,6 @@ if [[ $layout_ok -eq 0 ]]; then
 fi
 
 if [[ $STRICT -eq 1 ]]; then
-	[[ $turbo_ok -eq 1 ]] || die "Strict: run npm ci at repo root"
 	[[ $agent_deps -eq 1 && $ide_deps -eq 1 ]] || die "Strict: run ./scripts/setup.sh for product dependencies"
 fi
 

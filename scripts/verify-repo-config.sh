@@ -14,17 +14,12 @@ cd "$ROOT"
 REQUIRED_PATHS=(
 	AGENTS.md
 	package.json
-	package-lock.json
-	turbo.json
 	mise.toml
 	.npmrc
 	scripts/monorepo-doctor.sh
 	Quantum.code-workspace
 	.editorconfig
 	.gitattributes
-	.cursorignore
-	.cursor/mcp.json
-	.cursor/rules/quantum-monorepo.mdc
 	.vscode/settings.json
 	.vscode/tasks.json
 	.vscode/launch.json

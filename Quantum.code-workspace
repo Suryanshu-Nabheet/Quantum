@@ -19,10 +19,6 @@
 		{
 			"name": "Release build",
 			"path": "build"
-		},
-		{
-			"name": "Agent eval",
-			"path": "eval"
 		}
 	],
 	"settings": {

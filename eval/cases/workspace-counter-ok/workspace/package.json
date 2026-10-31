@@ -1,8 +1,0 @@
-{
-  "name": "eval-fixture-counter",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "test": "bun test counter.test.ts"
-  }
-}

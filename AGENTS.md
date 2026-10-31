@@ -14,10 +14,8 @@ This repository contains two products. Use the product-specific guide for implem
 From the repo root:
 
 ```bash
-npm ci                # Root Turbo orchestration (small; commit package-lock.json)
 ./scripts/setup.sh    # Install + build Agent Manager and IDE
 ./scripts/verify.sh   # Confirm both products are ready
-npm run eval          # Workbench Agent harness + fixture regression (turbo)
 npm run doctor        # scripts/monorepo-doctor.sh (layout, installs, git scale)
 ```
 

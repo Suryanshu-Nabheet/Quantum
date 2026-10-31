@@ -11,8 +11,6 @@ Routing guide for automated coding agents (Cursor, IDE Workbench Agent, CI bots)
 | **Workbench Agent** | [`ide/AGENTS.md`](../ide/AGENTS.md) + [`contrib/agent/README.md`](../ide/src/vs/workbench/contrib/agent/README.md) | `ide/src/vs/workbench/contrib/agent/**` |
 | **Agent Manager** | [`agent/AGENTS.md`](../agent/AGENTS.md) | Any change under `agent/` |
 
-Cursor project rules: [`.cursor/rules/quantum-monorepo.mdc`](../.cursor/rules/quantum-monorepo.mdc).
-
 ## Documentation map
 
 | Task | Read |
@@ -28,7 +26,7 @@ Cursor project rules: [`.cursor/rules/quantum-monorepo.mdc`](../.cursor/rules/qu
 ## Monorepo orchestration (root)
 
 - **Dual install is intentional:** `ide/` = npm, `agent/` = Bun. Do not merge into one workspace `node_modules`.
-- **Root:** `package.json`, `turbo.json`, `mise.toml` — run `./scripts/setup.sh` or `npm run setup` after `npm ci`.
+- **Root:** `package.json`, `mise.toml` — run `./scripts/setup.sh` or `npm run setup`.
 - Doctor: `scripts/monorepo-doctor.sh` (not product TS). Details: [Monorepo orchestration](architecture/monorepo-orchestration.md).
 
 ## Hard rules (all products)

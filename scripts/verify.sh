@@ -58,7 +58,6 @@ ensure_repo_layout "$ROOT"
 ensure_mise_toolchain "$ROOT"
 ensure_bun
 ensure_node_min "$QUANTUM_NODE_MIN_MAJOR"
-ensure_root_orchestration "$ROOT"
 
 FAILED=0
 

@@ -17,10 +17,8 @@ Thank you for your interest in contributing to the Quantum ecosystem.
 From the monorepo root:
 
 ```bash
-npm ci                      # Root Turbo orchestration (committed lockfile)
 ./scripts/setup.sh          # Install + build Agent Manager and IDE
 ./scripts/verify.sh         # Repo config + product verification
-npm run eval                # Workbench Agent regression (optional)
 ```
 
 Orchestration model: [docs/architecture/monorepo-orchestration.md](docs/architecture/monorepo-orchestration.md).
@@ -31,11 +29,11 @@ Full documentation: **[docs/readme.md](docs/readme.md)** (getting started, IDE, 
 
 ## Editor and AI setup
 
-1. Open **[`Quantum.code-workspace`](Quantum.code-workspace)** in VS Code or Cursor (multi-root: root, agent, ide, docs, build, eval).
+1. Open **[`Quantum.code-workspace`](Quantum.code-workspace)** in VS Code or Cursor (multi-root: root, agent, ide, docs, build).
 2. Install extension recommendations when prompted.
 3. **Tasks:** `Quantum: Setup`, `Quantum: Verify`, `Agent: dev stack`, `IDE: watch` — [`.vscode/tasks.json`](.vscode/tasks.json).
 4. **IDE F5 / debug:** configs live in [`ide/.vscode/`](ide/.vscode/), not at repo root.
-5. **AI agents:** [`AGENTS.md`](AGENTS.md), [`.cursor/rules/`](.cursor/rules/), product [`agent/AGENTS.md`](agent/AGENTS.md) and [`ide/AGENTS.md`](ide/AGENTS.md).
+5. **AI agents:** [`AGENTS.md`](AGENTS.md), product [`agent/AGENTS.md`](agent/AGENTS.md) and [`ide/AGENTS.md`](ide/AGENTS.md).
 
 ### What to commit
 
@@ -49,11 +47,9 @@ Automated check: `./scripts/verify-repo-config.sh`
 | Committed at root | Local only |
 | --- | --- |
 | `.vscode/settings.json`, `tasks.json`, `launch.json`, `extensions.json`, `README.md` | Other `.vscode/*` |
-| `.cursor/rules/`, `.cursor/mcp.json`, `.cursorignore` | Cursor user settings |
 | `.idea/` modules, `codeStyles/`, `runConfigurations/`, `*.iml` | `.idea/workspace.xml`, `shelf/` |
 | `AGENTS.md`, `Quantum.code-workspace`, `.editorconfig`, `.gitattributes` | — |
 
-[`.cursorignore`](.cursorignore) affects Cursor search only, **not** git.
 
 ## Guidelines
 

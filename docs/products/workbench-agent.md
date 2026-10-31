@@ -49,16 +49,7 @@ From `contrib/agent/`:
 ```bash
 npm run build:agent
 npm run verify         # core + gui + packages matrix
-npm run eval:harness   # replay eval transcripts (see ../../../eval/)
 ```
-
-Monorepo regression suite (harness + fixture cases):
-
-```bash
-npm run eval   # from repository root (turbo)
-```
-
-See [eval/README.md](../../../eval/README.md).
 
 Generated artifacts (not committed):
 

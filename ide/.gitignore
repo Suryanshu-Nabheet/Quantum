@@ -52,6 +52,4 @@ dist
 # Quantum: stray CLI build artifacts (openssl prebuilt)
 /cli/*.tgz
 
-# Quantum: Cursor AI
-.cursor/
 .claude/

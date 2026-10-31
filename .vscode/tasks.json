@@ -18,22 +18,6 @@
 			"problemMatcher": []
 		},
 		{
-			"label": "Quantum: root npm ci (orchestration)",
-			"type": "shell",
-			"command": "npm ci",
-			"options": { "cwd": "${workspaceFolder}" },
-			"group": "build",
-			"problemMatcher": []
-		},
-		{
-			"label": "Agent: eval regression",
-			"type": "shell",
-			"command": "npm run eval",
-			"options": { "cwd": "${workspaceFolder}" },
-			"group": "test",
-			"problemMatcher": []
-		},
-		{
 			"label": "Quantum: E2E smoke",
 			"type": "shell",
 			"command": "./scripts/e2e.sh",

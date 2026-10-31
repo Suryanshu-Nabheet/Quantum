@@ -8,10 +8,7 @@ on:
       - "ide/package.json"
       - "ide/package-lock.json"
       - "ide/.npmrc"
-      - "eval/**"
       - "package.json"
-      - "package-lock.json"
-      - "turbo.json"
       - ".github/workflows/workbench-agent.yml"
   push:
     branches: [main]
@@ -21,10 +18,7 @@ on:
       - "ide/package.json"
       - "ide/package-lock.json"
       - "ide/.npmrc"
-      - "eval/**"
       - "package.json"
-      - "package-lock.json"
-      - "turbo.json"
       - ".github/workflows/workbench-agent.yml"
 
 permissions:
@@ -41,7 +35,6 @@ jobs:
           node-version: 22.22.1
           cache: npm
           cache-dependency-path: |
-            package-lock.json
             ide/src/vs/workbench/contrib/agent/package-lock.json
             ide/src/vs/workbench/contrib/agent/core/package-lock.json
             ide/src/vs/workbench/contrib/agent/gui/package-lock.json
@@ -51,12 +44,6 @@ jobs:
             ide/src/vs/workbench/contrib/agent/packages/fetch/package-lock.json
             ide/src/vs/workbench/contrib/agent/packages/llm-info/package-lock.json
             ide/src/vs/workbench/contrib/agent/packages/openai-adapters/package-lock.json
-      - name: Set up Bun for the eval harness
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.3.12
-      - name: Install root orchestration dependencies
-        run: npm ci
       - name: Install Workbench Agent package dependencies
         shell: bash
         run: |
@@ -81,5 +68,3 @@ jobs:
         run: node ide/src/vs/workbench/contrib/agent/scripts/build-packages.js
       - name: Verify Workbench Agent packages
         run: npm run verify --prefix ide/src/vs/workbench/contrib/agent
-      - name: Run Workbench Agent harness and fixtures
-        run: npm run eval

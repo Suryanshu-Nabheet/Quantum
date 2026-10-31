@@ -155,7 +155,6 @@ npm run tsc:check
 npm test
 npm run build:agent
 npm run verify   # full matrix (core, gui, packages)
-npm run eval:harness   # monorepo eval cases (or: cd ../../../../../eval && bun run eval)
 ```
 
 Verification must finish with zero failures. Historical failure counts are not accepted as a baseline; investigate and resolve failures before merging.

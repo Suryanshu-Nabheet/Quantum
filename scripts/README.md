@@ -6,10 +6,10 @@ Production-grade setup and verification for both Quantum products.
 
 | Platform | Command |
 |----------|---------|
-| macOS / Linux | `npm ci && ./scripts/setup.sh` |
-| Windows | `npm ci` then `scripts\setup.bat` |
+| macOS / Linux | `./scripts/setup.sh` |
+| Windows | `scripts\setup.bat` |
 
-Root `npm ci` installs **Turbo only** (`@quantum/root`; workspace: `eval`). Product deps still install inside `agent/` (Bun) and `ide/` (npm). See [docs/architecture/monorepo-orchestration.md](../docs/architecture/monorepo-orchestration.md).
+Product dependencies install inside `agent/` (Bun) and `ide/` (npm); root scripts do not require a separate dependency install. See [docs/architecture/monorepo-orchestration.md](../docs/architecture/monorepo-orchestration.md).
 
 Full setup installs dependencies and builds **Agent Manager → IDE**. The IDE compile step is the longest; expect several minutes on first run.
 
@@ -63,7 +63,6 @@ Recommended: [mise](https://mise.jdx.dev) at the repo root (`mise.toml` — Bun 
 ./scripts/e2e.sh                 # Full E2E smoke suite (recommended)
 ./scripts/e2e.sh --only agent
 ./scripts/verify.sh --skip-ide
-npm run eval                     # Workbench Agent harness + fixtures (no API keys)
 ```
 
 Checks:

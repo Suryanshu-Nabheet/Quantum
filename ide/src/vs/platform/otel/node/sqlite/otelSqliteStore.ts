@@ -121,7 +121,7 @@ export interface SessionRow {
  *
  * Consumers call {@link insertSpan} with a serialized completed span; the store
  * persists span attributes and events with denormalized columns for the most
- * common GenAI semconv attributes (so the eval harness can query without joining).
+ * common GenAI semconv attributes for efficient querying without joins.
  *
  * - WAL mode + busy_timeout for concurrent read/write safety
  * - Schema versioning with migration table

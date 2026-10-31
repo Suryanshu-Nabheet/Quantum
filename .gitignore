@@ -34,14 +34,6 @@ bun.lockb.tmp
 # Documented in docs/version-control.md — run ./scripts/verify-repo-config.sh
 # AGENTS.md, Quantum.code-workspace, .editorconfig, .gitattributes are not ignored.
 
-# Cursor — shared project config (must un-ignore dir first — overrides ~/.gitignore)
-!.cursor/
-.cursor/*
-!.cursor/rules/
-!.cursor/rules/**
-!.cursor/mcp.json
-!.cursorignore
-
 # JetBrains — shared team config only (must un-ignore dir first — overrides ~/.gitignore)
 !.idea/
 .idea/*
