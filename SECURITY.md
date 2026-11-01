@@ -1,22 +1,19 @@
-# Security Policy
+# Security
 
-## Supported Subsystems
+## Reporting a vulnerability
 
-| Subsystem | Status |
-| :--- | :--- |
-| Quantum IDE | Supported |
-| Quantum Agent Manager | Supported |
+**Please do not report security vulnerabilities through public GitHub issues.**
 
-## Vulnerability Reporting
+Report security issues privately via [GitHub Security Advisories](https://github.com/Suryanshu-Nabheet/Quantum/security/advisories/new) for this repository.
 
-Security reports are handled with high priority. To report a security vulnerability, please do not use public issue trackers.
+Include:
 
-Submit reports directly to:
-**suryanshunab@gmail.com**
+- A description of the issue and its impact
+- Steps to reproduce
+- Affected versions or commits, if known
 
-Please include:
-1. Impact assessment and affected subsystem(s).
-2. Minimal reproduction steps or proof-of-concept.
-3. Relevant environment parameters (OS version, architecture, Node/Bun runtime).
+We will acknowledge reports and work on fixes as promptly as possible.
 
-We will investigate and publish patches in accordance with responsible disclosure practices.
+## Supported versions
+
+Security fixes are applied on the `main` branch. Use the latest commit or release build when deploying Quantum.

@@ -1,62 +1,31 @@
 # Contributing to Quantum
 
-Thank you for your interest in contributing to the Quantum ecosystem.
+Thank you for your interest in improving Quantum.
 
-## Monorepo products
+## How to contribute
 
-| Path | Product |
-| --- | --- |
-| `ide/` | Quantum IDE (AI-native editor based on VS Code) |
-| `agent/` | Quantum Agent Manager — parallel agents, one workspace |
-| `docs/` | Architecture and ecosystem documentation |
-| `build/` | Release packaging (upstream VS Code → Quantum binaries) |
-
-## Development setup
-
-From the monorepo root:
-
-```bash
-./scripts/setup.sh          # Install + build Agent Manager and IDE
-./scripts/verify.sh         # Repo config + product verification
-```
-
-Orchestration model: [docs/architecture/monorepo-orchestration.md](docs/architecture/monorepo-orchestration.md).
-
-Per-product setup: `agent/scripts/`, `ide/scripts/`. See [scripts/README.md](scripts/README.md).
-
-Full documentation: **[docs/readme.md](docs/readme.md)** (getting started, IDE, Agent Manager, workbench agent, architecture).
-
-## Editor and AI setup
-
-1. Open **[`Quantum.code-workspace`](Quantum.code-workspace)** in VS Code or Cursor (multi-root: root, agent, ide, docs, build).
-2. Install extension recommendations when prompted.
-3. **Tasks:** `Quantum: Setup`, `Quantum: Verify`, `Agent: dev stack`, `IDE: watch` — [`.vscode/tasks.json`](.vscode/tasks.json).
-4. **IDE F5 / debug:** configs live in [`ide/.vscode/`](ide/.vscode/), not at repo root.
-5. **AI agents:** [`AGENTS.md`](AGENTS.md), product [`agent/AGENTS.md`](agent/AGENTS.md) and [`ide/AGENTS.md`](ide/AGENTS.md).
-
-### What to commit
-
-**Canonical policy:** [docs/version-control.md](docs/version-control.md) — shared config vs secrets vs build artifacts.
-
-Quick rule: commit **source** and **team editor config**; never commit **`.env`**, **`node_modules/`**, or compile **`out/` / `dist/`**.
-
-Check a path: `git check-ignore -v path/to/file`  
-Automated check: `./scripts/verify-repo-config.sh`
-
-| Committed at root | Local only |
-| --- | --- |
-| `.vscode/settings.json`, `tasks.json`, `launch.json`, `extensions.json`, `README.md` | Other `.vscode/*` |
-| `.idea/` modules, `codeStyles/`, `runConfigurations/`, `*.iml` | `.idea/workspace.xml`, `shelf/` |
-| `AGENTS.md`, `Quantum.code-workspace`, `.editorconfig`, `.gitattributes` | — |
-
-
-## Guidelines
-
-1. **Isolation:** Keep product-specific dependencies and docs inside each product directory unless the change is truly monorepo-wide.
-2. **Client-side privacy:** No third-party telemetry or non-consensual network requests.
-3. **Testing:** Run tests for the package you modify before opening a PR.
-4. **Commits:** [Conventional Commits](https://www.conventionalcommits.org/) — `feat(agent): …`, `fix(ide): …`, `docs: …`, `chore: …`.
+1. **Fork** [github.com/Suryanshu-Nabheet/Quantum](https://github.com/Suryanshu-Nabheet/Quantum) and create a branch from `main`.
+2. **Set up** the dev environment:
+   - **Recommended:** `./scripts/setup.sh` (macOS/Linux) or `scripts\setup.bat` (Windows) — see [README.md](README.md#getting-started) and [scripts/README.md](scripts/README.md).
+   - Dev builds store settings under `quantum-dev` (see README).
+3. **Make focused changes** — keep PRs scoped to one concern when possible.
+4. **Verify** your change builds: `npm run compile` (or `npm run watch` during development). Type-check main sources with `npm run compile-check-ts-native` when you only change files under `src/`.
+5. **Open a pull request** with a clear description and test steps.
 
 ## Reporting issues
 
-Open issues with reproduction steps, OS details, and relevant logs.
+- Search [existing issues](https://github.com/Suryanshu-Nabheet/Quantum/issues) before filing a new one.
+- Include OS, Node version (`node -v`), npm version (`npm -v`), and steps to reproduce.
+- For extension-specific bugs, note whether the issue reproduces with all extensions disabled (`--disable-extensions`).
+
+## Security
+
+Do not open public issues for security vulnerabilities. See [SECURITY.md](SECURITY.md).
+
+## Code of conduct
+
+Be respectful and constructive. We aim to keep this project welcoming to contributors of all experience levels.
+
+## Upstream
+
+Quantum is based on Visual Studio Code. Large architectural changes should consider maintainability against future upstream concepts. When in doubt, discuss in an issue before a large refactor.

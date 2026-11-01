@@ -1,122 +1,100 @@
 @echo off
-setlocal EnableExtensions EnableDelayedExpansion
+setlocal EnableExtensions
 
-title Quantum Ecosystem Setup
+title Quantum Dev Setup
 
-set "SCRIPT_DIR=%~dp0"
-pushd "%SCRIPT_DIR%\.."
+pushd %~dp0\..
 
-if not exist "ide\package.json" (
-	echo error: Run setup.bat from the Quantum monorepo scripts folder.
-	exit /b 1
-)
-if not exist "agent\package.json" (
-	echo error: Missing agent\package.json
+if not exist "package.json" (
+	echo error: Run setup.bat from the Quantum IDE directory.
 	exit /b 1
 )
 
-set "SETUP_AGENT=1"
-set "SETUP_IDE=1"
+findstr /C:"\"name\": \"quantum\"" package.json >nul 2>&1
+if errorlevel 1 (
+	echo error: Expected package name 'quantum' in package.json.
+	exit /b 1
+)
+
+set "SETUP_ONLY=0"
+set "LAUNCH_ONLY=0"
 set "SKIP_INSTALL=0"
-set "SKIP_BUILD=0"
-set "LAUNCH_IDE=0"
-set "VERIFY_ONLY=0"
+set "SKIP_COMPILE=0"
+set "CODE_ARGS="
 
 :parse_args
 if "%~1"=="" goto args_done
+if /I "%~1"=="--setup-only" set "SETUP_ONLY=1" & shift & goto parse_args
+if /I "%~1"=="--launch-only" set "LAUNCH_ONLY=1" & set "SKIP_INSTALL=1" & set "SKIP_COMPILE=1" & shift & goto parse_args
+if /I "%~1"=="--skip-install" set "SKIP_INSTALL=1" & shift & goto parse_args
+if /I "%~1"=="--skip-compile" set "SKIP_COMPILE=1" & shift & goto parse_args
 if /I "%~1"=="--help" goto show_help
 if /I "%~1"=="-h" goto show_help
-if /I "%~1"=="--launch-ide" set "LAUNCH_IDE=1" & shift & goto parse_args
-if /I "%~1"=="--verify-only" set "VERIFY_ONLY=1" & shift & goto parse_args
-if /I "%~1"=="--skip-agent" set "SETUP_AGENT=0" & shift & goto parse_args
-if /I "%~1"=="--skip-ide" set "SETUP_IDE=0" & shift & goto parse_args
-if /I "%~1"=="--skip-install" set "SKIP_INSTALL=1" & shift & goto parse_args
-if /I "%~1"=="--skip-build" set "SKIP_BUILD=1" & shift & goto parse_args
-echo error: unknown argument %~1
-exit /b 1
+set "CODE_ARGS=%CODE_ARGS% %~1"
+shift
+goto parse_args
 
 :args_done
 
-echo.
-echo Quantum Ecosystem Setup
-echo Repository: %CD%
-echo.
+echo Quantum dev setup (root: %CD%)
 
-where bun >nul 2>&1
+if "%SKIP_COMPILE%"=="0" goto check_out
+if exist "out\main.js" goto node_check
+echo error: --skip-compile requires an existing build (missing out\main.js).
+exit /b 1
+
+:check_out
+:node_check
+echo.
+echo ==^> Checking Node.js (.nvmrc)
+echo.
+node -e "const fs=require('fs');const r=fs.readFileSync('.nvmrc','utf8').trim();const m=/^(\\d+)\\.(\\d+)\\.(\\d+)/.exec(r);if(!m)process.exit(1);const[rm,ri,rp]=m.slice(1).map(Number);const c=/^(\\d+)\\.(\\d+)\\.(\\d+)/.exec(process.versions.node);const[cm,ci,cp]=c.slice(1).map(Number);if(cm!==rm||ci<ri||(ci===ri&&cp<rp)){console.error('Node '+process.versions.node+' does not satisfy '+r);process.exit(1);}"
 if errorlevel 1 (
-	echo error: Bun is required. Install from https://bun.sh
+	echo error: Install Node.js version from .nvmrc. See README.md.
 	exit /b 1
 )
 
-if "%VERIFY_ONLY%"=="1" (
-	if exist "%SCRIPT_DIR%verify.sh" (
-		bash "%SCRIPT_DIR%verify.sh"
-		set "ERR=!ERRORLEVEL!"
-	) else (
-		echo error: verify.sh not found. Use Git Bash or WSL for full verification.
-		set "ERR=1"
-	)
-	popd
-	exit /b !ERR!
-)
+if "%SKIP_INSTALL%"=="1" goto maybe_compile
 
-set "SUBSYS_ARGS=--setup-only"
-if "%SKIP_INSTALL%"=="1" set "SUBSYS_ARGS=%SUBSYS_ARGS% --skip-install"
-if "%SKIP_BUILD%"=="1" set "SUBSYS_ARGS=%SUBSYS_ARGS% --skip-build"
+echo.
+echo ==^> Installing npm dependencies
+echo.
+set PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+call npm install
+if errorlevel 1 exit /b 1
 
-if "%SETUP_AGENT%"=="1" (
-	echo.
-	echo ==^> Setting up Quantum Agent Manager
-	echo.
-	pushd agent
-	if exist scripts\setup.sh (
-		bash scripts/setup.sh %SUBSYS_ARGS%
-	) else (
-		bun install
-		if not "%SKIP_BUILD%"=="1" bun run build
-	)
-	if errorlevel 1 exit /b 1
-	popd
-)
+:maybe_compile
+if "%SKIP_COMPILE%"=="1" goto maybe_launch
+echo.
+echo ==^> Compiling sources (this may take several minutes)
+echo.
+call npm run compile
+if errorlevel 1 exit /b 1
 
-if "%SETUP_IDE%"=="1" (
+:maybe_launch
+if "%SETUP_ONLY%"=="1" (
 	echo.
-	echo ==^> Setting up Quantum IDE
-	echo.
-	pushd ide
-	set "IDE_ARGS=--setup-only"
-	if "%SKIP_INSTALL%"=="1" set "IDE_ARGS=%IDE_ARGS% --skip-install"
-	if "%SKIP_BUILD%"=="1" set "IDE_ARGS=%IDE_ARGS% --skip-compile"
-	call scripts\setup.bat %IDE_ARGS%
-	if errorlevel 1 exit /b 1
-	popd
+	echo Setup complete.
+	echo   Launch: scripts\code.bat
+	echo   Fast:   scripts\setup.bat --launch-only
+	exit /b 0
 )
 
 echo.
-echo Quantum ecosystem setup complete.
-echo   Agent:  cd agent ^&^& bun run dev
-echo   IDE:    cd ide ^&^& scripts\code.bat
+echo ==^> Launching Quantum
 echo.
-
-if "%LAUNCH_IDE%"=="1" (
-	if not "%SETUP_IDE%"=="1" (
-		echo error: --launch-ide requires IDE setup
-		exit /b 1
-	)
-	call ide\scripts\code.bat
-)
-
-popd
-exit /b 0
+call scripts\code.bat %CODE_ARGS%
+exit /b %ERRORLEVEL%
 
 :show_help
-echo Quantum ecosystem setup (Windows)
+echo Quantum dev setup (Windows)
 echo.
-echo scripts\setup.bat                  Install + build all products
-echo scripts\setup.bat --launch-ide     Setup, then launch Quantum IDE
-echo scripts\setup.bat --verify-only    Verify setup
-echo scripts\setup.bat --skip-agent      Skip Agent Manager
-echo scripts\setup.bat --skip-ide        Skip IDE
+echo   scripts\setup.bat                 Install, compile, and launch
+echo   scripts\setup.bat --setup-only    Install and compile only
+echo   scripts\setup.bat --launch-only   Launch only
+echo   scripts\setup.bat --skip-install  Skip npm install
+echo   scripts\setup.bat --skip-compile  Skip compile
 echo.
+echo See README.md for prerequisites.
 popd
 exit /b 0

@@ -1,6 +1,6 @@
-# Quantum Monorepo Scripts
+# Development scripts
 
-Production-grade setup and verification for both Quantum products.
+Scripts for building and running Quantum from source. Prerequisites are in [README.md](../README.md#getting-started).
 
 ## Quick start
 
@@ -9,117 +9,72 @@ Production-grade setup and verification for both Quantum products.
 | macOS / Linux | `./scripts/setup.sh` |
 | Windows | `scripts\setup.bat` |
 
-Product dependencies install inside `agent/` (Bun) and `ide/` (npm); root scripts do not require a separate dependency install. See [docs/architecture/monorepo-orchestration.md](../docs/architecture/monorepo-orchestration.md).
-
-Full setup installs dependencies and builds **Agent Manager → IDE**. The IDE compile step is the longest; expect several minutes on first run.
-
-## Prerequisites
-
-| Tool | Agent Manager | IDE |
-|------|---------------|-----|
-| [Bun](https://bun.sh) | >= 1.3.9 | — |
-| Node.js | >= 24 (see `agent/package.json`) | **22.22.1** (`.nvmrc`) |
-| npm | — | required, **< 11.2** |
-| Python | — | 3.10–3.13 (native modules) |
-
-The root setup detects Homebrew's versioned Node formula and can load nvm or fnm from a non-interactive shell. It selects the Agent Manager's pinned Node version when a manager is available and Node is missing or too old. The IDE setup then selects its own pinned version from `ide/.nvmrc`.
-
-Recommended: [mise](https://mise.jdx.dev) at the repo root (`mise.toml` — Bun + Node 24), plus [nvm](https://github.com/nvm-sh/nvm) or [fnm](https://github.com/Schniz/fnm) for IDE Node **22.22.1** (`ide/.nvmrc`).
+Full setup installs dependencies, compiles TypeScript, downloads Electron (on first launch), and opens the repo as the workspace.
 
 ## Setup options
 
 | Flag | Effect |
 |------|--------|
-| `--launch-ide` | Run full setup, then launch Quantum IDE |
-| `--launch-agent` | Run full setup, then launch Agent Manager dev stack |
-| `--skip-agent` | Skip Quantum Agent Manager |
-| `--skip-ide` | Skip Quantum IDE |
-| `-h`, `--help` | Show usage |
+| `--setup-only` | Install + compile, do not launch |
+| `--launch-only` | Launch only (skip install and compile) |
+| `--skip-install` | Skip `npm install` |
+| `--skip-compile` | Skip `npm run compile` (requires `out/main.js`) |
+| `--` | Forward following args to `code.sh` / `code.bat` |
+| `-h`, `--help` | Show usage (`setup.sh` only) |
 
-### Examples
-
-```bash
-# Full ecosystem setup
-./scripts/setup.sh
-
-# Setup without the slow IDE compile (Agent only)
-./scripts/setup.sh --skip-ide
-
-# Re-verify an existing setup
-./scripts/verify.sh
-
-# IDE only (from repo root)
-./scripts/setup.sh --skip-agent
-
-# Setup and open the editor
-./scripts/setup.sh --launch-ide
-```
-
-## Verification
+Examples:
 
 ```bash
-./scripts/verify.sh              # Repo config + build artifacts
-./scripts/verify-repo-config.sh  # Editor/git policy only (fast)
-./scripts/e2e.sh                 # Full E2E smoke suite (recommended)
-./scripts/e2e.sh --only agent
-./scripts/verify.sh --skip-ide
+./scripts/setup.sh --setup-only
+./scripts/setup.sh --launch-only
+./scripts/setup.sh -- --disable-extensions
 ```
 
-Checks:
+## Launch without full setup
 
-- **Repository config** — required root paths exist and are committable ([`verify-repo-config.sh`](verify-repo-config.sh); see [docs/version-control.md](../docs/version-control.md))
-- **Agent** — workspace install, contracts/server/web/desktop build outputs (`agent/scripts/verify.sh`)
-- **IDE** — delegates to `ide/scripts/verify-dev.sh`
-
-## Subsystem scripts
-
-Each product also has its own setup script:
-
-| Product | Script |
-|---------|--------|
-| Agent Manager | `agent/scripts/setup.sh` |
-| IDE (dev) | `ide/scripts/setup.sh` (macOS/Linux) / `ide/scripts/setup.bat` (Windows) |
-| IDE (release packaging) | `build/dev/build.sh` — upstream VS Code → Quantum binaries |
-
-The root `scripts/setup.sh` orchestrates these and runs verification at the end.
-
-### Release builds (IDE)
-
-Daily development uses `ide/` (`npm run compile`, `./scripts/code.sh`). To produce packaged Quantum binaries from pinned upstream VS Code:
+After the first successful setup:
 
 ```bash
-cd build && ./dev/build.sh      # compile
-cd build && ./dev/build.sh -p   # compile + package
+./scripts/code.sh                              # macOS / Linux
+VSCODE_SKIP_PRELAUNCH=1 ./scripts/code.sh      # skip Electron/compile checks
+scripts\code.bat                               # Windows
 ```
 
-See [`build/docs/howto-build.md`](../build/docs/howto-build.md).
+## Other scripts
 
-## After setup
+| Script | Purpose |
+|--------|---------|
+| `setup.sh` / `setup.bat` | Full dev setup (install, compile, launch) |
+| `node-ts.sh` | Run TypeScript build scripts (`--experimental-strip-types` + `.nvmrc` check) |
+| `verify-dev.sh` | Check Node, deps, build, bins, typecheck |
+| `code.sh` / `code.bat` | Run dev build of Quantum |
+| `code-cli.sh` / `code-cli.bat` | CLI entry |
+| `code-server.sh` | Server build |
+| `code-web.sh` | Web build |
+| `test.sh` / `test.bat` | Unit tests |
+
+Active development (real-time rebuilds):
 
 ```bash
-# Agent Manager (dev stack)
-cd agent && bun run dev
+# Terminal 1 — keep this running
+npm run watch
 
-# IDE
-cd ide && ./scripts/code.sh
-
-# IDE with live rebuilds (two terminals)
-cd ide && npm run watch          # terminal 1
-cd ide && VSCODE_SKIP_PRELAUNCH=1 ./scripts/code.sh   # terminal 2
+# Terminal 2 — launch (skip one-shot compile; watch owns rebuilds)
+VSCODE_SKIP_PRELAUNCH=1 ./scripts/code.sh
+# or: ./scripts/setup.sh --launch-only
 ```
 
-### Environment configuration
+`npm run watch` runs four pipelines in parallel:
 
-- **IDE**: configure models in Quantum Settings (`~/.agent/index/globalContext.json`)
-- **Agent Manager**: runs locally; see `agent/README.md` for dev port isolation
+| Pipeline | What it rebuilds on save |
+|----------|--------------------------|
+| `watch-client-transpile` | Workbench / Electron client (`src/` → `out/`) |
+| `watch-client` | Typecheck + API proposal / extension-point / codicon updates |
+| `watch-extensions` | Built-in extensions under `extensions/` |
+| `watch-agent` | Native Agent runtime, GUI webview, and agent packages |
 
-## Troubleshooting
+After a watched rebuild, use **Developer: Reload Window** (or relaunch) to pick up Electron / extension-host changes. Agent GUI webview updates usually apply on the next panel refresh.
 
-| Issue | Fix |
-|-------|-----|
-| IDE Node version mismatch | `cd ide && nvm install && nvm use` (reads `.nvmrc`) |
-| IDE npm too new | Use npm bundled with Node 22 via nvm (must be < 11.2) |
-| IDE `code.sh` fails on `.ts` extension | Use Node **22.22.1** from `ide/.nvmrc` (`nvm use` in `ide/`) — launch scripts call `node-ts.sh` with `--experimental-strip-types` |
-| Agent build fails | Ensure Bun >= 1.3.9; try `cd agent && bun install && bun run build` |
-| IDE `out/` stale while `npm run watch` runs | Stop watch (Ctrl+C) and restart `npm run watch`. Confirm heartbeat shows `watch-client-transpile=up`. Run `./scripts/verify-watch.sh`. Old npm-run-all could abort all watchers when one failed — supervisor restarts them. |
-| Re-run from scratch | Remove `node_modules` / `dist` / `out` in the affected subsystem, then `./scripts/setup.sh` |
+`npm run watch` is orchestrated by `scripts/watch-supervisor.mjs`: each pipeline is restarted on crash without aborting the others, and a periodic heartbeat reports which pipelines are up. Confirm emits with `./scripts/verify-watch.sh`.
+
+Do **not** run a second `npm run watch` (or a lone `watch-extensions`) in parallel — two watchers cleaning the same `out/` dirs will race and break activation.
