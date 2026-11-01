@@ -167,7 +167,7 @@ scripts\setup.bat
 
 See [scripts/README.md](scripts/README.md) for all setup and launch scripts.
 
-For the release pipeline that fetches the latest upstream VS Code source and applies Quantum branding and patches, see [`quantum-build/README.md`](quantum-build/README.md). The `build/` directory alongside it contains the IDE's day-to-day compile tooling.
+The upstream release builder is maintained inside the IDE build tree at [`build/quantum-release/README.md`](build/quantum-release/README.md). It applies Quantum branding and patches to a pinned VS Code source release; the surrounding `build/` tooling compiles this repository's IDE source.
 
 ### Manual setup
 
