@@ -8,6 +8,7 @@ import { createDecorator } from '../../../../../platform/instantiation/common/in
 export interface IAgentWorkbenchHost {
 	readonly _serviceBrand: undefined;
 	handleGuiRequest(messageType: string, payload: unknown): { handled: boolean; value?: unknown };
+	restoreActiveSession(): Promise<unknown>;
 	openSettingsPage(route?: string): void;
 }
 

@@ -21,8 +21,44 @@ const packageNames = [
 let debounceTimer;
 let rebuilding = false;
 let rebuildQueued = false;
+let buildChild;
+let stopping = false;
+
+function collectSourceSnapshot() {
+  const snapshot = new Map();
+
+  function visit(directory) {
+    let entries;
+    try {
+      entries = fs.readdirSync(directory, { withFileTypes: true });
+    } catch (error) {
+      if (error.code === "ENOENT") {
+        return;
+      }
+      throw error;
+    }
+
+    for (const entry of entries) {
+      const filename = path.join(directory, entry.name);
+      if (entry.isDirectory()) {
+        visit(filename);
+      } else if (entry.isFile() && /\.(?:ts|js|json)$/.test(entry.name)) {
+        const stats = fs.statSync(filename);
+        snapshot.set(filename, `${stats.mtimeMs}:${stats.size}`);
+      }
+    }
+  }
+
+  for (const name of packageNames) {
+    visit(path.join(packagesDir, name, "src"));
+  }
+  return snapshot;
+}
 
 function rebuild() {
+  if (stopping) {
+    return;
+  }
   if (rebuilding) {
     rebuildQueued = true;
     return;
@@ -30,42 +66,71 @@ function rebuild() {
   rebuilding = true;
   rebuildQueued = false;
   console.log("[watch-packages] Rebuilding agent packages...");
-  const child = spawn(process.execPath, [path.join(__dirname, "build-packages.js")], {
+  buildChild = spawn(process.execPath, [path.join(__dirname, "build-packages.js")], {
     cwd: agentDir,
     stdio: "inherit",
     env: { ...process.env, SKIP_INSTALLS: "true" },
   });
-  child.on("exit", (code) => {
+  buildChild.on("exit", (code) => {
+    buildChild = undefined;
     rebuilding = false;
     if (code !== 0) {
       console.error(`[watch-packages] build-packages exited with code ${code ?? "unknown"}`);
     } else {
       console.log("[watch-packages] Packages rebuilt");
     }
-    if (rebuildQueued) {
+    if (rebuildQueued && !stopping) {
       rebuild();
     }
   });
 }
 
 function scheduleRebuild() {
+  if (stopping) {
+    return;
+  }
   clearTimeout(debounceTimer);
   debounceTimer = setTimeout(rebuild, 300);
 }
 
-for (const name of packageNames) {
-  const srcDir = path.join(packagesDir, name, "src");
-  if (!fs.existsSync(srcDir)) {
-    continue;
+function stop() {
+  if (stopping) {
+    return;
   }
-  fs.watch(srcDir, { recursive: true }, (_event, filename) => {
-    if (!filename) {
-      return;
-    }
-    if (filename.endsWith(".ts") || filename.endsWith(".js") || filename.endsWith(".json")) {
-      scheduleRebuild();
-    }
-  });
+  stopping = true;
+  rebuildQueued = false;
+  clearTimeout(debounceTimer);
+  clearInterval(pollTimer);
+  buildChild?.kill("SIGTERM");
+  process.exitCode = 0;
 }
 
-console.log("[watch-packages] Watching packages/*/src");
+process.once("SIGINT", () => void stop());
+process.once("SIGTERM", () => void stop());
+
+let previousSnapshot;
+try {
+  previousSnapshot = collectSourceSnapshot();
+} catch (error) {
+  console.error("[watch-packages] Could not read package sources:", error);
+  process.exit(1);
+}
+
+const pollTimer = setInterval(() => {
+  try {
+    const nextSnapshot = collectSourceSnapshot();
+    const changed =
+      nextSnapshot.size !== previousSnapshot.size ||
+      [...nextSnapshot].some(([filename, fingerprint]) =>
+        previousSnapshot.get(filename) !== fingerprint,
+      );
+    previousSnapshot = nextSnapshot;
+    if (changed) {
+      scheduleRebuild();
+    }
+  } catch (error) {
+    console.error("[watch-packages] Could not refresh package sources:", error);
+  }
+}, 1000);
+
+console.log("[watch-packages] Polling packages/*/src for changes");

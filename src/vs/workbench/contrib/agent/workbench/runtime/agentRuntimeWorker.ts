@@ -7,6 +7,7 @@ import { parentPort } from 'node:worker_threads';
 import type { FromIdeProtocol, ToCoreProtocol } from '../../core/protocol';
 import type { AutocompleteInput } from '../../core/autocomplete/util/types';
 import type { Message } from '../../core/protocol/messenger';
+import { createInvocationLock } from '../common/agentInvocationLock';
 import { AgentRuntime } from './AgentRuntime';
 
 type WorkerRequest =
@@ -35,6 +36,10 @@ let nextRequestId = 0;
 const pendingHostRequests = new Map<string, { resolve(value: unknown): void; reject(error: Error): void }>();
 const completionControllers = new Map<string, AbortController>();
 const MAX_INVOKE_CHUNK_BATCH_SIZE = 32;
+
+// Serialize model streams at the native runtime boundary. Keeping this lock in
+// the worker prevents concurrent webview requests from racing provider streams.
+const withLlmStreamLock = createInvocationLock();
 
 function requestHost(kind: 'ide' | 'core', messageType: string, data: unknown): Promise<unknown> {
 	const id = `host-${++nextRequestId}`;
@@ -65,10 +70,7 @@ function serializeError(error: unknown): { message: string; stack?: string } {
 	return { message: String(error) };
 }
 
-async function handleInvoke(request: WorkerRequest): Promise<void> {
-	if (request.kind !== 'invoke') {
-		throw new Error('Invalid Agent invocation message.');
-	}
+async function handleInvokeUnlocked(request: Extract<WorkerRequest, { kind: 'invoke' }>): Promise<void> {
 	const { id, messageType, data } = request;
 
 	let chunks: unknown[] = [];
@@ -115,6 +117,14 @@ async function handleInvoke(request: WorkerRequest): Promise<void> {
 		flushChunks();
 		port.postMessage({ kind: 'invokeResult', id, error: serializeError(error) });
 	}
+}
+
+async function handleInvoke(request: Extract<WorkerRequest, { kind: 'invoke' }>): Promise<void> {
+	if (request.messageType === 'llm/streamChat') {
+		await withLlmStreamLock(() => handleInvokeUnlocked(request));
+		return;
+	}
+	await handleInvokeUnlocked(request);
 }
 
 async function handleCompletion(request: WorkerRequest): Promise<void> {

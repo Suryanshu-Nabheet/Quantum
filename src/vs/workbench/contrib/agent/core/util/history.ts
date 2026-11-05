@@ -117,6 +117,12 @@ export class HistoryManager {
     if (session.usage !== undefined) {
       orderedSession.usage = session.usage;
     }
+    if (session.todos !== undefined) {
+      orderedSession.todos = session.todos;
+    }
+    if (session.planBrief !== undefined) {
+      orderedSession.planBrief = session.planBrief;
+    }
 
     fs.writeFileSync(
       getSessionFilePath(session.sessionId),

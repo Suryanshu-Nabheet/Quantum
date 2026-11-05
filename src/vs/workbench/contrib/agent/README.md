@@ -125,9 +125,11 @@ After `npm run compile`, confirm:
 
 ## Agent harness (maintainers)
 
-Chat/tool turns: `runAgentDriver` in `streamModelTurn` → `withAgentStreamLock` → tool policy → parallel tools → next driver iteration.
+Chat/tool turns: `runAgentDriver` in `gui/src/redux/thunks/streamModelTurn.ts` owns turn iteration and tool continuations. Model streams run in the native Agent worker; approval and the live session projection remain in the webview.
 
-- One LLM stream at a time: `withAgentStreamLock` on `runStreamModelTurnLocked`
+- One LLM stream at a time: the native worker serializes `llm/streamChat` invocations and releases the lock before tool execution
+- Turn orchestration, approvals, and the live session projection remain in the React webview
+- The workbench restores the active session and persists its identity; Core persists transcript, todo, and plan data while Redux stores the live UI projection
 - **Stream continuation:** only inside `core/llm/streamChat.ts` (up to 3 segments when truncated or clearly cut off — no extra GUI re-stream loops)
 - Step depth resets per user message; tools at `depth + 1`
 - Mixed approval: auto tools do not auto-resume the LLM
@@ -137,7 +139,7 @@ Chat/tool turns: `runAgentDriver` in `streamModelTurn` → `withAgentStreamLock`
 
 **Local Ollama `*coder*` models:** use ` ```tool ` system-message tools (not native `tool_calls`). If the model still prints ` ```json ` tool JSON, post-stream recovery in `markdownJsonToolCall.ts` turns it into a real tool call once.
 
-Full workflow rules: `ide/AGENTS.md`.
+Full workflow rules: `.github/copilot-instructions.md`.
 
 ## Quality checks
 

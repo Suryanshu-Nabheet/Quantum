@@ -12,6 +12,12 @@ const testSession: Session = {
   title: `${sessionId} title`,
   workspaceDirectory: "workspaceDir",
   sessionId: sessionId,
+  todos: [{ id: "todo-1", text: "Verify session restore", status: "pending" }],
+  planBrief: {
+    title: "Session restore",
+    overview: "Keep the Agent plan with its transcript.",
+    approach: "Persist and reload the structured fields.",
+  },
 };
 
 describe("No sessions have been created", () => {

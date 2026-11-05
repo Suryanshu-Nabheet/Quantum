@@ -31,6 +31,7 @@ export class AgentViewPane extends ViewPane {
 	private bodyContainer: HTMLElement | undefined;
 	private readonly nonce = generateUuid();
 	private guiReady = false;
+	private activeSessionRestoreStarted = false;
 
 	constructor(
 		options: IViewletViewOptions,
@@ -164,6 +165,10 @@ export class AgentViewPane extends ViewPane {
 			for (const queued of this.queuedGuiMessages.splice(0)) {
 				void this.webview?.postMessage(queued);
 			}
+			if (!this.activeSessionRestoreStarted) {
+				this.activeSessionRestoreStarted = true;
+				void this.restoreActiveSession();
+			}
 			return;
 		}
 		const pending = this.pendingGuiRequests.get(request.messageId);
@@ -201,6 +206,17 @@ export class AgentViewPane extends ViewPane {
 		} finally {
 			this.invocationTypes.delete(request.messageId);
 		}
+	}
+
+	private async restoreActiveSession(): Promise<void> {
+		let session: unknown;
+		try {
+			session = await this.agentWorkbenchHost.restoreActiveSession();
+			this.runtimeStarted = true;
+		} catch (error) {
+			console.error('[Agent] Failed to restore the active session:', error);
+		}
+		this.agentService.sendGuiMessage('loadAgentSession', { session });
 	}
 
 	private postCoreMessageToGui(message: unknown): void {

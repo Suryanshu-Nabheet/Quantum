@@ -22,23 +22,23 @@ import Electron service implementations.
 
 ## Current runtime ownership
 
-- The webview renders the conversation and currently owns the Redux session
-  state and turn loop in `gui/src/redux/thunks`.
+- The workbench persists the active session identity, and Core owns transcript
+  history on disk. The webview renders a Redux projection and performs
+  one-step model and tool execution in `gui/src/redux/thunks`.
 - `core` owns provider adapters, prompts, tool and MCP implementations, and
   history storage. `workbench/common/agentTurnPolicy.ts` owns shared turn
-  decisions, and `workbench/runtime/AgentRuntime.ts` constructs Core inside
-  the Node worker.
+  decisions, and `workbench/runtime/AgentRuntime.ts` constructs Core and the
+  runtime inside the Node worker.
 - `workbench/electron-browser` maps Agent requests to IDE services such as
   editors, files, terminals, SCM, browser views, and secret storage.
 - `workbench/electron-main` creates and disposes the worker for each window.
 
-This is a native workbench integration, but turn orchestration and session
-state are still split between the GUI and Core. The GUI also uses a webview
-message bridge. Those are remaining runtime ownership boundaries; this
-document does not claim that the Agent loop has already moved into the
-workbench. Continuation decisions and loop limits are now centralized in
-`workbench/common/agentTurnPolicy.ts`; the GUI still owns the driver loop and session
-mutations.
+The workbench routes history list/load/save/delete/clear operations, stores the
+active session id, and restores the selected session before passing it to the
+webview; Core stores transcript, todo, and plan data. Turn orchestration,
+approval handling, and the live session projection still run in the React
+webview. Moving the chat surface, turn orchestration, and session mutations
+into native workbench code remains unfinished.
 
 ## Runtime constraints
 

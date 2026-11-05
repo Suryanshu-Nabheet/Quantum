@@ -69,7 +69,9 @@ async function buildPackage(packageName, cleanNodeModules = false) {
     }
   }
 
-  await runCommand(npmInstallCmd, packagePath, `${packageName} (install)`);
+  if (process.env.SKIP_INSTALLS !== "true") {
+    await runCommand(npmInstallCmd, packagePath, `${packageName} (install)`);
+  }
 
   const result = await runCommand("npm run build", packagePath, `${packageName} (build)`);
   await linkOutputNodeModules(packageName, packagePath);

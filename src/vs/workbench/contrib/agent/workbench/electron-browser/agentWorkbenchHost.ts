@@ -14,11 +14,13 @@ import { INotificationService } from '../../../../../platform/notification/commo
 import { IOpenerService } from '../../../../../platform/opener/common/opener.js';
 import { IProductService } from '../../../../../platform/product/common/productService.js';
 import { ISecretStorageService } from '../../../../../platform/secrets/common/secrets.js';
+import { IStorageService, StorageScope, StorageTarget } from '../../../../../platform/storage/common/storage.js';
 import { IWorkspaceContextService } from '../../../../../platform/workspace/common/workspace.js';
 import { IAgentNativeService } from '../common/agentNativeService.js';
 import { IAgentWorkbenchHost } from '../common/agentWorkbenchHost.js';
 import { IAgentPlanEditorService } from '../common/agentPlanEditorService.js';
 import type { IAgentPlanViewData } from '../common/agentPlanEditorService.js';
+import type { BaseSessionMetadata, Session } from '../../core';
 import { ICommandService } from '../../../../../platform/commands/common/commands.js';
 import { IClipboardService } from '../../../../../platform/clipboard/common/clipboardService.js';
 import { ICodeEditorService } from '../../../../../editor/browser/services/codeEditorService.js';
@@ -55,6 +57,7 @@ const MAX_AGENT_DIFF_FILES = 100;
 const MAX_AGENT_DIFF_BYTES = 900 * 1024;
 const MAX_AGENT_DIFF_FILE_BYTES = 1024 * 1024;
 const AGENT_DIFF_CONCURRENCY = 8;
+const ACTIVE_AGENT_SESSION_STORAGE_KEY = 'quantum.agent.activeSessionId';
 
 const NATIVE_IDE_OPERATIONS = new Set([
 	'getIdeInfo', 'getWorkspaceDirs', 'isWorkspaceRemote', 'getIdeSettings', 'isTelemetryEnabled', 'getUniqueId',
@@ -98,6 +101,7 @@ export class AgentWorkbenchHost extends Disposable {
 		@ISCMService private readonly scmService: ISCMService,
 		@IWebviewWorkbenchService private readonly webviewWorkbenchService: IWebviewWorkbenchService,
 		@IAgentPlanEditorService private readonly agentPlanEditorService: IAgentPlanEditorService,
+		@IStorageService private readonly storageService: IStorageService,
 	) {
 		super();
 		this.queryBuilder = instantiationService.createInstance(QueryBuilder);
@@ -149,6 +153,18 @@ export class AgentWorkbenchHost extends Disposable {
 		input.webview.setHtml(this.createSettingsEditorHtml(guiRoot, route));
 	}
 
+	async restoreActiveSession(): Promise<Session | undefined> {
+		let sessionId = this.storageService.get(ACTIVE_AGENT_SESSION_STORAGE_KEY, StorageScope.WORKSPACE);
+		if (!sessionId) {
+			const recentSessions = await this.invokeCoreRequest('history/list', { limit: 1 }) as BaseSessionMetadata[];
+			sessionId = recentSessions[0]?.sessionId;
+		}
+		if (!sessionId) {
+			return undefined;
+		}
+		return await this.loadSession(sessionId);
+	}
+
 	private createSettingsEditorHtml(guiRoot: URI, route: string): string {
 		const nonce = generateUuid();
 		const workspacePaths = this.workspaceContextService.getWorkspace().folders.map(folder => folder.uri.toString());
@@ -190,6 +206,31 @@ export class AgentWorkbenchHost extends Disposable {
 		}
 		const data = payload as Record<string, unknown> | undefined;
 		switch (messageType) {
+			case 'history/list':
+				return { handled: true, value: this.invokeCoreRequest('history/list', payload) };
+			case 'history/load': {
+				const sessionId = data?.id;
+				if (typeof sessionId !== 'string' || !sessionId) {
+					throw new Error('Invalid Agent session id.');
+				}
+				return { handled: true, value: this.loadSession(sessionId) };
+			}
+			case 'history/save': {
+				const session = payload as Session | undefined;
+				if (!session || typeof session.sessionId !== 'string' || !session.sessionId) {
+					throw new Error('Invalid Agent session.');
+				}
+				return { handled: true, value: this.saveSession(session) };
+			}
+			case 'history/delete': {
+				const sessionId = data?.id;
+				if (typeof sessionId !== 'string' || !sessionId) {
+					throw new Error('Invalid Agent session id.');
+				}
+				return { handled: true, value: this.deleteSession(sessionId) };
+			}
+			case 'history/clear':
+				return { handled: true, value: this.clearSessionHistory() };
 			case 'showFile':
 				return { handled: true, value: this.editorService.openEditor({ resource: this.toResource(data?.filepath) }) };
 			case 'focusEditor':
@@ -227,6 +268,39 @@ export class AgentWorkbenchHost extends Disposable {
 			default:
 				return { handled: false };
 		}
+	}
+
+	private invokeCoreRequest(messageType: string, data: unknown): Promise<unknown> {
+		return this.agentService.invoke({ id: generateUuid(), messageType, data });
+	}
+
+	private async loadSession(sessionId: string): Promise<Session> {
+		const session = await this.invokeCoreRequest('history/load', { id: sessionId }) as Session;
+		if (session && typeof session.sessionId === 'string' && session.sessionId) {
+			this.storeActiveSessionId(session.sessionId);
+		}
+		return session;
+	}
+
+	private async saveSession(session: Session): Promise<void> {
+		await this.invokeCoreRequest('history/save', session);
+		this.storeActiveSessionId(session.sessionId);
+	}
+
+	private async deleteSession(sessionId: string): Promise<void> {
+		await this.invokeCoreRequest('history/delete', { id: sessionId });
+		if (this.storageService.get(ACTIVE_AGENT_SESSION_STORAGE_KEY, StorageScope.WORKSPACE) === sessionId) {
+			this.storageService.remove(ACTIVE_AGENT_SESSION_STORAGE_KEY, StorageScope.WORKSPACE);
+		}
+	}
+
+	private async clearSessionHistory(): Promise<void> {
+		await this.invokeCoreRequest('history/clear', undefined);
+		this.storageService.remove(ACTIVE_AGENT_SESSION_STORAGE_KEY, StorageScope.WORKSPACE);
+	}
+
+	private storeActiveSessionId(sessionId: string): void {
+		this.storageService.store(ACTIVE_AGENT_SESSION_STORAGE_KEY, sessionId, StorageScope.WORKSPACE, StorageTarget.MACHINE);
 	}
 
 	private async setAppearanceLayout(data: Record<string, unknown> | undefined): Promise<void> {
