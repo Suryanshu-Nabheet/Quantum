@@ -150,15 +150,32 @@ export async function buildAgentConfigFromGui(options: {
   // Keep provider configuration visible even when live model discovery finds
   // nothing. In particular, a stopped local server should show zero available
   // models, not disappear or acquire a bundled placeholder model.
-  agentConfig.configuredModels = (config.models ?? []).map((model) => ({
-    title: model.name,
-    provider: model.provider,
-    underlyingProviderName: model.provider,
-    model: model.model,
-    apiKey: model.apiKey,
-    apiBase: model.apiBase,
-    roles: model.roles,
-  }));
+  agentConfig.configuredModels = (config.models ?? []).map((model) => {
+    const env = model.env ?? {};
+    return {
+      title: model.name,
+      provider: model.provider,
+      underlyingProviderName: model.provider,
+      model: model.model,
+      apiKey: model.apiKey,
+      apiBase: model.apiBase,
+      roles: model.roles,
+      deployment:
+        typeof env.deployment === "string" ? env.deployment : undefined,
+      apiVersion:
+        typeof env.apiVersion === "string" ? env.apiVersion : undefined,
+      apiType:
+        env.apiType === "openai" || env.apiType === "azure"
+          ? env.apiType
+          : undefined,
+      deploymentId:
+        typeof env.deploymentId === "string" ? env.deploymentId : undefined,
+      projectId: typeof env.projectId === "string" ? env.projectId : undefined,
+      region: typeof env.region === "string" ? env.region : undefined,
+      profile: typeof env.profile === "string" ? env.profile : undefined,
+      accountId: typeof env.accountId === "string" ? env.accountId : undefined,
+    };
+  });
 
   for (const rule of config.rules ?? []) {
     agentConfig.rules.push(convertBlockRuleToAgentRule(rule));

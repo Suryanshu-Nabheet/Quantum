@@ -31,7 +31,10 @@ export function ConfiguredModelsList({
   return (
     <ul className="m-0 flex list-none flex-col gap-2 p-0">
       {providers.map((group) => {
-        const hint = statusHint(group.credentialModel);
+        const hint =
+          statusHint(group.credentialModel) ??
+          group.models.map(statusHint).find((value) => value !== null) ??
+          null;
         const count = group.models.length;
         return (
           <li

@@ -1,19 +1,26 @@
 import { ModelDescription } from "core";
 import { getProviderDisplayName } from "../../util/modelDisplay";
 
-/** Deduplicate models that appear under multiple roles. */
-export function uniqueModelsByTitle(
+/** Deduplicate the same provider model when it appears under multiple roles. */
+export function uniqueModelsByProviderAndModel(
   modelsByRole: Record<string, ModelDescription[] | undefined>,
 ): ModelDescription[] {
-  const byTitle = new Map<string, ModelDescription>();
+  const byIdentity = new Map<string, ModelDescription>();
   for (const models of Object.values(modelsByRole)) {
     for (const model of models ?? []) {
-      if (!byTitle.has(model.title)) {
-        byTitle.set(model.title, model);
+      const provider = (
+        model.underlyingProviderName || model.provider || "unknown"
+      )
+        .trim()
+        .toLowerCase();
+      const modelId = model.model?.trim() || `title:${model.title}`;
+      const identity = JSON.stringify([provider, modelId]);
+      if (!byIdentity.has(identity)) {
+        byIdentity.set(identity, model);
       }
     }
   }
-  return Array.from(byTitle.values()).sort((a, b) =>
+  return Array.from(byIdentity.values()).sort((a, b) =>
     a.title.localeCompare(b.title),
   );
 }
@@ -67,7 +74,11 @@ export function includeEmptyConfiguredProviders(
     const id = (model.underlyingProviderName || model.provider || "unknown")
       .trim()
       .toLowerCase();
-    if (byProvider.has(id)) {
+    const existingGroup = byProvider.get(id);
+    if (existingGroup) {
+      // Configure the saved provider credentials, not one of its discovered
+      // child models. This keeps edits scoped to the provider configuration.
+      existingGroup.credentialModel = model;
       continue;
     }
     byProvider.set(id, {

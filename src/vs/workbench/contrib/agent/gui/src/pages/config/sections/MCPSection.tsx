@@ -436,12 +436,11 @@ export function MCPSection() {
           text={`Remove "${server.name}" from Settings?`}
           confirmText="Delete"
           onConfirm={async () => {
-            try {
-              await hostBridge.request("config/deleteMcpServer", {
-                name: server.name,
-              });
-            } catch (error) {
-              console.error("Failed to delete MCP server:", error);
+            const response = await hostBridge.request("config/deleteMcpServer", {
+              name: server.name,
+            });
+            if (response.status === "error") {
+              throw new Error(response.error);
             }
           }}
         />,

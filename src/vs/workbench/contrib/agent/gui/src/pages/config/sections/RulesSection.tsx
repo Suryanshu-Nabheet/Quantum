@@ -213,10 +213,11 @@ const RuleCard: React.FC<RuleCardProps> = ({ rule }) => {
           text="Are you sure you want to delete this rule?"
           confirmText="Delete"
           onConfirm={async () => {
-            try {
-              await hostBridge.request("config/deleteRule", { ruleId });
-            } catch (error) {
-              console.error("Failed to delete rule:", error);
+            const response = await hostBridge.request("config/deleteRule", {
+              ruleId,
+            });
+            if (response.status === "error") {
+              throw new Error(response.error);
             }
           }}
         />,
@@ -373,10 +374,11 @@ function PromptsSubSection() {
           text="Are you sure you want to delete this prompt?"
           confirmText="Delete"
           onConfirm={async () => {
-            try {
-              await hostBridge.request("config/deletePrompt", { promptId });
-            } catch (error) {
-              console.error("Failed to delete prompt:", error);
+            const response = await hostBridge.request("config/deletePrompt", {
+              promptId,
+            });
+            if (response.status === "error") {
+              throw new Error(response.error);
             }
           }}
         />,

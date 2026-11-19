@@ -202,21 +202,32 @@ export function AddModelForm({
       ...(hasValidApiKey ? { apiKey } : {}),
     };
 
-    if (existingModel) {
-      await hostBridge.request("config/updateModel", {
-        title: existingModel.title,
-        model: {
-          ...model,
-          // Prefer updating the provider credential row by provider id.
-          title: selectedProvider.title,
-          model: "AUTODETECT",
-        },
-      });
-    } else {
-      await hostBridge.request("config/addModel", { model, roles });
-    }
+    formMethods.clearErrors("root");
+    try {
+      const response = existingModel
+        ? await hostBridge.request("config/updateModel", {
+            title: existingModel.title,
+            model: {
+              ...model,
+              // Prefer updating the provider credential row by provider id.
+              title: selectedProvider.title,
+              model: "AUTODETECT",
+            },
+          })
+        : await hostBridge.request("config/addModel", { model, roles });
 
-    onDone(existingModel ? undefined : (model as ModelDescription));
+      if (response.status === "error") {
+        throw new Error(response.error);
+      }
+
+      onDone(existingModel ? undefined : (model as ModelDescription));
+    } catch (error) {
+      formMethods.setError("root", {
+        type: "server",
+        message:
+          error instanceof Error ? error.message : "Failed to save provider.",
+      });
+    }
   }
 
   function onClickDownloadProvider() {
@@ -360,9 +371,23 @@ export function AddModelForm({
               )}
           </div>
 
+          {formMethods.formState.errors.root?.message && (
+            <p className="text-error mt-2 text-sm" role="alert">
+              {formMethods.formState.errors.root.message}
+            </p>
+          )}
+
           <div className="mt-4 w-full">
-            <Button type="submit" className="w-full" disabled={isDisabled()}>
-              {existingModel ? "Save changes" : "Connect"}
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isDisabled() || formMethods.formState.isSubmitting}
+            >
+              {formMethods.formState.isSubmitting
+                ? "Saving..."
+                : existingModel
+                  ? "Save changes"
+                  : "Connect"}
             </Button>
 
             <span className="text-description-muted block w-full text-center text-xs">

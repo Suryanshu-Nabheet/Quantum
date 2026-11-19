@@ -20,7 +20,7 @@ import { IAgentNativeService } from '../common/agentNativeService.js';
 import { IAgentWorkbenchHost } from '../common/agentWorkbenchHost.js';
 import { IAgentPlanEditorService } from '../common/agentPlanEditorService.js';
 import type { IAgentPlanViewData } from '../common/agentPlanEditorService.js';
-import type { BaseSessionMetadata, Session } from '../../core';
+import type { BaseSessionMetadata, Session } from '../../core/index.js';
 import { ICommandService } from '../../../../../platform/commands/common/commands.js';
 import { IClipboardService } from '../../../../../platform/clipboard/common/clipboardService.js';
 import { ICodeEditorService } from '../../../../../editor/browser/services/codeEditorService.js';
@@ -106,6 +106,7 @@ export class AgentWorkbenchHost extends Disposable {
 		super();
 		this.queryBuilder = instantiationService.createInstance(QueryBuilder);
 		this._register(agentService.registerHostRequestHandler(request => this.handleRequest(request.requestKind, request.messageType, request.data)));
+		this._register(agentService.onDidReceiveCoreMessage(message => this.postCoreMessageToSettings(message)));
 		this._register(agentService.onDidReceiveRuntimeChunk(chunk => {
 			const messageType = this.settingsInvocationTypes.get(chunk.messageId);
 			if (messageType && this.settingsEditor && !this.settingsEditor.isDisposed()) {
@@ -123,6 +124,7 @@ export class AgentWorkbenchHost extends Disposable {
 	private readonly queryBuilder: QueryBuilder;
 	private settingsEditor: WebviewInput | undefined;
 	private readonly settingsInvocationTypes = new Map<string, string>();
+	private readonly settingsCoreMessageAcks = new Set<string>();
 
 	openSettingsPage(route = '/config'): void {
 		const existingEditor = this.settingsEditor;
@@ -148,6 +150,7 @@ export class AgentWorkbenchHost extends Disposable {
 			if (this.settingsEditor === input) {
 				this.settingsEditor = undefined;
 				this.settingsInvocationTypes.clear();
+				this.settingsCoreMessageAcks.clear();
 			}
 		});
 		input.webview.setHtml(this.createSettingsEditorHtml(guiRoot, route));
@@ -186,6 +189,9 @@ export class AgentWorkbenchHost extends Disposable {
 		if (typeof request.messageType !== 'string' || typeof request.messageId !== 'string') {
 			return;
 		}
+		if (request.messageType === 'configUpdate' && this.settingsCoreMessageAcks.delete(request.messageId)) {
+			return;
+		}
 		this.settingsInvocationTypes.set(request.messageId, request.messageType);
 		try {
 			const nativeRequest = this.handleGuiRequest(request.messageType, request.data);
@@ -198,6 +204,28 @@ export class AgentWorkbenchHost extends Disposable {
 		} finally {
 			this.settingsInvocationTypes.delete(request.messageId);
 		}
+	}
+
+	private postCoreMessageToSettings(message: unknown): void {
+		const coreMessage = message as { messageType?: unknown; data?: unknown } | undefined;
+		const editor = this.settingsEditor;
+		if (coreMessage?.messageType !== 'configUpdate' || !editor || editor.isDisposed()) {
+			return;
+		}
+
+		const messageId = generateUuid();
+		if (this.settingsCoreMessageAcks.size >= 256) {
+			const oldest = this.settingsCoreMessageAcks.values().next().value;
+			if (oldest) {
+				this.settingsCoreMessageAcks.delete(oldest);
+			}
+		}
+		this.settingsCoreMessageAcks.add(messageId);
+		void editor.webview.postMessage({
+			messageType: 'configUpdate',
+			messageId,
+			data: coreMessage.data,
+		});
 	}
 
 	handleGuiRequest(messageType: string, payload: unknown): { handled: boolean; value?: unknown } {

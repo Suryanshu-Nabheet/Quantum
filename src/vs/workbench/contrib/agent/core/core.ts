@@ -401,11 +401,9 @@ export class Core {
         roles: msg.data.roles,
         profileId: this.configHandler.currentProfile?.profileDescription.id,
       });
-      void this.configHandler
-        .reloadConfig("Model added (config/addModel message)")
-        .catch((error) => {
-          Logger.error("Failed to reload config after adding a model:", error);
-        });
+      await this.configHandler.reloadConfig(
+        "Model added (config/addModel message)",
+      );
     });
 
     on("config/addMcpServer", async (msg) => {

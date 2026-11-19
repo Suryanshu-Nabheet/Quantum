@@ -1,6 +1,6 @@
 import { ConfigResult, ConfigValidationError } from "agent-config";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { BrowserSerializedAgentConfig } from "core";
+import type { BrowserSerializedAgentConfig, ModelDescription } from "core";
 export type ConfigState = {
   configError: ConfigValidationError[] | undefined;
   config: BrowserSerializedAgentConfig;
@@ -74,6 +74,35 @@ export const configSlice = createSlice({
     ) => {
       state.config = config;
     },
+    removeProviderModels: (
+      state,
+      { payload: providerId }: PayloadAction<string>,
+    ) => {
+      const normalizedProviderId = providerId.trim().toLowerCase();
+      const belongsToProvider = (model: ModelDescription | null) =>
+        !!model &&
+        (model.underlyingProviderName || model.provider || "unknown")
+          .trim()
+          .toLowerCase() === normalizedProviderId;
+
+      for (const role of Object.keys(state.config.modelsByRole) as Array<
+        keyof typeof state.config.modelsByRole
+      >) {
+        state.config.modelsByRole[role] = state.config.modelsByRole[
+          role
+        ].filter((model) => !belongsToProvider(model));
+      }
+      state.config.configuredModels = (
+        state.config.configuredModels ?? []
+      ).filter((model) => !belongsToProvider(model));
+      for (const role of Object.keys(state.config.selectedModelByRole) as Array<
+        keyof typeof state.config.selectedModelByRole
+      >) {
+        if (belongsToProvider(state.config.selectedModelByRole[role])) {
+          state.config.selectedModelByRole[role] = null;
+        }
+      }
+    },
     setConfigLoading: (state, { payload: loading }: PayloadAction<boolean>) => {
       state.loading = loading;
     },
@@ -88,7 +117,12 @@ export const configSlice = createSlice({
   },
 });
 
-export const { updateConfig, setConfigResult, setConfigLoading } =
+export const {
+  updateConfig,
+  removeProviderModels,
+  setConfigResult,
+  setConfigLoading,
+} =
   configSlice.actions;
 
 export const { selectUIConfig, selectSelectedChatModel } =

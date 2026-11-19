@@ -234,7 +234,12 @@ export function deleteModelsByProvider(
   provider: string,
   titlesToClear: string[] = [],
 ) {
-  setGuiModels(getGuiModels().filter((m) => m.provider !== provider));
+  const providerId = provider.trim().toLowerCase();
+  setGuiModels(
+    getGuiModels().filter(
+      (model) => model.provider.trim().toLowerCase() !== providerId,
+    ),
+  );
 
   const clear = new Set(titlesToClear);
   if (clear.size === 0) {

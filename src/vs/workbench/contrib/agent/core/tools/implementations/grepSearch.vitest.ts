@@ -43,7 +43,8 @@ describe("grepSearchImpl", () => {
 
   it("exposes the split-by-file option in the public tool schema", async () => {
     const { grepSearchTool } = await import("../definitions/grepSearch");
-    expect(grepSearchTool.function.parameters.properties).toHaveProperty(
+    expect(grepSearchTool.function.parameters).toBeDefined();
+    expect(grepSearchTool.function.parameters?.properties).toHaveProperty(
       "splitByFile",
     );
   });
