@@ -56,6 +56,9 @@ function code() {
 			touch "$ROOT/.build/electron/$NAME.app"
 		fi
 	fi
+	# The parent editor may set this for its own Node-based subprocesses. Clear it
+	# before launching Electron so the app starts in Chromium/Electron mode.
+	unset ELECTRON_RUN_AS_NODE
 
 	# Manage built-in extensions
 	if [[ "$1" == "--builtin" ]]; then

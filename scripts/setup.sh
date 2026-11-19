@@ -108,7 +108,9 @@ ensure_node() {
 		# shellcheck disable=SC1090
 		source "${NVM_DIR:-$HOME/.nvm}/nvm.sh"
 		log_step "Node.js ${required} (nvm)"
-		nvm install "$required"
+		if ! nvm ls "$required" >/dev/null 2>&1; then
+			nvm install "$required"
+		fi
 		nvm use "$required"
 		return
 	fi

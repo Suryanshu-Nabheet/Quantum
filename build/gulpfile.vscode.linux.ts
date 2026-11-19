@@ -9,23 +9,16 @@ import rename from 'gulp-rename';
 import es from 'event-stream';
 import vfs from 'vinyl-fs';
 import { rimraf } from './lib/util.ts';
-import { getVersion } from './lib/getVersion.ts';
 import * as task from './lib/task.ts';
 import packageJson from '../package.json' with { type: 'json' };
 import product from '../product.json' with { type: 'json' };
 import { getDependencies } from './linux/dependencies-generator.ts';
 import { recommendedDeps as debianRecommendedDependencies } from './linux/debian/dep-lists.ts';
 import { recommendedDeps as rpmRecommendedDependencies } from './linux/rpm/dep-lists.ts';
-import * as path from 'path';
 import * as cp from 'child_process';
 import { promisify } from 'util';
 
 const exec = promisify(cp.exec);
-const root = path.dirname(import.meta.dirname);
-const commit = getVersion(root);
-
-const linuxPackageRevision = Math.floor(new Date().getTime() / 1000);
-
 function getDebPackageArch(arch: string): string {
 	switch (arch) {
 		case 'x64': return 'amd64';

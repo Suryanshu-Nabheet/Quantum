@@ -33,6 +33,7 @@
     "watch-client": "npm run gulp watch-client",
     "watch-clientd": "deemon npm run watch-client",
     "kill-watch-clientd": "deemon --kill npm run watch-client",
+    "pretranspile-client": "npm run gulp copy-codicons",
     "transpile-client": "node build/next/index.ts transpile",
     "watch-client-transpile": "node build/next/index.ts transpile --watch",
     "watch-client-transpiled": "deemon npm run watch-client-transpile",

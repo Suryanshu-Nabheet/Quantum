@@ -74,7 +74,7 @@ const compileClientTask = task.define('compile-client', task.series(rimrafOutPre
 gulp.task(compileClientTask);
 
 // Transpile only
-const transpileClientTask = task.define('transpile-client', task.series(rimrafOutPreservingAgent, compilation.transpileTask('src', 'out'), compilation.compileElectronPreloadsTask));
+const transpileClientTask = task.define('transpile-client', task.series(rimrafOutPreservingAgent, compilation.copyCodiconsTask, compilation.transpileTask('src', 'out'), compilation.compileElectronPreloadsTask));
 gulp.task(transpileClientTask);
 
 const watchClientTask = task.define('watch-client', task.parallel(compilation.watchTypeCheckTask('src'), compilation.watchApiProposalNamesTask, compilation.watchExtensionPointNamesTask, compilation.watchCodiconsTask));

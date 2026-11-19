@@ -38,10 +38,20 @@ async function getElectron() {
 
 async function ensureCompiled() {
 	const workbenchHtml = path.join(rootDir, 'out/vs/code/electron-browser/workbench/workbench-dev.html');
+	const codiconFont = path.join(rootDir, 'out/vs/base/browser/ui/codicons/codicon/codicon.ttf');
 	try {
-		await fs.stat(workbenchHtml);
+		await Promise.all([fs.stat(workbenchHtml), fs.stat(codiconFont)]);
 	} catch {
 		await runProcess(npm, ['run', 'transpile-client']);
+	}
+
+	try {
+		const font = await fs.stat(codiconFont);
+		if (font.size === 0) {
+			throw new Error('The generated Codicon font is empty.');
+		}
+	} catch {
+		throw new Error('Codicon font is missing. Run npm install, then retry the Quantum launch.');
 	}
 }
 
