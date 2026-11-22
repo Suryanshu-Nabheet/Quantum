@@ -1,0 +1,35 @@
+name: Agent CodeQL
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/vs/workbench/contrib/agent/**'
+      - '.github/workflows/agent-codeql.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/vs/workbench/contrib/agent/**'
+      - '.github/workflows/agent-codeql.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: javascript-typescript
+          build-mode: none
+          config: |
+            paths:
+              - src/vs/workbench/contrib/agent
+            paths-ignore:
+              - '**/node_modules/**'
+      - uses: github/codeql-action/analyze@v4

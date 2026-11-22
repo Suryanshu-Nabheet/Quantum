@@ -87,7 +87,9 @@ jobs:
       - name: Compile
         run: npm run compile
 
-      - name: Compile agent
-        run: |
-          npm run valid-layers-check
-          npm run compile-agent
+      - name: Check layer boundaries
+        run: npm run valid-layers-check
+
+      - name: Verify Agent
+        working-directory: src/vs/workbench/contrib/agent
+        run: npm run verify
