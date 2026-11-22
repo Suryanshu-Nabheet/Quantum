@@ -1,7 +1,7 @@
 import type { ChatMessage, PromptLog, ToolCall, ToolCallDelta } from "../index.js";
 import { renderChatMessage } from "../util/messageContent.js";
 
-export const MAX_STREAM_CHAT_CONTINUATIONS = 8;
+export const MAX_STREAM_CHAT_CONTINUATIONS = 2;
 
 export const STREAM_CHAT_CONTINUATION_NUDGE =
   "Your previous response stopped before you finished. Continue in a new paragraph. If you said you would explore, read files, or use tools, do that now. If you already have the files, write the findings in complete sentences. Do not repeat the lead-in, and do not end with a colon.";
@@ -200,7 +200,8 @@ export function looksLikeStalledAutonomousTask(args: {
 /** A finished sentence that only promises more work, with no tool call yet. */
 export function looksLikeDeferredWork(text: string): boolean {
   const sentence = lastSentence(text);
-  if (!sentence || sentence.length > 400 || sentence.includes("```")) {
+  if (!sentence || sentence.length > 400 || sentence.includes("```") ||
+      /^let me know\b/i.test(sentence)) {
     return false;
   }
   return /\b(let me|i'll|i will|i'm going to|im going to|next,? i|now i)\b[\s\S]{0,160}\b(dig|look|read|check|explore|scan|analy[sz]e|inspect|search|list|gather|continue|investigate|open|find|examine|understand)\b/i.test(

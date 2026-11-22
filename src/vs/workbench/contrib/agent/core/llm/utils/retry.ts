@@ -329,19 +329,21 @@ async function* createRetryableAsyncGenerator<T>(
   args: any[],
   initialAttempt: number,
 ): AsyncGenerator<T> {
-  let currentGenerator = generator;
-  let attempt = initialAttempt;
+  let hasYielded = false;
 
   try {
-    for await (const value of currentGenerator) {
+    for await (const value of generator) {
+      hasYielded = true;
       yield value;
     }
   } catch (error) {
-    // If we encounter an error during iteration, we can retry by creating a new generator
+    if (hasYielded) {
+      throw error;
+    }
     let lastError = error;
 
     for (
-      let retryAttempt = attempt + 1;
+      let retryAttempt = initialAttempt + 1;
       retryAttempt <= config.maxAttempts;
       retryAttempt++
     ) {
@@ -376,6 +378,7 @@ async function* createRetryableAsyncGenerator<T>(
           typeof newGenerator[Symbol.asyncIterator] === "function"
         ) {
           for await (const value of newGenerator) {
+            hasYielded = true;
             yield value;
           }
           return; // Successfully completed
@@ -383,6 +386,9 @@ async function* createRetryableAsyncGenerator<T>(
           throw new Error("Method did not return an async generator on retry");
         }
       } catch (retryError) {
+        if (hasYielded) {
+          throw retryError;
+        }
         lastError = retryError;
         error = retryError;
       }

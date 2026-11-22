@@ -8,7 +8,7 @@ export type AgentAccessMode = "full" | "sandboxed" | "strict";
 export type TerminalAutoExecution = "auto" | "allowlist" | "ask";
 
 export const DEFAULT_AGENT_ACCESS_MODE: AgentAccessMode = "full";
-export const DEFAULT_TERMINAL_AUTO_EXECUTION: TerminalAutoExecution = "auto";
+export const DEFAULT_TERMINAL_AUTO_EXECUTION: TerminalAutoExecution = "allowlist";
 
 const FILE_ACCESS_TOOLS = new Set<string>([
   BuiltInToolNames.ReadFile,

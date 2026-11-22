@@ -145,13 +145,14 @@ export const streamModelTurn = createAsyncThunk<
 async function runTurnWithOverloadRetry<T>(
   selectedChatModel: Parameters<typeof analyzeError>[1],
   runTurn: () => Promise<T>,
+  canRetry: () => boolean,
 ): Promise<T> {
   for (let attempt = 0; ; attempt++) {
     try {
       return await runTurn();
     } catch (e) {
       const { message } = analyzeError(e, selectedChatModel);
-      if (!isOverloadedErrorMessage(message)) {
+      if (!canRetry() || !isOverloadedErrorMessage(message)) {
         throw e;
       }
       if (attempt >= OVERLOADED_RETRIES) {
@@ -188,7 +189,9 @@ export async function runAgentDriver({
     releaseDriver = resolve;
   });
   driverTail = driverTail.then(() => settled);
-  const streamEpoch = getState().session.streamEpoch ?? 0;
+  const initialSession = getState().session;
+  const streamEpoch = initialSession.streamEpoch ?? 0;
+  const userMessageId = initialSession.history.findLast(({ message }) => message.role === "user")?.message.id;
   try {
     const selectedChatModel = selectSelectedChatModel(getState());
 
@@ -235,9 +238,16 @@ export async function runAgentDriver({
       }
       dispatch(setAgentStepDepth(currentDepth));
 
-      let streamOutcome = await runTurnWithOverloadRetry(selectedChatModel, () =>
-        withAgentStreamLock(async () =>
-          runStreamModelTurnLocked({
+      const isCurrentTurn = () =>
+        (getState().session.streamEpoch ?? 0) === streamEpoch;
+      let receivedChunks = false;
+      const streamOutcome = await runTurnWithOverloadRetry(
+        selectedChatModel,
+        () => withAgentStreamLock(async () => {
+          if (!isCurrentTurn()) {
+            return undefined;
+          }
+          return runStreamModelTurnLocked({
             legacySlashCommandData,
             depth: currentDepth,
             dispatch,
@@ -245,9 +255,19 @@ export async function runAgentDriver({
             getState,
             selectedChatModel,
             resumeAfterIdle,
-          }),
-        ),
+            onChunk: () => { receivedChunks = true; },
+          });
+        }),
+        () => isCurrentTurn() && !receivedChunks,
       );
+      if (!isCurrentTurn()) {
+        const session = getState().session;
+        if (session.id === initialSession.id &&
+            session.history.findLast(({ message }) => message.role === "user")?.message.id === userMessageId) {
+          settleInterruptedToolCalls(dispatch, getState());
+        }
+        return;
+      }
       if (!streamOutcome) {
         ensureAgentTurnInactive(dispatch, getState);
         return;
@@ -343,6 +363,7 @@ async function runStreamModelTurnLocked({
   getState,
   selectedChatModel,
   resumeAfterIdle,
+  onChunk,
 }: {
   legacySlashCommandData?: ToCoreProtocol["llm/streamChat"][0]["legacySlashCommandData"];
   depth: number;
@@ -351,6 +372,7 @@ async function runStreamModelTurnLocked({
   getState: () => RootState;
   selectedChatModel: ModelDescription;
   resumeAfterIdle: boolean;
+  onChunk: () => void;
 }) {
   const state = getState();
   let activeTools = selectActiveTools(state);
@@ -440,11 +462,19 @@ async function runStreamModelTurnLocked({
   dispatch(setActive());
   dispatch(setInlineErrorMessage(undefined));
 
+  const streamAborter = getState().session.streamAborter;
   const precompiledRes = await extra.hostBridge.request("llm/assembleChat", {
     messages,
     options: completionOptions,
+  }, { signal: streamAborter.signal }).catch((error) => {
+    if (!streamAborter.signal.aborted) {
+      throw error;
+    }
   });
 
+  if (!precompiledRes || streamAborter.signal.aborted) {
+    return;
+  }
   if (precompiledRes.status === "error") {
     if (precompiledRes.error.includes("Not enough context")) {
       dispatch(setInlineErrorMessage("out-of-context"));
@@ -467,7 +497,6 @@ async function runStreamModelTurnLocked({
   dispatch(setContextPercentage(contextPercentage));
   dispatch(setContextUsage(contextUsage));
 
-  const streamAborter = getState().session.streamAborter;
   try {
     let gen = extra.hostBridge.llmStreamChat(
       {
@@ -487,7 +516,8 @@ async function runStreamModelTurnLocked({
       );
     }
 
-    const renderBatch = createStreamRenderBatcher(dispatch);
+    const isCurrent = () => getState().session.streamEpoch === state.session.streamEpoch;
+    const renderBatch = createStreamRenderBatcher(dispatch, isCurrent);
     let next = await nextWithIdleTimeout(gen.next());
     while (!next.done) {
       if (streamAborter.signal.aborted) {
@@ -496,13 +526,14 @@ async function runStreamModelTurnLocked({
 
       const chunk = next.value as ChatMessage[] | undefined;
       if (chunk?.length) {
+        onChunk();
         renderBatch.push(chunk);
       }
       next = await nextWithIdleTimeout(gen.next());
     }
     renderBatch.flushNow();
 
-    if (next.done && next.value) {
+    if (next.done && next.value && isCurrent()) {
       dispatch(addPromptCompletionPair([next.value]));
     }
   } catch (e) {
@@ -546,6 +577,29 @@ async function runStreamModelTurnLocked({
   return { streamAborter, activeTools };
 }
 
+function settleInterruptedToolCalls(dispatch: AppDispatch, state: RootState) {
+  // An interrupted stream leaves calls in "generating", which the resume gate
+  // never treats as settled. Settle them as errored so the next turn is not wedged.
+  for (const tc of selectCurrentToolCalls(state)) {
+    if (tc.status === "generating") {
+      dispatch(
+        errorToolCall({
+          toolCallId: tc.toolCallId,
+          output: [
+            {
+              name: "Tool Call Interrupted",
+              description: "Stream interrupted",
+              content:
+                "This tool call was interrupted before its arguments finished streaming. Re-issue it if it is still needed.",
+              icon: "problems",
+            },
+          ],
+        }),
+      );
+    }
+  }
+}
+
 async function runPostStreamToolPhase({
   depth,
   dispatch,
@@ -565,26 +619,7 @@ async function runPostStreamToolPhase({
   // 1. Mark generating tool calls as generated
   const state1 = getState();
   if (streamAborter.signal.aborted) {
-    // An interrupted stream leaves calls in "generating", which the resume gate
-    // never treats as settled. Settle them as errored so the next turn is not wedged.
-    for (const tc of selectCurrentToolCalls(state1)) {
-      if (tc.status === "generating") {
-        dispatch(
-          errorToolCall({
-            toolCallId: tc.toolCallId,
-            output: [
-              {
-                name: "Tool Call Interrupted",
-                description: "Stream interrupted",
-                content:
-                  "This tool call was interrupted before its arguments finished streaming. Re-issue it if it is still needed.",
-                icon: "problems",
-              },
-            ],
-          }),
-        );
-      }
-    }
+    settleInterruptedToolCalls(dispatch, state1);
     return "stop";
   }
 

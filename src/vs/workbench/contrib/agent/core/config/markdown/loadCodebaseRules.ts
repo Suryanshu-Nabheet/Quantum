@@ -19,6 +19,12 @@ export class CodebaseRulesCache {
   }
   rules: RuleWithSource[] = [];
   errors: ConfigValidationError[] = [];
+  private initialRefresh?: Promise<void>;
+
+  initialize(ide: IDE): Promise<void> {
+    return (this.initialRefresh ??= this.refresh(ide));
+  }
+
   async refresh(ide: IDE) {
     const { rules, errors } = await loadCodebaseRules(ide);
     this.rules = rules;
@@ -73,7 +79,7 @@ export async function loadCodebaseRules(ide: IDE): Promise<{
 
   try {
     // Get all files from the workspace
-    const allFiles = await walkDirs(ide);
+    const allFiles = await walkDirs(ide, { deadlineMs: 2_000, maxEntries: 20_000 });
 
     // Filter to just rules.md files
     const rulesMdFiles = allFiles.filter((file) => {

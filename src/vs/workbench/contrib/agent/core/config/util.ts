@@ -1,3 +1,4 @@
+import { withAgentStateLock } from "../util/stateFile";
 import fs from "fs";
 
 import { markdownToRule, MCPServer, ModelConfig, ModelRole } from "agent-config";
@@ -139,94 +140,102 @@ export function addModel(
   model: JSONModelDescription,
   options?: AddModelOptions,
 ) {
-  const role = options?.role;
-  const profileId = options?.profileId;
-  const roles = resolveModelRoles(options);
+  return withAgentStateLock(() => {
+    const role = options?.role;
+    const profileId = options?.profileId;
+    const roles = resolveModelRoles(options);
 
-  console.log(
-    `[CORE] addModel called: ${model.title}, roles: ${roles.join(",")}, profileId: ${profileId}`,
-  );
+    console.log(
+      `[CORE] addModel called: ${model.title}, roles: ${roles.join(",")}, profileId: ${profileId}`,
+    );
 
-  const models = getGuiModels();
-  if (models.some((m) => stringify(m) === stringify(jsonModelToModelConfig(model, roles)))) {
-    return;
-  }
+    const models = getGuiModels();
+    if (models.some((m) => stringify(m) === stringify(jsonModelToModelConfig(model, roles)))) {
+      return;
+    }
 
-  const numMatches = models.reduce(
-    (prev, curr) =>
-      curr.name.startsWith(model.title) ? prev + 1 : prev,
-    0,
-  );
-  if (numMatches > 0) {
-    model.title = `${model.title} (${numMatches})`;
-  }
+    const numMatches = models.reduce(
+      (prev, curr) =>
+        curr.name.startsWith(model.title) ? prev + 1 : prev,
+      0,
+    );
+    if (numMatches > 0) {
+      model.title = `${model.title} (${numMatches})`;
+    }
 
-  setGuiModels([...models, jsonModelToModelConfig(model, roles)]);
-  selectModelForRoles(profileId, model.title, roles);
+    setGuiModels([...models, jsonModelToModelConfig(model, roles)]);
+    selectModelForRoles(profileId, model.title, roles);
+  });
 }
 
 export function addMcpServer(server: MCPServer) {
-  setGuiMcpServers([...getGuiMcpServers(), server]);
+  return withAgentStateLock(() => {
+    setGuiMcpServers([...getGuiMcpServers(), server]);
+  });
 }
 
 export function updateModel(
   title: string,
   updates: JSONModelDescription,
 ) {
-  setGuiModels(
-    getGuiModels().map((m) => {
-      const matchByName = m.name === title;
-      // Provider credential rows use model AUTODETECT and name = provider title;
-      // expanded children use other titles — still update the credential by provider.
-      const matchProviderCredential =
-        !!updates.provider &&
-        m.provider === updates.provider &&
-        (m.model === "AUTODETECT" || m.name === title);
-      if (!matchByName && !matchProviderCredential) {
-        return m;
-      }
-      const nextEnv = extractModelEnv(updates);
-      return {
-        ...m,
-        provider: updates.provider ?? m.provider,
-        // Keep AUTODETECT so the provider continues to expand all models.
-        model:
-          m.model === "AUTODETECT"
-            ? "AUTODETECT"
-            : (updates.model ?? m.model),
-        apiKey: updates.apiKey ?? m.apiKey,
-        apiBase: updates.apiBase ?? m.apiBase,
-        maxStopWords: updates.maxStopWords ?? m.maxStopWords,
-        defaultCompletionOptions:
-          updates.completionOptions ?? m.defaultCompletionOptions,
-        env: nextEnv ? { ...(m.env ?? {}), ...nextEnv } : m.env,
-      };
-    }),
-  );
+  return withAgentStateLock(() => {
+    setGuiModels(
+      getGuiModels().map((m) => {
+        const matchByName = m.name === title;
+        // Provider credential rows use model AUTODETECT and name = provider title;
+        // expanded children use other titles — still update the credential by provider.
+        const matchProviderCredential =
+          !!updates.provider &&
+          m.provider === updates.provider &&
+          (m.model === "AUTODETECT" || m.name === title);
+        if (!matchByName && !matchProviderCredential) {
+          return m;
+        }
+        const nextEnv = extractModelEnv(updates);
+        return {
+          ...m,
+          provider: updates.provider ?? m.provider,
+          // Keep AUTODETECT so the provider continues to expand all models.
+          model:
+            m.model === "AUTODETECT"
+              ? "AUTODETECT"
+              : (updates.model ?? m.model),
+          apiKey: updates.apiKey ?? m.apiKey,
+          apiBase: updates.apiBase ?? m.apiBase,
+          maxStopWords: updates.maxStopWords ?? m.maxStopWords,
+          defaultCompletionOptions:
+            updates.completionOptions ?? m.defaultCompletionOptions,
+          env: nextEnv ? { ...(m.env ?? {}), ...nextEnv } : m.env,
+        };
+      }),
+    );
+  });
 }
 
 export function deleteModel(title: string) {
-  setGuiModels(getGuiModels().filter((m) => m.name !== title));
+  return withAgentStateLock(() => {
+    setGuiModels(getGuiModels().filter((m) => m.name !== title));
 
-  // Clear role selections that pointed at the removed model.
-  const globalContext = new GlobalContext();
-  const selectedByProfile =
-    globalContext.get("selectedModelsByProfileId") ?? {};
-  let changed = false;
-  const next: typeof selectedByProfile = {};
-  for (const [profileId, roles] of Object.entries(selectedByProfile)) {
-    const cleaned = { ...roles };
-    for (const role of Object.keys(cleaned) as (keyof typeof cleaned)[]) {
-      if (cleaned[role] === title) {
-        cleaned[role] = null;
-        changed = true;
+    // Clear role selections that pointed at the removed model.
+    const globalContext = new GlobalContext();
+    const selectedByProfile =
+      globalContext.get("selectedModelsByProfileId") ?? {};
+    let changed = false;
+    const next: typeof selectedByProfile = {};
+    for (const [profileId, roles] of Object.entries(selectedByProfile)) {
+      const cleaned = { ...roles };
+      for (const role of Object.keys(cleaned) as (keyof typeof cleaned)[]) {
+        if (cleaned[role] === title) {
+          cleaned[role] = null;
+          changed = true;
+        }
       }
+      next[profileId] = cleaned;
     }
-    next[profileId] = cleaned;
-  }
-  if (changed) {
-    globalContext.update("selectedModelsByProfileId", next);
-  }
+    if (changed) {
+      globalContext.update("selectedModelsByProfileId", next);
+    }
+  });
 }
 
 /** Remove every stored model/credential for a provider (Models page provider cards). */
@@ -268,18 +277,22 @@ export function deleteModelsByProvider(
 }
 
 export function updateMcpServer(originalName: string, server: MCPServer) {
-  setGuiMcpServers(
-    getGuiMcpServers().map((s) => {
-      if ("uses" in s) {
-        return s;
-      }
-      return s.name === originalName ? server : s;
-    }),
-  );
+  return withAgentStateLock(() => {
+    setGuiMcpServers(
+      getGuiMcpServers().map((s) => {
+        if ("uses" in s) {
+          return s;
+        }
+        return s.name === originalName ? server : s;
+      }),
+    );
+  });
 }
 
 export function deleteMcpServer(name: string) {
-  setGuiMcpServers(getGuiMcpServers().filter((s) => s.name !== name));
+  return withAgentStateLock(() => {
+    setGuiMcpServers(getGuiMcpServers().filter((s) => s.name !== name));
+  });
 }
 
 export {
@@ -371,13 +384,13 @@ export async function migrateLegacyGuiConfigIfNeeded(ide: IDE): Promise<void> {
   const existingRules = globalContext.get("guiRules") ?? [];
   const existingPrompts = globalContext.get("guiPrompts") ?? [];
 
-  if (existingRules.length > 0 && existingPrompts.length > 0) {
+  if (globalContext.get("hasMigratedLegacyGuiDefinitions") ||
+      (existingRules.length > 0 && existingPrompts.length > 0)) {
     return;
   }
 
   const migratedRules: StoredGuiRule[] = [...existingRules];
   const migratedPrompts: StoredGuiPrompt[] = [...existingPrompts];
-  const filesToDelete: string[] = [];
 
   const dirsToCheck: Array<{ dir: string; target: "rules" | "prompts" }> = [
     { dir: RULES_DIR_NAME, target: "rules" },
@@ -415,7 +428,6 @@ export async function migrateLegacyGuiConfigIfNeeded(ide: IDE): Promise<void> {
               description: parsed.description,
               invokable: true,
             });
-            filesToDelete.push(file.path);
           } else if (target === "rules" && !parsed.invokable) {
             migratedRules.push({
               id: uuidv4(),
@@ -427,7 +439,6 @@ export async function migrateLegacyGuiConfigIfNeeded(ide: IDE): Promise<void> {
               alwaysApply: parsed.alwaysApply,
               invokable: parsed.invokable,
             });
-            filesToDelete.push(file.path);
           }
         } catch {
           // Skip unreadable legacy files
@@ -448,17 +459,7 @@ export async function migrateLegacyGuiConfigIfNeeded(ide: IDE): Promise<void> {
     globalContext.update("guiPrompts", migratedPrompts);
   }
 
-  if ((rulesUpdated || promptsUpdated) && filesToDelete.length > 0) {
-    await Promise.all(
-      filesToDelete.map(async (fileUri) => {
-        try {
-          await ide.removeFile(fileUri);
-        } catch {
-          // Best-effort cleanup of migrated legacy files
-        }
-      }),
-    );
-  }
+  globalContext.update("hasMigratedLegacyGuiDefinitions", true);
 }
 
 export function serializePromptTemplates(

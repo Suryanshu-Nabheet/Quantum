@@ -461,7 +461,7 @@ class Gemini extends BaseLLM {
     options: CompletionOptions,
   ): AsyncGenerator<ChatMessage> {
     const apiURL = new URL(
-      `models/${options.model}:streamGenerateContent?key=${this.apiKey}`,
+      `models/${options.model}:streamGenerateContent`,
       this.apiBase,
     );
 
@@ -472,6 +472,7 @@ class Gemini extends BaseLLM {
 
     const response = await this.fetch(apiURL, {
       method: "POST",
+      headers: { "x-goog-api-key": this.apiKey ?? "" },
       body: JSON.stringify(body),
       signal,
     });
@@ -492,12 +493,13 @@ class Gemini extends BaseLLM {
     }
 
     const apiURL = new URL(
-      `models/${options.model}:generateMessage?key=${this.apiKey}`,
+      `models/${options.model}:generateMessage`,
       this.apiBase,
     );
     const body = { prompt: { messages: msgList } };
     const response = await this.fetch(apiURL, {
       method: "POST",
+      headers: { "x-goog-api-key": this.apiKey ?? "" },
       body: JSON.stringify(body),
       signal,
     });

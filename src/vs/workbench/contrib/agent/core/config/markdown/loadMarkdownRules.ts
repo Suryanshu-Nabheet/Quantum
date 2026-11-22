@@ -21,7 +21,6 @@ export async function loadProjectAgentMarkdownRules(ide: IDE): Promise<{
   const workspaceDirs = await ide.getWorkspaceDirs();
 
   for (const workspaceDir of workspaceDirs) {
-    let agentFileFound = false;
     for (const fileName of SUPPORTED_AGENT_FILES) {
       try {
         const agentFileUri = joinPathsToUri(workspaceDir, fileName);
@@ -39,16 +38,11 @@ export async function loadProjectAgentMarkdownRules(ide: IDE): Promise<{
             sourceFile: agentFileUri,
             alwaysApply: true,
           });
-          agentFileFound = true;
+          break;
         }
-
-        break;
       } catch {
         // File doesn't exist or can't be read, skip to next file
       }
-    }
-    if (agentFileFound) {
-      break;
     }
   }
 

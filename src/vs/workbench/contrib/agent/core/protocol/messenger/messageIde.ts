@@ -137,6 +137,10 @@ export class MessageIde implements IDE {
     return await this.request("getTerminalContents", undefined);
   }
 
+  async resolveRealPath(uri: string) {
+    return await this.request("resolveRealPath", { uri });
+  }
+
   async getWorkspaceDirs(): Promise<string[]> {
     return await this.request("getWorkspaceDirs", undefined);
   }
@@ -185,8 +189,8 @@ export class MessageIde implements IDE {
     await this.request("openUrl", url);
   }
 
-  async runCommand(command: string, options?: TerminalOptions): Promise<void> {
-    await this.request("runCommand", { command, options });
+  async runCommand(command: string, options?: TerminalOptions) {
+    return await this.request("runCommand", { command, options });
   }
 
   async saveFile(fileUri: string): Promise<void> {

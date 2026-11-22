@@ -11,6 +11,7 @@ export interface ClientToolExtras {
   getState: () => RootState;
   dispatch: AppThunkDispatch;
   hostBridge: IHostBridge;
+  editPreview?: { filepath: string; contents: string };
 }
 
 interface ClientToolOutput {
@@ -32,7 +33,14 @@ export async function callClientTool(
   toolCallState: ToolCallState,
   extras: ClientToolExtras,
 ): Promise<ClientToolResult> {
-  const { toolCall, parsedArgs } = toolCallState;
+  const { toolCall, parsedArgs, processedArgs } = toolCallState;
+  if (typeof processedArgs?.fileUri === "string" &&
+      typeof processedArgs.editingFileContents === "string") {
+    extras = {
+      ...extras,
+      editPreview: { filepath: processedArgs.fileUri, contents: processedArgs.editingFileContents },
+    };
+  }
   try {
     let output: ClientToolOutput;
     switch (toolCall.function.name) {

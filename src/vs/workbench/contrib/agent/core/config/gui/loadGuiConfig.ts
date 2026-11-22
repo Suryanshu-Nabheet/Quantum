@@ -299,7 +299,7 @@ export async function buildAgentConfigFromGui(options: {
     (server) =>
       convertMcpConfigToInternalMcpOptions(server, config.requestOptions),
   );
-  mcpManager.setConnections(mcpOptions, false, { ide });
+  mcpManager.setConnections(mcpOptions, true, { ide });
 
   return { config: agentConfig, errors: localErrors };
 }

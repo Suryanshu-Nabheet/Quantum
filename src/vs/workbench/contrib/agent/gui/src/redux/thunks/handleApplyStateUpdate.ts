@@ -51,7 +51,7 @@ export const handleApplyStateUpdate = createAsyncThunk<
 
         // Write the edit and continue. The user reviews the saved files after
         // the turn, instead of accepting each file before the next one starts.
-        if (applyState.status === "done" && toolCallState) {
+        if (applyState.status === "done" && toolCallState?.status === "calling") {
           extra.hostBridge.post("acceptDiff", {
             streamId: applyState.streamId,
             filepath: applyState.filepath,
@@ -67,11 +67,14 @@ export const handleApplyStateUpdate = createAsyncThunk<
             }
 
             const accepted = toolCallState.status !== "canceled";
+            if (applyState.error) {
+              dispatch(errorToolCall({ toolCallId: applyState.toolCallId }));
+            }
 
             logToolUsage(toolCallState, accepted, true, extra.hostBridge);
 
             if (accepted) {
-              if (toolCallState.status !== "errored") {
+              if (toolCallState.status !== "errored" && !applyState.error) {
                 dispatch(
                   acceptToolCall({
                     toolCallId: applyState.toolCallId,
@@ -116,7 +119,7 @@ export const handleApplyStateUpdate = createAsyncThunk<
                     contextItems: [
                       {
                         name: "Edit Failed",
-                        content: `Failed to edit ${applyState.filepath}. To keep working with the file, read it again to see the most up-to-date contents`,
+                        content: applyState.error ?? `Failed to edit ${applyState.filepath}. To keep working with the file, read it again to see the most up-to-date contents`,
                         description: "",
                         hidden: true,
                       },
@@ -143,7 +146,7 @@ export const handleApplyStateUpdate = createAsyncThunk<
                 (state) => state.streamId === applyState.streamId,
               );
               const original = stored?.originalFileContent;
-              if (original !== undefined && applyState.filepath) {
+              if (!applyState.error && original !== undefined && applyState.filepath) {
                 for (const prior of getState().session.codeBlockApplyStates
                   .states) {
                   if (
@@ -183,6 +186,9 @@ export const applyForEditTool = createAsyncThunk<
   ThunkApiType
 >("apply/editTool", async (payload, { dispatch, getState, extra }) => {
   const { toolCallId, streamId } = payload;
+  if (selectToolCallById(getState(), toolCallId)?.status === "canceled") {
+    return;
+  }
   dispatch(
     updateApplyState({
       streamId,

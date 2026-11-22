@@ -100,7 +100,7 @@ describe("loadCodebaseRules", () => {
     const { rules, errors } = await loadCodebaseRules(mockIde);
 
     // Should find all rules.md files
-    expect(walkDirs).toHaveBeenCalledWith(mockIde);
+    expect(walkDirs).toHaveBeenCalledWith(mockIde, { deadlineMs: 2_000, maxEntries: 20_000 });
 
     // Should read all rules.md files
     expect(mockIde.readFile).toHaveBeenCalledTimes(4);

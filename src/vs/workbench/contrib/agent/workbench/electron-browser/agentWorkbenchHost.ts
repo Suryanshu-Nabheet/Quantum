@@ -4,11 +4,12 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { encodeBase64, VSBuffer } from '../../../../../base/common/buffer.js';
-import { Disposable } from '../../../../../base/common/lifecycle.js';
+import { Disposable, DisposableStore, MutableDisposable } from '../../../../../base/common/lifecycle.js';
 import { URI } from '../../../../../base/common/uri.js';
+import { isMacintosh } from '../../../../../base/common/platform.js';
 import { ITextResourceEditorInput } from '../../../../../platform/editor/common/editor.js';
 import { IWorkbenchEnvironmentService } from '../../../../services/environment/common/environmentService.js';
-import { IFileService } from '../../../../../platform/files/common/files.js';
+import { FileOperationResult, IFileService, toFileOperationResult } from '../../../../../platform/files/common/files.js';
 import { InstantiationType, registerSingleton } from '../../../../../platform/instantiation/common/extensions.js';
 import { INotificationService } from '../../../../../platform/notification/common/notification.js';
 import { IOpenerService } from '../../../../../platform/opener/common/opener.js';
@@ -20,7 +21,7 @@ import { IAgentNativeService } from '../common/agentNativeService.js';
 import { IAgentWorkbenchHost } from '../common/agentWorkbenchHost.js';
 import { IAgentPlanEditorService } from '../common/agentPlanEditorService.js';
 import type { IAgentPlanViewData } from '../common/agentPlanEditorService.js';
-import type { BaseSessionMetadata, Session } from '../../core/index.js';
+import type { ApplyState, ApplyToFilePayload, BaseSessionMetadata, Session } from '../../core/index.js';
 import { ICommandService } from '../../../../../platform/commands/common/commands.js';
 import { IClipboardService } from '../../../../../platform/clipboard/common/clipboardService.js';
 import { ICodeEditorService } from '../../../../../editor/browser/services/codeEditorService.js';
@@ -33,6 +34,7 @@ import { IMarkerService } from '../../../../../platform/markers/common/markers.j
 import { EditorsOrder } from '../../../../common/editor.js';
 import { IEditorGroupsService } from '../../../../services/editor/common/editorGroupsService.js';
 import { extUri, relativePath } from '../../../../../base/common/resources.js';
+import { ICommandDetectionCapability, TerminalCapability } from '../../../../../platform/terminal/common/capabilities/capabilities.js';
 import { ITerminalService } from '../../../terminal/browser/terminal.js';
 import { IDebugService } from '../../../debug/common/debug.js';
 import { ISCMRepository, ISCMService, ISCMResource } from '../../../scm/common/scm.js';
@@ -60,7 +62,7 @@ const AGENT_DIFF_CONCURRENCY = 8;
 const ACTIVE_AGENT_SESSION_STORAGE_KEY = 'quantum.agent.activeSessionId';
 
 const NATIVE_IDE_OPERATIONS = new Set([
-	'getIdeInfo', 'getWorkspaceDirs', 'isWorkspaceRemote', 'getIdeSettings', 'isTelemetryEnabled', 'getUniqueId',
+	'getIdeInfo', 'getWorkspaceDirs', 'resolveRealPath', 'isWorkspaceRemote', 'getIdeSettings', 'isTelemetryEnabled', 'getUniqueId',
 	'readSecrets', 'writeSecrets', 'fileExists', 'readFile', 'writeFile', 'removeFile', 'readRangeInFile',
 	'getFileStats', 'getFileResults', 'getSearchResults', 'listDir', 'openFile', 'showLines', 'saveFile',
 	'getOpenFiles', 'getPinnedFiles', 'getCurrentFile', 'getClipboardContent', 'getProblems', 'showToast', 'openUrl',
@@ -73,9 +75,21 @@ const NATIVE_IDE_OPERATIONS = new Set([
 	'reportError', 'closeSidebar',
 ]);
 
+interface IAgentFileEdit {
+	readonly resource: URI;
+	readonly original: string;
+	readonly modified: string;
+	readonly toolCallId?: string;
+	written: boolean;
+	finishing?: boolean;
+}
+
 /** Implements IDE operations on the workbench side of the native runtime boundary. */
 export class AgentWorkbenchHost extends Disposable {
 	declare readonly _serviceBrand: undefined;
+	private readonly preparingEdits = new Map<string, string | undefined>();
+	private readonly fileEdits = new Map<string, IAgentFileEdit>();
+
 	constructor(
 		@IAgentNativeService private readonly agentService: IAgentNativeService,
 		@INativeEnvironmentService private readonly nativeEnvironmentService: INativeEnvironmentService,
@@ -229,6 +243,9 @@ export class AgentWorkbenchHost extends Disposable {
 	}
 
 	handleGuiRequest(messageType: string, payload: unknown): { handled: boolean; value?: unknown } {
+		if (messageType === 'readSecrets' || messageType === 'writeSecrets') {
+			throw new Error('Agent secret storage is available only to the native runtime.');
+		}
 		if (NATIVE_IDE_OPERATIONS.has(messageType)) {
 			return { handled: true, value: this.handleRequest('ide', messageType, payload) };
 		}
@@ -278,6 +295,11 @@ export class AgentWorkbenchHost extends Disposable {
 				return { handled: true, value: this.openerService.open(URI.parse(String(payload))) };
 			case 'copyText':
 				return { handled: true, value: this.clipboardService.writeText(String(data?.text ?? '')) };
+			case 'applyToFile':
+				return { handled: true, value: this.prepareFileEdit(payload) };
+			case 'acceptDiff':
+			case 'rejectDiff':
+				return { handled: true, value: this.finishFileEdit(data?.streamId, messageType === 'acceptDiff') };
 			case 'insertAtCursor': {
 				const editor = this.codeEditorService.getFocusedCodeEditor();
 				if (!editor) {
@@ -296,6 +318,107 @@ export class AgentWorkbenchHost extends Disposable {
 			default:
 				return { handled: false };
 		}
+	}
+
+	private sendApplyState(state: ApplyState): void {
+		this.agentService.sendGuiMessage('updateApplyState', state);
+	}
+
+	private async prepareFileEdit(payload: unknown): Promise<void> {
+		const request = payload as Partial<ApplyToFilePayload> | undefined;
+		if (typeof request?.streamId !== 'string' || !request.streamId ||
+			typeof request.filepath !== 'string' || typeof request.text !== 'string' ||
+			(request.toolCallId !== undefined && typeof request.toolCallId !== 'string') ||
+			(request.expectedOriginalContent !== undefined && typeof request.expectedOriginalContent !== 'string')) {
+			throw new Error('Invalid Agent file edit.');
+		}
+		const { streamId, toolCallId, filepath } = request;
+		if (this.preparingEdits.has(streamId) || this.fileEdits.has(streamId)) {
+			throw new Error('This file edit is already active.');
+		}
+		this.preparingEdits.set(streamId, toolCallId);
+		this.sendApplyState({ streamId, toolCallId, filepath, status: 'streaming' });
+		try {
+			const result = await this.invokeCoreRequest('apply/prepareFile', request) as { filepath: string; original: string; modified: string };
+			if (!this.preparingEdits.has(streamId)) {
+				return;
+			}
+			const resource = this.toResource(result.filepath);
+			this.fileEdits.set(streamId, { resource, original: result.original, modified: result.modified, toolCallId, written: false });
+			this.sendApplyState({
+				streamId, toolCallId, filepath: resource.toString(), status: 'done',
+				originalFileContent: result.original, fileContent: result.modified,
+				numDiffs: result.original === result.modified ? 0 : 1,
+			});
+		} catch (error) {
+			if (this.preparingEdits.has(streamId) && !toolCallId) {
+				const message = error instanceof Error ? error.message : String(error);
+				this.sendApplyState({ streamId, filepath, status: 'closed', error: message });
+				this.notificationService.error(message);
+			}
+			throw error;
+		} finally {
+			this.preparingEdits.delete(streamId);
+		}
+	}
+
+	private async finishFileEdit(streamId: unknown, accept: boolean): Promise<void> {
+		if (typeof streamId !== 'string') {
+			throw new Error('An Agent file edit ID is required.');
+		}
+		const edit = this.fileEdits.get(streamId);
+		if (!edit) {
+			if (!accept && this.preparingEdits.has(streamId)) {
+				const toolCallId = this.preparingEdits.get(streamId);
+				this.preparingEdits.delete(streamId);
+				await this.invokeCoreRequest('cancelApply', streamId);
+				this.sendApplyState({ streamId, toolCallId, status: 'closed' });
+			}
+			return;
+		}
+
+		if (edit.finishing) {
+			return;
+		}
+		edit.finishing = true;
+		const filepath = edit.resource.toString();
+		try {
+			if (accept !== edit.written) {
+				const resolved = await this.invokeCoreRequest('apply/resolveFile', { filepath });
+				const current = await this.fileService.readFile(edit.resource, { limits: { size: MAX_AGENT_DIFF_FILE_BYTES } });
+				const expected = edit.written ? edit.modified : edit.original;
+				if (resolved !== filepath || this.textFileService.isDirty(edit.resource) || current.value.toString() !== expected) {
+					throw new Error('The file changed after the edit was prepared. Review it again before applying changes.');
+				}
+				const contents = accept ? edit.modified : edit.original;
+				if (contents !== expected) {
+					await this.fileService.writeFile(edit.resource, VSBuffer.fromString(contents), { etag: current.etag, mtime: current.mtime });
+				}
+			}
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			if (edit.toolCallId && !edit.written) {
+				this.fileEdits.delete(streamId);
+				this.sendApplyState({ streamId, toolCallId: edit.toolCallId, filepath, status: 'closed', error: message });
+			} else {
+				this.notificationService.error(message);
+			}
+			throw error;
+		} finally {
+			edit.finishing = false;
+		}
+
+		if (accept && edit.toolCallId && !edit.written) {
+			for (const [priorId, prior] of this.fileEdits) {
+				if (priorId !== streamId && prior.written && prior.resource.toString() === filepath) {
+					this.fileEdits.delete(priorId);
+				}
+			}
+			edit.written = true;
+		} else {
+			this.fileEdits.delete(streamId);
+		}
+		this.sendApplyState({ streamId, toolCallId: edit.toolCallId, filepath, status: 'closed', fileContent: edit.modified });
 	}
 
 	private invokeCoreRequest(messageType: string, data: unknown): Promise<unknown> {
@@ -456,15 +579,45 @@ export class AgentWorkbenchHost extends Disposable {
 			}
 			case 'runCommand': {
 				const options = data?.options ?? {};
+				const command = String(data?.command ?? '');
 				const requestedName = typeof options.terminalName === 'string' ? options.terminalName : undefined;
-			let terminal = options.reuseTerminal === false ? undefined : this.terminalService.instances.find(instance => requestedName ? instance.title === requestedName : instance === this.terminalService.instances.at(-1));
-			if (!terminal) {
-				terminal = await this.terminalService.createTerminal({ cwd: typeof options.cwd === 'string' ? options.cwd : undefined, config: requestedName ? { name: requestedName } : undefined });
+				let terminal = options.reuseTerminal === false ? undefined : this.terminalService.instances.find(instance => requestedName ? instance.title === requestedName : instance === this.terminalService.instances.at(-1));
+				if (!terminal) {
+					terminal = await this.terminalService.createTerminal({ cwd: typeof options.cwd === 'string' ? options.cwd : undefined, config: requestedName ? { name: requestedName } : undefined });
+				}
+				await this.terminalService.revealTerminal(terminal);
+				if (options.waitForCompletion !== true) {
+					await terminal.sendText(command, true);
+					return undefined;
+				}
+				const instance = terminal;
+				const listeners = new DisposableStore();
+				const commandListener = listeners.add(new MutableDisposable());
+				let timer: ReturnType<typeof setTimeout> | undefined;
+				try {
+					const completed = new Promise<{ output: string; exitCode?: number } | undefined>(resolve => {
+						const observe = (detection: ICommandDetectionCapability) => {
+							commandListener.value = detection.onCommandFinished(finished => {
+								if (finished.command.trim() === command.trim()) {
+									resolve({ output: finished.getOutput()?.slice(-100_000) ?? '', exitCode: finished.exitCode });
+								}
+							});
+						};
+						const detection = instance.capabilities.get(TerminalCapability.CommandDetection);
+						if (detection) {
+							observe(detection);
+						}
+						listeners.add(instance.capabilities.onDidAddCommandDetectionCapability(observe));
+						listeners.add(instance.onDisposed(() => resolve(undefined)));
+						timer = setTimeout(() => resolve(undefined), 20_000);
+					});
+					await instance.sendText(command, true);
+					return await completed;
+				} finally {
+					clearTimeout(timer);
+					listeners.dispose();
+				}
 			}
-			await this.terminalService.revealTerminal(terminal);
-			await terminal.sendText(String(data?.command ?? ''), false);
-			return undefined;
-		}
 			case 'closeSidebar':
 				return this.commandService.executeCommand('workbench.action.closeSidebar');
 			case 'reportError': {
@@ -548,6 +701,27 @@ export class AgentWorkbenchHost extends Disposable {
 					await this.secretStorageService.set(key, String(value));
 				}
 				return undefined;
+			case 'resolveRealPath': {
+				if (typeof data?.uri !== 'string' || !data.uri) {
+					throw new Error('Invalid Agent resource.');
+				}
+				const resource = this.toResource(data.uri);
+				try {
+					const resolved = await this.fileService.realpath(resource);
+					// On macOS these system aliases are ordinary scratch locations. The
+					// leading /private prefix is an implementation detail of the OS.
+					if (isMacintosh && resolved?.scheme === 'file' &&
+						/^\/private\/(?:tmp(?:\/|$)|var\/folders(?:\/|$))/.test(resolved.path)) {
+						return resolved.with({ path: resolved.path.slice('/private'.length) }).toString();
+					}
+					return resolved?.toString();
+				} catch (error) {
+					if (toFileOperationResult(error) === FileOperationResult.FILE_NOT_FOUND) {
+						return undefined;
+					}
+					throw error;
+				}
+			}
 			case 'fileExists':
 				try {
 					await this.fileService.stat(this.toResource(data?.filepath ?? data?.path));

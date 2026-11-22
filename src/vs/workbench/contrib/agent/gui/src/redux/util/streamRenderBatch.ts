@@ -3,7 +3,7 @@ import { streamUpdate } from "../slices/sessionSlice";
 import { AppDispatch } from "../store";
 
 /** Coalesce high-frequency stream chunks; flush on the next microtask for low latency. */
-export function createStreamRenderBatcher(dispatch: AppDispatch) {
+export function createStreamRenderBatcher(dispatch: AppDispatch, isCurrent: () => boolean) {
   let pending: ChatMessage[] = [];
   let scheduled = false;
 
@@ -13,7 +13,9 @@ export function createStreamRenderBatcher(dispatch: AppDispatch) {
     }
     const batch = pending;
     pending = [];
-    dispatch(streamUpdate(batch));
+    if (isCurrent()) {
+      dispatch(streamUpdate(batch));
+    }
   };
 
   return {

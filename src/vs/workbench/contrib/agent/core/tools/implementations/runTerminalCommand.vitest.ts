@@ -270,14 +270,17 @@ describe("runTerminalCommandImpl", () => {
     // We'll keep mocking for remote environments as we can't test those directly
     const args = { command: "echo 'test'", waitForCompletion: true };
     const extras = createMockExtras({ remoteName: "ssh" });
+    mockRunCommand.mockResolvedValueOnce({ output: "test", exitCode: 0 });
 
     const result = await runTerminalCommandImpl(args, extras);
 
     // In remote environments, it should use the IDE's runCommand
     expect(mockRunCommand).toHaveBeenCalledWith("echo 'test'", {
       terminalName: "Agent",
+      reuseTerminal: false,
+      waitForCompletion: true,
     });
-    expect(result[0].status).toMatch(/Command completed|Sent to terminal/);
+    expect(result[0]).toMatchObject({ content: "test", status: "Command completed" });
   });
 
   it("should handle errors when executing invalid commands", async () => {

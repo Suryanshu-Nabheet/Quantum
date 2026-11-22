@@ -18,9 +18,9 @@ src/vs/workbench/contrib/agent/   # source (this directory)
 └── scripts/        # build helpers for the generated Agent runtime
 ```
 
-Quantum builds the native runtime and GUI into `ide/out/agent`. The workbench owns the view, commands, autocomplete provider, and runtime lifecycle; this directory is not registered or loaded as an extension.
+Quantum builds the native runtime and GUI into `out/agent`. The workbench owns the view, commands, autocomplete provider, and runtime lifecycle; this directory is not registered or loaded as an extension.
 
-## Build (from `ide/` repo root)
+## Build (from the repository root)
 
 ```bash
 npm run compile    # includes agent via gulp compile-agent
@@ -98,7 +98,7 @@ Integrate from the shell via **commands**, not deep imports into `core/` or `gui
 - `agent.browser.*` — workbench browser bridge
 - Browser tools (core): `open_browser_page`, `list_open_pages`, `close_browser_page`, `read_page`, `screenshot_page`, `navigate_page`, click/type/hover/drag, `run_playwright_code`, `handle_dialog`
 
-Launch from `ide/`:
+Launch from the repository root:
 
 ```bash
 npm run compile
@@ -143,7 +143,7 @@ Full workflow rules: `.github/copilot-instructions.md`.
 
 ## Quality checks
 
-From the IDE root (`ide/`):
+From the repository root:
 
 ```bash
 npm run compile-agent
@@ -163,4 +163,4 @@ Verification must finish with zero failures. Historical failure counts are not a
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT — see [LICENSE.txt](../../../../../LICENSE.txt).

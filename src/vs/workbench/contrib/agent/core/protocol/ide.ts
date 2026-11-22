@@ -13,6 +13,7 @@ import type {
   RangeInFile,
   SignatureHelp,
   TextSearchResults,
+  TerminalCommandResult,
   TerminalOptions,
   Thread,
 } from "../";
@@ -21,6 +22,7 @@ import type {
 export type ToIdeFromWebviewOrCoreProtocol = {
   // Methods from IDE type
   getIdeInfo: [undefined, IdeInfo];
+  resolveRealPath: [{ uri: string }, string | undefined];
   getWorkspaceDirs: [undefined, string[]];
   writeFile: [{ path: string; contents: string }, void];
   removeFile: [{ path: string }, void];
@@ -29,7 +31,7 @@ export type ToIdeFromWebviewOrCoreProtocol = {
   updateAgentPlan: [AgentPlanViewData, void];
   openFile: [{ path: string }, void];
   openUrl: [string, void];
-  runCommand: [{ command: string; options?: TerminalOptions }, void];
+  runCommand: [{ command: string; options?: TerminalOptions }, TerminalCommandResult | void];
   getSearchResults: [
     { query: string; maxResults?: number; isRegExp?: boolean },
     TextSearchResults,

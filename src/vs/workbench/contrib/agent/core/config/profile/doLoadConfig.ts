@@ -32,6 +32,7 @@ async function loadRules(ide: IDE) {
   errors.push(...projectAgentErrors);
 
   const codebaseRulesCache = CodebaseRulesCache.getInstance();
+  await codebaseRulesCache.initialize(ide);
   rules.unshift(...codebaseRulesCache.rules);
   errors.push(...codebaseRulesCache.errors);
 
@@ -150,12 +151,13 @@ export default async function doLoadConfig(options: {
       const serverTools: Tool[] = server.tools.map((tool) => ({
         displayTitle: server.name + " " + tool.name,
         function: {
-          description: tool.description,
+          description: tool.description?.slice(0, 2_000),
           name: getMCPToolName(server, tool),
           parameters: tool.inputSchema,
         },
         faviconUrl: server.faviconUrl,
         readonly: false,
+        defaultToolPolicy: "allowedWithPermission",
         type: "function" as const,
         uri: encodeMCPToolUri(server.id, tool.name),
         group: server.name,

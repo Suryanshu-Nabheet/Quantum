@@ -39,17 +39,17 @@ function resolveToolName(
   if (!trimmed) {
     return null;
   }
-  if (!activeTools?.length) {
+  if (!activeTools) {
     return trimmed;
   }
   const exact = activeTools.find((t) => t.function.name === trimmed);
   if (exact) {
     return exact.function.name;
   }
-  const suffix = activeTools.find((t) =>
+  const matches = activeTools.filter((t) =>
     t.function.name.toLowerCase().endsWith(trimmed.toLowerCase()),
   );
-  return suffix?.function.name ?? trimmed;
+  return matches.length === 1 ? matches[0].function.name : null;
 }
 
 export function extractMarkdownJsonToolPayload(text: string): string | null {
@@ -97,8 +97,15 @@ export function tryParseMarkdownJsonToolCall(
 }
 
 export function stripMarkdownJsonToolCallFromAssistantText(text: string): string {
-  return text
-    .replace(/```(?:json)?\s*[\s\S]*?```/gi, "")
-    .replace(/^\s*\{[\s\S]*"name"\s*:[\s\S]*\}\s*$/m, "")
-    .trim();
+  const payload = extractMarkdownJsonToolPayload(text);
+  if (!payload || !tryParseMarkdownJsonToolCall(text)) {
+    return text;
+  }
+  if (text.trim() === payload) {
+    return "";
+  }
+  const fence = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  return fence?.[1].trim() === payload
+    ? text.replace(fence[0], "").trim()
+    : text;
 }

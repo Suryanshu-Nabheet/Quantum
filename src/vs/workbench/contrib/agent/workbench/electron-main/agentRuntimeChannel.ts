@@ -50,6 +50,7 @@ interface IAgentWorker {
 export class AgentRuntimeChannel extends Disposable implements IServerChannel<string> {
 	private readonly workers = new Map<string, IAgentWorker>();
 	private nextInvocationId = 0;
+	private readonly agentStateLock = new Int32Array(new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT));
 
 	constructor(
 		private readonly server: IPCServer<string>,
@@ -142,6 +143,7 @@ export class AgentRuntimeChannel extends Disposable implements IServerChannel<st
 
 		const agent: IAgentWorker = {
 			worker: new Worker(runtimePath, {
+				workerData: { agentStateLock: this.agentStateLock.buffer },
 				// The shared process may not inherit the same HOME as the IDE's
 				// resolved environment. Agent settings are rooted at the IDE user
 				// home, so pass that location explicitly to the native worker.
@@ -162,7 +164,11 @@ export class AgentRuntimeChannel extends Disposable implements IServerChannel<st
 				this.disposeWindow(context, false);
 			}
 		});
+		const workerThreadId = agent.worker.threadId;
 		agent.worker.on('exit', code => {
+			if (Atomics.compareExchange(this.agentStateLock, 0, workerThreadId, 0) === workerThreadId) {
+				Atomics.notify(this.agentStateLock, 0);
+			}
 			if (agent.disposeTimeout) {
 				clearTimeout(agent.disposeTimeout);
 				agent.disposeTimeout = undefined;

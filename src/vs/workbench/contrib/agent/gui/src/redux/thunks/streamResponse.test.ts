@@ -172,7 +172,7 @@ describe("streamResponseThunk", () => {
         },
       ],
       options: {},
-    });
+    }, { signal: expect.any(AbortSignal) });
 
     expect(mockHostBridge.llmStreamChat).toHaveBeenCalledWith(
       {
@@ -462,7 +462,7 @@ describe("streamResponseThunk", () => {
         },
       ],
       options: { tools: [grepTool] },
-    });
+    }, { signal: expect.any(AbortSignal) });
 
     expect(requestSpy).toHaveBeenCalledWith("tools/call", {
       toolCall: {
@@ -479,6 +479,7 @@ describe("streamResponseThunk", () => {
     expect(requestSpy).toHaveBeenCalledWith(
       "llm/assembleChat",
       expect.any(Object),
+      { signal: expect.any(AbortSignal) },
     );
 
     expect(result.type).toBe("chat/streamResponse/fulfilled");
@@ -598,7 +599,7 @@ describe("streamResponseThunk", () => {
         },
       ],
       options: {},
-    });
+    }, { signal: expect.any(AbortSignal) });
 
     expect(mockHostBridgeAbort.llmStreamChat).toHaveBeenCalledWith(
       {

@@ -165,7 +165,8 @@ export function AddModelForm({
       if (value !== undefined && value.length > 0) {
         return true;
       }
-      if (isEditing && existingValueFor(input.key)) {
+      if (isEditing && (existingValueFor(input.key) ||
+        (input.key === "apiKey" && existingModel?.hasApiKey))) {
         return true;
       }
       return false;
@@ -305,7 +306,7 @@ export function AddModelForm({
                   type="password"
                   placeholder={
                     isEditing &&
-                    (existingModel?.apiKey || existingModel?.apiKeyLocation)
+                    (existingModel?.hasApiKey || existingModel?.apiKeyLocation)
                       ? "Leave blank to keep current key"
                       : `Enter your ${selectedProvider.title} API key`
                   }

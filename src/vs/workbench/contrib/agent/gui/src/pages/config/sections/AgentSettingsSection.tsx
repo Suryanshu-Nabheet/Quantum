@@ -88,7 +88,7 @@ const TERMINAL_AUTO_CHOICES: AccessModeChoice<TerminalAutoExecution>[] = [
   {
     value: "auto",
     title: "Run Everything",
-    description: "Allow all commands to run without asking for confirmation.",
+    description: "Skip approval for commands flagged for review. Blocked commands stay blocked.",
   },
   {
     value: "allowlist",

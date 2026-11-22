@@ -22,8 +22,10 @@ describe("markdownJsonToolCall", () => {
     });
   });
 
-  it("strips json fences from assistant text", () => {
-    const text = "Prefix\n```json\n{}\n```\n";
-    expect(stripMarkdownJsonToolCallFromAssistantText(text)).toBe("Prefix");
+  it("removes the tool-call fence and preserves the following code example", () => {
+    const call = '```json\n{"name":"read_file","arguments":{}}\n```';
+    const code = "```ts\nconst example = true;\n```";
+    const text = `Prefix\n${call}\n${code}`;
+    expect(stripMarkdownJsonToolCallFromAssistantText(text)).toBe(`Prefix\n\n${code}`);
   });
 });

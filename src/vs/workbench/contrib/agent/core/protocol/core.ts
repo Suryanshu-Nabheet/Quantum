@@ -6,6 +6,7 @@ import { SharedConfigSchema } from "../config/sharedConfig";
 import { GlobalContextModelSelections } from "../util/GlobalContext";
 
 import {
+    ApplyToFilePayload,
     BaseSessionMetadata,
     BrowserSerializedAgentConfig,
     ChatMessage,
@@ -27,7 +28,6 @@ import {
     Session,
     Skill,
     SlashCommandDescWithSource,
-    StreamDiffLinesPayload,
     ToolCall
 } from "../";
 import { ProfileDescription } from "../config/ProfileLifecycleManager";
@@ -47,8 +47,8 @@ export interface ListHistoryOptions {
 export type ToCoreFromIdeOrWebviewProtocol = {
   // Special
   ping: [string, string];
-  abort: [undefined, void];
-  cancelApply: [undefined, void];
+  abort: [string | undefined, void];
+  cancelApply: [string | undefined, void];
 
   // History
   "history/list": [
@@ -238,7 +238,12 @@ export type ToCoreFromIdeOrWebviewProtocol = {
     },
     AsyncGenerator<ChatMessage, PromptLog>,
   ];
-  streamDiffLines: [StreamDiffLinesPayload, AsyncGenerator<DiffLine>];
+  "apply/resolveFile": [{ filepath: string }, string];
+  "apply/prepareFile": [ApplyToFilePayload, {
+    filepath: string;
+    original: string;
+    modified: string;
+  }];
   getDiffLines: [{ oldContent: string; newContent: string }, DiffLine[]];
   "llm/assembleChat": [
     { messages: ChatMessage[]; options: LLMFullCompletionOptions },

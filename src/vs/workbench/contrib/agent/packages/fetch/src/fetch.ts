@@ -2,82 +2,12 @@ import { RequestOptions } from "config-types";
 import * as followRedirects from "follow-redirects";
 import { HttpProxyAgent } from "http-proxy-agent";
 import { HttpsProxyAgent } from "https-proxy-agent";
-import { BodyInit, RequestInit, Response } from "node-fetch";
+import { RequestInit, Response } from "node-fetch";
 import { getAgentOptions } from "./getAgentOptions.js";
 import patchedFetch from "./node-fetch-patch.js";
 import { getProxy, shouldBypassProxy } from "./util.js";
 
 const { http, https } = (followRedirects as any).default;
-
-function logRequest(
-  method: string,
-  url: URL,
-  headers: { [key: string]: string },
-  body: BodyInit | null | undefined,
-  proxy?: string,
-  shouldBypass?: boolean,
-) {
-  console.log("=== FETCH REQUEST ===");
-  console.log(`Method: ${method}`);
-  console.log(`URL: ${url.toString()}`);
-
-  // Log headers in curl format
-  console.log("Headers:");
-  for (const [key, value] of Object.entries(headers)) {
-    console.log(`  -H '${key}: ${value}'`);
-  }
-
-  // Log proxy information
-  if (proxy && !shouldBypass) {
-    console.log(`Proxy: ${proxy}`);
-  }
-
-  // Log body
-  if (body) {
-    console.log(`Body: ${body}`);
-  }
-
-  // Generate equivalent curl command
-  let curlCommand = `curl -X ${method}`;
-  for (const [key, value] of Object.entries(headers)) {
-    curlCommand += ` -H '${key}: ${value}'`;
-  }
-  if (body) {
-    curlCommand += ` -d '${body}'`;
-  }
-  if (proxy && !shouldBypass) {
-    curlCommand += ` --proxy '${proxy}'`;
-  }
-  curlCommand += ` '${url.toString()}'`;
-  console.log(`Equivalent curl: ${curlCommand}`);
-  console.log("=====================");
-}
-
-async function logResponse(resp: Response) {
-  console.log("=== FETCH RESPONSE ===");
-  console.log(`Status: ${resp.status} ${resp.statusText}`);
-  console.log("Response Headers:");
-  resp.headers.forEach((value, key) => {
-    console.log(`  ${key}: ${value}`);
-  });
-
-  // For streamed responses, this caused the response to be consumed and the connection would just hang open
-  // Clone response to read body without consuming it
-  // const respClone = resp.clone();
-  // try {
-  //   const responseText = await respClone.text();
-  //   console.log(`Response Body: ${responseText}`);
-  // } catch (e) {
-  //   console.log("Could not read response body:", e);
-  // }
-  console.log("======================");
-}
-
-function logError(error: unknown) {
-  console.log("=== FETCH ERROR ===");
-  console.log(`Error: ${error}`);
-  console.log("===================");
-}
 
 export async function fetchwithRequestOptions(
   url_: URL | string,
@@ -148,7 +78,7 @@ export async function fetchwithRequestOptions(
       });
     }
   } catch (e) {
-    console.log("Unable to parse HTTP request body: ", e);
+    console.log("Unable to parse HTTP request body");
   }
 
   const finalBody = updatedBody ?? init?.body;
@@ -156,7 +86,7 @@ export async function fetchwithRequestOptions(
 
   // Verbose logging for debugging - log request details
   if (process.env.VERBOSE_FETCH) {
-    logRequest(method, url, headers, finalBody, proxy, shouldBypass);
+    console.log(`[fetch] ${method} ${url.protocol}//${url.host}`);
   }
 
   // fetch the request with the provided options
@@ -170,7 +100,7 @@ export async function fetchwithRequestOptions(
 
     // Verbose logging for debugging - log response details
     if (process.env.VERBOSE_FETCH) {
-      await logResponse(resp);
+      console.log(`[fetch] HTTP ${resp.status}`);
     }
 
     if (!resp.ok) {
@@ -184,7 +114,7 @@ export async function fetchwithRequestOptions(
   } catch (error) {
     // Verbose logging for errors
     if (process.env.VERBOSE_FETCH) {
-      logError(error);
+      console.log("[fetch] Request failed");
     }
 
     if (error instanceof Error && error.name === "AbortError") {

@@ -16,7 +16,7 @@ function llmToSerializedModelDescription(llm: ILLM): ModelDescription {
     underlyingProviderName: llm.underlyingProviderName,
     model: llm.model,
     title: llm.title ?? llm.model,
-    apiKey: llm.apiKey,
+    hasApiKey: !!llm.apiKey || !!llm.apiKeyLocation,
     apiBase: llm.apiBase,
     contextLength: llm.contextLength,
     template: llm.template,
@@ -24,7 +24,6 @@ function llmToSerializedModelDescription(llm: ILLM): ModelDescription {
     baseAgentSystemMessage: llm.baseAgentSystemMessage,
     basePlanSystemMessage: llm.basePlanSystemMessage,
     baseChatSystemMessage: llm.baseChatSystemMessage,
-    requestOptions: llm.requestOptions,
     promptTemplates: serializePromptTemplates(llm.promptTemplates),
     capabilities: llm.capabilities,
     roles: llm.roles,
@@ -97,7 +96,10 @@ export async function finalToBrowserConfig(
         deduplicateModels(v.map(llmToSerializedModelDescription)),
       ]),
     ) as Record<ModelRole, ModelDescription[]>,
-    configuredModels: final.configuredModels ?? [],
+    configuredModels: (final.configuredModels ?? []).map(({ apiKey, requestOptions, ...model }) => ({
+      ...model,
+      hasApiKey: model.hasApiKey || !!apiKey || !!model.apiKeyLocation,
+    })),
     selectedModelByRole: Object.fromEntries(
       Object.entries(final.selectedModelByRole).map(([k, v]) => [
         k,

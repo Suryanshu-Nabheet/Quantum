@@ -28,6 +28,7 @@ type MockResponseHandlers = Partial<{
 
 const DEFAULT_MOCK_CORE_RESPONSES: MockResponses = {
   fileExists: true,
+  resolveRealPath: undefined,
   getCurrentFile: {
     isUntitled: false,
     contents: "Current file contents",

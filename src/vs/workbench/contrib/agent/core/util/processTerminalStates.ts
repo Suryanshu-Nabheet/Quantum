@@ -11,6 +11,7 @@ interface RunningProcessInfo {
     contextItems: any[];
   }) => void;
   currentOutput: string;
+  onBackground?: () => void;
 }
 
 const processTerminalForegroundStates = new Map<string, RunningProcessInfo>();
@@ -18,6 +19,9 @@ const processTerminalForegroundStates = new Map<string, RunningProcessInfo>();
 // Background process functions (existing)
 export function markProcessAsBackgrounded(toolCallId: string): void {
   processTerminalBackgroundStates.set(toolCallId, true);
+  const onBackground = processTerminalForegroundStates.get(toolCallId)?.onBackground;
+  processTerminalForegroundStates.delete(toolCallId);
+  onBackground?.();
 }
 
 export function isProcessBackgrounded(toolCallId: string): boolean {
@@ -37,11 +41,13 @@ export function markProcessAsRunning(
     contextItems: any[];
   }) => void,
   currentOutput: string = "",
+  onBackground?: () => void,
 ): void {
   processTerminalForegroundStates.set(toolCallId, {
     process,
     onPartialOutput,
     currentOutput,
+    onBackground,
   });
 }
 

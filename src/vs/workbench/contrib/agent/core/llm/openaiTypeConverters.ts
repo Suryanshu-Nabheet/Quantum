@@ -343,6 +343,10 @@ export function fromChatResponse(response: ChatCompletion): ChatMessage[] {
 export function fromChatCompletionChunk(
   chunk: ChatCompletionChunk,
 ): ChatMessage | undefined {
+  const usage = chunk.usage && {
+    completionTokens: chunk.usage.completion_tokens,
+    promptTokens: chunk.usage.prompt_tokens,
+  };
   const delta = chunk.choices?.[0]?.delta as
     | (ChatCompletionChunk.Choice.Delta & {
         reasoning?: string;
@@ -357,6 +361,7 @@ export function fromChatCompletionChunk(
     return {
       role: "assistant",
       content: delta.content,
+      ...(usage && { usage }),
     };
   } else if (delta?.tool_calls) {
     const toolCalls = delta?.tool_calls
@@ -375,6 +380,7 @@ export function fromChatCompletionChunk(
         role: "assistant",
         content: "",
         toolCalls,
+        ...(usage && { usage }),
       };
     }
   } else if (
@@ -391,7 +397,7 @@ export function fromChatCompletionChunk(
     return message;
   }
 
-  return undefined;
+  return usage ? { role: "assistant", content: "", usage } : undefined;
 }
 
 function handleTextDeltaEvent(

@@ -4,6 +4,7 @@ import untildify from "untildify";
 import { IDE } from "..";
 import { resolveRelativePathInDir } from "./ideUtils";
 import { findUriInDirs } from "./uri";
+import { throwIfFileIsSecurityConcern } from "../indexing/ignore";
 
 export interface ResolvedPath {
   uri: string;
@@ -12,20 +13,31 @@ export interface ResolvedPath {
   isWithinWorkspace: boolean;
 }
 
-/**
- * Checks if a URI is within any of the workspace directories
- * Also verifies the file actually exists, matching the behavior of resolveRelativePathInDir
- */
-async function isUriWithinWorkspace(ide: IDE, uri: string): Promise<boolean> {
-  const workspaceDirs = await ide.getWorkspaceDirs();
-  const { foundInDir } = findUriInDirs(uri, workspaceDirs);
-
-  // Check both: within workspace path AND file exists
-  if (foundInDir !== null) {
-    return await ide.fileExists(uri);
+async function resolvePath(
+  ide: IDE,
+  uri: string,
+  displayPath: string,
+  isAbsolute: boolean,
+): Promise<ResolvedPath> {
+  throwIfFileIsSecurityConcern(uri);
+  const realUri = await ide.resolveRealPath?.(uri);
+  if (realUri) {
+    throwIfFileIsSecurityConcern(realUri);
   }
-
-  return false;
+  let withinWorkspace = !isAbsolute;
+  if (realUri || isAbsolute) {
+    const workspaceDirs = await ide.getWorkspaceDirs();
+    const workspaceRoots = realUri
+      ? await Promise.all(workspaceDirs.map(async (dir) => (await ide.resolveRealPath?.(dir)) ?? dir))
+      : workspaceDirs;
+    withinWorkspace = findUriInDirs(realUri ?? uri, workspaceRoots).foundInDir !== null;
+  }
+  return {
+    uri: realUri ?? uri,
+    displayPath: realUri && realUri !== uri ? realUri : displayPath,
+    isAbsolute,
+    isWithinWorkspace: withinWorkspace && (isAbsolute ? await ide.fileExists(uri) : true),
+  };
 }
 
 export async function resolveInputPath(
@@ -37,13 +49,7 @@ export async function resolveInputPath(
   // Handle file:// URIs
   if (trimmedPath.startsWith("file://")) {
     const displayPath = fileURLToPath(trimmedPath);
-    const isWithinWorkspace = await isUriWithinWorkspace(ide, trimmedPath);
-    return {
-      uri: trimmedPath,
-      displayPath,
-      isAbsolute: true,
-      isWithinWorkspace,
-    };
+    return await resolvePath(ide, trimmedPath, displayPath, true);
   }
 
   // Expand tilde paths (handles ~/ and ~username/)
@@ -60,24 +66,13 @@ export async function resolveInputPath(
   if (isAbsolute) {
     // Convert to file:// URI format
     const uri = pathToFileURL(expandedPath).href;
-    const isWithinWorkspace = await isUriWithinWorkspace(ide, uri);
-    return {
-      uri,
-      displayPath: expandedPath,
-      isAbsolute: true,
-      isWithinWorkspace,
-    };
+    return await resolvePath(ide, uri, expandedPath, true);
   }
 
   // Handle relative paths...
   const workspaceUri = await resolveRelativePathInDir(expandedPath, ide);
   if (workspaceUri) {
-    return {
-      uri: workspaceUri,
-      displayPath: expandedPath,
-      isAbsolute: false,
-      isWithinWorkspace: true,
-    };
+    return await resolvePath(ide, workspaceUri, expandedPath, false);
   }
 
   return null;

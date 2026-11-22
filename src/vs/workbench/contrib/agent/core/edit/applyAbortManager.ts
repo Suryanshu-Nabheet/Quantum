@@ -22,6 +22,12 @@ export class ApplyAbortManager {
     return controller;
   }
 
+  public release(id: string, controller: AbortController): void {
+    if (this.controllers.get(id) === controller) {
+      this.controllers.delete(id);
+    }
+  }
+
   public abort(id: string): void {
     const controller = this.controllers.get(id);
     if (controller) {

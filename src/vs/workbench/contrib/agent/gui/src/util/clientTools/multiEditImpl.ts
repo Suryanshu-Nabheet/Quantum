@@ -9,6 +9,7 @@ import {
   waitForFileEditToSettle,
 } from "../../redux/util";
 import { ClientToolImpl } from "./callClientTool";
+import { readEditFile } from "./readEditFile";
 
 export const multiEditImpl: ClientToolImpl = async (
   args,
@@ -22,7 +23,7 @@ export const multiEditImpl: ClientToolImpl = async (
       args.filepath,
       extras.hostBridge.ide,
     );
-    const editingFileContents = await extras.hostBridge.ide.readFile(fileUri);
+    const editingFileContents = await readEditFile(fileUri, extras);
     const newFileContents = executeMultiFindAndReplace(
       editingFileContents,
       edits,
@@ -36,6 +37,7 @@ export const multiEditImpl: ClientToolImpl = async (
         text: newFileContents,
         filepath: fileUri,
         isSearchAndReplace: true,
+        expectedOriginalContent: editingFileContents,
       }),
     );
     if (driverOwnsToolBatch()) {

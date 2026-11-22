@@ -1455,21 +1455,27 @@ describe("evaluateTerminalCommandSecurity", () => {
   });
 
   describe("Build Tool Commands", () => {
-    it("should allow safe npm commands", () => {
-      const result = evaluateTerminalCommandSecurity(
-        "allowedWithPermission",
-        "npm run test",
-      );
-      expect(result).toBe("allowedWithPermission");
-    });
+    it.each(["npm run test", "npm run build", "pnpm run build", "make build"])(
+      "requires approval for repository-defined command %s",
+      (command) => {
+        expect(evaluateTerminalCommandSecurity("allowedWithoutPermission", command))
+          .toBe("allowedWithPermission");
+      },
+    );
 
-    it("should allow safe npm scripts", () => {
-      const result = evaluateTerminalCommandSecurity(
-        "allowedWithPermission",
-        "npm run build",
-      );
-      expect(result).toBe("allowedWithPermission");
-    });
+    it.each([
+      "git branch -D feature",
+      "git tag v1",
+      "git config core.pager pager",
+      "git remote add upstream https://example.com/repo",
+      "git reflog expire --all",
+    ])(
+      "requires approval for mutating Git command %s",
+      (command) => {
+        expect(evaluateTerminalCommandSecurity("allowedWithoutPermission", command))
+          .toBe("allowedWithPermission");
+      },
+    );
 
     it("should require permission for npm scripts with suspicious names", () => {
       const result = evaluateTerminalCommandSecurity(

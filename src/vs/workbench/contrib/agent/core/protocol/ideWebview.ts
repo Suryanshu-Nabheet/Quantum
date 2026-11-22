@@ -66,7 +66,6 @@ export type ToIdeFromWebviewProtocol = ToIdeFromWebviewOrCoreProtocol & {
   ];
   "edit/addCurrentSelection": [undefined, void];
   "edit/clearDecorations": [undefined, void];
-  "session/share": [{ sessionId: string }, void];
   "vscode/openMoveRightMarkdown": [undefined, void];
 };
 

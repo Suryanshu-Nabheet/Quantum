@@ -44,8 +44,27 @@ const withLlmStreamLock = createInvocationLock();
 function requestHost(kind: 'ide' | 'core', messageType: string, data: unknown): Promise<unknown> {
 	const id = `host-${++nextRequestId}`;
 	return new Promise((resolve, reject) => {
-		pendingHostRequests.set(id, { resolve, reject });
-		port.postMessage({ kind: 'hostRequest', id, requestKind: kind, messageType, data });
+		const timeout = setTimeout(() => {
+			pendingHostRequests.delete(id);
+			reject(new Error(`Quantum Agent timed out waiting for ${messageType}.`));
+		}, 120_000);
+		const settle = {
+			resolve(value: unknown) {
+				clearTimeout(timeout);
+				resolve(value);
+			},
+			reject(error: Error) {
+				clearTimeout(timeout);
+				reject(error);
+			},
+		};
+		pendingHostRequests.set(id, settle);
+		try {
+			port.postMessage({ kind: 'hostRequest', id, requestKind: kind, messageType, data });
+		} catch (error) {
+			pendingHostRequests.delete(id);
+			settle.reject(error instanceof Error ? error : new Error(String(error)));
+		}
 	});
 }
 
@@ -119,10 +138,26 @@ async function handleInvokeUnlocked(request: Extract<WorkerRequest, { kind: 'inv
 	}
 }
 
+const pendingStreams = new Map<string, boolean>();
+
 async function handleInvoke(request: Extract<WorkerRequest, { kind: 'invoke' }>): Promise<void> {
 	if (request.messageType === 'llm/streamChat') {
-		await withLlmStreamLock(() => handleInvokeUnlocked(request));
+		pendingStreams.set(request.id, false);
+		try {
+			await withLlmStreamLock(() => {
+				if (pendingStreams.get(request.id)) {
+					port.postMessage({ kind: 'invokeResult', id: request.id });
+					return Promise.resolve();
+				}
+				return handleInvokeUnlocked(request);
+			});
+		} finally {
+			pendingStreams.delete(request.id);
+		}
 		return;
+	}
+	if (request.messageType === 'abort' && typeof request.data === 'string' && pendingStreams.has(request.data)) {
+		pendingStreams.set(request.data, true);
 	}
 	await handleInvokeUnlocked(request);
 }

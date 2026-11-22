@@ -252,7 +252,7 @@ export function createEditorConfig(options: {
         addKeyboardShortcuts() {
           return {
             Enter: () => {
-              if (inDropdownRef.current) {
+              if (this.editor.view.composing || inDropdownRef.current) {
                 return false;
               }
 
@@ -264,6 +264,9 @@ export function createEditorConfig(options: {
             },
 
             "Mod-Enter": () => {
+              if (this.editor.view.composing) {
+                return false;
+              }
               onEnter({
                 noContext: true,
                 sendMode: isStreamingRef.current ? "stop" : undefined,
@@ -272,6 +275,9 @@ export function createEditorConfig(options: {
               return true;
             },
             "Alt-Enter": () => {
+              if (this.editor.view.composing) {
+                return false;
+              }
               onEnter({
                 noContext: true,
                 sendMode: isStreamingRef.current ? "queue" : undefined,

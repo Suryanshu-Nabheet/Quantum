@@ -643,7 +643,9 @@ export const sessionSlice = createSlice({
           ) {
             state.contextOutputTokens = message.usage.completionTokens;
             state.contextOutputIsEstimated = false;
-            continue;
+            if (!message.content && !message.toolCalls?.length) {
+              continue;
+            }
           }
 
           let lastItem = state.history[state.history.length - 1];
@@ -702,7 +704,7 @@ export const sessionSlice = createSlice({
 
               handleToolCallsInMessage(message, lastItem);
 
-              return;
+              continue;
             }
           }
 

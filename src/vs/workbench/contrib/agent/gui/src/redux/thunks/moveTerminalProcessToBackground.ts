@@ -1,12 +1,11 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { ContextItem } from "core";
 import {
-  abortStream,
   acceptToolCall,
   updateToolCallOutput,
 } from "../slices/sessionSlice";
 import { ThunkApiType } from "../store";
-import { findToolCallById } from "../util";
+import { driverOwnsToolBatch, findToolCallById } from "../util";
 import { streamResponseAfterToolCall } from "./streamResponseAfterToolCall";
 
 /**
@@ -51,9 +50,6 @@ export const moveTerminalProcessToBackground = createAsyncThunk<
       },
     ];
 
-    // Abort any existing stream for this tool call
-    dispatch(abortStream());
-
     // Update the tool call output
     dispatch(
       updateToolCallOutput({
@@ -63,20 +59,22 @@ export const moveTerminalProcessToBackground = createAsyncThunk<
     );
 
     // Mark the process as backgrounded so we ignore future events
-    await extra.hostBridge.request("process/markAsBackgrounded", {
+    const response = await extra.hostBridge.request("process/markAsBackgrounded", {
       toolCallId,
     });
+    if (response.status === "error") {
+      await extra.hostBridge.ide.showToast("error", response.error);
+      return;
+    }
 
-    // Mark the tool call as "done" in the UI
-    // This will set isRunning to false in RunTerminalCommand.tsx
+    if (driverOwnsToolBatch()) {
+      return;
+    }
+    const currentToolCall = findToolCallById(getState().session.history, toolCallId);
+    if (currentToolCall?.status !== "calling") {
+      return;
+    }
     dispatch(acceptToolCall({ toolCallId }));
-
-    // Trigger an LLM response about the command being moved to background
-    dispatch(updateToolCallOutput({ toolCallId, contextItems }));
-    void dispatch(
-      streamResponseAfterToolCall({
-        toolCallId,
-      }),
-    );
+    void dispatch(streamResponseAfterToolCall({ toolCallId }));
   },
 );

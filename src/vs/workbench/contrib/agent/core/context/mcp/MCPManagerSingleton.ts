@@ -68,7 +68,7 @@ export class MCPManagerSingleton {
 
   setConnections(
     servers: InternalMcpOptions[],
-    _forceRefresh: boolean,
+    connectNew: boolean,
     extras?: MCPExtras,
   ) {
     // Remove any connections that are no longer in config
@@ -87,6 +87,7 @@ export class MCPManagerSingleton {
     });
 
     // Add any connections that are not yet in manager
+    const newConnections: MCPConnection[] = [];
     servers.forEach((server) => {
       if (this.connections.has(server.id)) {
         const conn = this.connections.get(server.id);
@@ -95,9 +96,22 @@ export class MCPManagerSingleton {
           conn.options = server;
         }
       } else {
-        this.connections.set(server.id, new MCPConnection(server, extras));
+        const connection = new MCPConnection(server, extras);
+        this.connections.set(server.id, connection);
+        newConnections.push(connection);
       }
     });
+
+    if (connectNew && newConnections.length > 0) {
+      const signal = this.abortController.signal;
+      void Promise.allSettled(
+        newConnections.map((connection) => connection.connectClient(false, signal)),
+      ).then(() => {
+        if (!signal.aborted) {
+          this.onConnectionsRefreshed?.();
+        }
+      });
+    }
   }
 
   private compareTransportOptions(
@@ -111,10 +125,16 @@ export class MCPManagerSingleton {
       return (
         a.command === b.command &&
         JSON.stringify(a.args) === JSON.stringify(b.args) &&
-        this.compareEnv(a.env, b.env)
+        this.compareEnv(a.env, b.env) &&
+        a.cwd === b.cwd
       );
     } else if ("url" in a && "url" in b) {
-      return a.url === b.url;
+      return (
+        a.url === b.url &&
+        ("apiKey" in a ? a.apiKey : undefined) ===
+          ("apiKey" in b ? b.apiKey : undefined) &&
+        JSON.stringify(a.requestOptions) === JSON.stringify(b.requestOptions)
+      );
     }
     return false;
   }

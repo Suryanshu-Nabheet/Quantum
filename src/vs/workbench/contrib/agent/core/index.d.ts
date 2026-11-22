@@ -809,6 +809,7 @@ export interface IDE {
   getAvailableThreads(): Promise<Thread[]>;
 
   getWorkspaceDirs(): Promise<string[]>;
+  resolveRealPath?(uri: string): Promise<string | undefined>;
 
   fileExists(fileUri: string): Promise<boolean>;
 
@@ -828,7 +829,7 @@ export interface IDE {
 
   getExternalUri?(uri: string): Promise<string>;
 
-  runCommand(command: string, options?: TerminalOptions): Promise<void>;
+  runCommand(command: string, options?: TerminalOptions): Promise<TerminalCommandResult | void>;
 
   saveFile(fileUri: string): Promise<void>;
 
@@ -1172,6 +1173,7 @@ export interface ModelDescription {
   underlyingProviderName: string;
   model: string;
   apiKey?: string;
+  hasApiKey?: boolean;
 
   apiBase?: string;
   apiKeyLocation?: string;
@@ -1442,6 +1444,7 @@ export interface ApplyState {
   originalFileContent?: string;
   toolCallId?: string;
   autoFormattingDiff?: string;
+  error?: string;
 }
 
 export type StreamDiffLinesType = "edit" | "apply";
@@ -1491,6 +1494,7 @@ export interface ApplyToFilePayload {
   text: string;
   toolCallId?: string;
   isSearchAndReplace?: boolean;
+  expectedOriginalContent?: string;
 }
 
 export interface RangeInFileWithContents {
@@ -1756,6 +1760,11 @@ export type PackageDocsResult = {
     | { error: string; details?: never }
     | { details: PackageDetailsSuccess; error?: never }
   );
+
+export interface TerminalCommandResult {
+  output: string;
+  exitCode?: number;
+}
 
 export interface TerminalOptions {
   reuseTerminal?: boolean;

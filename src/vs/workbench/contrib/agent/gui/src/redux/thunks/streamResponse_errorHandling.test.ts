@@ -178,7 +178,7 @@ describe("streamResponseThunk", () => {
         },
       ],
       options: {},
-    });
+    }, { signal: expect.any(AbortSignal) });
     expect(chatSpy).not.toHaveBeenCalled();
 
     // Verify final state shows error condition
@@ -304,7 +304,7 @@ describe("streamResponseThunk", () => {
         },
       ],
       options: {},
-    });
+    }, { signal: expect.any(AbortSignal) });
     expect(chatSpy).not.toHaveBeenCalled();
 
     const finalState = mockStore.getState() as RootState;

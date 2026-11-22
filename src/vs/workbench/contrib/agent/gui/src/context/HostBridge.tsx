@@ -65,7 +65,7 @@ export interface IHostBridge {
   request<T extends keyof FromWebviewProtocol>(
     messageType: T,
     data: FromWebviewProtocol[T][0],
-    options?: { timeoutMs?: number },
+    options?: { timeoutMs?: number; signal?: AbortSignal },
   ): Promise<WebviewSingleProtocolMessage<T>>;
 
   streamRequest<T extends keyof FromWebviewProtocol>(
@@ -160,29 +160,41 @@ export class HostBridge implements IHostBridge {
   request<T extends keyof FromWebviewProtocol>(
     messageType: T,
     data: FromWebviewProtocol[T][0],
-    options?: { timeoutMs?: number },
+    options?: { timeoutMs?: number; signal?: AbortSignal },
   ): Promise<WebviewSingleMessage<T>> {
     const messageId = uuidv4();
     const timeoutMs = resolveRequestTimeoutMs(messageType, options?.timeoutMs);
 
     return new Promise((resolve, reject) => {
-      let timeout: ReturnType<typeof setTimeout>;
-      const handler = (event: any) => {
+      const signal = options?.signal;
+      const cleanup = () => {
+        clearTimeout(timeout);
+        window.removeEventListener("message", handler);
+        signal?.removeEventListener("abort", abort);
+      };
+      const abort = () => {
+        cleanup();
+        reject(signal?.reason ?? new DOMException("Request cancelled", "AbortError"));
+      };
+      const handler = (event: MessageEvent) => {
         if (event.data.messageId === messageId) {
-          clearTimeout(timeout);
-          window.removeEventListener("message", handler);
+          cleanup();
           resolve(event.data.data as WebviewSingleMessage<T>);
         }
       };
-
-      timeout = setTimeout(() => {
-        window.removeEventListener("message", handler);
+      const timeout = setTimeout(() => {
+        cleanup();
         reject(
           new Error(
             `The agent request timed out while waiting for ${String(messageType)}.`,
           ),
         );
       }, timeoutMs);
+      if (signal?.aborted) {
+        abort();
+        return;
+      }
+      signal?.addEventListener("abort", abort, { once: true });
       window.addEventListener("message", handler);
 
       this.post(messageType, data, messageId);
@@ -230,7 +242,8 @@ export class HostBridge implements IHostBridge {
         }
         error =
           "The agent stream stopped receiving data. The model connection may have been interrupted.";
-        this.post("abort", undefined, messageId);
+        this.post("abort", messageId);
+        notifyStreamWaiter();
       }, idleTimeoutMs);
     };
 
@@ -276,7 +289,7 @@ export class HostBridge implements IHostBridge {
       // Marking the generator complete lets the UI settle immediately while
       // the best-effort abort message is sent in the background.
       done = true;
-      this.post("abort", undefined, messageId);
+      this.post("abort", messageId);
       notifyStreamWaiter();
     };
     if (cancelToken?.aborted) {

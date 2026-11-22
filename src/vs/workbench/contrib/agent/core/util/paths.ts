@@ -1,8 +1,6 @@
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import dotenv from "dotenv";
-dotenv.config();
 
 const AGENT_GLOBAL_DIR = (() => {
   const configPath = process.env.AGENT_GLOBAL_DIR;
@@ -38,25 +36,19 @@ export function getEmbeddingModelsPath(): string {
 export function getAgentGlobalPath(): string {
   // This is ~/.agent on mac/linux
   const agentPath = AGENT_GLOBAL_DIR;
-  if (!fs.existsSync(agentPath)) {
-    fs.mkdirSync(agentPath);
-  }
+  fs.mkdirSync(agentPath, { recursive: true, mode: 0o700 });
   return agentPath;
 }
 
 export function getSessionsFolderPath(): string {
   const sessionsPath = path.join(getAgentGlobalPath(), "sessions");
-  if (!fs.existsSync(sessionsPath)) {
-    fs.mkdirSync(sessionsPath);
-  }
+  fs.mkdirSync(sessionsPath, { recursive: true, mode: 0o700 });
   return sessionsPath;
 }
 
 export function getIndexFolderPath(): string {
   const indexPath = path.join(getAgentGlobalPath(), "index");
-  if (!fs.existsSync(indexPath)) {
-    fs.mkdirSync(indexPath);
-  }
+  fs.mkdirSync(indexPath, { recursive: true, mode: 0o700 });
   return indexPath;
 }
 
@@ -69,13 +61,22 @@ export function getSharedConfigFilePath(): string {
 }
 
 export function getSessionFilePath(sessionId: string): string {
+  if (!/^[a-z0-9_-]+$/i.test(sessionId) || sessionId.toLowerCase() === "sessions") {
+    throw new Error("Invalid Agent session ID");
+  }
   return path.join(getSessionsFolderPath(), `${sessionId}.json`);
 }
 
 export function getSessionsListPath(): string {
   const filepath = path.join(getSessionsFolderPath(), "sessions.json");
   if (!fs.existsSync(filepath)) {
-    fs.writeFileSync(filepath, JSON.stringify([]));
+    try {
+      fs.writeFileSync(filepath, "[]", { flag: "wx", mode: 0o600 });
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "EEXIST") {
+        throw error;
+      }
+    }
   }
   return filepath;
 }

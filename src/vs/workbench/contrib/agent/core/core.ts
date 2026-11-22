@@ -72,6 +72,7 @@ import { MCPManagerSingleton } from "./context/mcp/MCPManagerSingleton";
 import { myersDiff } from "./diff/myers";
 import { ApplyAbortManager } from "./edit/applyAbortManager";
 import { streamDiffLines } from "./edit/streamDiffLines";
+import { resolveSafeEditUri } from "./edit/searchAndReplace/validateArgs";
 import { shouldIgnore } from "./indexing/shouldIgnore";
 import { walkDirCache } from "./indexing/walkDir";
 import { LLMLogger } from "./llm/logger";
@@ -227,6 +228,7 @@ export class Core {
       controller.abort();
     }
     this.messageAbortControllers.clear();
+    ApplyAbortManager.getInstance().clear();
     this.configHandler.dispose();
 		await Promise.allSettled([
 			killAllRunningTerminalProcesses(),
@@ -791,38 +793,66 @@ export class Core {
       this.completionProvider.cancel();
     });
 
-    on("streamDiffLines", async (msg) => {
-      const { config } = await this.configHandler.loadConfig();
-      if (!config) {
-        throw new Error("Failed to load config");
+    on("apply/resolveFile", async ({ data: { filepath } }) =>
+      resolveSafeEditUri(filepath, this.ide),
+    );
+
+    on("apply/prepareFile", async ({ data }) => {
+      if (!data.filepath || typeof data.text !== "string") {
+        throw new Error("An existing file and edit text are required.");
+      }
+      const filepath = await resolveSafeEditUri(data.filepath, this.ide);
+      const original = await this.ide.readFile(filepath);
+      if (original.includes("\0") || original.length > 900 * 1024) {
+        throw new Error("Apply supports text files up to 900 KiB.");
+      }
+      if (data.expectedOriginalContent !== undefined && data.expectedOriginalContent !== original) {
+        throw new Error("The file changed after the edit was prepared.");
+      }
+      if (data.isSearchAndReplace) {
+        return { filepath, original, modified: data.text };
       }
 
-      const { data } = msg;
-
-      // Title can be an edit, chat, or apply model
-      // Fall back to chat
-      const llm =
-        config.modelsByRole.edit.find((m) => m.title === data.modelTitle) ??
-        config.modelsByRole.apply.find((m) => m.title === data.modelTitle) ??
-        config.modelsByRole.chat.find((m) => m.title === data.modelTitle) ??
-        config.selectedModelByRole.chat;
-
+      const { config } = await this.configHandler.loadConfig();
+      const llm = config?.selectedModelByRole.apply ?? config?.selectedModelByRole.chat;
       if (!llm) {
-        throw new Error("No model selected");
+        throw new Error("Select a model before applying changes.");
       }
 
       const abortManager = ApplyAbortManager.getInstance();
-      const abortController = abortManager.get(
-        data.fileUri ?? "current-file-stream",
-      ); // not super important since currently cancelling apply will cancel all streams it's one file at a time
-
-      return streamDiffLines(
-        data,
-        llm,
-        abortController,
-        undefined,
-        data.includeRulesInSystemMessage ? config.rules : undefined,
-      );
+      const controller = abortManager.get(data.streamId);
+      try {
+        const result: string[] = [];
+        const normalized = original.replace(/\r\n/g, "\n");
+        const diffs = streamDiffLines({
+          type: "apply",
+          prefix: "",
+          highlighted: normalized,
+          suffix: "",
+          input: "",
+          language: undefined,
+          modelTitle: llm.title,
+          includeRulesInSystemMessage: false,
+          newCode: data.text,
+          fileUri: filepath,
+        }, llm, controller, undefined, undefined);
+        for await (const line of diffs) {
+          if (line.type !== "old") {
+            result.push(line.line);
+          }
+        }
+        controller.signal.throwIfAborted();
+        if (!result.length && normalized.trim()) {
+          throw new Error("The apply model returned an empty edit.");
+        }
+        let modified = result.join(original.includes("\r\n") ? "\r\n" : "\n");
+        if (original.endsWith("\n") && modified && !modified.endsWith("\n")) {
+          modified += original.includes("\r\n") ? "\r\n" : "\n";
+        }
+        return { filepath, original, modified };
+      } finally {
+        abortManager.release(data.streamId, controller);
+      }
     });
 
     on("getDiffLines", (msg) => {
@@ -831,7 +861,11 @@ export class Core {
 
     on("cancelApply", async (msg) => {
       const abortManager = ApplyAbortManager.getInstance();
-      abortManager.clear(); // for now abort all streams
+      if (typeof msg.data === "string") {
+        abortManager.abort(msg.data);
+      } else {
+        abortManager.clear();
+      }
     });
 
 
@@ -1035,15 +1069,16 @@ export class Core {
         const targetPath = extractToolTargetPath(parsedArgs, processedArgs);
         if (targetPath) {
           const policyBeforeProtected = policy;
-          policy = applyProtectedPathPolicy(
-            toolName,
-            policy,
-            targetPath,
-            protectedFilePatterns ?? DEFAULT_PROTECTED_FILE_PATTERNS,
-            {
-              requireReadApproval: protectedPathsRequireReadApproval ?? true,
-            },
-          );
+          const originalPath = extractToolTargetPath(parsedArgs);
+          for (const path of new Set([targetPath, originalPath ?? targetPath])) {
+            policy = applyProtectedPathPolicy(
+              toolName,
+              policy,
+              path,
+              protectedFilePatterns ?? DEFAULT_PROTECTED_FILE_PATTERNS,
+              { requireReadApproval: protectedPathsRequireReadApproval ?? true },
+            );
+          }
           if (
             policy === "allowedWithPermission" &&
             policyBeforeProtected === "allowedWithoutPermission" &&

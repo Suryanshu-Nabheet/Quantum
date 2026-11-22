@@ -460,7 +460,7 @@ describe("Bedrock", () => {
         {
           role: "thinking",
           content: "",
-          redactedThinking: "redacted-content-bytes",
+          redactedThinking: Buffer.from("redacted-content-bytes").toString("base64"),
         },
         { role: "assistant", content: "Here's my answer" },
       ];

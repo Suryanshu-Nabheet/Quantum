@@ -9,6 +9,10 @@ export const readCurrentlyOpenFileImpl: ToolImpl = async (_, extras) => {
 
   if (result) {
     throwIfFileIsSecurityConcern(result.path);
+    const targetUri = await extras.ide.resolveRealPath?.(result.path);
+    if (targetUri) {
+      throwIfFileIsSecurityConcern(targetUri);
+    }
     await throwIfFileExceedsHalfOfContext(
       result.path,
       result.contents,

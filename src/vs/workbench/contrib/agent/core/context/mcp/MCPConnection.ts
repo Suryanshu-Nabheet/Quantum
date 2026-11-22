@@ -290,10 +290,23 @@ Set secrets in ~/.agent/.env or your workspace .env file (see config docs in the
               // Tools <—> Tools
               if (capabilities?.tools) {
                 try {
-                  const { tools } = await this.client.listTools(
-                    {},
-                    { signal: timeoutController.signal },
-                  );
+                  const tools: MCPTool[] = [];
+                  const seenCursors = new Set<string>();
+                  let cursor: string | undefined;
+                  do {
+                    const page = await this.client.listTools(
+                      cursor === undefined ? {} : { cursor },
+                      { signal: timeoutController.signal },
+                    );
+                    tools.push(...page.tools);
+                    cursor = page.nextCursor;
+                    if (cursor !== undefined) {
+                      if (seenCursors.has(cursor) || seenCursors.size >= 99) {
+                        throw new Error("MCP tool pagination did not finish within 100 pages");
+                      }
+                      seenCursors.add(cursor);
+                    }
+                  } while (cursor !== undefined);
                   this.tools = tools;
                 } catch (e) {
                   let errorMessage = `Error loading tools for MCP Server ${this.options.name}`;

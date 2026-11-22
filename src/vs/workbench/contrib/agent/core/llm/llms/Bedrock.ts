@@ -10,7 +10,6 @@ import {
   ImageFormat,
   InvokeModelCommand,
   Message,
-  ReasoningContentBlockDelta,
   ToolConfiguration,
   ToolUseBlock,
   ToolUseBlockDelta,
@@ -174,14 +173,13 @@ class Bedrock extends BaseLLM {
           }
         }
 
-        const reasoningDelta: ReasoningContentBlockDelta | undefined = chunk
-          .contentBlockDelta?.delta as ReasoningContentBlockDelta;
+        const reasoningDelta = contentBlockDelta?.reasoningContent;
         if (reasoningDelta) {
           if (reasoningDelta.redactedContent) {
             yield {
               role: "thinking",
               content: "",
-              redactedThinking: reasoningDelta.text,
+              redactedThinking: Buffer.from(reasoningDelta.redactedContent).toString("base64"),
             };
             continue;
           }
@@ -475,7 +473,7 @@ class Bedrock extends BaseLLM {
             const block: ContentBlock.ReasoningContentMember = {
               reasoningContent: {
                 redactedContent: new Uint8Array(
-                  Buffer.from(message.redactedThinking),
+                  Buffer.from(message.redactedThinking, "base64"),
                 ),
               },
             };

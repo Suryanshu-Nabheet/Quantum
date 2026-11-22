@@ -1,6 +1,5 @@
 import { ConfigHandler } from "../config/ConfigHandler.js";
 import { CompletionOptions, ILLM, TabAutocompleteOptions } from "../index.js";
-import OpenAI from "../llm/llms/OpenAI.js";
 import { DEFAULT_AUTOCOMPLETE_OPTS } from "../util/parameters.js";
 
 import { isSecurityConcern } from "../indexing/ignore.js";
@@ -161,14 +160,6 @@ export class CompletionProvider {
 
     if (llm.providerName === "mistral" && llm.apiKey === "") {
       return undefined;
-    }
-
-    if (llm.completionOptions.temperature === undefined) {
-      llm.completionOptions.temperature = 0.01;
-    }
-
-    if (llm instanceof OpenAI) {
-      llm.useLegacyCompletionsEndpoint = true;
     }
 
     return llm;

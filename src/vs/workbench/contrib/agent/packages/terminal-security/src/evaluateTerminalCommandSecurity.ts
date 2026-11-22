@@ -1006,7 +1006,8 @@ function isSafeCommand(baseCommand: string, args: string[]): boolean {
       baseCommand === "go" ||
       baseCommand === "rustc" ||
       baseCommand === "cargo") &&
-    args.includes("--version")
+    args.length === 1 &&
+    args[0] === "--version"
   ) {
     return true;
   }
@@ -1085,15 +1086,19 @@ function isSafeCommand(baseCommand: string, args: string[]): boolean {
     }
   }
 
-  // Safe git operations (read-only / introspection)
+  // Repository-defined scripts and build entry points require review.
+  // Git commands with write forms or executable helpers are also excluded.
   if (baseCommand === "git") {
-    const safeGitOps = [
+    const [operation, ...options] = args;
+    if (operation === "stash") {
+      return options.length === 1 && options[0] === "list";
+    }
+
+    const readOnlyOperations = [
       "status",
       "log",
       "diff",
       "show",
-      "branch",
-      "remote",
       "rev-parse",
       "describe",
       "shortlog",
@@ -1101,57 +1106,11 @@ function isSafeCommand(baseCommand: string, args: string[]): boolean {
       "grep",
       "ls-files",
       "ls-tree",
-      "stash",
-      "config",
-      "tag",
-      "reflog",
     ];
-    if (args.length > 0 && safeGitOps.includes(args[0])) {
-      const sub = args[0];
-      if (
-        sub === "config" &&
-        args.some((arg) => arg === "--global" || arg === "--system")
-      ) {
-        return false;
-      }
-      if (sub === "stash" && args[1] && !["list", "show"].includes(args[1])) {
-        return false;
-      }
-      if (sub === "tag" && args.some((arg) => arg === "-d" || arg === "--delete")) {
-        return false;
-      }
-      return true;
-    }
-  }
-
-  // Safe npm/yarn commands
-  if (
-    baseCommand === "npm" ||
-    baseCommand === "yarn" ||
-    baseCommand === "pnpm"
-  ) {
-    const safeOps = ["test", "build", "start", "run"];
-    if (args.length > 0 && safeOps.includes(args[0])) {
-      // Check for suspicious script names
-      const suspiciousScripts = [
-        "preinstall",
-        "postinstall",
-        "prepare",
-        "prepublish",
-      ];
-      if (args.length > 1 && !suspiciousScripts.includes(args[1])) {
-        return true;
-      }
-    }
-  }
-
-  // Safe build commands
-  const buildCommands = ["make", "gradle", "mvn", "cargo"];
-  if (buildCommands.includes(baseCommand)) {
-    const safeBuildOps = ["build", "compile", "test", "check", "clean"];
-    if (args.some((arg) => safeBuildOps.includes(arg))) {
-      return true;
-    }
+    return (
+      readOnlyOperations.includes(operation) &&
+      !options.some((option) => /^--(?:ext-diff|textconv|output|open-files-in-pager)(?:=|$)/.test(option))
+    );
   }
 
   // Safe compression (creation only, not extraction to system paths)

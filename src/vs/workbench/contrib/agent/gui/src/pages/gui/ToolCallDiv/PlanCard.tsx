@@ -1,5 +1,6 @@
 import { ArrowDownTrayIcon } from "@heroicons/react/24/outline";
 import ReactMarkdown from "react-markdown";
+import { SecureImageComponent } from "../../../components/StyledMarkdownPreview/SecureImageComponent";
 import remarkGfm from "remark-gfm";
 import type { AgentPlanViewData, ToolCallState } from "core";
 import { BuiltInToolNames } from "core/tools/builtIn";
@@ -77,6 +78,7 @@ function PlanMarkdown({
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
+          img: ({ src, alt }) => <SecureImageComponent src={src} alt={alt} />,
           p: ({ children }) => (
             <p className={compact ? "m-0" : "my-2 first:mt-0 last:mb-0"}>
               {children}

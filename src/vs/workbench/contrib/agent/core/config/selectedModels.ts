@@ -1,3 +1,4 @@
+import { withAgentStateLock } from "../util/stateFile";
 import { ModelRole } from "agent-config";
 
 import { AgentConfig, ILLM } from "..";
@@ -10,69 +11,72 @@ export function rectifySelectedModelsFromGlobalContext(
   agentConfig: AgentConfig,
   profileId: string,
 ): AgentConfig {
-  const configCopy = { ...agentConfig };
+  return withAgentStateLock(() => {
+    const configCopy = { ...agentConfig, selectedModelByRole: { ...agentConfig.selectedModelByRole } };
 
-  const globalContext = new GlobalContext();
-  const currentSelectedModels = globalContext.get("selectedModelsByProfileId");
-  const currentForProfile: GlobalContextModelSelections =
-    currentSelectedModels?.[profileId] ?? {};
+    const globalContext = new GlobalContext();
+    const currentSelectedModels = globalContext.get("selectedModelsByProfileId");
+    const currentForProfile: GlobalContextModelSelections =
+      currentSelectedModels?.[profileId] ?? {};
 
-  let fellBack = false;
+    let fellBack = false;
 
-  const roles: ModelRole[] = [
-    "autocomplete",
-    "apply",
-    "edit",
-    "embed",
-    "rerank",
-    "chat",
-  ];
+    const roles: ModelRole[] = [
+      "autocomplete",
+      "apply",
+      "edit",
+      "embed",
+      "rerank",
+      "chat",
+      "subagent",
+    ];
 
-  for (const role of roles) {
-    let newModel: ILLM | null = null;
-    const currentSelection = currentForProfile[role] ?? null;
+    for (const role of roles) {
+      let newModel: ILLM | null = null;
+      const currentSelection = currentForProfile[role] ?? null;
 
-    if (currentSelection) {
-      const match = agentConfig.modelsByRole[role].find(
-        (m) => m.title === currentSelection,
-      );
-      if (match) {
-        newModel = match;
+      if (currentSelection) {
+        const match = agentConfig.modelsByRole[role].find(
+          (m) => m.title === currentSelection,
+        );
+        if (match) {
+          newModel = match;
+        }
       }
+
+      if (!newModel && agentConfig.modelsByRole[role].length > 0) {
+        newModel = agentConfig.modelsByRole[role][0];
+      }
+
+      if (!(currentSelection === (newModel?.title ?? null))) {
+        fellBack = true;
+      }
+
+      // Currently only check for configuration status for apply
+      if (
+        role === "apply" &&
+        newModel?.getConfigurationStatus() !== LLMConfigurationStatuses.VALID
+      ) {
+        continue;
+      }
+
+      configCopy.selectedModelByRole[role] = newModel;
     }
 
-    if (!newModel && agentConfig.modelsByRole[role].length > 0) {
-      newModel = agentConfig.modelsByRole[role][0];
+    // In the case shared config wasn't respected,
+    // Rewrite the shared config
+    if (fellBack) {
+      globalContext.update("selectedModelsByProfileId", {
+        ...currentSelectedModels,
+        [profileId]: Object.fromEntries(
+          Object.entries(configCopy.selectedModelByRole).map(([key, value]) => [
+            key,
+            value?.title ?? null,
+          ]),
+        ),
+      });
     }
 
-    if (!(currentSelection === (newModel?.title ?? null))) {
-      fellBack = true;
-    }
-
-    // Currently only check for configuration status for apply
-    if (
-      role === "apply" &&
-      newModel?.getConfigurationStatus() !== LLMConfigurationStatuses.VALID
-    ) {
-      continue;
-    }
-
-    configCopy.selectedModelByRole[role] = newModel;
-  }
-
-  // In the case shared config wasn't respected,
-  // Rewrite the shared config
-  if (fellBack) {
-    globalContext.update("selectedModelsByProfileId", {
-      ...currentSelectedModels,
-      [profileId]: Object.fromEntries(
-        Object.entries(configCopy.selectedModelByRole).map(([key, value]) => [
-          key,
-          value?.title ?? null,
-        ]),
-      ),
-    });
-  }
-
-  return configCopy;
+    return configCopy;
+  });
 }

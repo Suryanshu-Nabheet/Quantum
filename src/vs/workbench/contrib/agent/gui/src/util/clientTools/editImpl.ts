@@ -1,3 +1,4 @@
+import { resolveSafeEditUri } from "core/edit/searchAndReplace/validateArgs";
 import { resolveRelativePathInDir } from "core/util/ideUtils";
 import { v4 as uuid } from "uuid";
 import { applyForEditTool } from "../../redux/thunks/handleApplyStateUpdate";
@@ -42,13 +43,14 @@ export const editToolImpl: ClientToolImpl = async (
     if (!firstUriMatch) {
       throw new Error(`${filepath} does not exist`);
     }
+    const targetUri = await resolveSafeEditUri(firstUriMatch, extras.hostBridge.ide);
     const streamId = uuid();
     void extras.dispatch(
       applyForEditTool({
         streamId,
         text: args.changes,
         toolCallId,
-        filepath: firstUriMatch,
+        filepath: targetUri,
       }),
     );
     if (driverOwnsToolBatch()) {

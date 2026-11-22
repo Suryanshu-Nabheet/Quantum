@@ -50,7 +50,7 @@ export function groupModelsByProvider(
   return Array.from(byProvider.entries())
     .map(([providerId, groupModels]) => {
       const credentialModel =
-        groupModels.find((m) => !!m.apiKey || !!m.apiKeyLocation) ??
+        groupModels.find((m) => m.hasApiKey || !!m.apiKeyLocation) ??
         groupModels[0];
       return {
         providerId,

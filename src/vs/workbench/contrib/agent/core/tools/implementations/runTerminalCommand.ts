@@ -125,18 +125,6 @@ const getColorEnv = () => ({
   CLICOLOR_FORCE: "1",
 });
 
-const ENABLED_FOR_REMOTES = [
-  "",
-  "local",
-  "wsl",
-  "dev-container",
-  "devcontainer",
-  "ssh-remote",
-  "attached-container",
-  "codespaces",
-  "tunnel",
-];
-
 export const runTerminalCommandImpl: ToolImpl = async (args, extras) => {
   const command = getStringArg(args, "command");
   // Default to waiting for completion if not specified
@@ -146,19 +134,10 @@ export const runTerminalCommandImpl: ToolImpl = async (args, extras) => {
   const ideInfo = await extras.ide.getIdeInfo();
   const toolCallId = extras.toolCallId || "";
 
-  // When the extension host runs on Windows but connects to a remote workspace
-  // (WSL, Dev Container, SSH, etc.), we can't spawn shells directly — the
-  // platform is "win32" but commands should run in the remote's Linux/macOS.
-  // Use ide.runCommand() instead to let VS Code handle the remote execution.
-  const isWindowsHostWithRemote =
-    process.platform === "win32" && !["", "local"].includes(ideInfo.remoteName);
-  const useWslFromWindows =
-    isWindowsHostWithRemote && ideInfo.remoteName === "wsl";
-
-  if (
-    ENABLED_FOR_REMOTES.includes(ideInfo.remoteName) &&
-    (!isWindowsHostWithRemote || useWslFromWindows)
-  ) {
+  // The native worker is local. A remote workspace needs the workbench's
+  // integrated terminal so the process runs on the workspace host.
+  const useWslFromWindows = process.platform === "win32" && ideInfo.remoteName === "wsl";
+  if (["", "local"].includes(ideInfo.remoteName) || useWslFromWindows) {
     // For streaming output
     if (extras.onPartialOutput) {
       try {
@@ -201,6 +180,12 @@ export const runTerminalCommandImpl: ToolImpl = async (args, extras) => {
               childProc,
               extras.onPartialOutput,
               terminalOutput,
+              () => resolve([{
+                name: "Terminal",
+                description: "Terminal command output",
+                content: terminalOutput,
+                status: "Command moved to background. Further output will be ignored.",
+              }]),
             );
           }
 
@@ -506,48 +491,23 @@ export const runTerminalCommandImpl: ToolImpl = async (args, extras) => {
     }
   }
 
-  // Remote / Windows-host-with-remote: run in integrated terminal and capture output.
-  await extras.ide.runCommand(command, { terminalName: "Agent" });
+  const result = await extras.ide.runCommand(command, {
+    terminalName: "Agent",
+    reuseTerminal: false,
+    waitForCompletion,
+  });
 
-  if (!waitForCompletion) {
-    return [
-      {
-        name: "Terminal",
-        description: "Terminal command output",
-        content: "Command is running in the integrated terminal...",
-        status: "Command is running in the background...",
-      },
-    ];
+  let status = "Sent to terminal";
+  if (result?.exitCode !== undefined) {
+    status = result.exitCode === 0
+      ? "Command completed"
+      : `Command failed with exit code ${result.exitCode}`;
   }
 
-  const pollDelaysMs = [300, 500, 700, 1000, 1500];
-  let terminalOutput = "";
-  for (const delayMs of pollDelaysMs) {
-    await new Promise((resolve) => setTimeout(resolve, delayMs));
-    terminalOutput = await extras.ide.getTerminalContents();
-    if (terminalOutput.trim()) {
-      break;
-    }
-  }
-
-  if (terminalOutput.trim()) {
-    return [
-      {
-        name: "Terminal",
-        description: "Terminal command output",
-        content: terminalOutput,
-        status: "Command completed",
-      },
-    ];
-  }
-
-  return [
-    {
-      name: "Terminal",
-      description: "Terminal command output",
-      content:
-        "Command sent to the integrated terminal. Output could not be captured automatically — check the Agent terminal panel.",
-      status: "Sent to terminal",
-    },
-  ];
+  return [{
+    name: "Terminal",
+    description: "Terminal command output",
+    content: result?.output ?? "Command sent to the integrated Agent terminal.",
+    status,
+  }];
 };

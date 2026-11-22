@@ -13,7 +13,7 @@
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",
     "test:watch": "vitest",
-    "lint": "eslint --ext ts,tsx src --ignore-pattern '**/*.test.ts' --ignore-pattern '**/*.test.tsx' --ignore-pattern '**/test/**'"
+    "lint": "eslint --no-inline-config --config ../eslint.config.mjs src"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.0",

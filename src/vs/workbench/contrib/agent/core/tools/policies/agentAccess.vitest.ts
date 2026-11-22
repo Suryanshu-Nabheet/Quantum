@@ -3,6 +3,13 @@ import { BuiltInToolNames } from "../builtIn";
 import { applyAgentAccessModes } from "./agentAccess";
 
 describe("applyAgentAccessModes", () => {
+  it("requires review by default for commands flagged by terminal security", () => {
+    expect(applyAgentAccessModes(
+      BuiltInToolNames.RunTerminalCommand,
+      "allowedWithPermission",
+    )).toBe("allowedWithPermission");
+  });
+
   it("keeps hard disabled policies", () => {
     expect(
       applyAgentAccessModes(

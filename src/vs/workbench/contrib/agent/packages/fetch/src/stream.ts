@@ -7,6 +7,28 @@ export async function* toAsyncIterable(
   }
 }
 
+const MAX_ERROR_BODY_BYTES = 64 * 1024;
+
+async function readErrorBody(response: Response): Promise<string> {
+  if (!response.body) {
+    return response.statusText;
+  }
+  const decoder = new TextDecoder();
+  let remaining = MAX_ERROR_BODY_BYTES;
+  let text = "";
+  // Both node-fetch responses and native Node streams expose async iterators.
+  const body = response.body as unknown as AsyncIterable<Uint8Array | string>;
+  for await (const chunk of body) {
+    const bytes = typeof chunk === "string" ? Buffer.from(chunk) : chunk;
+    text += decoder.decode(bytes.subarray(0, remaining), { stream: true });
+    if (bytes.length >= remaining) {
+      return text + decoder.decode() + "…";
+    }
+    remaining -= bytes.length;
+  }
+  return text + decoder.decode();
+}
+
 export async function* streamResponse(
   response: Response,
 ): AsyncGenerator<string> {
@@ -15,7 +37,7 @@ export async function* streamResponse(
   }
 
   if (response.status !== 200) {
-    throw new Error(await response.text());
+    throw new Error(await readErrorBody(response));
   }
 
   if (!response.body) {

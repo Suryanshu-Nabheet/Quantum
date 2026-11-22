@@ -1,6 +1,5 @@
 import ignore from "ignore";
 
-import { fileURLToPath } from "url";
 import { AgentError, AgentErrorReason } from "../util/errors";
 
 // Security-focused ignore patterns - these should always be excluded for security reasons
@@ -361,15 +360,7 @@ export function isSecurityConcern(filePathOrUri: string) {
     if (decodedUriPath === "..") {
       return true;
     }
-    if (/^file:\/\//i.test(filePathOrUri)) {
-      try {
-        filepath = fileURLToPath(filePathOrUri);
-      } catch {
-        return true;
-      }
-    } else {
-      filepath = decodedUriPath;
-    }
+    filepath = decodedUriPath;
   }
 
   // The ignore library expects a workspace-relative, slash-separated path.

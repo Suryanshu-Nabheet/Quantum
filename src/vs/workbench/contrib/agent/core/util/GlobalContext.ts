@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 
 import { MCPServer, ModelConfig, ModelRole } from "agent-config";
@@ -9,6 +10,7 @@ import {
 } from "../config/sharedConfig";
 
 import { getGlobalContextFilePath } from "./paths";
+import { withAgentStateLock, writeAtomically } from "./stateFile";
 
 export type GlobalContextModelSelections = Partial<
   Record<ModelRole, string | null>
@@ -37,6 +39,7 @@ export type GlobalContextType = {
   guiRules: StoredGuiRule[];
   /** Slash-command prompts configured through Settings (GUI). */
   guiPrompts: StoredGuiPrompt[];
+  hasMigratedLegacyGuiDefinitions: boolean;
 };
 
 export interface StoredGuiRule {
@@ -58,90 +61,94 @@ export interface StoredGuiPrompt {
   invokable?: boolean;
 }
 
+function readIfPresent(filepath: string): string | undefined {
+  try {
+    const fd = fs.openSync(filepath, "r");
+    try {
+      const stat = fs.fstatSync(fd);
+      if (stat.isFile() && process.platform !== "win32" && (stat.mode & 0o077)) {
+        fs.fchmodSync(fd, 0o600);
+      }
+      return fs.readFileSync(fd, "utf-8");
+    } finally {
+      fs.closeSync(fd);
+    }
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+      throw error;
+    }
+  }
+}
+
+function parseContext(data: string | undefined): Partial<GlobalContextType> | undefined {
+  if (data === undefined) {
+    return undefined;
+  }
+  try {
+    const value = JSON.parse(data);
+    return value && typeof value === "object" && !Array.isArray(value)
+      ? value
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function salvageContext(data: string): Partial<GlobalContextType> {
+  try {
+    const match = data.match(/"sharedConfig"\s*:\s*({[^}]*})/);
+    if (match) {
+      const sharedConfig = salvageSharedConfig(JSON.parse(match[1]));
+      if (Object.keys(sharedConfig).length > 0) {
+        return { sharedConfig };
+      }
+    }
+  } catch {
+    // The original bytes are retained for manual recovery.
+  }
+  return {};
+}
+
 /**
- * A way to persist global state
+ * Persists global Agent settings and retains the last readable version.
  */
 export class GlobalContext {
   update<T extends keyof GlobalContextType>(
     key: T,
     value: GlobalContextType[T],
   ) {
-    const filepath = getGlobalContextFilePath();
-    if (!fs.existsSync(filepath)) {
-      fs.writeFileSync(filepath, JSON.stringify({ [key]: value }, null, 2));
-    } else {
-      const data = fs.readFileSync(filepath, "utf-8");
-
-      let parsed;
-      try {
-        parsed = JSON.parse(data);
-      } catch (e: any) {
-        console.warn(
-          `Error updating global context, attempting to salvage security-sensitive values: ${e}`,
-        );
-
-        // Attempt to salvage security-sensitive values before deleting
-        let salvaged: Partial<GlobalContextType> = {};
-        try {
-          // Try to partially parse the corrupted data to extract sharedConfig
-          const match = data.match(/"sharedConfig"\s*:\s*({[^}]*})/);
-          if (match) {
-            const sharedConfigObj = JSON.parse(match[1]);
-            const salvagedSharedConfig = salvageSharedConfig(sharedConfigObj);
-            if (Object.keys(salvagedSharedConfig).length > 0) {
-              salvaged.sharedConfig = salvagedSharedConfig;
-            }
-          }
-        } catch {
-          // If salvage fails, proceed with empty salvaged object
+    return withAgentStateLock(() => {
+      const filepath = getGlobalContextFilePath();
+      const data = readIfPresent(filepath);
+      let context: Partial<GlobalContextType> = {};
+      if (data !== undefined) {
+        const parsed = parseContext(data);
+        if (parsed) {
+          writeAtomically(`${filepath}.bak`, data);
+          context = parsed;
+        } else {
+          writeAtomically(`${filepath}.corrupt-${randomUUID()}`, data);
+          context = parseContext(readIfPresent(`${filepath}.bak`)) ?? salvageContext(data);
+          console.warn("Recovered Agent settings after preserving the corrupted file.");
         }
-
-        // Delete the corrupted file and recreate it fresh
-        try {
-          fs.unlinkSync(filepath);
-        } catch (deleteError) {
-          console.warn(
-            `Error deleting corrupted global context file: ${deleteError}`,
-          );
-        }
-
-        // Recreate the file with salvaged values plus the new value
-        const newData = { ...salvaged, [key]: value };
-
-        fs.writeFileSync(filepath, JSON.stringify(newData, null, 2));
-        return;
       }
-
-      parsed[key] = value;
-      fs.writeFileSync(filepath, JSON.stringify(parsed, null, 2));
-    }
+      context[key] = value;
+      writeAtomically(filepath, JSON.stringify(context, null, 2));
+    });
   }
 
   get<T extends keyof GlobalContextType>(
     key: T,
   ): GlobalContextType[T] | undefined {
     const filepath = getGlobalContextFilePath();
-    if (!fs.existsSync(filepath)) {
-      return undefined;
-    }
-
-    const data = fs.readFileSync(filepath, "utf-8");
-    try {
-      const parsed = JSON.parse(data);
-      return parsed[key];
-    } catch (e: any) {
-      console.warn(
-        `Error parsing global context, deleting corrupted file: ${e}`,
-      );
-      // Delete the corrupted file so it can be recreated fresh
-      try {
-        fs.unlinkSync(filepath);
-      } catch (deleteError) {
-        console.warn(
-          `Error deleting corrupted global context file: ${deleteError}`,
-        );
+    const data = readIfPresent(filepath);
+    if (data !== undefined) {
+      const context = parseContext(data);
+      if (context) {
+        return context[key];
       }
-      return undefined;
+      console.warn("Agent settings are corrupted. Reading from the recovery copy.");
+      return (parseContext(readIfPresent(`${filepath}.bak`)) ?? salvageContext(data))[key];
     }
   }
 
@@ -163,10 +170,12 @@ export class GlobalContext {
   updateSharedConfig(
     newValues: Partial<SharedConfigSchema>,
   ): SharedConfigSchema {
-    const currentSharedConfig = this.getSharedConfig();
-    const updatedSharedConfig = { ...currentSharedConfig, ...newValues };
-    this.update("sharedConfig", updatedSharedConfig);
-    return updatedSharedConfig;
+    return withAgentStateLock(() => {
+      const currentSharedConfig = this.getSharedConfig();
+      const updatedSharedConfig = { ...currentSharedConfig, ...newValues };
+      this.update("sharedConfig", updatedSharedConfig);
+      return updatedSharedConfig;
+    });
   }
 
   updateSelectedModel(
@@ -174,14 +183,16 @@ export class GlobalContext {
     role: ModelRole,
     title: string | null,
   ): GlobalContextModelSelections {
-    const currentSelections = this.get("selectedModelsByProfileId") ?? {};
-    const forProfile = currentSelections[profileId] ?? {};
-    const newSelections = { ...forProfile, [role]: title };
+    return withAgentStateLock(() => {
+      const currentSelections = this.get("selectedModelsByProfileId") ?? {};
+      const forProfile = currentSelections[profileId] ?? {};
+      const newSelections = { ...forProfile, [role]: title };
 
-    this.update("selectedModelsByProfileId", {
-      ...currentSelections,
-      [profileId]: newSelections,
+      this.update("selectedModelsByProfileId", {
+        ...currentSelections,
+        [profileId]: newSelections,
+      });
+      return newSelections;
     });
-    return newSelections;
   }
 }

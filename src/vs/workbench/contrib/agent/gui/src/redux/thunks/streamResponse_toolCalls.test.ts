@@ -346,7 +346,7 @@ describe("streamResponseThunk - tool calls", () => {
       options: {
         tools: [grepTool],
       },
-    });
+    }, { signal: expect.any(AbortSignal) });
 
     expect(requestSpy).toHaveBeenCalledWith("tools/call", {
       toolCall: {
@@ -512,7 +512,7 @@ describe("streamResponseThunk - tool calls", () => {
         },
       ],
       options: { tools: [grepTool] },
-    });
+    }, { signal: expect.any(AbortSignal) });
 
     expect(mockHostBridgeManual.llmStreamChat).toHaveBeenCalledWith(
       {

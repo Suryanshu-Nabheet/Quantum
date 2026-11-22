@@ -51,9 +51,10 @@ export function HistoryTableRow({
   }, [sessionMetadata]);
 
   const shareSession = async (sessionId: string) => {
-    await hostBridge.request("session/share", {
-      sessionId,
-    });
+    const response = await hostBridge.request("history/share", { id: sessionId });
+    if (response.status === "error") {
+      await hostBridge.ide.showToast("error", response.error);
+    }
   };
 
 

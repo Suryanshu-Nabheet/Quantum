@@ -1,6 +1,7 @@
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import React, { isValidElement } from "react";
 import ReactMarkdown from "react-markdown";
+import { SecureImageComponent } from "../StyledMarkdownPreview/SecureImageComponent";
 import styled from "styled-components";
 import {
   CloseButton,
@@ -69,7 +70,11 @@ const TextDialog = (props: TextDialogProps) => {
         </CloseButton>
 
         {typeof props.message === "string" ? (
-          <ReactMarkdown>{props.message || ""}</ReactMarkdown>
+          <ReactMarkdown components={{
+            img: ({ src, alt }) => <SecureImageComponent src={src} alt={alt} />,
+          }}>
+            {props.message}
+          </ReactMarkdown>
         ) : !React.isValidElement(props.message) ? null : (
           props.message
         )}

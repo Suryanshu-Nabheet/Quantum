@@ -38,5 +38,11 @@ describe("HostBridge request lifecycle", () => {
 
     expect(result.done).toBe(true);
     expect(postMessage).toHaveBeenCalledTimes(2);
+    const [streamRequest, abortRequest] = postMessage.mock.calls.map(([message]) => message);
+    expect(abortRequest).toMatchObject({
+      messageType: "abort",
+      data: streamRequest.messageId,
+    });
+    expect(abortRequest.messageId).not.toBe(streamRequest.messageId);
   });
 });

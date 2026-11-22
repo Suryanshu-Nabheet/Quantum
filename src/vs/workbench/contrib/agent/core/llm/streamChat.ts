@@ -10,6 +10,7 @@ import { renderChatMessage } from "../util/messageContent";
 import {
   buildStreamContinuationMessages,
   MAX_STREAM_CHAT_CONTINUATIONS,
+  isTruncatedFinishReason,
   mergeAssistantStreamChunk,
   shouldContinueLlmStream,
 } from "./streamContinuation.js";
@@ -197,10 +198,14 @@ export async function* llmStreamChat(
         return combinedPromptLog;
       }
 
-      if (
-        continuation >= MAX_STREAM_CHAT_CONTINUATIONS ||
-        !shouldContinueLlmStream(segmentLog, partialAssistant)
-      ) {
+      const needsContinuation = shouldContinueLlmStream(segmentLog, partialAssistant);
+      if (continuation >= MAX_STREAM_CHAT_CONTINUATIONS || !needsContinuation) {
+        if (needsContinuation && isTruncatedFinishReason(segmentLog.finishReason)) {
+          yield {
+            role: "assistant",
+            content: "\n\n[Response truncated at the continuation limit.]",
+          };
+        }
         if (getReadResponseTTS(config) && combinedPromptLog.completion) {
           void TTS.read(combinedPromptLog.completion);
         }

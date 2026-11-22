@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 // core/util/GlobalContext.test.ts
 import fs from "node:fs";
+import path from "node:path";
 import { GlobalContext } from "./GlobalContext";
 import { getGlobalContextFilePath } from "./paths";
 
@@ -18,8 +19,12 @@ describe("GlobalContext", () => {
 
   afterEach(() => {
     // Clean up
-    if (fs.existsSync(globalContextFilePath)) {
-      fs.unlinkSync(globalContextFilePath);
+    fs.rmSync(globalContextFilePath, { force: true });
+    fs.rmSync(`${globalContextFilePath}.bak`, { force: true });
+    for (const name of fs.readdirSync(path.dirname(globalContextFilePath))) {
+      if (name.startsWith(`${path.basename(globalContextFilePath)}.corrupt-`)) {
+        fs.rmSync(path.join(path.dirname(globalContextFilePath), name));
+      }
     }
   });
 
@@ -70,7 +75,7 @@ describe("GlobalContext", () => {
     expect(value).toBeUndefined();
     expect(consoleWarnMock).toHaveBeenCalledWith(
       expect.stringContaining(
-        "Error parsing global context, deleting corrupted file",
+        "Agent settings are corrupted",
       ),
     );
 
@@ -78,7 +83,7 @@ describe("GlobalContext", () => {
     consoleWarnMock.mockRestore();
   });
 
-  it("should delete corrupted file on get and allow fresh start", () => {
+  it("should preserve corrupted bytes and allow a fresh start", () => {
     // Write invalid JSON to the file
     fs.writeFileSync(globalContextFilePath, "{ invalid json }");
     expect(fs.existsSync(globalContextFilePath)).toBe(true);
@@ -87,12 +92,11 @@ describe("GlobalContext", () => {
       .spyOn(console, "warn")
       .mockImplementation(() => {});
 
-    // Try to get a value - this should delete the corrupted file
+    // Reading a corrupt file leaves the original bytes available.
     const value = globalContext.get("indexingPaused");
     expect(value).toBeUndefined();
 
-    // File should be deleted after corruption is detected
-    expect(fs.existsSync(globalContextFilePath)).toBe(false);
+    expect(fs.readFileSync(globalContextFilePath, "utf-8")).toBe("{ invalid json }");
 
     // Now we should be able to update and get values normally
     globalContext.update("indexingPaused", true);
@@ -116,7 +120,7 @@ describe("GlobalContext", () => {
 
     expect(consoleWarnMock).toHaveBeenCalledWith(
       expect.stringContaining(
-        "Error updating global context, attempting to salvage security-sensitive values",
+        "Recovered Agent settings",
       ),
     );
 
@@ -128,7 +132,7 @@ describe("GlobalContext", () => {
     consoleWarnMock.mockRestore();
   });
 
-  it("should delete and recreate corrupted file on update", () => {
+  it("should archive and replace corrupted file on update", () => {
     // Write invalid JSON to the file
     fs.writeFileSync(globalContextFilePath, "{ invalid json }");
     expect(fs.existsSync(globalContextFilePath)).toBe(true);
@@ -137,7 +141,7 @@ describe("GlobalContext", () => {
       .spyOn(console, "warn")
       .mockImplementation(() => {});
 
-    // Try to update - this should delete the corrupted file and recreate it
+    // Updating preserves the damaged input before replacing the primary file.
     globalContext.update("indexingPaused", true);
 
     // File should still exist but with valid JSON now
@@ -174,6 +178,24 @@ describe("GlobalContext", () => {
     expect(globalContext.get("showConfigUpdateToast")).toBeUndefined();
   });
 
+  it("recovers the previous settings and preserves the damaged bytes on update", () => {
+    globalContext.update("indexingPaused", true);
+    globalContext.update("indexingPaused", false);
+    fs.writeFileSync(globalContextFilePath, "{ damaged");
+
+    expect(globalContext.get("indexingPaused")).toBe(true);
+    globalContext.update("showConfigUpdateToast", true);
+
+    const directory = path.dirname(globalContextFilePath);
+    const archived = fs.readdirSync(directory).filter(
+      (name) => name.startsWith(`${path.basename(globalContextFilePath)}.corrupt-`),
+    );
+    expect(archived).toHaveLength(1);
+    expect(fs.readFileSync(path.join(directory, archived[0]), "utf-8")).toBe("{ damaged");
+    expect(globalContext.get("indexingPaused")).toBe(true);
+    expect(globalContext.get("showConfigUpdateToast")).toBe(true);
+  });
+
   describe("salvage functionality", () => {
 
 
@@ -192,7 +214,7 @@ describe("GlobalContext", () => {
 
       expect(consoleWarnMock).toHaveBeenCalledWith(
         expect.stringContaining(
-          "Error updating global context, attempting to salvage security-sensitive values",
+          "Recovered Agent settings",
         ),
       );
 
