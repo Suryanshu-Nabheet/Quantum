@@ -26,11 +26,17 @@ Quantum is open source and licensed under the [MIT License](LICENSE.txt).
     <td width="50%" valign="top">
       <h3>Work in your codebase</h3>
       <p>Ask the Agent to inspect, explain, and modify your project with the active workspace and relevant files in context.</p>
-      <img src="./assets/screenshots/agent-working-in-codebase.png" alt="Agent working in the open codebase" width="100%" />
     </td>
     <td width="50%" valign="top">
       <h3>Connect the browser to your work</h3>
       <p>Use the integrated browser and element picker to give the Agent direct page context for debugging and implementation.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="./assets/screenshots/agent-working-in-codebase.png" alt="Agent working in the open codebase" width="100%" />
+    </td>
+    <td width="50%" valign="top">
       <img src="./assets/screenshots/agent-browser-integration.png" alt="Agent working with an attached browser element" width="100%" />
     </td>
   </tr>
@@ -38,11 +44,17 @@ Quantum is open source and licensed under the [MIT License](LICENSE.txt).
     <td width="50%" valign="top">
       <h3>Plan Mode</h3>
       <p>Plan Mode helps you organize and break down complex tasks with the Agent. It allows the Agent to generate step-by-step plans for your goals, making it easier to tackle large code changes or debugging sessions by providing a clear summary and actionable checklist.</p>
-      <img src="./assets/screenshots/plan-mode.png" alt="Plan mode summary card in Quantum" width="100%" />
     </td>
     <td width="50%" valign="top">
       <h3>Agent to-do list</h3>
       <p>Work through complex tasks with the built-in AI-powered to-do list. Track, edit, and collaborate on steps with the agent as you go.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="./assets/screenshots/plan-mode.png" alt="Plan mode summary card in Quantum" width="100%" />
+    </td>
+    <td width="50%" valign="top">
       <img src="./assets/screenshots/todo.png" alt="Agent to-do list in Quantum" width="100%" />
     </td>
   </tr>
@@ -50,9 +62,19 @@ Quantum is open source and licensed under the [MIT License](LICENSE.txt).
     <td width="50%" valign="top">
       <h3>Web search</h3>
       <p>Search the web from the Agent and use source links to investigate a question.</p>
+    </td>
+    <td width="50%" valign="top">
+      <h3>Attach context</h3>
+      <p>Attach the context your task needs, including code, files, images, videos, PDFs, Git changes, terminal output, browser content, and more.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
       <img src="./assets/screenshots/web-search.png" alt="Agent using web search in Quantum" width="100%" />
     </td>
-    <td width="50%"></td>
+    <td width="50%" valign="top">
+      <img src="./assets/screenshots/@-attach.png" alt="Context menu showing the types of content users can attach to the Agent" width="100%" />
+    </td>
   </tr>
 </table>
 
