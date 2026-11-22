@@ -7,6 +7,7 @@ export const writeTodosTool: GetTool = async () => ({
   wouldLikeTo: "update the todo list",
   isCurrently: "updating the todo list",
   hasAlready: "updated the todo list",
+  toolCallIcon: "ListBulletIcon",
   group: BUILT_IN_GROUP_NAME,
   readonly: false,
   function: {

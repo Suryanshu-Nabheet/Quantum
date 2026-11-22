@@ -3,11 +3,9 @@ import {
   ContextItem,
   ContextItemWithId,
   ToolCallState,
-  ToolStatus,
 } from "core";
 import { ComponentType, SVGProps } from "react";
-import { vscButtonBackground } from "../../../components";
-import Spinner from "../../../components/gui/Spinner";
+import { BuiltInToolNames } from "core/tools/builtIn";
 
 // Helper function to determine the intro verb based on tool call status
 export function getStatusIntro(
@@ -67,19 +65,59 @@ export function getIconByName(name: string): Icon | null {
   return null;
 }
 
-export function getStatusIcon(state: ToolStatus) {
-  switch (state) {
-    case "generating":
-    case "calling":
-      return <Spinner />;
-    case "generated":
-      return <Icons.ArrowRightIcon color={vscButtonBackground} />;
-    case "done":
-      return <Icons.CheckIcon className="text-success" />;
-    case "canceled":
-    case "errored":
-      return <Icons.XMarkIcon className="text-error" />;
+export function getToolCallIcon(
+  toolName?: string,
+  group?: string,
+  configuredIcon?: string,
+): Icon {
+  if (configuredIcon) {
+    const configured = getIconByName(configuredIcon);
+    if (configured) return configured;
   }
+
+  const iconByTool: Record<string, IconName> = {
+    [BuiltInToolNames.ReadFile]: "DocumentIcon",
+    [BuiltInToolNames.ReadFileRange]: "DocumentTextIcon",
+    [BuiltInToolNames.ReadCurrentlyOpenFile]: "DocumentTextIcon",
+    [BuiltInToolNames.CreateNewFile]: "DocumentPlusIcon",
+    [BuiltInToolNames.EditExistingFile]: "PencilSquareIcon",
+    [BuiltInToolNames.SingleFindAndReplace]: "MagnifyingGlassIcon",
+    [BuiltInToolNames.MultiEdit]: "PencilSquareIcon",
+    [BuiltInToolNames.RunTerminalCommand]: "CommandLineIcon",
+    [BuiltInToolNames.GrepSearch]: "MagnifyingGlassIcon",
+    [BuiltInToolNames.FileGlobSearch]: "MagnifyingGlassIcon",
+    [BuiltInToolNames.ViewDiff]: "CodeBracketIcon",
+    [BuiltInToolNames.LSTool]: "FolderIcon",
+    [BuiltInToolNames.CreateRuleBlock]: "PencilIcon",
+    [BuiltInToolNames.RequestRule]: "DocumentMagnifyingGlassIcon",
+    [BuiltInToolNames.ReadSkill]: "BookOpenIcon",
+    [BuiltInToolNames.WriteTodos]: "ListBulletIcon",
+    [BuiltInToolNames.CreatePlan]: "ClipboardDocumentListIcon",
+    open_browser_page: "GlobeAltIcon",
+    list_open_pages: "RectangleStackIcon",
+    close_browser_page: "GlobeAltIcon",
+    read_page: "DocumentTextIcon",
+    screenshot_page: "CameraIcon",
+    navigate_page: "GlobeAltIcon",
+    click_element: "CursorArrowRaysIcon",
+    type_in_page: "PencilSquareIcon",
+    hover_element: "EyeIcon",
+    drag_element: "ArrowsPointingOutIcon",
+    run_playwright_code: "CodeBracketIcon",
+    handle_dialog: "ChatBubbleLeftRightIcon",
+  };
+
+  const iconName = toolName ? iconByTool[toolName] : undefined;
+  if (iconName) return getIconByName(iconName) ?? undefined;
+
+  const normalizedGroup = group?.toLowerCase() ?? "";
+  if (normalizedGroup.includes("browser")) {
+    return getIconByName("GlobeAltIcon") ?? undefined;
+  }
+  if (normalizedGroup.includes("mcp")) {
+    return getIconByName("PuzzlePieceIcon") ?? undefined;
+  }
+  return getIconByName("WrenchScrewdriverIcon") ?? undefined;
 }
 
 export function toolCallStateToContextItems(

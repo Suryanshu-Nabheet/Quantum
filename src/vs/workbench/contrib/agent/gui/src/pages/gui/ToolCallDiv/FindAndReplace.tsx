@@ -17,7 +17,7 @@ import {
 } from "../../../redux/selectors/selectToolCalls";
 import { cn } from "../../../util/cn";
 import { highlightLines, languageFromPath, ThemedCode } from "../../../util/highlightCode";
-import { getStatusIcon } from "./utils";
+import { getToolCallIcon } from "./utils";
 
 interface FindAndReplaceDisplayProps {
   fileUri?: string; // Added during args preprocessing
@@ -123,6 +123,10 @@ export function FindAndReplaceDisplay({
 
   const toolCallState = useAppSelector((state) =>
     selectToolCallById(state, toolCallId),
+  );
+  const ActionIcon = getToolCallIcon(
+    toolCallState?.toolCall?.function?.name,
+    "Built-In",
   );
   const showContent = isExpanded ?? toolCallState?.status === "generated";
   const config = useAppSelector((state) => state.config.config);
@@ -235,11 +239,26 @@ export function FindAndReplaceDisplay({
             }
           }}
         >
-          {getStatusIcon(status)}
+          {ActionIcon && (
+            <ActionIcon
+              aria-hidden="true"
+              focusable="false"
+              className={
+                status === "errored" || status === "canceled"
+                  ? "text-error h-4 w-4"
+                  : "text-description h-4 w-4"
+              }
+            />
+          )}
         </div>
       );
     }
-  }, [toolCallState?.status, toolCallState?.output]);
+  }, [
+    ActionIcon,
+    hostBridge,
+    toolCallState?.status,
+    toolCallState?.output,
+  ]);
 
   // Unified container component that always renders the same structure
   const renderContainer = (content: React.ReactNode) => (

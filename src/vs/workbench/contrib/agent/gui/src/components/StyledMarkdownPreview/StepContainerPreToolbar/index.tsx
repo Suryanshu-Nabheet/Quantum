@@ -5,7 +5,7 @@ import { useContext, useEffect, useMemo, useState } from "react";
 import { HostBridgeContext } from "../../../context/HostBridge";
 import { useHostBridgeRequest } from "../../../hooks/useHostBridgeRequest";
 import { useWebviewListener } from "../../../hooks/useWebviewListener";
-import { getStatusIcon } from "../../../pages/gui/ToolCallDiv/utils";
+import { getToolCallIcon } from "../../../pages/gui/ToolCallDiv/utils";
 import { useAppSelector } from "../../../redux/hooks";
 import { selectToolCallById } from "../../../redux/selectors/selectToolCalls";
 import {
@@ -89,6 +89,13 @@ export function StepContainerPreToolbar({
   const toolCallState = useAppSelector((state) =>
     forceToolCallId ? selectToolCallById(state, forceToolCallId) : undefined,
   );
+  const ToolActionIcon = toolCallState
+    ? getToolCallIcon(
+        toolCallState.toolCall.function?.name,
+        toolCallState.tool?.group,
+        toolCallState.tool?.toolCallIcon,
+      )
+    : undefined;
 
   const toolCallStatusIcon =
     showToolCallStatusIcon &&
@@ -106,7 +113,18 @@ export function StepContainerPreToolbar({
           }
         }}
       >
-        {getStatusIcon(toolCallState.status)}
+        {ToolActionIcon && (
+          <ToolActionIcon
+            aria-hidden="true"
+            focusable="false"
+            className={
+              toolCallState.status === "errored" ||
+              toolCallState.status === "canceled"
+                ? "text-error h-4 w-4"
+                : "text-description h-4 w-4"
+            }
+          />
+        )}
       </div>
     ) : null;
 

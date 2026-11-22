@@ -601,7 +601,11 @@ export function Chat() {
                 </ErrorBoundary>
                 {turnTodos ? (
                   <div className={rendered ? "mt-3" : ""}>
-                    <TaskList todos={turnTodos} scroll={false} />
+                    <TaskList
+                      todos={turnTodos}
+                      scroll={false}
+                      collapseWhenComplete
+                    />
                   </div>
                 ) : null}
                 {index === history.length - 1 && <InlineErrorMessage />}

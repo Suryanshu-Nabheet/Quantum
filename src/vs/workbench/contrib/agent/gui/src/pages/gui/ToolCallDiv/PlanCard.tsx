@@ -1,4 +1,7 @@
-import { ArrowDownTrayIcon } from "@heroicons/react/24/outline";
+import {
+  ArrowDownTrayIcon,
+  ChevronDownIcon,
+} from "@heroicons/react/24/outline";
 import ReactMarkdown from "react-markdown";
 import { SecureImageComponent } from "../../../components/StyledMarkdownPreview/SecureImageComponent";
 import remarkGfm from "remark-gfm";
@@ -190,6 +193,58 @@ function PlanTask({
         <PlanMarkdown source={text} compact />
       </div>
     </li>
+  );
+}
+
+export function PlanTodoList({
+  todos,
+}: {
+  todos: AgentPlanViewData["todos"];
+}) {
+  const total = todos.length;
+  const doneCount = todos.filter((todo) => todo.status === "done").length;
+  const allDone = total > 0 && doneCount === total;
+  const [collapsed, setCollapsed] = useState(allDone);
+
+  useEffect(() => {
+    setCollapsed(allDone);
+  }, [allDone]);
+
+  return (
+    <div
+      className="mt-1 min-w-0 rounded-md border border-solid px-2 py-2"
+      style={{
+        backgroundColor: "var(--vscode-editor-background)",
+        borderColor:
+          "var(--vscode-widget-border, var(--vscode-panel-border, rgba(128, 128, 128, 0.24)))",
+      }}
+    >
+      <button
+        type="button"
+        className="m-0 flex w-full items-center justify-between gap-3 border-0 bg-transparent p-0 text-left text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
+        aria-expanded={!collapsed}
+        aria-label={`${collapsed ? "Expand" : "Collapse"} plan to-dos (${doneCount} of ${total} complete)`}
+        onClick={() => setCollapsed((value) => !value)}
+      >
+        <span className="text-foreground font-medium">
+          {total} {total === 1 ? "To-do" : "To-dos"}
+        </span>
+        <span className="text-description inline-flex items-center gap-1.5">
+          {doneCount}/{total}
+          <ChevronDownIcon
+            aria-hidden="true"
+            className={`h-3.5 w-3.5 transition-transform ${collapsed ? "-rotate-90" : "rotate-0"}`}
+          />
+        </span>
+      </button>
+      {!collapsed && (
+        <ul className="m-0 mt-1 list-none p-0">
+          {todos.map((todo) => (
+            <PlanTask key={todo.id} text={todo.text} status={todo.status} />
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
@@ -425,30 +480,7 @@ export function PlanCard({
       >
         View full plan
       </button>
-      <div
-        className="mt-1 min-w-0 rounded-md border border-solid px-2 py-2"
-        style={{
-          backgroundColor: "var(--vscode-editor-background)",
-          borderColor:
-            "var(--vscode-widget-border, var(--vscode-panel-border, rgba(128, 128, 128, 0.24)))",
-        }}
-      >
-        <div className="mb-1 flex items-baseline justify-between gap-3">
-          <div className="text-foreground text-xs font-medium">
-            {planData.todos.length}{" "}
-            {planData.todos.length === 1 ? "To-do" : "To-dos"}
-          </div>
-          <div className="text-description text-xs">
-            {planData.todos.filter((todo) => todo.status === "done").length}/
-            {planData.todos.length}
-          </div>
-        </div>
-        <ul className="m-0 list-none p-0">
-          {planData.todos.map((todo) => (
-            <PlanTask key={todo.id} text={todo.text} status={todo.status} />
-          ))}
-        </ul>
-      </div>
+      <PlanTodoList todos={planData.todos} />
       <div className="flex justify-end pt-1">
         <BuildButton disabled={!ready || isStreaming} onClick={build} />
       </div>

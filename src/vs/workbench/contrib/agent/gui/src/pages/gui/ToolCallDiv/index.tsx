@@ -14,7 +14,7 @@ import { McpAppRenderer } from "./MCPAppRenderer";
 import { SimpleToolCallUI } from "./SimpleToolCallUI";
 import { ToolCallDisplay } from "./ToolCallDisplay";
 import { PlanCard } from "./PlanCard";
-import { getIconByName, getStatusIcon } from "./utils";
+import { getToolCallIcon } from "./utils";
 
 interface ToolCallDivProps {
   toolCallStates: ToolCallState[];
@@ -53,15 +53,24 @@ export function ToolCallDiv({
         (tool) => toolCallState.toolCall.function?.name === tool.function.name,
       ) ?? toolCallState.tool;
     const functionName = toolCallState.toolCall.function?.name;
-    const icon =
-      functionName && tool?.toolCallIcon
-        ? getIconByName(tool.toolCallIcon)
-        : undefined;
+    const icon = getToolCallIcon(functionName, tool?.group, tool?.toolCallIcon);
+    const ActionIcon = icon;
+    const iconNode = ActionIcon ? (
+      <ActionIcon
+        aria-hidden="true"
+        focusable="false"
+        className={`h-4 w-4 ${
+          toolCallState.status === "errored" || toolCallState.status === "canceled"
+            ? "text-error"
+            : "text-description"
+        }`}
+      />
+    ) : null;
 
     if (toolCallState.mcpUiState) {
       return (
         <ToolCallDisplay
-          icon={getStatusIcon(toolCallState.status)}
+          icon={iconNode}
           tool={tool}
           toolCallState={toolCallState}
           historyIndex={historyIndex}
@@ -71,7 +80,12 @@ export function ToolCallDiv({
       );
     }
 
-    if (icon) {
+    if (
+      tool?.toolCallIcon &&
+      functionName !== BuiltInToolNames.SingleFindAndReplace &&
+      functionName !== BuiltInToolNames.MultiEdit &&
+      functionName !== BuiltInToolNames.RunTerminalCommand
+    ) {
       return (
         <SimpleToolCallUI
           tool={tool}
@@ -103,7 +117,7 @@ export function ToolCallDiv({
 
     return (
       <ToolCallDisplay
-        icon={getStatusIcon(toolCallState.status)}
+        icon={iconNode}
         tool={tool}
         toolCallState={toolCallState}
         historyIndex={historyIndex}

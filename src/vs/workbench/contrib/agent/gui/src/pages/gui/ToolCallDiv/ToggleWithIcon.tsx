@@ -48,7 +48,13 @@ export function ToggleWithIcon({
       return null;
     }
 
-    return <Icon className="text-description h-4 w-4" />;
+    return (
+      <Icon
+        aria-hidden="true"
+        focusable="false"
+        className="text-description h-4 w-4"
+      />
+    );
   }
 
   return (

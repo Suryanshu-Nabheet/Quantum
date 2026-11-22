@@ -24,7 +24,7 @@ vi.mock("core/edit/searchAndReplace/performReplace", () => ({
 }));
 
 vi.mock("./utils", () => ({
-  getStatusIcon: vi.fn(() => <div data-testid="status-icon">✓</div>),
+  getToolCallIcon: vi.fn(() => () => <svg data-testid="action-icon" />),
 }));
 
 vi.mock("react", async () => {

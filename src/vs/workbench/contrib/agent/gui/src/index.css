@@ -432,6 +432,10 @@ body {
   display: block;
 }
 
+.tdl-completed-icon {
+  color: var(--vscode-testing-iconPassed, #73c991);
+}
+
 .tdl-pie {
   position: relative;
   display: block;
