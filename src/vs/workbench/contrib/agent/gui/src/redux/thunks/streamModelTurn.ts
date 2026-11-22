@@ -507,7 +507,10 @@ async function runStreamModelTurnLocked({
 
   dispatch(setIsPruned(didPrune));
   dispatch(setContextPercentage(contextPercentage));
-  dispatch(setContextUsage(contextUsage));
+  dispatch(setContextUsage(contextUsage ? {
+    ...contextUsage,
+    modelKey: JSON.stringify([selectedChatModel.provider, selectedChatModel.model, selectedChatModel.title]),
+  } : undefined));
 
   try {
     let gen = extra.hostBridge.llmStreamChat(

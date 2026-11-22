@@ -1831,6 +1831,8 @@ export interface CompiledMessagesResult {
 export interface ContextWindowUsage {
   inputTokens: number;
   contextLength: number;
+  /** Model whose tokenizer and context window produced this count. */
+  modelKey?: string;
 }
 
 export interface AddToChatPayload {

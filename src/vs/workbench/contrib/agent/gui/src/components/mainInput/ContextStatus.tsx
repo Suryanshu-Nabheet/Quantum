@@ -1,4 +1,3 @@
-import { useMemo, useRef } from "react";
 import { useAppSelector } from "../../redux/hooks";
 import { ToolTip } from "../gui/Tooltip";
 
@@ -31,31 +30,22 @@ function useContextStatus(): ContextStatusInfo | null {
     (state) => state.session.contextOutputIsEstimated ?? false,
   );
   const selectedChatModel = useAppSelector(
-    (state) => state.config.config.selectedModelByRole.chat?.model,
+    (state) => state.config.config.selectedModelByRole.chat,
   );
-  const previousHistoryLength = useRef<number | null>(null);
-  const previousSelectedChatModel = useRef<string | null>(null);
-  const history = useAppSelector((state) => state.session.history);
   const isPruned = useAppSelector((state) => state.session.isPruned);
-
-  const isDifferentModelAndSameHistory = useMemo(() => {
-    if (!selectedChatModel) {
-      return false;
-    }
-    if (previousHistoryLength.current !== history.length) {
-      previousHistoryLength.current = history.length;
-      previousSelectedChatModel.current = selectedChatModel;
-      return false;
-    }
-    return previousSelectedChatModel.current !== selectedChatModel;
-  }, [history.length, selectedChatModel]);
 
   if (
     !contextUsage ||
     !Number.isFinite(contextUsage.inputTokens) ||
     !Number.isFinite(contextUsage.contextLength) ||
     contextUsage.contextLength <= 0 ||
-    isDifferentModelAndSameHistory
+    (contextUsage.modelKey !== undefined &&
+      contextUsage.modelKey !==
+        JSON.stringify([
+          selectedChatModel?.provider,
+          selectedChatModel?.model,
+          selectedChatModel?.title,
+        ]))
   ) {
     return null;
   }
@@ -87,7 +77,8 @@ function ContextUsageTooltip({ status }: { status: ContextStatusInfo }) {
       <div className="flex items-baseline justify-between gap-3">
         <span className="font-medium">{percentLabel}</span>
         <span className="text-description-muted tabular-nums">
-          {formatCompactTokenCount(status.loadedTokens)} / {formatCompactTokenCount(status.contextLength)}
+          {formatCompactTokenCount(status.loadedTokens)} /{" "}
+          {formatCompactTokenCount(status.contextLength)}
         </span>
       </div>
       <div
@@ -126,7 +117,9 @@ function ContextUsageTooltip({ status }: { status: ContextStatusInfo }) {
       >
         <div className="flex justify-between gap-4">
           <span className="text-description-muted">Input</span>
-          <span className="tabular-nums">{status.inputTokens.toLocaleString()} tokens</span>
+          <span className="tabular-nums">
+            {status.inputTokens.toLocaleString()} tokens
+          </span>
         </div>
         <div className="flex justify-between gap-4">
           <span className="text-description-muted">Output</span>
@@ -135,12 +128,14 @@ function ContextUsageTooltip({ status }: { status: ContextStatusInfo }) {
         <div className="flex justify-between gap-4 font-medium">
           <span>Loaded context</span>
           <span className="tabular-nums">
-            {status.loadedTokens.toLocaleString()} / {status.contextLength.toLocaleString()}
+            {status.loadedTokens.toLocaleString()} /{" "}
+            {status.contextLength.toLocaleString()}
           </span>
         </div>
       </div>
       <div className="text-description-muted text-[11px] leading-snug">
-        Input is counted from the assembled prompt. Output uses provider usage when available and a model tokenizer estimate otherwise.
+        Based on the last assembled prompt. Output uses provider usage when
+        available and a model tokenizer estimate otherwise.
       </div>
     </div>
   );
@@ -149,8 +144,34 @@ function ContextUsageTooltip({ status }: { status: ContextStatusInfo }) {
 /** Compact context usage and model-window details for the composer toolbar. */
 const ContextStatus = () => {
   const status = useContextStatus();
+  const selectedModel = useAppSelector(
+    (state) => state.config.config.selectedModelByRole.chat,
+  );
   if (!status) {
-    return null;
+    const length = selectedModel?.contextLength;
+    const knownLength =
+      typeof length === "number" && Number.isFinite(length) && length > 0;
+    return (
+      <ToolTip
+        place="top"
+        content="Context usage will appear after the prompt is assembled."
+      >
+        <div
+          className="border-command-border text-description inline-flex shrink-0 items-center gap-1 rounded border border-solid px-1.5 py-0.5 text-[10px] leading-none tabular-nums"
+          role="img"
+          aria-label={
+            knownLength
+              ? `Context usage not yet calculated. Model window ${length.toLocaleString()} tokens.`
+              : "Context usage not yet calculated. Model window unknown."
+          }
+        >
+          <span>—</span>
+          <span className="text-description-muted">
+            {knownLength ? `—/${formatCompactTokenCount(length)}` : "Context"}
+          </span>
+        </div>
+      </ToolTip>
+    );
   }
 
   const progress = Math.min(100, Math.max(0, status.percent));
@@ -158,10 +179,7 @@ const ContextStatus = () => {
   const accessibleLabel = `${status.percent.toFixed(1)} percent of context used. ${status.loadedTokens.toLocaleString()} of ${status.contextLength.toLocaleString()} tokens loaded.`;
 
   return (
-    <ToolTip
-      place="top"
-      content={<ContextUsageTooltip status={status} />}
-    >
+    <ToolTip place="top" content={<ContextUsageTooltip status={status} />}>
       <div
         className={`border-command-border inline-flex shrink-0 items-center gap-1 rounded border border-solid px-1.5 py-0.5 text-[10px] leading-none tabular-nums ${toneClass}`}
         aria-label={accessibleLabel}
@@ -194,7 +212,8 @@ const ContextStatus = () => {
           />
         </svg>
         <span className="text-description-muted">
-          {formatCompactTokenCount(status.loadedTokens)}/{formatCompactTokenCount(status.contextLength)}
+          {formatCompactTokenCount(status.loadedTokens)}/
+          {formatCompactTokenCount(status.contextLength)}
         </span>
       </div>
     </ToolTip>

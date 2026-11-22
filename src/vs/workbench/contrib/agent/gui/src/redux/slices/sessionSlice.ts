@@ -380,6 +380,9 @@ export const sessionSlice = createSlice({
       const { index, editorState } = payload;
 
       if (state.history.length && index < state.history.length) {
+        state.contextUsage = undefined;
+        state.contextOutputTokens = undefined;
+        state.contextOutputIsEstimated = undefined;
         // Resubmission - update input message, truncate history after resubmit with new empty response message
         if (index % 2 === 1) {
           console.warn(
@@ -424,9 +427,6 @@ export const sessionSlice = createSlice({
       }
 
       state.isStreaming = true;
-      state.contextUsage = undefined;
-      state.contextOutputTokens = undefined;
-      state.contextOutputIsEstimated = undefined;
       state.agentStepDepth = 0;
     },
     truncateHistoryToMessage: (
