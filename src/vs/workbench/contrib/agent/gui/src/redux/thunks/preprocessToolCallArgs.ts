@@ -43,9 +43,9 @@ export async function preprocessToolCalls(
             contextItems: [
               {
                 icon: "problems",
-                name: "Invalid Tool Call",
+                name: "Could Not Prepare Tool Call",
                 description: "",
-                content: `${tcState.toolCall.function.name} failed because the arguments were invalid, with the following message: ${errorMessage}\n\nPlease try something else or request further instructions.`,
+                content: `The ${tcState.toolCall.function.name} tool call was not run because its arguments could not be prepared: ${errorMessage}\n\nCorrect the arguments or choose another available tool, then continue with the task. Do not repeat the same call unchanged.`,
                 hidden: false,
               },
             ],

@@ -84,11 +84,15 @@ export const PROVIDER_TOOL_SUPPORT: Record<string, (model: string) => boolean> =
       }
       return ["claude", "gemini"].some((val) => lowerCaseModel.includes(val));
     },
-    xAI: (model) => {
+    xai: (model) => {
       const lowerCaseModel = model.toLowerCase();
       return ["grok-3", "grok-4", "grok-4-1", "grok-code"].some((val) =>
         lowerCaseModel.includes(val),
       );
+    },
+    zai: (model) => {
+      const lowerCaseModel = model.toLowerCase();
+      return /(?:^|[/-])glm-(?:4\.[5-9]|[5-9](?:\.|-|$))/.test(lowerCaseModel);
     },
     bedrock: (model) => {
       if (model.includes("claude-2") || model.includes("claude-instant")) {
@@ -469,7 +473,8 @@ export function modelSupportsNativeTools(modelDescription: ModelDescription) {
     return false;
   }
 
-  const providerSupport = PROVIDER_TOOL_SUPPORT[modelDescription.provider];
+  const providerSupport =
+    PROVIDER_TOOL_SUPPORT[modelDescription.provider.toLowerCase()];
   if (!providerSupport) {
     return false;
   }

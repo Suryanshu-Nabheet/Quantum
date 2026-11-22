@@ -281,7 +281,7 @@ describe("PROVIDER_TOOL_SUPPORT", () => {
   });
 
   describe("xAI", () => {
-    const supportsFn = PROVIDER_TOOL_SUPPORT["xAI"];
+    const supportsFn = PROVIDER_TOOL_SUPPORT["xai"];
 
     it("should return true for Grok-3 models", () => {
       expect(supportsFn("grok-3")).toBe(true);
@@ -294,6 +294,18 @@ describe("PROVIDER_TOOL_SUPPORT", () => {
       expect(supportsFn("grok-4-fast-non-reasoning")).toBe(true);
       expect(supportsFn("grok-4-fast-reasoning")).toBe(true);
       expect(supportsFn("Grok-4-Fast")).toBe(true);
+    });
+  });
+
+  describe("Z.AI", () => {
+    const supportsFn = PROVIDER_TOOL_SUPPORT["zai"];
+
+    it("should enable native tools for GLM 4.5 and newer models", () => {
+      expect(supportsFn("glm-4.5")).toBe(true);
+      expect(supportsFn("glm-4.6")).toBe(true);
+      expect(supportsFn("glm-5.3")).toBe(true);
+      expect(supportsFn("zai-org/glm-5.3")).toBe(true);
+      expect(supportsFn("glm-4")).toBe(false);
     });
   });
 
@@ -345,6 +357,18 @@ describe("PROVIDER_TOOL_SUPPORT", () => {
           completionOptions: {},
         }),
       ).toBe(false);
+    });
+
+    it("matches provider names without case sensitivity", () => {
+      expect(
+        modelSupportsNativeTools({
+          title: "GLM 5.3",
+          model: "glm-5.3",
+          provider: "zAI",
+          underlyingProviderName: "zAI",
+          completionOptions: {},
+        }),
+      ).toBe(true);
     });
   });
 
