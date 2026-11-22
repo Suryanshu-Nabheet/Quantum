@@ -10,6 +10,7 @@ import { createRuleBlockImpl } from "./implementations/createRuleBlock";
 
 import { fileGlobSearchImpl } from "./implementations/globSearch";
 import { grepSearchImpl } from "./implementations/grepSearch";
+import { webSearchImpl } from "./implementations/webSearch";
 import { lsToolImpl } from "./implementations/lsTool";
 import { readCurrentlyOpenFileImpl } from "./implementations/readCurrentlyOpenFile";
 import { readFileImpl } from "./implementations/readFile";
@@ -203,6 +204,8 @@ export async function callBuiltInTool(
       return await createNewFileImpl(args, extras);
     case BuiltInToolNames.GrepSearch:
       return await grepSearchImpl(args, extras);
+    case BuiltInToolNames.WebSearch:
+      return await webSearchImpl(args, extras);
     case BuiltInToolNames.FileGlobSearch:
       return await fileGlobSearchImpl(args, extras);
     case BuiltInToolNames.RunTerminalCommand:

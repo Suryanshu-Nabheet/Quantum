@@ -10,6 +10,7 @@ export const getBaseToolDefinitions = () => [
   toolDefinitions.createNewFileTool,
   toolDefinitions.runTerminalCommandTool,
   toolDefinitions.globSearchTool,
+  toolDefinitions.webSearchTool,
   toolDefinitions.viewDiffTool,
   toolDefinitions.readCurrentlyOpenFileTool,
   toolDefinitions.lsTool,

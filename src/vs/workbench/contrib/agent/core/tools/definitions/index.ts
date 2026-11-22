@@ -5,6 +5,7 @@ export { editFileTool } from "./editFile";
 
 export { globSearchTool } from "./globSearch";
 export { grepSearchTool } from "./grepSearch";
+export { webSearchTool } from "./webSearch";
 export { lsTool } from "./ls";
 export { multiEditTool } from "./multiEdit";
 export { readCurrentlyOpenFileTool } from "./readCurrentlyOpenFile";

@@ -8,6 +8,7 @@ export enum BuiltInToolNames {
   CreateNewFile = "create_new_file",
   RunTerminalCommand = "run_terminal_command",
   GrepSearch = "grep_search",
+  WebSearch = "web_search",
   FileGlobSearch = "file_glob_search",
   ViewDiff = "view_diff",
   LSTool = "ls",

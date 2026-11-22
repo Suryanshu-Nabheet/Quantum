@@ -85,6 +85,7 @@ export function getToolCallIcon(
     [BuiltInToolNames.MultiEdit]: "PencilSquareIcon",
     [BuiltInToolNames.RunTerminalCommand]: "CommandLineIcon",
     [BuiltInToolNames.GrepSearch]: "MagnifyingGlassIcon",
+    [BuiltInToolNames.WebSearch]: "MagnifyingGlassIcon",
     [BuiltInToolNames.FileGlobSearch]: "MagnifyingGlassIcon",
     [BuiltInToolNames.ViewDiff]: "CodeBracketIcon",
     [BuiltInToolNames.LSTool]: "FolderIcon",
