@@ -45,3 +45,23 @@ Follow [AGENTS.md](../AGENTS.md) for the required Agent checks and desktop smoke
 ## Packaging and releases
 
 The [release workflow](../.github/workflows/release.yml) builds release assets from a version tag. It checks the tag against Quantum's configured release version. The separate [release builder](../build/quantum-release/README.md) documents its own preparation and packaging process.
+
+## Agent verification and desktop smoke
+
+For a change under `src/vs/workbench/contrib/agent/`, the repository instructions require the host and GUI typechecks and test suites before committing:
+
+```bash
+cd src/vs/workbench/contrib/agent
+npm run tsc:check
+npm test
+npm --prefix gui run tsc:check
+npm --prefix gui test
+```
+
+Build any local package you change with its `npm run build`. `npm run lint` checks the Agent source, and `npm run verify` runs the broader Agent verification matrix. Build the runtime and webview with `npm run build:agent`; the build script supports `SKIP_INSTALLS=true` when dependencies are already installed. Avoid running package builds concurrently with tests that consume their generated outputs.
+
+After the checks, launch a desktop build and exercise the affected workflow, including model and tool interactions when relevant. The repository's [launch skill](../.agents/skills/launch/SKILL.md) describes attaching to a debug port and capturing evidence. A successful typecheck or bundle does not prove a live provider, browser interaction, or desktop workflow works. Report any environment limitation rather than treating a skipped smoke as a pass.
+
+## Generated files and repository changes
+
+Source lives under `src/`; build output under `out/` is generated. Avoid committing generated output, local credentials, session data, or user-specific configuration. Keep the working tree's existing changes intact and inspect the staged diff before committing. The [contribution guide](../CONTRIBUTING.md) covers issue reports and pull requests.

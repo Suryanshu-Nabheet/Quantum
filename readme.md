@@ -65,7 +65,7 @@ Attach the context your task needs, including code, files, images, videos, PDFs,
 ## What’s inside
 
 - **A complete development environment** with code editing, search, Git, debugging, integrated terminals, and extensions from [Open VSX](https://open-vsx.org).
-- **Quantum Agent** for understanding a project, planning work, editing files, running tools, and reviewing changes. Configure model providers, permissions, rules, prompts, and MCP servers in Agent Settings.
+- **Quantum Agent** for understanding a project, planning work, editing files, running tools, and reviewing changes. Configure model providers, permissions, rules, prompts, and MCP servers in Settings.
 - **Inline editing and autocomplete** to work with AI directly in the editor.
 - **An integrated browser** with an element picker and tools that give the Agent context from pages you choose to share.
 
@@ -100,7 +100,10 @@ On Windows, run `scripts\setup.bat`. For subsequent launches, use `./scripts/set
 ## Documentation
 
 - [Getting started](docs/getting-started.md)
-- [Using the Agent and browser](docs/agent.md)
+- [Editor and workspace](docs/editor.md)
+- [Quantum Agent](docs/agent.md)
+- [Integrated browser](docs/browser.md)
+- [Troubleshooting](docs/troubleshooting.md)
 - [Architecture](docs/architecture.md)
 - [Development and verification](docs/development.md)
 - [Contributing](CONTRIBUTING.md)
