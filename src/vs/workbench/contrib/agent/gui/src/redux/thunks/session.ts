@@ -272,6 +272,7 @@ export const saveCurrentSession = createAsyncThunk<
       chatModelTitle: selectedChatModel?.title ?? null,
       todos: session.todos,
       planBrief: session.planBrief,
+      reviewEdits: session.codeBlockApplyStates.states.filter((edit) => edit.status === "review"),
     };
 
     if (refreshMetadata) {

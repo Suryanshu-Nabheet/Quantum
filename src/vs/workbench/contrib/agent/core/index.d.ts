@@ -228,6 +228,7 @@ export interface Session {
   todos?: TodoItem[];
   /** Optional: detailed plan the user approved for the current build */
   planBrief?: PlanBrief;
+  reviewEdits?: ApplyState[];
 }
 
 export interface PlanBrief {
@@ -1442,6 +1443,7 @@ export interface ApplyState {
   filepath?: string;
   fileContent?: string;
   originalFileContent?: string;
+  createdFile?: boolean;
   toolCallId?: string;
   autoFormattingDiff?: string;
   error?: string;

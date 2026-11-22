@@ -17,6 +17,7 @@ import { driverOwnsToolBatch, findToolCallById, logToolUsage } from "../util";
 import { appendToolResultMessage } from "../util/toolResultMessages";
 import { exitEdit } from "./edit";
 import { streamResponseAfterToolCall } from "./streamResponseAfterToolCall";
+import { scheduleDebouncedSessionSave } from "../util/debouncedSessionSave";
 
 export const handleApplyStateUpdate = createAsyncThunk<
   void,
@@ -145,7 +146,8 @@ export const handleApplyStateUpdate = createAsyncThunk<
               const stored = getState().session.codeBlockApplyStates.states.find(
                 (state) => state.streamId === applyState.streamId,
               );
-              const original = stored?.originalFileContent;
+              let original = stored?.originalFileContent;
+              let createdFile = false;
               if (!applyState.error && original !== undefined && applyState.filepath) {
                 for (const prior of getState().session.codeBlockApplyStates
                   .states) {
@@ -154,6 +156,8 @@ export const handleApplyStateUpdate = createAsyncThunk<
                     prior.streamId !== applyState.streamId &&
                     prior.status === "review"
                   ) {
+                    original = prior.originalFileContent;
+                    createdFile = prior.createdFile ?? false;
                     dispatch(
                       updateApplyState({
                         streamId: prior.streamId,
@@ -168,9 +172,11 @@ export const handleApplyStateUpdate = createAsyncThunk<
                     status: "review",
                     filepath: applyState.filepath,
                     originalFileContent: original,
+                    ...(createdFile ? { createdFile: true } : {}),
                     fileContent: applyState.fileContent ?? stored?.fileContent,
                   }),
                 );
+                scheduleDebouncedSessionSave(dispatch);
               }
             }
           }

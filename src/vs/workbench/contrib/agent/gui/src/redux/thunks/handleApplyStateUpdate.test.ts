@@ -396,6 +396,29 @@ describe("handleApplyStateUpdate", () => {
         fileContent: "after",
       });
     });
+
+    it("preserves the original baseline across repeated edits", async () => {
+      vi.mocked(findToolCallById).mockReturnValue({
+        toolCallId: "test-tool-call",
+        status: "calling",
+        ...UNUSED_TOOL_CALL_PARAMS,
+      });
+      mockGetState.mockReturnValue({
+        session: {
+          history: [],
+          codeBlockApplyStates: {
+            states: [
+              { streamId: "first", status: "review", filepath: "test.txt", originalFileContent: "before", fileContent: "middle", createdFile: true },
+              { streamId: "second", status: "closed", filepath: "test.txt", originalFileContent: "middle", fileContent: "after" },
+            ],
+          },
+        },
+      });
+      await handleApplyStateUpdate({ streamId: "second", toolCallId: "test-tool-call", status: "closed", filepath: "test.txt", fileContent: "after" })(mockDispatch, mockGetState, mockExtra);
+      expect(updateApplyState).toHaveBeenCalledWith({
+        streamId: "second", status: "review", filepath: "test.txt", originalFileContent: "before", fileContent: "after", createdFile: true,
+      });
+    });
   });
 
   describe("edge cases", () => {

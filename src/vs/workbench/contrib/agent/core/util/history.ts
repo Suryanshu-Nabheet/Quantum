@@ -129,6 +129,9 @@ export class HistoryManager {
       if (session.planBrief !== undefined) {
         orderedSession.planBrief = session.planBrief;
       }
+      if (session.reviewEdits?.length) {
+        orderedSession.reviewEdits = session.reviewEdits;
+      }
 
       writeAtomically(
         getSessionFilePath(session.sessionId),

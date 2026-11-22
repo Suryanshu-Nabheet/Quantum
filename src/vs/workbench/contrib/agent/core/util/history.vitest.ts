@@ -18,6 +18,7 @@ const testSession: Session = {
     overview: "Keep the Agent plan with its transcript.",
     approach: "Persist and reload the structured fields.",
   },
+  reviewEdits: [{ streamId: "edit-1", status: "review", filepath: "file.txt", originalFileContent: "before", fileContent: "after" }],
 };
 
 describe("No sessions have been created", () => {

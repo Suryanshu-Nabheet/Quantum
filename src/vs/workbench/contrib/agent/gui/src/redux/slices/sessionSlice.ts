@@ -819,6 +819,7 @@ export const sessionSlice = createSlice({
     },
     newSession: (state, { payload }: PayloadAction<Session | undefined>) => {
       state.lastSessionId = state.id;
+      state.codeBlockApplyStates = { states: payload?.reviewEdits ?? [], curIndex: 0 };
 
       state.streamAborter.abort();
       state.streamAborter = new AbortController();
@@ -954,6 +955,7 @@ export const sessionSlice = createSlice({
         applyState.fileContent = payload.fileContent ?? applyState.fileContent;
         applyState.originalFileContent =
           payload.originalFileContent ?? applyState.originalFileContent;
+        applyState.createdFile = payload.createdFile ?? applyState.createdFile;
       }
 
       if (payload.status === "done") {

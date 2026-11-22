@@ -1,6 +1,7 @@
 import { createAsyncThunk, unwrapResult } from "@reduxjs/toolkit";
 import { ContextItem, McpUiState } from "core";
-import { CLIENT_TOOLS_IMPLS } from "core/tools/builtIn";
+import { BuiltInToolNames, CLIENT_TOOLS_IMPLS } from "core/tools/builtIn";
+import { getStringArg } from "core/tools/parseArgs";
 import { AgentError, AgentErrorReason } from "core/util/errors";
 import { callClientTool } from "../../util/clientTools/callClientTool";
 import { selectSelectedChatModel } from "../slices/configSlice";
@@ -10,12 +11,14 @@ import {
   setInactive,
   setToolCallCalling,
   updateToolCallOutput,
+  updateApplyState,
 } from "../slices/sessionSlice";
 import { ThunkApiType } from "../store";
 import { findToolCallById, logToolUsage } from "../util";
 import { syncTodosFromToolCall } from "../util/syncTodos";
 import { appendToolResultMessage } from "../util/toolResultMessages";
 import { streamResponseAfterToolCall } from "./streamResponseAfterToolCall";
+import { scheduleDebouncedSessionSave } from "../util/debouncedSessionSave";
 
 export const callToolById = createAsyncThunk<
   void,
@@ -106,6 +109,23 @@ export const callToolById = createAsyncThunk<
         : undefined;
     }
     streamResponse = true;
+  }
+
+  if (!error && toolCallState.toolCall.function.name === BuiltInToolNames.CreateNewFile) {
+    const filepath = output?.find((item) => item.uri?.type === "file")?.uri?.value;
+    const contents = getStringArg(toolCallState.parsedArgs, "contents", true);
+    if (filepath) {
+      dispatch(updateApplyState({
+        streamId: toolCallId,
+        toolCallId,
+        filepath,
+        status: "review",
+        originalFileContent: "",
+        fileContent: contents,
+        createdFile: true,
+      }));
+      scheduleDebouncedSessionSave(dispatch);
+    }
   }
 
   if (error) {

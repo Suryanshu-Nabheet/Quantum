@@ -297,6 +297,8 @@ export class AgentWorkbenchHost extends Disposable {
 				return { handled: true, value: this.clipboardService.writeText(String(data?.text ?? '')) };
 			case 'applyToFile':
 				return { handled: true, value: this.prepareFileEdit(payload) };
+			case 'revertAgentEdit':
+				return { handled: true, value: this.revertAgentEdit(data) };
 			case 'acceptDiff':
 			case 'rejectDiff':
 				return { handled: true, value: this.finishFileEdit(data?.streamId, messageType === 'acceptDiff') };
@@ -322,6 +324,28 @@ export class AgentWorkbenchHost extends Disposable {
 
 	private sendApplyState(state: ApplyState): void {
 		this.agentService.sendGuiMessage('updateApplyState', state);
+	}
+
+	private async revertAgentEdit(data: Record<string, unknown> | undefined): Promise<void> {
+		if (typeof data?.filepath !== 'string' || typeof data.expectedContent !== 'string' ||
+			(data.createdFile !== true && typeof data.originalContent !== 'string')) {
+			throw new Error('Invalid Agent edit review.');
+		}
+		const resource = this.toResource(data.filepath);
+		const filepath = resource.toString();
+		const resolved = await this.invokeCoreRequest('apply/resolveFile', { filepath });
+		const current = await this.fileService.readFile(resource, { limits: { size: MAX_AGENT_DIFF_FILE_BYTES } });
+		if (resolved !== filepath || this.textFileService.isDirty(resource) || current.value.toString() !== data.expectedContent) {
+			throw new Error('This file has changed since the Agent edited it. Review the current file before reverting.');
+		}
+		if (data.createdFile === true) {
+			await this.fileService.del(resource, { useTrash: false });
+		} else {
+			await this.fileService.writeFile(resource, VSBuffer.fromString(data.originalContent as string), { etag: current.etag, mtime: current.mtime });
+		}
+		if (typeof data.streamId === 'string') {
+			this.fileEdits.delete(data.streamId);
+		}
 	}
 
 	private async prepareFileEdit(payload: unknown): Promise<void> {

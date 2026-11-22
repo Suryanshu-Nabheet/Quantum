@@ -1,24 +1,33 @@
 import { CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { ApplyState } from "core";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { HostBridgeContext, IHostBridge } from "../context/HostBridge";
 import { useAppDispatch } from "../redux/hooks";
 import type { AppDispatch } from "../redux/store";
 import { cancelToolCall, updateApplyState } from "../redux/slices/sessionSlice";
 import { getMetaKeyLabel } from "../util";
 import { ToolTip } from "./gui/Tooltip";
+import { scheduleDebouncedSessionSave } from "../redux/util/debouncedSessionSave";
 
 export async function revertReviewedEdit(
   hostBridge: IHostBridge,
   dispatch: AppDispatch,
   applyState: ApplyState,
 ) {
-  if (applyState.filepath && applyState.originalFileContent !== undefined) {
-    await hostBridge.request("overwriteFile", {
+  if (applyState.filepath && applyState.fileContent !== undefined &&
+      (applyState.createdFile || applyState.originalFileContent !== undefined)) {
+    const result = await hostBridge.request("revertAgentEdit", {
+      streamId: applyState.streamId,
       filepath: applyState.filepath,
-      prevFileContent: applyState.originalFileContent,
+      expectedContent: applyState.fileContent,
+      originalContent: applyState.originalFileContent,
+      createdFile: applyState.createdFile,
     });
-    await hostBridge.request("saveFile", { filepath: applyState.filepath });
+    if (result.status === "error") {
+      throw new Error(result.error);
+    }
+  } else {
+    throw new Error("The original file contents are unavailable for review.");
   }
   dispatch(
     updateApplyState({
@@ -26,6 +35,7 @@ export async function revertReviewedEdit(
       status: "closed",
     }),
   );
+  scheduleDebouncedSessionSave(dispatch);
 }
 
 export interface AcceptRejectAllButtonsProps {
@@ -44,38 +54,49 @@ export default function AcceptRejectAllButtons({
   );
   const hostBridge = useContext(HostBridgeContext);
   const dispatch = useAppDispatch();
+  const [error, setError] = useState<string>();
   async function handleAcceptOrReject(status: AcceptOrRejectOutcome) {
-    for (const applyState of pendingApplyStates) {
-      if (applyState.status === "review") {
-        if (status === "rejectDiff") {
-          await revertReviewedEdit(hostBridge, dispatch, applyState);
-        } else {
+    setError(undefined);
+    try {
+      for (const applyState of pendingApplyStates) {
+        if (applyState.status === "review") {
+          if (status === "rejectDiff") {
+            await revertReviewedEdit(hostBridge, dispatch, applyState);
+          } else {
+            const result = await hostBridge.request("acceptDiff", { streamId: applyState.streamId, filepath: applyState.filepath ?? "" });
+            if (result.status === "error") {
+              throw new Error(result.error);
+            }
+            dispatch(
+              updateApplyState({
+                streamId: applyState.streamId,
+                status: "closed",
+              }),
+            );
+            scheduleDebouncedSessionSave(dispatch);
+          }
+          continue;
+        }
+
+        if (status === "rejectDiff" && applyState.toolCallId) {
           dispatch(
-            updateApplyState({
-              streamId: applyState.streamId,
-              status: "closed",
+            cancelToolCall({
+              toolCallId: applyState.toolCallId,
             }),
           );
         }
-        continue;
+
+        hostBridge.post(status, {
+          filepath: applyState.filepath ?? "",
+          streamId: applyState.streamId,
+        });
       }
 
-      if (status === "rejectDiff" && applyState.toolCallId) {
-        dispatch(
-          cancelToolCall({
-            toolCallId: applyState.toolCallId,
-          }),
-        );
+      if (onAcceptOrReject) {
+        onAcceptOrReject(status);
       }
-
-      hostBridge.post(status, {
-        filepath: applyState.filepath ?? "",
-        streamId: applyState.streamId,
-      });
-    }
-
-    if (onAcceptOrReject) {
-      onAcceptOrReject(status);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
     }
   }
 
@@ -87,6 +108,7 @@ export default function AcceptRejectAllButtons({
       className="flex flex-row items-center justify-evenly gap-3 px-3"
       data-testid="accept-reject-all-buttons"
     >
+      {error && <span role="alert" className="text-error text-xs">{error}</span>}
       <ToolTip content={`Reject All (${rejectShortcut})`}>
         <button
           className="text-foreground flex cursor-pointer flex-row flex-wrap justify-center gap-1 border-none bg-transparent p-0 text-xs opacity-80 hover:opacity-100 hover:brightness-125"

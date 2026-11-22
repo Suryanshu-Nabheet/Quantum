@@ -21,6 +21,7 @@ export type ToIdeFromWebviewProtocol = ToIdeFromWebviewOrCoreProtocol & {
   openUrl: [string, void];
   applyToFile: [ApplyToFilePayload, void];
   overwriteFile: [{ filepath: string; prevFileContent: string | null }, void];
+  revertAgentEdit: [{ streamId: string; filepath: string; expectedContent: string; originalContent?: string; createdFile?: boolean }, void];
   showFile: [ShowFilePayload, void];
   toggleDevTools: [undefined, void];
   reloadWindow: [undefined, void];
