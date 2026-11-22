@@ -47,7 +47,7 @@ usage() {
 	echo ""
 	echo "Windows: use scripts\\setup.bat"
 	echo ""
-	echo "See README.md#getting-started for prerequisites and troubleshooting."
+	echo "See docs/development.md for prerequisites and troubleshooting."
 }
 
 for arg in "$@"; do

@@ -1,10 +1,10 @@
 # Agent instructions (Quantum)
 
-This repository is **Quantum**, an MIT-licensed fork of Visual Studio Code.
+This repository is **Quantum**, an MIT-licensed AI-powered coding agent, code editor, and development environment built on a Visual Studio Code foundation.
 
 For architecture, coding standards, validation, and layer rules, see [.github/copilot-instructions.md](.github/copilot-instructions.md).
 
-For human contributors, see [README.md](README.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
+For human contributors, see [readme.md](readme.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
 
 **First-time dev setup:** `./scripts/setup.sh` (macOS/Linux) or `./scripts/setup.bat` (Windows). After a successful build, relaunch with `./scripts/setup.sh --launch-only` or `VSCODE_SKIP_PRELAUNCH=1 ./scripts/code.sh`. Details: [scripts/README.md](scripts/README.md).
 

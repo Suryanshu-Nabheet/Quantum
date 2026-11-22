@@ -1,10 +1,10 @@
 # Agent — Quantum IDE
 
-Autonomous AI coding agent for **Quantum IDE** (VS Code–compatible editor). Chat, inline edit, tab autocomplete, and MCP-backed agents — BYOK providers, no Quantum cloud account.
+The Agent powers chat, inline editing, autocomplete, tools, and MCP workflows in **Quantum**, an AI-powered development environment built on a Visual Studio Code foundation. Configure local or remote model providers in Agent Settings.
 
 **Part of:** [Quantum](https://github.com/Suryanshu-Nabheet/Quantum) · **Founder:** Suryanshu Nabheet
 
-See the [Quantum IDE development guide](../../../../../README.md) for product setup and build guidance.
+See the [Quantum development guide](../../../../../docs/development.md) for product setup and build guidance.
 
 ## Layout
 
@@ -57,7 +57,6 @@ Open **Settings** with **⌘,** / **Ctrl+,**. Workbench preferences: **VS Code S
 - **Tab** — Tab model and ignored paths for inline completions
 - **Browser** — integrated browser tools (tabs, navigate, click, type, screenshot, Playwright)
 - **Rules** and **MCP**
-- Secrets: `~/.agent/.env` or workspace `.env`
 - **Project rules** — `AGENTS.md` / `AGENT.md` / `CLAUDE.md` in the workspace root
 
 User data: `~/.agent/` (settings, sessions, index, embedding models cache).

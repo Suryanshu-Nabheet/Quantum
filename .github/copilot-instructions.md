@@ -1,6 +1,6 @@
 # Quantum — Copilot Instructions
 
-> **Quantum** is an MIT-licensed, AI-native fork of Visual Studio Code ([Suryanshu-Nabheet/Quantum](https://github.com/Suryanshu-Nabheet/Quantum)). Product branding lives in `product.json`; dev user data uses `quantum-dev` / `~/.quantum-dev`. Internal module paths (`vs/*`) remain VS Code–compatible by design.
+> **Quantum** is an MIT-licensed AI-powered coding agent, code editor, and development environment built on a Visual Studio Code foundation ([Suryanshu-Nabheet/Quantum](https://github.com/Suryanshu-Nabheet/Quantum)). Product branding lives in `product.json`; dev user data uses `quantum-dev` / `~/.quantum-dev`. Internal module paths (`vs/*`) remain VS Code–compatible by design.
 
 ## Project Overview
 

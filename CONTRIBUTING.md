@@ -6,8 +6,8 @@ Thank you for your interest in improving Quantum.
 
 1. **Fork** [github.com/Suryanshu-Nabheet/Quantum](https://github.com/Suryanshu-Nabheet/Quantum) and create a branch from `main`.
 2. **Set up** the dev environment:
-   - **Recommended:** `./scripts/setup.sh` (macOS/Linux) or `scripts\setup.bat` (Windows) — see [README.md](README.md#getting-started) and [scripts/README.md](scripts/README.md).
-   - Dev builds store settings under `quantum-dev` (see README).
+   - **Recommended:** `./scripts/setup.sh` (macOS/Linux) or `scripts\setup.bat` (Windows) — see the [development guide](docs/development.md) and [scripts/README.md](scripts/README.md).
+   - Dev builds use a separate Quantum development profile.
 3. **Make focused changes** — keep PRs scoped to one concern when possible.
 4. **Verify** your change builds: `npm run compile` (or `npm run watch` during development). Type-check main sources with `npm run compile-check-ts-native` when you only change files under `src/`.
 5. **Open a pull request** with a clear description and test steps.

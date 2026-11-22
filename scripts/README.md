@@ -1,6 +1,6 @@
 # Development scripts
 
-Scripts for building and running Quantum from source. Prerequisites are in [README.md](../README.md#getting-started).
+Scripts for building and running Quantum from source. Prerequisites are in the [development guide](../docs/development.md).
 
 ## Quick start
 
