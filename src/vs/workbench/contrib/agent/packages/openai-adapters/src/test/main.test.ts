@@ -216,6 +216,20 @@ if (process.env.IGNORE_API_KEY_TESTS === "true") {
 }
 
 describe("Configuration", () => {
+  it("routes custom OpenAI-compatible providers through the OpenAI adapter", () => {
+    const custom = constructLlmApi({
+      provider: "custom-openai-local-server--abc123",
+      apiKey: "local-key",
+      apiBase: "http://localhost:1234/v1",
+    });
+
+    expect(custom).toBeInstanceOf(OpenAIApi);
+    expect((custom as OpenAIApi).openai.baseURL).toBe(
+      "http://localhost:1234/v1",
+    );
+    expect((custom as OpenAIApi).openai.apiKey).toBe("local-key");
+  });
+
   it("should configure DeepSeek OpenAI client with correct apiBase and apiKey", () => {
     const deepseek = constructLlmApi({
       provider: "deepseek",

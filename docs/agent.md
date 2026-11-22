@@ -4,7 +4,7 @@ Quantum Agent works alongside the editor. You can ask it to explain a codebase, 
 
 ## Configure models
 
-Open Agent Settings and add a provider and model. Assign models to the roles you want to use, such as chat or autocomplete. Quantum supports multiple remote providers and local models. Availability and capabilities depend on the provider and model you configure.
+Open Settings and add a provider and model. Assign models to the roles you want to use, such as chat or autocomplete. Quantum supports multiple remote providers and local models. Availability and capabilities depend on the provider and model you configure.
 
 ## Add context
 

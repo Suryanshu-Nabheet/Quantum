@@ -79,6 +79,10 @@ function createAiSdkApiForProvider(
 }
 
 export function constructLlmApi(config: LLMConfig): BaseLlmApi | undefined {
+  if (config.provider.startsWith("custom-openai-")) {
+    return new OpenAIApi({ ...config, provider: "openai" as const });
+  }
+
   if (process.env.AGENT_USE_AI_SDK) {
     if (["openai", "anthropic"].includes(config.provider)) {
       const aiSdkApi = createAiSdkApiForProvider(

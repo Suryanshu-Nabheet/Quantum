@@ -84,7 +84,15 @@ export async function getLLMClass(providerName: string): Promise<LLMClass | unde
   let loader = loadedProviders.get(key);
   if (!loader) {
     const load = providerLoaders[key];
-    loader = load ? load() : Promise.resolve(undefined);
+    loader = load
+      ? load()
+      : key.startsWith("custom-openai-")
+        ? import("./OpenAI").then(({ default: OpenAI }) => {
+            return class CustomOpenAI extends OpenAI {
+              static override providerName = key;
+            };
+          })
+        : Promise.resolve(undefined);
     loadedProviders.set(key, loader);
   }
   return loader;

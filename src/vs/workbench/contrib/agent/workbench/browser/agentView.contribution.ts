@@ -120,7 +120,7 @@ const guiActions: Array<{ id: string; title: string; messageType: string; data?:
 
 registerAction2(class OpenAgentSettingsAction extends Action2 {
 	constructor() {
-		super({ id: 'agent.openConfigPage', title: localize2('agent.openConfigPage', 'Open Agent Settings'), category: quantumCategory, f1: true });
+		super({ id: 'agent.openConfigPage', title: localize2('agent.openConfigPage', 'Open Settings'), category: quantumCategory, f1: true });
 	}
 	run(accessor: ServicesAccessor): void {
 		accessor.get(IAgentWorkbenchHost).openSettingsPage('/config');

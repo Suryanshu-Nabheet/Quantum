@@ -3,6 +3,7 @@ import {
   formatModelDisplayName,
   getModelDisplayId,
   getModelPickerProviderLabel,
+  getProviderDisplayName,
   getRawModelSlug,
 } from "./modelDisplay";
 
@@ -78,5 +79,13 @@ describe("getRawModelSlug", () => {
         model: "anthropic/claude-sonnet-4",
       }),
     ).toBe("anthropic/claude-sonnet-4");
+  });
+});
+
+describe("getProviderDisplayName", () => {
+  it("uses the configured name for custom OpenAI-compatible providers", () => {
+    expect(getProviderDisplayName("custom-openai-my-local-server--abc123")).toBe(
+      "My Local Server",
+    );
   });
 });

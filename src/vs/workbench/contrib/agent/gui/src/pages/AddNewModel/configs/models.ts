@@ -536,6 +536,19 @@ export const models: { [key: string]: ModelPackage } = {
     providerOptions: ["zAI"],
     isOpenSource: false,
   },
+  glm53: {
+    title: "GLM-5.3",
+    description: "Z.ai's GLM-5.3 model with a 1M-token context window",
+    refUrl: "https://z.ai/model-api",
+    params: {
+      title: "GLM-5.3",
+      model: "glm-5.3",
+      contextLength: 1_000_000,
+    },
+    icon: "zai.svg",
+    providerOptions: ["zAI"],
+    isOpenSource: false,
+  },
   glm47: {
     title: "GLM-4.7",
     description: "Z.ai's latest GLM-4.7 model with 128k context",

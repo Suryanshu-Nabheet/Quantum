@@ -154,6 +154,14 @@ describe("BaseLLM", () => {
     });
   });
   describe("default context length", () => {
+    test("uses the GLM-5.3 context window for compatible providers", () => {
+      class CompatibleProviderLLM extends BaseLLM {
+        static providerName = "openai";
+      }
+      const llm = new CompatibleProviderLLM({ model: "glm-5.3" });
+      expect(llm.contextLength).toBe(1_000_000);
+    });
+
     allModelProviders.map((modelProvider) => {
       const LLMClass = LLMClasses.find(
         (llm) => llm.providerName === modelProvider.id,

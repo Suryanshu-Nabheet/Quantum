@@ -1,5 +1,6 @@
 import { ModelDescription } from "core";
 import { getProviderPresentation } from "./providerPresentation";
+import { CUSTOM_OPENAI_PROVIDER_ID_PREFIX } from "./customProvider";
 
 const AUTODETECT = "autodetect";
 
@@ -161,6 +162,12 @@ export function getProviderDisplayName(
   const id = (providerId ?? "").trim();
   if (!id) {
     return "Provider";
+  }
+  if (id.toLowerCase().startsWith(CUSTOM_OPENAI_PROVIDER_ID_PREFIX)) {
+    const customName = id
+      .slice(CUSTOM_OPENAI_PROVIDER_ID_PREFIX.length)
+      .replace(/--[a-z0-9]+$/i, "");
+    return formatSlugSegment(customName) || "Custom provider";
   }
   const provider = getProviderPresentation(id);
   if (provider) {

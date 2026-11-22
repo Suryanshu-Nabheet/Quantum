@@ -114,7 +114,10 @@ function jsonModelToModelConfig(
     apiKey: model.apiKey,
     apiBase: model.apiBase,
     maxStopWords: model.maxStopWords,
-    defaultCompletionOptions: model.completionOptions,
+    defaultCompletionOptions: {
+      ...model.completionOptions,
+      ...(model.contextLength ? { contextLength: model.contextLength } : {}),
+    },
     roles,
     env: extractModelEnv(model),
   };
@@ -194,6 +197,10 @@ export function updateModel(
         const nextEnv = extractModelEnv(updates);
         return {
           ...m,
+          name:
+            updates.model && updates.model !== "AUTODETECT"
+              ? (updates.title ?? m.name)
+              : m.name,
           provider: updates.provider ?? m.provider,
           // Keep AUTODETECT so the provider continues to expand all models.
           model:
@@ -204,7 +211,13 @@ export function updateModel(
           apiBase: updates.apiBase ?? m.apiBase,
           maxStopWords: updates.maxStopWords ?? m.maxStopWords,
           defaultCompletionOptions:
-            updates.completionOptions ?? m.defaultCompletionOptions,
+            updates.completionOptions ??
+            (updates.contextLength
+              ? {
+                  ...m.defaultCompletionOptions,
+                  contextLength: updates.contextLength,
+                }
+              : m.defaultCompletionOptions),
           env: nextEnv ? { ...(m.env ?? {}), ...nextEnv } : m.env,
         };
       }),

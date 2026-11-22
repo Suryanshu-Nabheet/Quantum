@@ -3,6 +3,13 @@ import { ModelProvider } from "../types.js";
 export const zAI: ModelProvider = {
   models: [
     {
+      model: "glm-5.3",
+      displayName: "GLM-5.3",
+      contextLength: 1_000_000,
+      recommendedFor: ["chat"],
+      regex: /glm[-_. ]?5[-_. ]?3(?:$|[-_/ ])/i,
+    },
+    {
       model: "glm-5",
       displayName: "GLM-5",
       contextLength: 128000,

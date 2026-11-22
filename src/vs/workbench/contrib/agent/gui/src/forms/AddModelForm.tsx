@@ -16,6 +16,57 @@ import {
   providers,
 } from "../pages/AddNewModel/configs/providers";
 import { CONFIG_ROUTES } from "../util/navigation";
+import {
+  CUSTOM_OPENAI_PROVIDER_ID_PREFIX,
+  customOpenAIProviderId,
+  isCustomOpenAIProviderId,
+  normalizeCustomOpenAIApiBase,
+} from "../util/customProvider";
+
+const CUSTOM_PROVIDER_TITLE = "Custom provider";
+
+const customProvider: ProviderInfo = {
+  title: CUSTOM_PROVIDER_TITLE,
+  provider: `${CUSTOM_OPENAI_PROVIDER_ID_PREFIX}pending`,
+  description: "Connect an OpenAI-compatible API endpoint",
+  packages: [],
+  collectInputFor: [
+    {
+      inputType: "text",
+      key: "providerName",
+      label: "Provider name",
+      placeholder: "e.g. My local server",
+      required: true,
+    },
+    {
+      inputType: "text",
+      key: "apiBase",
+      label: "API base URL",
+      placeholder: "e.g. http://localhost:1234/v1",
+      required: true,
+    },
+    {
+      inputType: "password",
+      key: "apiKey",
+      label: "API key",
+      placeholder: "Leave blank if your server does not require a key",
+    },
+    {
+      inputType: "text",
+      key: "model",
+      label: "Model ID",
+      placeholder: "e.g. qwen2.5-coder-14b-instruct",
+      required: true,
+    },
+    {
+      inputType: "number",
+      key: "contextLength",
+      label: "Context window (tokens)",
+      placeholder: "e.g. 1000000",
+      required: false,
+    },
+  ],
+};
 
 export interface AddModelFormProps {
   onDone: (addedModel?: ModelDescription) => void;
@@ -46,9 +97,11 @@ export function AddModelForm({
   existingModel,
 }: AddModelFormProps) {
   const isEditing = !!existingModel;
+  const existingIsCustomProvider =
+    !!existingModel && isCustomOpenAIProviderId(existingModel.provider);
   const initialProvider =
     (existingModel && findProviderForModel(existingModel)) ??
-    providers["openai"]!;
+    (existingIsCustomProvider ? customProvider : providers["openai"]!);
 
   const [selectedProvider, setSelectedProvider] =
     useState<ProviderInfo>(initialProvider);
@@ -65,6 +118,13 @@ export function AddModelForm({
           region: existingModel.region ?? "",
           profile: existingModel.profile ?? "",
           accountId: existingModel.accountId ?? "",
+          providerName: existingIsCustomProvider
+            ? existingModel.title.split(" / ")[0]
+            : "",
+          model: existingIsCustomProvider ? existingModel.model : "",
+          contextLength: existingModel?.contextLength
+            ? String(existingModel.contextLength)
+            : "",
         }
       : {},
   });
@@ -90,6 +150,13 @@ export function AddModelForm({
       region: existingModel.region ?? "",
       profile: existingModel.profile ?? "",
       accountId: existingModel.accountId ?? "",
+      providerName: existingIsCustomProvider
+        ? existingModel.title.split(" / ")[0]
+        : "",
+      model: existingIsCustomProvider ? existingModel.model : "",
+      contextLength: existingModel.contextLength
+        ? String(existingModel.contextLength)
+        : "",
     };
     for (const input of selectedProvider.collectInputFor ?? []) {
       if (defaults[input.key] !== undefined && defaults[input.key] !== "") {
@@ -116,7 +183,8 @@ export function AddModelForm({
     .filter(([key]) => !["openai-aiohttp"].includes(key))
     .map(([, provider]) => provider)
     .filter((provider) => !!provider)
-    .map((provider) => provider!);
+    .map((provider) => provider!)
+    .concat(customProvider);
 
   const popularProviders = allProviders
     .filter((provider) => popularProviderTitles.includes(provider.title))
@@ -124,7 +192,9 @@ export function AddModelForm({
 
   const otherProviders = allProviders
     .filter((provider) => !popularProviderTitles.includes(provider.title))
-    .sort((a, b) => a.title.localeCompare(b.title));
+    .filter((provider) => provider.title !== CUSTOM_PROVIDER_TITLE)
+    .sort((a, b) => a.title.localeCompare(b.title))
+    .concat(customProvider);
 
   function existingValueFor(key: string): string | undefined {
     if (!existingModel) {
@@ -174,6 +244,61 @@ export function AddModelForm({
   }
 
   async function onSubmit() {
+    const isCustomProvider =
+      selectedProvider === customProvider ||
+      isCustomOpenAIProviderId(selectedProvider.provider);
+    if (isCustomProvider) {
+      formMethods.clearErrors("root");
+      try {
+        const providerName = (
+          formMethods.getValues("providerName") ?? ""
+        ).trim();
+        const modelId = (formMethods.getValues("model") ?? "").trim();
+        const apiBase = normalizeCustomOpenAIApiBase(
+          formMethods.getValues("apiBase") ?? "",
+        );
+        if (!providerName || !modelId) {
+          throw new Error("Enter a provider name and model ID.");
+        }
+        const provider = customOpenAIProviderId(providerName, apiBase);
+        const apiKey = formMethods.getValues("apiKey")?.trim();
+        const configuredContextLength = Number.parseInt(
+          formMethods.getValues("contextLength") ?? "",
+          10,
+        );
+        const model = {
+          provider,
+          underlyingProviderName: provider,
+          title: `${providerName} / ${modelId}`,
+          model: modelId,
+          apiBase,
+          ...(Number.isSafeInteger(configuredContextLength) &&
+          configuredContextLength > 0
+            ? { contextLength: configuredContextLength }
+            : {}),
+          ...(apiKey ? { apiKey } : {}),
+        };
+        const response = existingModel
+          ? await hostBridge.request("config/updateModel", {
+              title: existingModel.title,
+              model,
+            })
+          : await hostBridge.request("config/addModel", { model, roles });
+        if (response.status === "error") {
+          throw new Error(response.error);
+        }
+        onDone(existingModel ? undefined : (model as ModelDescription));
+        return;
+      } catch (error) {
+        formMethods.setError("root", {
+          type: "server",
+          message:
+            error instanceof Error ? error.message : "Failed to save provider.",
+        });
+        return;
+      }
+    }
+
     const reqInputFields: Record<string, string> = {};
     for (const input of selectedProvider.collectInputFor ?? []) {
       const watched = formMethods.watch(input.key);
@@ -238,11 +363,15 @@ export function AddModelForm({
 
   const extraFields = (selectedProvider.collectInputFor ?? []).filter(
     (field) =>
-      !Object.values(completionParamsInputs).some(
+      (selectedProvider === customProvider ||
+        !Object.values(completionParamsInputs).some(
         (input) => input.key === field.key,
-      ) &&
+      )) &&
       field.key !== "apiKey" &&
-      (field.required || isEditing || field.key === "apiBase"),
+      (field.required ||
+        isEditing ||
+        field.key === "apiBase" ||
+        (selectedProvider === customProvider && field.key === "contextLength")),
   );
 
   const needsApiKey =
@@ -272,7 +401,11 @@ export function AddModelForm({
                     (provider) => provider.title === val.title,
                   );
                   if (match) {
-                    setSelectedProvider(match);
+                    setSelectedProvider(
+                      match.title === CUSTOM_PROVIDER_TITLE
+                        ? customProvider
+                        : match,
+                    );
                   }
                 }}
                 topOptions={popularProviders}
@@ -346,6 +479,9 @@ export function AddModelForm({
                 <Input
                   id={field.key}
                   className="w-full"
+                  type={field.inputType === "number" ? "number" : "text"}
+                  min={field.inputType === "number" ? 1 : undefined}
+                  step={field.inputType === "number" ? 1 : undefined}
                   placeholder={`${field.placeholder ?? ""}`}
                   {...formMethods.register(field.key)}
                 />

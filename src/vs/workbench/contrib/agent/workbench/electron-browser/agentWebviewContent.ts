@@ -9,7 +9,7 @@ import { asWebviewUri, webviewGenericCspSource } from '../../../webview/common/w
 export interface IAgentWebviewContentOptions {
 	readonly guiRoot: URI;
 	readonly nonce: string;
-	readonly title: 'Quantum Agent' | 'Quantum Settings';
+	readonly title: 'Quantum Agent' | 'Settings';
 	readonly workspacePaths: readonly string[];
 	readonly page: 'sidebar' | 'settings';
 	readonly initialRoute?: string;

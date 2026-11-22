@@ -151,11 +151,11 @@ export class AgentWorkbenchHost extends Disposable {
 		const guiRoot = URI.file(`${this.nativeEnvironmentService.agentRuntimePath}/webview`);
 		const input = this.webviewWorkbenchService.openWebview({
 			providedViewType: 'quantum.agent.settings',
-			title: 'Quantum Settings',
+			title: 'Settings',
 			options: { retainContextWhenHidden: true, enableFindWidget: true },
 			contentOptions: { allowScripts: true, localResourceRoots: [guiRoot] },
 			extension: undefined,
-		}, 'quantum.agent.settings', 'Quantum Settings', Codicon.settingsGear, { group: ACTIVE_GROUP, preserveFocus: false });
+		}, 'quantum.agent.settings', 'Settings', Codicon.settingsGear, { group: ACTIVE_GROUP, preserveFocus: false });
 		this.settingsEditor = input;
 		const listener = input.webview.onMessage(event => void this.handleSettingsEditorMessage(input, event.message));
 		const disposeListener = input.onWillDispose(() => {
@@ -188,7 +188,7 @@ export class AgentWorkbenchHost extends Disposable {
 		return createAgentWebviewContent({
 			guiRoot,
 			nonce,
-			title: 'Quantum Settings',
+			title: 'Settings',
 			workspacePaths,
 			page: 'settings',
 			initialRoute: route,
