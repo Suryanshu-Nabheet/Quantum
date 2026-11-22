@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { spawn } from 'child_process';
-import { relative } from '../../../base/common/path.js';
+import { join, relative } from '../../../base/common/path.js';
 import { FileAccess } from '../../../base/common/network.js';
 import { StopWatch } from '../../../base/common/stopwatch.js';
 import { IEnvironmentService } from '../../environment/common/environment.js';
@@ -51,7 +51,7 @@ export class CSSDevelopmentService implements ICSSDevelopmentService {
 
 			const chunks: Buffer[] = [];
 			const basePath = FileAccess.asFileUri('').fsPath;
-			const process = spawn(rg.rgPath, ['-g', '**/*.css', '--files', '--no-ignore', basePath], {});
+			const process = spawn(rg.rgPath, ['-g', '**/*.css', '--files', '--no-ignore', join(basePath, 'vs')], {});
 
 			process.stdout.on('data', data => {
 				chunks.push(data);
