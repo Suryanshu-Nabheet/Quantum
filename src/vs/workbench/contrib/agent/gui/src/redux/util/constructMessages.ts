@@ -220,9 +220,8 @@ export function constructMessages(
     rulePolicies,
   });
 
-  // Keep the system message to the stable base (plus summary) so the
-  // provider prompt-cache prefix does not change when the matched rule set
-  // changes. Applied rules are injected into the latest user message instead.
+  // Keep rules in the system role. Putting them into the user message makes
+  // the model interpret repository instructions as text the user just said.
   let finalSystemMessage = baseSystemMessage ?? "";
   if (summaryContent) {
     finalSystemMessage = finalSystemMessage
@@ -230,23 +229,10 @@ export function constructMessages(
       : `Previous conversation summary:\n\n ${summaryContent}`;
   }
 
-  if (rulesText) {
-    const latestUserIndex = findLastIndex(
-      msgs,
-      (item) => item.message.role === "user",
-    );
-    if (latestUserIndex !== -1) {
-      const target = msgs[latestUserIndex];
-      const rulesPart = {
-        type: "text" as const,
-        text: `Applicable rules:\n\n${rulesText}\n\n`,
-      };
-      const existing = normalizeToMessageParts(target.message);
-      target.message = {
-        ...target.message,
-        content: [rulesPart, ...existing],
-      } as ChatMessage;
-    }
+  if (rulesText.trim()) {
+    finalSystemMessage = finalSystemMessage.trim()
+      ? `${finalSystemMessage}\n\nApplicable rules:\n\n${rulesText}`
+      : `Applicable rules:\n\n${rulesText}`;
   }
 
   if (finalSystemMessage.trim()) {

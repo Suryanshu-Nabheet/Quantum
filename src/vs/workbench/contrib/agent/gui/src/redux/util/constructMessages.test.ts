@@ -70,8 +70,7 @@ vi.mock("core/llm/rules/getSystemMessageWithRules", async (importOriginal) => {
         return true;
       });
 
-      // Mirror the real contract: system message is the base only; applied
-      // rule text is returned separately for injection into the user turn.
+      // Rule text is returned separately and added to a system-role message.
       const rulesText = appliedRules.map((rule) => rule.rule).join("\n\n");
       return {
         systemMessage: baseSystemMessage || "",
@@ -149,7 +148,6 @@ describe("constructMessages", () => {
     expect(messages[0].role).toBe("system");
     expect(messages[1].role).toBe("user");
     expect(messages[1].content).toEqual([
-      expect.objectContaining({ type: "text" }),
       { type: "text", text: "Valid user message" },
     ]);
     expect(messages.some((msg) => msg.content === "I should be ignored")).toBe(
@@ -186,11 +184,13 @@ describe("constructMessages", () => {
 
     // Check content structure
     const content = messages[1].content as any[];
-    // applied-rules part + 2 context items + original message
-    expect(content.length).toBe(4);
-    expect(content[1].text).toContain("Context content 1");
-    expect(content[2].text).toContain("Context content 2");
-    expect(content[3].text).toBe("User message with context");
+    // Context items and the original text stay in the user turn; rules do not.
+    expect(content.length).toBe(3);
+    expect(content[0].text).toContain("Context content 1");
+    expect(content[1].text).toContain("Context content 2");
+    expect(content[2].text).toBe("User message with context");
+    expect(messages[0].role).toBe("system");
+    expect(messages[0].content).toContain("Applicable rules:");
   });
 
   test("should inject thinking messages with no changes", () => {
@@ -540,15 +540,15 @@ describe("constructMessages", () => {
     expect(messages[1].role).toBe("user");
 
     const content = messages[1].content as any[];
-    // applied-rules part + context item + original 2 parts
-    expect(content.length).toBe(4);
+    // The user turn contains only its context and original content parts.
+    expect(content.length).toBe(3);
     expect(content[0].type).toBe("text");
+    expect(content[0].text).toContain("Context text");
     expect(content[1].type).toBe("text");
-    expect(content[1].text).toContain("Context text");
-    expect(content[2].type).toBe("text");
-    expect(content[2].text).toBe("Here is some text");
-    expect(content[3].type).toBe("imageUrl");
-    expect(content[3].imageUrl.url).toBe("https://example.com/image.jpg");
+    expect(content[1].text).toBe("Here is some text");
+    expect(content[2].type).toBe("imageUrl");
+    expect(content[2].imageUrl.url).toBe("https://example.com/image.jpg");
+    expect(messages[0].content).toContain("Applicable rules:");
 
     // This also verifies that rules are NOT applied if the triggers are not present
     expect(appliedRules).toHaveLength(1);
@@ -614,15 +614,15 @@ describe("constructMessages", () => {
       {},
     );
 
-    // Verify context rule was applied, injected into the latest user message
-    // and kept out of the cached system prefix
+    // Verify context rule is represented in the system role, not user text.
     expect(appliedRules).toHaveLength(2);
     expect(appliedRules).toContainEqual(NORMAL_RULE);
     expect(appliedRules).toContainEqual(CONTEXT_RULE);
     expect(messages[0].role).toBe("system");
-    expect(messages[0].content).toBe("Base System Message");
+    expect(messages[0].content).toContain("Base System Message");
+    expect(messages[0].content).toContain(CONTEXT_RULE.rule);
     const userMessage = messages.filter((m) => m.role === "user").at(-1);
-    expect(JSON.stringify(userMessage?.content)).toContain(CONTEXT_RULE.rule);
+    expect(JSON.stringify(userMessage?.content)).not.toContain(CONTEXT_RULE.rule);
   });
 
   test("system message should include rules triggered by tool output after the last user message", () => {
@@ -685,15 +685,15 @@ describe("constructMessages", () => {
       {},
     );
 
-    // Verify context rule was applied due to the tool output, injected into
-    // the latest user message and kept out of the cached system prefix
+    // Verify context rule was applied due to tool output and stays system-side.
     expect(appliedRules).toHaveLength(2);
     expect(appliedRules).toContainEqual(NORMAL_RULE);
     expect(appliedRules).toContainEqual(CONTEXT_RULE);
     expect(messages[0].role).toBe("system");
-    expect(messages[0].content).toBe("Base System Message");
+    expect(messages[0].content).toContain("Base System Message");
+    expect(messages[0].content).toContain(CONTEXT_RULE.rule);
     const userMessage = messages.filter((m) => m.role === "user").at(-1);
-    expect(JSON.stringify(userMessage?.content)).toContain(CONTEXT_RULE.rule);
+    expect(JSON.stringify(userMessage?.content)).not.toContain(CONTEXT_RULE.rule);
   });
 
   test("system message should only apply rules triggered by the last user message", () => {
@@ -740,6 +740,28 @@ describe("constructMessages", () => {
     expect(messages[0].role).toBe("system");
     expect(messages[0].content).toContain("Base System Message");
     expect(messages[0].content).not.toContain(LAST_MESSAGE_RULE.rule);
+  });
+
+  test("keeps a plain greeting separate from applicable agent rules", () => {
+    mockHistory = [
+      {
+        message: { role: "user", content: "hi" } as UserChatMessage,
+        contextItems: [],
+      },
+    ];
+
+    const { messages } = constructMessages(
+      mockHistory,
+      "Base System Message",
+      mockRules,
+      {},
+    );
+
+    const userMessage = messages.find((message) => message.role === "user");
+    const systemMessage = messages.find((message) => message.role === "system");
+    expect(userMessage?.content).toEqual([{ type: "text", text: "hi" }]);
+    expect(systemMessage?.content).toContain(NORMAL_RULE.rule);
+    expect(systemMessage?.content).toContain("Applicable rules:");
   });
 
   // Tests for the specific block in lines 135-142 handling toolCallState.output
