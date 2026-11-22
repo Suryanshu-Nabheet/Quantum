@@ -657,7 +657,10 @@ async function runPostStreamToolPhase({
     const args = tc.toolCall.function.arguments ?? "";
     if (name && args.trim()) {
       try {
-        JSON.parse(args);
+        const parsed: unknown = JSON.parse(args);
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+          throw new Error("Tool arguments must be a JSON object");
+        }
       } catch {
         dispatch(errorToolCall({ toolCallId: tc.toolCallId }));
         dispatch(
@@ -669,7 +672,7 @@ async function runPostStreamToolPhase({
                 name: "Incomplete Tool Call",
                 description: "",
                 content:
-                  "The model did not finish streaming valid tool arguments. The agent attempted to auto-continue but the call is still invalid. Try again or use a stronger model for tool use.",
+                  "The tool call was not run because its arguments were not a valid JSON object. Retry the call with a valid JSON object and the required arguments.",
                 hidden: false,
               },
             ],

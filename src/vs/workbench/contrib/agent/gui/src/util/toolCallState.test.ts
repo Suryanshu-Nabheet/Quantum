@@ -2,6 +2,12 @@ import { ToolCallDelta, ToolCallState } from "core";
 import { addToolCallDeltaToState } from "./toolCallState";
 
 describe("addToolCallDeltaToState", () => {
+  it("preserves cumulative arguments and replaces empty placeholders", () => {
+    const placeholder = addToolCallDeltaToState({ id: "call", function: { name: "navigate_page", arguments: "{}" } }, undefined);
+    const partial = addToolCallDeltaToState({ function: { arguments: '{"pageId":"p' } }, placeholder);
+    const complete = addToolCallDeltaToState({ function: { arguments: '{"pageId":"page-1","url":"https://example.com"}' } }, partial);
+    expect(complete.parsedArgs).toEqual({ pageId: "page-1", url: "https://example.com" });
+  });
   it("should initialize a new tool call state when current state is undefined", () => {
     const delta: ToolCallDelta = {
       id: "call123",

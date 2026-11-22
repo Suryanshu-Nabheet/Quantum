@@ -248,6 +248,18 @@ export async function callTool(
   mcpUiState?: McpUiState;
 }> {
   try {
+    const rawArgs = toolCall.function.arguments;
+    if (typeof rawArgs === "string" && rawArgs.trim()) {
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(rawArgs);
+      } catch {
+        throw new Error("Tool arguments must be a valid JSON object. The tool was not run.");
+      }
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        throw new Error("Tool arguments must be a JSON object. The tool was not run.");
+      }
+    }
     const args = safeParseToolCallArgs(toolCall);
     const { contextItems, mcpUiState } = tool.uri
       ? await callToolFromUri(tool.uri, args, extras)
