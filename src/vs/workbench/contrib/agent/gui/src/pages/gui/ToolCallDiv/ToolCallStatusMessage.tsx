@@ -1,4 +1,5 @@
 import { Tool, ToolCallState } from "core";
+import { BUILT_IN_GROUP_NAME } from "core/tools/builtIn";
 import Mustache from "mustache";
 import { getStatusIntro } from "./utils";
 
@@ -15,9 +16,20 @@ export function ToolCallStatusMessage({
 
   const toolName = tool.displayTitle ?? tool.function.name;
   const defaultToolDescription = `${toolName} tool`;
+  const originalArgs = toolCallState.parsedArgs ?? {};
+  const displayArgs = { ...originalArgs };
+  if (tool.group === BUILT_IN_GROUP_NAME) {
+    for (const key of ["filepath", "dirPath", "directory_path"]) {
+      const path = displayArgs[key];
+      if (typeof path === "string") {
+        const parts = path.replace(/\\/g, "/").split("/").filter(Boolean);
+        if (parts.length > 2) displayArgs[key] = `…/${parts.slice(-2).join("/")}`;
+      }
+    }
+  }
 
   const futureMessage: string = tool.wouldLikeTo
-    ? Mustache.render(tool.wouldLikeTo, toolCallState.parsedArgs)
+    ? Mustache.render(tool.wouldLikeTo, displayArgs)
     : `use the ${defaultToolDescription}`;
   // to make them more readable
 
@@ -30,7 +42,7 @@ export function ToolCallStatusMessage({
     (tool.isInstant && toolCallState.status === "calling")
   ) {
     message = tool.hasAlready
-      ? Mustache.render(tool.hasAlready, toolCallState.parsedArgs)
+      ? Mustache.render(tool.hasAlready, displayArgs)
       : `used the ${defaultToolDescription}`;
   } else {
     switch (toolCallState.status) {
@@ -42,7 +54,7 @@ export function ToolCallStatusMessage({
         break;
       case "calling":
         message = tool.isCurrently
-          ? Mustache.render(tool.isCurrently, toolCallState.parsedArgs)
+          ? Mustache.render(tool.isCurrently, displayArgs)
           : `calling the ${defaultToolDescription}`;
         break;
       default:
@@ -54,6 +66,9 @@ export function ToolCallStatusMessage({
     <div
       className="text-description line-clamp-4 min-w-0 break-words"
       data-testid="tool-call-title"
+      title={Object.keys(displayArgs).some((key) => displayArgs[key] !== originalArgs[key])
+        ? `${intro} ${Mustache.render(toolCallState.status === "done" || (tool.isInstant && toolCallState.status === "calling") ? tool.hasAlready ?? "" : toolCallState.status === "calling" ? tool.isCurrently ?? "" : tool.wouldLikeTo ?? "", originalArgs)}`.trim()
+        : undefined}
     >
       {`${intro} ${message}`.trim()}
     </div>
