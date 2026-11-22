@@ -21,18 +21,13 @@ import {
   newSession,
   setHasReasoningEnabled,
   setIsSessionMetadataLoading,
-  setMode,
 } from "../redux/slices/sessionSlice";
-import { store } from "../redux/store";
 import { setTTSActive } from "../redux/slices/uiSlice";
 
 import { modelSupportsReasoning } from "core/llm/autodetect";
 import { cancelStream } from "../redux/thunks/cancelStream";
 import { handleApplyStateUpdate } from "../redux/thunks/handleApplyStateUpdate";
-import {
-  loadSession,
-  refreshSessionMetadata,
-} from "../redux/thunks/session";
+import { refreshSessionMetadata } from "../redux/thunks/session";
 import {
   setDocumentStylesFromTheme,
 } from "../styles/theme";
@@ -184,10 +179,8 @@ function ParallelListeners() {
     };
   }, [hostBridge]);
 
-  // Restore chat history from ~/.agent/sessions on webview boot.
-  // Message history is not kept in redux-persist — only session id is —
-  // so without this the History UI and chat look empty after every reload
-  // even though session files were saved correctly.
+  // The workbench restores the active session for the current workspace.
+  // Load metadata separately for the History UI.
   useEffect(() => {
     let cancelled = false;
 
@@ -205,40 +198,8 @@ function ParallelListeners() {
         console.error("Failed to list saved chat sessions:", error);
       }
 
-      try {
-        if (cancelled) {
-          return;
-        }
-
-        // PersistGate has already rehydrated session.id / lastSessionId.
-        // history[] itself is never persisted, so reload it from disk.
-        const sessionState = store.getState().session;
-        if (sessionState.history.length > 0) {
-          return;
-        }
-
-        const candidateIds = [
-          sessionState.id,
-          sessionState.lastSessionId,
-        ].filter((id): id is string => !!id);
-
-        for (const sessionId of [...new Set(candidateIds)]) {
-          try {
-            await dispatch(
-              loadSession({
-                sessionId,
-                saveCurrentSession: false,
-              }),
-            ).unwrap();
-            return;
-          } catch {
-            // Try next candidate (e.g. brand-new id never written to disk).
-          }
-        }
-      } finally {
-        if (!cancelled) {
-          dispatch(setIsSessionMetadataLoading(false));
-        }
+      if (!cancelled) {
+        dispatch(setIsSessionMetadataLoading(false));
       }
     }
 
@@ -288,7 +249,6 @@ function ParallelListeners() {
 
   useWebviewListener("loadAgentSession", async (data) => {
     dispatch(newSession(data.session));
-    dispatch(setMode("agent"));
   });
 
   useWebviewListener("setTTSActive", async (status) => {

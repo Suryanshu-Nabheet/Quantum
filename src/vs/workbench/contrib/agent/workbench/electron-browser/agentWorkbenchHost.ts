@@ -171,15 +171,22 @@ export class AgentWorkbenchHost extends Disposable {
 	}
 
 	async restoreActiveSession(): Promise<Session | undefined> {
-		let sessionId = this.storageService.get(ACTIVE_AGENT_SESSION_STORAGE_KEY, StorageScope.WORKSPACE);
-		if (!sessionId) {
-			const recentSessions = await this.invokeCoreRequest('history/list', { limit: 1 }) as BaseSessionMetadata[];
-			sessionId = recentSessions[0]?.sessionId;
-		}
-		if (!sessionId) {
+		const folders = this.workspaceContextService.getWorkspace().folders.map(folder => folder.uri.toString());
+		if (!folders.length) {
 			return undefined;
 		}
-		return await this.loadSession(sessionId);
+		const sessions = await this.invokeCoreRequest('history/list', {}) as BaseSessionMetadata[];
+		const matching = sessions.filter(session => folders.includes(session.workspaceDirectory));
+		const activeId = this.storageService.get(ACTIVE_AGENT_SESSION_STORAGE_KEY, StorageScope.WORKSPACE);
+		const candidates = [...matching.filter(session => session.sessionId === activeId), ...matching.filter(session => session.sessionId !== activeId)];
+		for (const candidate of candidates) {
+			const session = await this.invokeCoreRequest('history/load', { id: candidate.sessionId }) as Session;
+			if (session && folders.includes(session.workspaceDirectory) && Array.isArray(session.history)) {
+				this.storeActiveSessionId(session.sessionId);
+				return session;
+			}
+		}
+		return undefined;
 	}
 
 	private createSettingsEditorHtml(guiRoot: URI, route: string): string {
