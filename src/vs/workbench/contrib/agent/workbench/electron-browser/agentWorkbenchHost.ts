@@ -302,6 +302,12 @@ export class AgentWorkbenchHost extends Disposable {
 				return { handled: true, value: this.openerService.open(URI.parse(String(payload))) };
 			case 'copyText':
 				return { handled: true, value: this.clipboardService.writeText(String(data?.text ?? '')) };
+			case 'openAgentDiagram': {
+				if (typeof data?.source !== 'string' || !data.source.trim() || data.source.length > 256_000) {
+					throw new Error('Invalid diagram source.');
+				}
+				return { handled: true, value: this.openAgentDiagram(data.source) };
+			}
 			case 'applyToFile':
 				return { handled: true, value: this.prepareFileEdit(payload) };
 			case 'revertAgentEdit':
@@ -331,6 +337,39 @@ export class AgentWorkbenchHost extends Disposable {
 
 	private sendApplyState(state: ApplyState): void {
 		this.agentService.sendGuiMessage('updateApplyState', state);
+	}
+
+	private openAgentDiagram(source: string): void {
+		const guiRoot = URI.file(`${this.nativeEnvironmentService.agentRuntimePath}/webview`);
+		const input = this.webviewWorkbenchService.openWebview({
+			providedViewType: 'quantum.agent.diagram',
+			title: 'Diagram',
+			options: { retainContextWhenHidden: true },
+			contentOptions: { allowScripts: true, localResourceRoots: [guiRoot] },
+			extension: undefined,
+		}, 'quantum.agent.diagram', 'Diagram', Codicon.graph, { group: ACTIVE_GROUP, preserveFocus: false });
+		const listener = input.webview.onMessage(event => {
+			const message = event.message as { messageType?: string; messageId?: string; data?: { text?: string } };
+			if (!message?.messageId) {
+				return;
+			}
+			if (message.messageType === 'closeAgentDiagram') {
+				for (const group of this.editorGroupsService.groups) {
+					if (group.getEditors(EditorsOrder.SEQUENTIAL).includes(input)) {
+						void group.closeEditor(input);
+					}
+				}
+			} else if (message.messageType === 'copyText') {
+				void this.clipboardService.writeText(message.data?.text ?? '').then(
+					() => input.webview.postMessage({ messageId: message.messageId, data: { done: true, status: 'success' } }),
+					error => input.webview.postMessage({ messageId: message.messageId, data: { done: true, status: 'error', error: String(error) } }),
+				);
+			}
+		});
+		const disposeListener = input.onWillDispose(() => { listener.dispose(); disposeListener.dispose(); });
+		input.webview.setHtml(createAgentWebviewContent({
+			guiRoot, nonce: generateUuid(), title: 'Diagram', workspacePaths: [], page: 'diagram', diagramSource: source,
+		}));
 	}
 
 	private async revertAgentEdit(data: Record<string, unknown> | undefined): Promise<void> {

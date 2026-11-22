@@ -11,22 +11,22 @@
   overflow-x: auto;
   margin: 0.75em 0;
   border: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.35));
-  border-radius: 6px;
-  background-color: var(--vscode-editor-background, transparent);
+  background-color: transparent;
 }
 
 .agent-markdown table.markdown-table {
   border-collapse: collapse;
   border-spacing: 0;
   width: 100%;
-  min-width: max-content;
+  min-width: 320px;
+  table-layout: fixed;
   margin: 0;
-  font-size: 0.925em;
-  line-height: 1.4;
+  font-size: 0.95em;
+  line-height: 1.45;
 }
 
 .agent-markdown table.markdown-table thead {
-  background-color: var(--vscode-editorWidget-background, rgba(128, 128, 128, 0.12));
+  background-color: transparent;
 }
 
 .agent-markdown table.markdown-table th {
@@ -34,31 +34,34 @@
   text-align: left;
   color: var(--vscode-foreground, inherit);
   border-bottom: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.35));
-  padding: 8px 12px;
-  white-space: nowrap;
+  padding: 6px 10px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  vertical-align: top;
 }
 
 .agent-markdown table.markdown-table td {
   text-align: left;
   color: var(--vscode-editor-foreground, inherit);
   border-bottom: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.2));
-  padding: 7px 12px;
+  padding: 6px 10px;
   vertical-align: top;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .agent-markdown table.markdown-table tbody tr:last-child td {
   border-bottom: none;
 }
 
-.agent-markdown table.markdown-table tbody tr:nth-child(even) {
-  background-color: var(
-    --vscode-tree-tableOddRowsBackground,
-    rgba(128, 128, 128, 0.06)
-  );
+.agent-markdown table.markdown-table th + th,
+.agent-markdown table.markdown-table td + td {
+  border-left: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.2));
 }
 
-.agent-markdown table.markdown-table tbody tr:hover {
-  background-color: var(--vscode-list-hoverBackground, rgba(128, 128, 128, 0.1));
+.agent-markdown table.markdown-table code {
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .agent-markdown table.markdown-table th[align="center"],
@@ -97,8 +100,12 @@
 .agent-markdown blockquote {
   margin: 0.75em 0;
   padding: 0.25em 0 0.25em 0.9em;
-  border-left: 3px solid var(--vscode-textBlockQuote-border, rgba(128, 128, 128, 0.45));
-  color: var(--vscode-textBlockQuote-foreground, var(--vscode-descriptionForeground));
+  border-left: 3px solid
+    var(--vscode-textBlockQuote-border, rgba(128, 128, 128, 0.45));
+  color: var(
+    --vscode-textBlockQuote-foreground,
+    var(--vscode-descriptionForeground)
+  );
   background-color: var(--vscode-textBlockQuote-background, transparent);
 }
 
@@ -120,4 +127,88 @@
 
 .agent-markdown .mermaid foreignObject {
   overflow: visible;
+}
+
+.agent-markdown .agent-mermaid {
+  position: relative;
+  margin: 0.75em 0;
+  overflow: hidden;
+  border: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.35));
+  border-radius: 6px;
+  background: var(--vscode-editor-background);
+}
+
+.agent-diagram-viewer {
+  height: 100vh;
+  padding: 12px;
+  box-sizing: border-box;
+}
+
+.agent-markdown .agent-mermaid-standalone {
+  height: 100%;
+  margin: 0;
+}
+
+.agent-markdown .agent-mermaid-standalone .mermaid {
+  height: 100%;
+}
+
+.agent-markdown .agent-mermaid-standalone .agent-mermaid-canvas {
+  min-height: 100%;
+  align-items: center;
+}
+
+.agent-markdown .agent-mermaid-toolbar {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 10;
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 4px;
+  background: var(--vscode-editor-background);
+}
+
+.agent-markdown .agent-mermaid-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 5px;
+  border: 0;
+  border-radius: 4px;
+  color: var(--vscode-descriptionForeground);
+  background: transparent;
+  cursor: pointer;
+}
+
+.agent-markdown .agent-mermaid-button:hover {
+  color: var(--vscode-foreground);
+  background: var(--vscode-toolbar-hoverBackground);
+}
+
+.agent-markdown .agent-mermaid-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.agent-markdown .agent-mermaid-button:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+}
+
+.agent-markdown .agent-mermaid-canvas svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.agent-markdown .agent-mermaid-error-details {
+  max-height: 14em;
+  overflow: auto;
+  margin-top: 0.5em;
+}
+
+.agent-markdown .agent-mermaid-error-details summary {
+  cursor: pointer;
 }

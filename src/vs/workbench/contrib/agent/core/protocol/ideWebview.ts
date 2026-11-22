@@ -56,6 +56,8 @@ export type ToIdeFromWebviewProtocol = ToIdeFromWebviewOrCoreProtocol & {
   toggleFullScreen: [{ newWindow?: boolean } | undefined, void];
   insertAtCursor: [{ text: string }, void];
   copyText: [{ text: string }, void];
+  openAgentDiagram: [{ source: string }, void];
+  closeAgentDiagram: [undefined, void];
   acceptDiff: [AcceptOrRejectDiffPayload, void];
   rejectDiff: [AcceptOrRejectDiffPayload, void];
   "edit/sendPrompt": [

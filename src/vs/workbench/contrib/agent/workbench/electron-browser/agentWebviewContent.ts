@@ -9,10 +9,11 @@ import { asWebviewUri, webviewGenericCspSource } from '../../../webview/common/w
 export interface IAgentWebviewContentOptions {
 	readonly guiRoot: URI;
 	readonly nonce: string;
-	readonly title: 'Quantum Agent' | 'Settings';
+	readonly title: 'Quantum Agent' | 'Settings' | 'Diagram';
 	readonly workspacePaths: readonly string[];
-	readonly page: 'sidebar' | 'settings';
+	readonly page: 'sidebar' | 'settings' | 'diagram';
 	readonly initialRoute?: string;
+	readonly diagramSource?: string;
 }
 
 function serializeScriptValue(value: string | readonly string[]): string {
@@ -28,10 +29,10 @@ export function createAgentWebviewContent(options: IAgentWebviewContentOptions):
 	const scriptUri = asWebviewUri(URI.joinPath(options.guiRoot, 'assets', 'index.js'));
 	const styleUri = asWebviewUri(URI.joinPath(options.guiRoot, 'assets', 'index.css'));
 	const mediaBaseUrl = `${asWebviewUri(options.guiRoot).toString()}/`;
-	const bodyClass = options.page === 'settings' ? 'full-screen' : 'sidebar';
+	const bodyClass = options.page === 'sidebar' ? 'sidebar' : 'full-screen';
 	const pageGlobals = options.page === 'settings'
 		? `window.isFullScreen = true; window.initialRoute = ${serializeScriptValue(options.initialRoute ?? '/config')};`
-		: '';
+		: options.page === 'diagram' ? `window.agentDiagramSource = ${serializeScriptValue(options.diagramSource ?? '')};` : '';
 
 	return `<!doctype html>
 <html lang="en">
