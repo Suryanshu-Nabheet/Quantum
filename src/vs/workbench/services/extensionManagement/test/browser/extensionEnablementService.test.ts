@@ -19,7 +19,7 @@ import { IConfigurationService } from '../../../../../platform/configuration/com
 import { URI } from '../../../../../base/common/uri.js';
 import { Schemas } from '../../../../../base/common/network.js';
 import { TestConfigurationService } from '../../../../../platform/configuration/test/common/testConfigurationService.js';
-import { productService, TestLifecycleService } from '../../../../test/browser/workbenchTestServices.js';
+import { TestLifecycleService } from '../../../../test/browser/workbenchTestServices.js';
 import { GlobalExtensionEnablementService } from '../../../../../platform/extensionManagement/common/extensionEnablementService.js';
 import { IUserDataSyncAccountService, UserDataSyncAccountService } from '../../../../../platform/userDataSync/common/userDataSyncAccount.js';
 import { IUserDataSyncEnablementService } from '../../../../../platform/userDataSync/common/userDataSync.js';
@@ -61,7 +61,7 @@ function createStorageService(instantiationService: TestInstantiationService, di
 }
 
 export class TestExtensionEnablementService extends ExtensionEnablementService {
-	constructor(instantiationService: TestInstantiationService, chatEntitlementService?: IChatEntitlementService) {
+	constructor(instantiationService: TestInstantiationService, chatEntitlementService?: IChatEntitlementService, productService: IProductService = TestProductService) {
 		const disposables = new DisposableStore();
 		const storageService = createStorageService(instantiationService, disposables);
 		const extensionManagementServerService = instantiationService.get(IExtensionManagementServerService) ||
@@ -1174,8 +1174,20 @@ suite('ExtensionEnablementService Test', () => {
 		assert.deepStrictEqual((<IExtension>target.args[0][0][0]).identifier, { id: 'pub.a' });
 	});
 
+	test('product restriction disables both upstream AI extensions even when requested by the environment', () => {
+		const { extensionId, chatExtensionId } = TestProductService.defaultChatAgent;
+		instantiationService.stub(IWorkbenchEnvironmentService, { enableExtensions: [extensionId, chatExtensionId] });
+		testObject = disposableStore.add(new TestExtensionEnablementService(instantiationService, undefined, { ...TestProductService, disableUpstreamAI: true }));
+
+		for (const id of [extensionId, chatExtensionId]) {
+			const extension = aLocalExtension(id, undefined, ExtensionType.System);
+			assert.strictEqual(testObject.getEnablementState(extension), EnablementState.DisabledByEnvironment);
+			assert.strictEqual(testObject.canChangeEnablement(extension), false);
+		}
+	});
+
 	test('test chat extension is disabled on profile switch when setup is not completed', async () => {
-		const chatExtensionId = productService.defaultChatAgent!.chatExtensionId;
+		const chatExtensionId = TestProductService.defaultChatAgent.chatExtensionId;
 		const chatExtension = aLocalExtension(chatExtensionId, undefined, ExtensionType.System);
 		installed.push(chatExtension);
 
@@ -1187,7 +1199,7 @@ suite('ExtensionEnablementService Test', () => {
 		const chatEntitlementService = new TestChatEntitlementService();
 		chatEntitlementService.context = new Lazy(() => ({ state: { completed: false }, onDidChange: Event.None })) as unknown as Lazy<ChatEntitlementContext>;
 
-		testObject = disposableStore.add(new TestExtensionEnablementService(instantiationService, chatEntitlementService));
+		testObject = disposableStore.add(new TestExtensionEnablementService(instantiationService, chatEntitlementService, { ...TestProductService, disableUpstreamAI: false }));
 		await testObject.waitUntilInitialized();
 
 		// Chat extension should be disabled after initial setup
