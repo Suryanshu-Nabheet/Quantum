@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import product from '../../../../platform/product/common/product.js';
 import { $, append, clearNode, h } from '../../../../base/browser/dom.js';
 import { KeybindingLabel } from '../../../../base/browser/ui/keybindingLabel/keybindingLabel.js';
 import { coalesce, shuffle } from '../../../../base/common/arrays.js';
@@ -49,7 +50,7 @@ const startDebugging: WatermarkEntry = { text: localize('watermark.startDebuggin
 const openSettings: WatermarkEntry = { text: localize('watermark.openSettings', "Open VS Code Settings"), id: 'workbench.action.openSettings' };
 
 const baseEntries: WatermarkEntry[] = [
-	openChat,
+	...(product.disableUpstreamAI ? [] : [openChat]),
 	showCommands,
 ];
 

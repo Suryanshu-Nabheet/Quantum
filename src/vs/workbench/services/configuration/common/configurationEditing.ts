@@ -509,7 +509,8 @@ export class ConfigurationEditing {
 
 	private async validate(target: EditableConfigurationTarget, operation: IConfigurationEditOperation, checkDirty: boolean, overrides: IConfigurationUpdateOverrides): Promise<void> {
 
-		if (this.configurationService.inspect(operation.key).policyValue !== undefined) {
+		const policyKey = operation.key || operation.workspaceStandAloneConfigurationKey;
+		if (policyKey && this.configurationService.inspect(policyKey).policyValue !== undefined) {
 			throw this.toConfigurationEditingError(ConfigurationEditingErrorCode.ERROR_POLICY_CONFIGURATION, target, operation);
 		}
 

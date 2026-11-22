@@ -828,7 +828,7 @@ suite('WorkspaceConfigurationService - Folder', () => {
 		disposables.add(fileService.registerProvider(Schemas.vscodeUserData, disposables.add(new FileUserDataProvider(ROOT.scheme, fileSystemProvider, Schemas.vscodeUserData, userDataProfilesService, uriIdentityService, new NullLogService()))));
 		userDataProfileService = instantiationService.stub(IUserDataProfileService, disposables.add(new UserDataProfileService(userDataProfilesService.defaultProfile)));
 		workspaceService = testObject = disposables.add(new WorkspaceService(
-			{ configurationCache: new ConfigurationCache() },
+			{ configurationCache: new ConfigurationCache(), disableUpstreamAI: true },
 			environmentService, userDataProfileService, userDataProfilesService,
 			fileService, remoteAgentService, uriIdentityService, new NullLogService(),
 			disposables.add(new FilePolicyService(environmentService.policyFile, fileService, logService))));
@@ -859,6 +859,23 @@ suite('WorkspaceConfigurationService - Folder', () => {
 					'policyObjectSetting': {}
 				}
 			});
+	});
+
+	test('product restrictions override saved AI settings on reload', async () => {
+		const userSettings = userDataProfileService.currentProfile.settingsResource;
+		const workspaceSettings = joinPath(workspaceService.getWorkspace().folders[0].uri, '.vscode', 'settings.json');
+		const overrides = '{ "chat.disableAIFeatures": false, "chat.agent.enabled": true }';
+		await fileService.writeFile(userSettings, VSBuffer.fromString(overrides));
+		await fileService.writeFile(workspaceSettings, VSBuffer.fromString(overrides));
+		await testObject.reloadConfiguration();
+
+		const disabled = testObject.inspect<boolean>('chat.disableAIFeatures');
+		assert.strictEqual(disabled.userValue, false);
+		assert.strictEqual(disabled.workspaceValue, false);
+		assert.strictEqual(disabled.value, true);
+		assert.strictEqual(testObject.getValue('chat.agent.enabled'), false);
+		assert.strictEqual((await fileService.readFile(userSettings)).value.toString(), overrides);
+		assert.strictEqual((await fileService.readFile(workspaceSettings)).value.toString(), overrides);
 	});
 
 	test('globals override defaults', () => runWithFakedTimers<void>({ useFakeTimers: true }, async () => {

@@ -108,6 +108,7 @@ else {
 			licenseName: 'MIT',
 			licenseUrl: 'https://github.com/Suryanshu-Nabheet/Quantum/blob/main/LICENSE.txt',
 			serverLicenseUrl: 'https://github.com/Suryanshu-Nabheet/Quantum/blob/main/LICENSE.txt',
+			disableUpstreamAI: true,
 			defaultChatAgent: {
 				extensionId: 'GitHub.copilot',
 				chatExtensionId: 'GitHub.copilot-chat',

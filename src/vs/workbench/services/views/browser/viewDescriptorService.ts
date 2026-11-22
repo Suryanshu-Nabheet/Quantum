@@ -25,7 +25,7 @@ import { Lazy } from '../../../../base/common/lazy.js';
 import { IViewsService } from '../common/viewsService.js';
 import { windowLogGroup } from '../../log/common/logConstants.js';
 import { IWorkbenchEnvironmentService } from '../../environment/common/environmentService.js';
-import { canMoveViewContainerToLocation, isAgentView, isAuxiliaryBarReservedForAgent } from '../../../contrib/agent/workbench/common/agentMode.js';
+import { canMoveViewContainerToLocation, isAgentView, isAuxiliaryBarReservedForAgent, UPSTREAM_CHAT_VIEW_CONTAINER_ID } from '../../../contrib/agent/workbench/common/agentMode.js';
 
 interface IViewsCustomizations {
 	viewContainerLocations: IStringDictionary<ViewContainerLocation>;
@@ -449,7 +449,8 @@ export class ViewDescriptorService extends Disposable implements IViewDescriptor
 	}
 
 	isViewContainerRemovedPermanently(viewContainerId: string): boolean {
-		return this.isGeneratedContainerId(viewContainerId) && !this.viewContainersCustomLocations.has(viewContainerId);
+		return (viewContainerId === UPSTREAM_CHAT_VIEW_CONTAINER_ID && !this.getViewContainerById(viewContainerId))
+			|| (this.isGeneratedContainerId(viewContainerId) && !this.viewContainersCustomLocations.has(viewContainerId));
 	}
 
 	private onDidChangeDefaultContainer(views: IViewDescriptor[], from: ViewContainer, to: ViewContainer): void {

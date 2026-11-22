@@ -355,16 +355,6 @@ class AskVSCodeCopilot extends Action2 {
 	}
 }
 
-MenuRegistry.appendMenuItem(MenuId.MenubarHelpMenu, {
-	command: {
-		id: AskVSCodeCopilot.ID,
-		title: localize2('askVScode', 'Ask @vscode'),
-	},
-	order: 7,
-	group: '1_welcome',
-	when: ContextKeyExpr.and(ContextKeyExpr.equals('chatSetupHidden', false), ContextKeyExpr.equals('chatSetupDisabledInWorkspace', false), IsSessionsWindowContext.negate())
-});
-
 // --- Actions Registration
 
 if (KeybindingsReferenceAction.AVAILABLE) {
@@ -405,4 +395,15 @@ if (OpenPrivacyStatementUrlAction.AVAILABLE) {
 
 registerAction2(GetStartedWithAccessibilityFeatures);
 
-registerAction2(AskVSCodeCopilot);
+if (!product.disableUpstreamAI) {
+	registerAction2(AskVSCodeCopilot);
+	MenuRegistry.appendMenuItem(MenuId.MenubarHelpMenu, {
+		command: {
+			id: AskVSCodeCopilot.ID,
+			title: localize2('askVScode', 'Ask @vscode'),
+		},
+		order: 7,
+		group: '1_welcome',
+		when: ContextKeyExpr.and(ContextKeyExpr.equals('chatSetupHidden', false), ContextKeyExpr.equals('chatSetupDisabledInWorkspace', false), IsSessionsWindowContext.negate()),
+	});
+}

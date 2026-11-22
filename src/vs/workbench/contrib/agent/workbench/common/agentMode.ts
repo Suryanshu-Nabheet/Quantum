@@ -30,6 +30,7 @@ export function canUseAuxiliaryBarLocation(location: ViewContainerLocation): boo
 }
 
 export const AGENT_LAYOUT_REASON = 'agentLayout';
+export const UPSTREAM_CHAT_VIEW_CONTAINER_ID = 'workbench.panel.chat';
 
 export function canMoveViewContainerToLocation(
 	container: ViewContainer,

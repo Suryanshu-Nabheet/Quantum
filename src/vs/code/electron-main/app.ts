@@ -967,7 +967,7 @@ export class CodeApplication extends Disposable {
 				window?.focus(); // this should help ensuring that the right window gets focus when multiple are opened
 
 				// Open chat session in the target window if requested
-				if (window && session) {
+				if (window && session && !this.productService.disableUpstreamAI) {
 					window.sendWhenReady('vscode:openChatSession', CancellationToken.None, session);
 				}
 

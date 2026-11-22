@@ -74,6 +74,7 @@ export class WorkspaceService extends Disposable implements IWorkbenchConfigurat
 	private initialized: boolean = false;
 	private readonly defaultConfiguration: DefaultConfiguration;
 	private readonly policyConfiguration: IPolicyConfiguration;
+	private readonly productConfiguration: ConfigurationModel;
 	private applicationConfiguration: ApplicationConfiguration | null = null;
 	private readonly applicationConfigurationDisposables: DisposableStore;
 	private readonly localUserConfiguration: UserConfiguration;
@@ -110,7 +111,7 @@ export class WorkspaceService extends Disposable implements IWorkbenchConfigurat
 	private configurationEditing: Promise<ConfigurationEditing> | undefined;
 
 	constructor(
-		{ remoteAuthority, configurationCache }: { remoteAuthority?: string; configurationCache: IConfigurationCache },
+		{ remoteAuthority, configurationCache, disableUpstreamAI }: { remoteAuthority?: string; configurationCache: IConfigurationCache; disableUpstreamAI?: boolean },
 		environmentService: IBrowserWorkbenchEnvironmentService,
 		private readonly userDataProfileService: IUserDataProfileService,
 		private readonly userDataProfilesService: IUserDataProfilesService,
@@ -128,8 +129,13 @@ export class WorkspaceService extends Disposable implements IWorkbenchConfigurat
 		this.completeWorkspaceBarrier = new Barrier();
 		this.defaultConfiguration = this._register(new DefaultConfiguration(userDataProfileService.currentProfile.id, configurationCache, environmentService, logService));
 		this.policyConfiguration = policyService instanceof NullPolicyService ? new NullPolicyConfiguration() : this._register(new PolicyConfiguration(this.defaultConfiguration, policyService, logService));
+		this.productConfiguration = ConfigurationModel.createEmptyModel(logService);
+		if (disableUpstreamAI) {
+			this.productConfiguration.setValue('chat.disableAIFeatures', true);
+			this.productConfiguration.setValue('chat.agent.enabled', false);
+		}
 		this.configurationCache = configurationCache;
-		this._configuration = new Configuration(this.defaultConfiguration.configurationModel, this.policyConfiguration.configurationModel, ConfigurationModel.createEmptyModel(logService), ConfigurationModel.createEmptyModel(logService), ConfigurationModel.createEmptyModel(logService), ConfigurationModel.createEmptyModel(logService), new ResourceMap(), ConfigurationModel.createEmptyModel(logService), new ResourceMap<ConfigurationModel>(), this.workspace, logService);
+		this._configuration = new Configuration(this.defaultConfiguration.configurationModel, this.getEffectivePolicyConfiguration(this.policyConfiguration.configurationModel), ConfigurationModel.createEmptyModel(logService), ConfigurationModel.createEmptyModel(logService), ConfigurationModel.createEmptyModel(logService), ConfigurationModel.createEmptyModel(logService), new ResourceMap(), ConfigurationModel.createEmptyModel(logService), new ResourceMap<ConfigurationModel>(), this.workspace, logService);
 		this.applicationConfigurationDisposables = this._register(new DisposableStore());
 		this.createApplicationConfiguration();
 		this.localUserConfiguration = this._register(new UserConfiguration(userDataProfileService.currentProfile.settingsResource, userDataProfileService.currentProfile.tasksResource, userDataProfileService.currentProfile.mcpResource, { scopes: getLocalUserConfigurationScopes(userDataProfileService.currentProfile, !!remoteAuthority) }, fileService, uriIdentityService, logService));
@@ -701,7 +707,7 @@ export class WorkspaceService extends Disposable implements IWorkbenchConfigurat
 		folderConfigurations.forEach((folderConfiguration, index) => folderConfigurationModels.set(folders[index].uri, folderConfiguration));
 
 		const currentConfiguration = this._configuration;
-		this._configuration = new Configuration(this.defaultConfiguration.configurationModel, this.policyConfiguration.configurationModel, applicationConfigurationModel, userConfigurationModel, remoteUserConfigurationModel, workspaceConfiguration, folderConfigurationModels, ConfigurationModel.createEmptyModel(this.logService), new ResourceMap<ConfigurationModel>(), this.workspace, this.logService);
+		this._configuration = new Configuration(this.defaultConfiguration.configurationModel, this.getEffectivePolicyConfiguration(this.policyConfiguration.configurationModel), applicationConfigurationModel, userConfigurationModel, remoteUserConfigurationModel, workspaceConfiguration, folderConfigurationModels, ConfigurationModel.createEmptyModel(this.logService), new ResourceMap<ConfigurationModel>(), this.workspace, this.logService);
 
 		this.initialized = true;
 
@@ -775,9 +781,14 @@ export class WorkspaceService extends Disposable implements IWorkbenchConfigurat
 		}
 	}
 
+	private getEffectivePolicyConfiguration(policyConfiguration: ConfigurationModel): ConfigurationModel {
+		// Product restrictions take precedence over settings and policy without rewriting either.
+		return this.productConfiguration.isEmpty() ? policyConfiguration : policyConfiguration.merge(this.productConfiguration);
+	}
+
 	private onPolicyConfigurationChanged(policyConfiguration: ConfigurationModel): void {
 		const previous = { data: this._configuration.toData(), workspace: this.workspace };
-		const change = this._configuration.compareAndUpdatePolicyConfiguration(policyConfiguration);
+		const change = this._configuration.compareAndUpdatePolicyConfiguration(this.getEffectivePolicyConfiguration(policyConfiguration));
 		this.triggerConfigurationChange(change, previous, ConfigurationTarget.DEFAULT);
 	}
 

@@ -469,6 +469,10 @@ export class PaneCompositeBar extends Disposable {
 			}
 		}
 
+		if (this.viewDescriptorService.isViewContainerRemovedPermanently(viewContainerId)) {
+			return true;
+		}
+
 		// Check cache only if extensions are not yet registered and current window is not native (desktop) remote connection window
 		if (!this.hasExtensionsRegistered && !(this.part === Parts.SIDEBAR_PART && this.environmentService.remoteAuthority && isNative)) {
 			cachedViewContainer = cachedViewContainer || this.cachedViewContainers.find(({ id }) => id === viewContainerId);

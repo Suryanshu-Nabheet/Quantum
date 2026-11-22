@@ -29,7 +29,7 @@ import './browser/actions/developerActions.js';
 import './browser/actions/helpActions.js';
 import './browser/actions/layoutActions.js';
 import './browser/parts/titlebar/layoutQuickMenuService.js';
-import './contrib/agent/workbench/browser/agentLayout.contribution.js';
+import { removeUpstreamChatView } from './contrib/agent/workbench/browser/agentLayout.contribution.js';
 import './contrib/agent/workbench/browser/agentView.contribution.js';
 import './contrib/agent/workbench/browser/agentWebviewHover.contribution.js';
 import './contrib/agent/workbench/browser/agentBrowser.contribution.js';
@@ -229,8 +229,6 @@ import './contrib/speech/browser/speech.contribution.js';
 
 // Chat
 import './contrib/chat/browser/chat.shared.contribution.js';
-import './contrib/chat/browser/chat.contribution.js';
-import './contrib/chat/browser/chat.view.contribution.js';
 import './contrib/inlineChat/browser/inlineChat.contribution.js';
 import './contrib/mcp/browser/mcp.contribution.js';
 import './contrib/mcp/browser/mcp.view.contribution.js';
@@ -471,3 +469,6 @@ import './contrib/editTelemetry/browser/editTelemetry.contribution.js';
 import './contrib/opener/browser/opener.contribution.js';
 
 //#endregion
+
+// Shared Chat services register their view on import. Remove it before layout restoration.
+removeUpstreamChatView();

@@ -294,6 +294,9 @@ export class WindowsMainService extends Disposable implements IWindowsMainServic
 
 	async openAgentsWindow(openConfig: IOpenConfiguration, folderUri?: URI): Promise<ICodeWindow[]> {
 		this.logService.trace('windowsManager#openAgentsWindow');
+		if (product.disableUpstreamAI) {
+			return this.open(openConfig);
+		}
 
 		// Open in a new browser window with the agent sessions workspace
 		const windows = await this.open(await this.ensureAgentsWindow(openConfig));
@@ -515,6 +518,9 @@ export class WindowsMainService extends Disposable implements IWindowsMainServic
 	}
 
 	private handleChatRequest(openConfig: IOpenConfiguration, usedWindows: ICodeWindow[]): void {
+		if (product.disableUpstreamAI) {
+			return;
+		}
 		if (openConfig.context !== OpenContext.CLI || !openConfig.cli.chat || usedWindows.length === 0) {
 			return;
 		}
@@ -1593,7 +1599,7 @@ export class WindowsMainService extends Disposable implements IWindowsMainServic
 
 			cssModules: this.cssDevelopmentService.isEnabled ? await this.cssDevelopmentService.getCssModules() : undefined,
 
-			isSessionsWindow: isWorkspaceIdentifier(options.workspace) && isEqual(options.workspace.configPath, this.environmentMainService.agentSessionsWorkspace),
+			isSessionsWindow: !product.disableUpstreamAI && isWorkspaceIdentifier(options.workspace) && isEqual(options.workspace.configPath, this.environmentMainService.agentSessionsWorkspace),
 		};
 
 		// New window

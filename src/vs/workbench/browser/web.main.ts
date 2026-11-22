@@ -388,7 +388,7 @@ export class BrowserMain extends Disposable {
 		remoteAuthorityResolverService: IRemoteAuthorityResolverService,
 		productService: IProductService,
 	): Promise<IWorkbenchConfigurationService> {
-		const { configurationService, storageService } = await this.createWorkspaceConfigAndStorageServices(serviceCollection, workspace, environmentService, userDataProfileService, userDataProfilesService, fileService, remoteAgentService, uriIdentityService, policyService, logService, remoteAuthorityResolverService);
+		const { configurationService, storageService } = await this.createWorkspaceConfigAndStorageServices(serviceCollection, workspace, environmentService, userDataProfileService, userDataProfilesService, fileService, remoteAgentService, uriIdentityService, policyService, logService, remoteAuthorityResolverService, productService.disableUpstreamAI);
 
 		// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		//
@@ -462,9 +462,10 @@ export class BrowserMain extends Disposable {
 		policyService: IPolicyService,
 		logService: ILogService,
 		remoteAuthorityResolverService: IRemoteAuthorityResolverService,
+		disableUpstreamAI: boolean | undefined,
 	): Promise<{ configurationService: IWorkbenchConfigurationService; storageService: IStorageService }> {
 		const [configurationService, storageService] = await Promise.all([
-			this.createWorkspaceService(workspace, environmentService, userDataProfileService, userDataProfilesService, fileService, remoteAgentService, uriIdentityService, policyService, logService).then(service => {
+			this.createWorkspaceService(workspace, environmentService, userDataProfileService, userDataProfilesService, fileService, remoteAgentService, uriIdentityService, policyService, logService, disableUpstreamAI).then(service => {
 				serviceCollection.set(IWorkspaceContextService, service);
 				serviceCollection.set(IWorkbenchConfigurationService, service);
 				return service;
@@ -609,7 +610,7 @@ export class BrowserMain extends Disposable {
 		}
 	}
 
-	private async createWorkspaceService(workspace: IAnyWorkspaceIdentifier, environmentService: IBrowserWorkbenchEnvironmentService, userDataProfileService: IUserDataProfileService, userDataProfilesService: IUserDataProfilesService, fileService: FileService, remoteAgentService: IRemoteAgentService, uriIdentityService: IUriIdentityService, policyService: IPolicyService, logService: ILogService): Promise<WorkspaceService> {
+	private async createWorkspaceService(workspace: IAnyWorkspaceIdentifier, environmentService: IBrowserWorkbenchEnvironmentService, userDataProfileService: IUserDataProfileService, userDataProfilesService: IUserDataProfilesService, fileService: FileService, remoteAgentService: IRemoteAgentService, uriIdentityService: IUriIdentityService, policyService: IPolicyService, logService: ILogService, disableUpstreamAI: boolean | undefined): Promise<WorkspaceService> {
 
 		// Temporary workspaces do not exist on startup because they are
 		// just in memory. As such, detect this case and eagerly create
@@ -625,7 +626,7 @@ export class BrowserMain extends Disposable {
 		}
 
 		const configurationCache = new ConfigurationCache([Schemas.file, Schemas.vscodeUserData, Schemas.tmp] /* Cache all non native resources */, environmentService, fileService);
-		const workspaceService = new WorkspaceService({ remoteAuthority: this.configuration.remoteAuthority, configurationCache }, environmentService, userDataProfileService, userDataProfilesService, fileService, remoteAgentService, uriIdentityService, logService, policyService);
+		const workspaceService = new WorkspaceService({ remoteAuthority: this.configuration.remoteAuthority, configurationCache, disableUpstreamAI }, environmentService, userDataProfileService, userDataProfilesService, fileService, remoteAgentService, uriIdentityService, logService, policyService);
 
 		try {
 			await workspaceService.initialize(workspace);

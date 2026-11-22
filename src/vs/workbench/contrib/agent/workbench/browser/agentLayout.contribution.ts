@@ -6,14 +6,29 @@
 import { Disposable } from '../../../../../base/common/lifecycle.js';
 import { IConfigurationService } from '../../../../../platform/configuration/common/configuration.js';
 import { IContextKey, IContextKeyService } from '../../../../../platform/contextkey/common/contextkey.js';
+import { Registry } from '../../../../../platform/registry/common/platform.js';
 import { IWorkbenchContribution, WorkbenchPhase, registerWorkbenchContribution2 } from '../../../../common/contributions.js';
 import { Parts, Position, positionToString, IWorkbenchLayoutService } from '../../../../services/layout/browser/layoutService.js';
-import { IViewDescriptorService, ViewContainer, ViewContainerLocation } from '../../../../common/views.js';
+import { Extensions as ViewExtensions, IViewContainersRegistry, IViewDescriptorService, IViewsRegistry, ViewContainer, ViewContainerLocation } from '../../../../common/views.js';
 import {
 	AGENT_LAYOUT_REASON,
 	isAgentViewContainer,
+	UPSTREAM_CHAT_VIEW_CONTAINER_ID,
 } from '../common/agentMode.js';
 import { AgentNativeModeContext } from '../common/agentNativeContext.js';
+
+/** Remove the upstream Chat surface before the workbench restores view locations. */
+export function removeUpstreamChatView(): void {
+	const containers = Registry.as<IViewContainersRegistry>(ViewExtensions.ViewContainersRegistry);
+	const chatContainer = containers.get(UPSTREAM_CHAT_VIEW_CONTAINER_ID);
+	if (!chatContainer) {
+		return;
+	}
+
+	const views = Registry.as<IViewsRegistry>(ViewExtensions.ViewsRegistry);
+	views.deregisterViews(views.getViews(chatContainer), chatContainer);
+	containers.deregisterViewContainer(chatContainer);
+}
 
 /**
  * Agent-native layout: the secondary sidebar is reserved for Agent only.

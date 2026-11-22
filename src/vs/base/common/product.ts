@@ -235,6 +235,7 @@ export interface IProductConfiguration {
 	readonly commonlyUsedSettings?: string[];
 	readonly aiGeneratedWorkspaceTrust?: IAiGeneratedWorkspaceTrust;
 
+	readonly disableUpstreamAI?: boolean;
 	readonly defaultChatAgent: IDefaultChatAgent;
 	readonly chatParticipantRegistry?: string;
 	readonly chatSessionRecommendations?: IChatSessionRecommendation[];

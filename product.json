@@ -85,6 +85,7 @@
       }
     }
   ],
+  "disableUpstreamAI": true,
   "defaultChatAgent": {
     "extensionId": "GitHub.copilot",
     "chatExtensionId": "GitHub.copilot-chat",
