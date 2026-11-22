@@ -1,8 +1,12 @@
-import * as path from 'path';
+import { execFile } from 'node:child_process';
+import { homedir } from 'node:os';
+import * as path from 'node:path';
+import { promisify } from 'node:util';
 import { window, QuickPickItem } from 'vscode';
 import { getPath, androidExtraBootArgs, isWSL } from './config';
-import { runCmd } from './utils/commands';
-import { ANDROID_COMMANDS, ANDROID } from './constants';
+import { ANDROID } from './constants';
+
+const runEmulator = promisify(execFile);
 
 interface EmulatorQuickPickItem extends QuickPickItem {
 	emulator: string;
@@ -70,38 +74,38 @@ export const androidPick = async (cold: boolean = false) => {
 	}
 };
 
-const getAndroidPath = async (): Promise<string> => {
-	const pathVal = getPath() || '';
-	return (await runCmd(`echo "${pathVal}"`)).trim().replace(/[\n\r"]/g, '');
-};
+const getAndroidPath = (): string => (getPath() ?? '').trim().replace(/^~(?=[/\\]|$)/, homedir());
 
 const getEmulatorPath = (androidPath: string): string => {
-	const emulatorPath = path.join(androidPath, ANDROID.PATH);
-
-	if (isWSL()) {
-		return `${emulatorPath}.exe`;
-	}
-
-	if (process.platform.startsWith('win')) {
-		return `"${emulatorPath}"`;
-	}
-
-	return emulatorPath;
+	const executable = isWSL() || process.platform === 'win32' ? `${ANDROID.PATH}.exe` : ANDROID.PATH;
+	return path.join(androidPath, executable);
 };
 
+function splitBootArgs(input: string): string[] {
+	const argumentsList: string[] = [];
+	const argument = /(?:[^\s"']+|"[^"]*"|'[^']*')+/y;
+	let remaining = input.trim();
+	while (remaining) {
+		argument.lastIndex = 0;
+		const match = argument.exec(remaining);
+		if (!match) {
+			throw new Error('Android emulator boot arguments have an unclosed quote.');
+		}
+		argumentsList.push(match[0].replace(/"([^"]*)"|'([^']*)'/g, (_, doubleQuoted, singleQuoted) => doubleQuoted ?? singleQuoted));
+		remaining = remaining.slice(match[0].length).trimStart();
+	}
+	return argumentsList;
+}
+
 const getAndroidEmulators = async (): Promise<string[] | false> => {
-	const androidPath = await getAndroidPath();
+	const androidPath = getAndroidPath();
 	if (!androidPath) {
 		return false;
 	}
 
-	const command = `${getEmulatorPath(androidPath)}${ANDROID_COMMANDS.LIST_AVDS}`;
+	const executable = getEmulatorPath(androidPath);
 	try {
-		const options = {
-			cwd: androidPath.replace('~', process.env.HOME || ''),
-		};
-
-		const res = await runCmd(command, options);
+		const { stdout: res } = await runEmulator(executable, ['-list-avds'], { cwd: androidPath });
 
 		if (res) {
 			return res.trim().split('\n');
@@ -112,27 +116,26 @@ const getAndroidEmulators = async (): Promise<string[] | false> => {
 		return false;
 	} catch (e) {
 		window.showErrorMessage(
-			`Error fetching your Android emulators! Make sure your path is correct. Try running this command: ${command}`,
+			`Error fetching your Android emulators! Make sure your path is correct. Emulator path: ${executable}`,
 		);
 		return false;
 	}
 };
 
 const runAndroidEmulator = async (emulator: string, cold: boolean): Promise<string | false> => {
-	const androidPath = await getAndroidPath();
+	const androidPath = getAndroidPath();
 	if (!androidPath) {
 		return false;
 	}
 
-	const command = `${getEmulatorPath(androidPath)} ${androidExtraBootArgs()}${cold ? ANDROID_COMMANDS.RUN_AVD_COLD : ANDROID_COMMANDS.RUN_AVD
-		}${emulator}`;
-
+	const executable = getEmulatorPath(androidPath);
 	try {
-		const options = {
-			cwd: androidPath.replace('~', process.env.HOME || ''),
-		};
-
-		await runCmd(command, options);
+		const bootArgs = splitBootArgs(androidExtraBootArgs() ?? '');
+		if (cold) {
+			bootArgs.push('-no-snapshot-load');
+		}
+		bootArgs.push('-avd', emulator);
+		await runEmulator(executable, bootArgs, { cwd: androidPath });
 		return '✓ Started ';
 	} catch (e: any) {
 		if (
@@ -143,7 +146,7 @@ const runAndroidEmulator = async (emulator: string, cold: boolean): Promise<stri
 			return 'Already running ';
 		}
 
-		if (e && e.err && e.err.toString().includes("CPU Architecture 'arm'")) {
+		if (e?.message?.includes("CPU Architecture 'arm'")) {
 			window.showErrorMessage(
 				'ARM-based Android emulators are not supported in WSL. Please use an x86/x64-based Android Virtual Device instead.',
 			);
@@ -151,7 +154,7 @@ const runAndroidEmulator = async (emulator: string, cold: boolean): Promise<stri
 		}
 
 		window.showErrorMessage(
-			`Error running your Android emulator! Try running this command: ${command}`,
+			`Error running your Android emulator! Emulator path: ${executable}`,
 		);
 		return false;
 	}

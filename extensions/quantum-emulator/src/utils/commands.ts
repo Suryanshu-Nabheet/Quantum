@@ -1,14 +1,9 @@
-import { exec } from 'node:child_process';
+import { exec, type ExecOptions } from 'node:child_process';
 import { promisify } from 'node:util';
 
 const execAsync = promisify(exec);
 
-export const runCmd = async (cmd: string, options: any = {}): Promise<string> => {
-	try {
-		const { stdout } = await execAsync(cmd, options);
-		return (stdout as unknown) as string;
-	} catch (err) {
-		const { stdout } = await execAsync(cmd);
-		return (stdout as unknown) as string;
-	}
-};
+export async function runCmd(command: string, options: ExecOptions = {}): Promise<string> {
+	const { stdout } = await execAsync(command, options);
+	return stdout.toString();
+}

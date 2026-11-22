@@ -4,12 +4,6 @@ export const OS_PICKER = {
 	IOS: 'View iOS simulators',
 };
 
-export const ANDROID_COMMANDS = {
-	LIST_AVDS: ' -list-avds',
-	RUN_AVD: ' -avd ',
-	RUN_AVD_COLD: ' -no-snapshot-load -avd ',
-};
-
 export const IOS_COMMANDS = {
 	LIST_SIMULATORS: 'xcrun simctl list --json devices',
 	BOOT_SIMULATOR: 'xcrun simctl boot ',
