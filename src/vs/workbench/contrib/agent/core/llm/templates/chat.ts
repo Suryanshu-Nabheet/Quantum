@@ -164,8 +164,6 @@ const templateAlpacaMessages = templateFactory(
 function deepseekTemplateMessages(msgs: ChatMessage[]): string {
   let prompt = "";
   let system: string | null = null;
-  prompt +=
-    "You are an AI programming assistant, utilizing the DeepSeek Coder model, developed by DeepSeek Company, and your  role is to assist with questions related to computer science. For politically sensitive questions, security and privacy issues, and other non-computer science questions, you will not answer.\n";
   if (msgs[0].role === "system") {
     system = renderChatMessage(msgs.shift()!);
   }
@@ -233,7 +231,7 @@ const xWinCoderTemplateMessages = templateFactory(
   "\n<AI>: ",
   "",
   undefined,
-  "<system>: You are an AI coding assistant that helps people with programming. Write a response that appropriately completes the user's request.",
+  "<system>: You are Quantum's AI assistant. Follow the user's request and the system instructions.",
 );
 
 /**

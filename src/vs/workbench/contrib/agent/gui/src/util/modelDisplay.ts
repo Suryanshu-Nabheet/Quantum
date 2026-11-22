@@ -109,9 +109,8 @@ export function formatModelDisplayName(raw: string | undefined | null): string {
     value = value.slice(1);
   }
 
-  const slashIndex = value.indexOf("/");
-  const namePart =
-    slashIndex >= 0 ? value.slice(slashIndex + 1).trim() : value.trim();
+  const pathSegments = value.split("/").filter(Boolean);
+  const namePart = pathSegments.at(-1)?.trim() || value.trim();
 
   if (!namePart) {
     return formatSlugSegment(value.replace(/\//g, " "));

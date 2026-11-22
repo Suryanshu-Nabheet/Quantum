@@ -1,6 +1,9 @@
 import { ChatMessage, PromptTemplate } from "../../index.js";
 import { gptEditPrompt } from "./edit/gpt.js";
 
+const EDIT_ASSISTANT_INSTRUCTIONS =
+  "You are Quantum's AI coding assistant. Make the requested code changes carefully, preserve existing behavior unless asked otherwise, and follow the output format below.";
+
 const simplifiedEditPrompt = `Consider the following code:
 \`\`\`{{{language}}}
 {{{codeToEdit}}}
@@ -76,7 +79,7 @@ ${otherData.prefix}${START_TAG}
   ];
 };
 
-const mistralEditPrompt = `[INST] You are a helpful code assistant. Your task is to rewrite the following code with these instructions: "{{{userInput}}}"
+const mistralEditPrompt = `[INST] ${EDIT_ASSISTANT_INSTRUCTIONS} Rewrite the following code to satisfy the user's request: "{{{userInput}}}"
 \`\`\`{{{language}}}
 {{{codeToEdit}}}
 \`\`\`
@@ -101,7 +104,7 @@ Sure! Here's the code you requested:
 `;
 
 const phindEditPrompt = `### System Prompt
-You are an expert programmer and write code on the first attempt without any errors or fillers.
+${EDIT_ASSISTANT_INSTRUCTIONS}
 
 ### User Message:
 Leave existing comments in place unless changes require modifying them. Rewrite the code to satisfy this request: "{{{userInput}}}"
@@ -116,9 +119,7 @@ Sure! Here's the code you requested:
 \`\`\`{{{language}}}
 `;
 
-const deepseekEditPrompt = `### System Prompt
-You are an AI programming assistant, utilizing the DeepSeek Coder model, developed by DeepSeek Company, and your  role is to assist with questions related to computer science. For politically sensitive questions, security and privacy issues, and other non-computer science questions, you will not answer.
-### Instruction:
+const deepseekEditPrompt = `### Instruction:
 Leave existing comments in place unless changes require modifying them. Rewrite the code to satisfy this request: "{{{userInput}}}"
 
 \`\`\`{{{language}}}
@@ -131,7 +132,7 @@ Sure! Here's the code you requested:
 `;
 
 const zephyrEditPrompt = `<|system|>
-You are an expert programmer and write code on the first attempt without any errors or fillers.</s>
+${EDIT_ASSISTANT_INSTRUCTIONS}</s>
 <|user|>
 Leave existing comments in place unless changes require modifying them. Rewrite the code to satisfy this request: "{{{userInput}}}"
 
@@ -144,7 +145,7 @@ Sure! Here's the code you requested:
 \`\`\`{{{language}}}
 `;
 
-const openchatEditPrompt = `GPT4 Correct User: You are an expert programmer and personal assistant. You are asked to rewrite the following code in order to {{{userInput}}}.
+const openchatEditPrompt = `GPT4 Correct User: Rewrite the following code to satisfy the user's request: {{{userInput}}}.
 \`\`\`{{{language}}}
 {{{codeToEdit}}}
 \`\`\`
@@ -152,7 +153,7 @@ Please only respond with code and put it inside of a markdown code block. Do not
 \`\`\`{{{language}}}
 `;
 
-const xWinCoderEditPrompt = `<system>: You are an AI coding agent that helps people with programming. Write a response that appropriately completes the user's request.
+const xWinCoderEditPrompt = `<system>: ${EDIT_ASSISTANT_INSTRUCTIONS}
 <user>: Please rewrite the following code (without changing existing code comments) with these instructions: "{{{userInput}}}"
 \`\`\`{{{language}}}
 {{{codeToEdit}}}
@@ -163,7 +164,7 @@ Just rewrite the code without explanations:
 \`\`\`{{{language}}}`;
 
 const neuralChatEditPrompt = `### System:
-You are an expert programmer and write code on the first attempt without any errors or fillers.
+${EDIT_ASSISTANT_INSTRUCTIONS}
 ### User:
 Rewrite the code (without changing existing code comments) to satisfy this request: "{{{userInput}}}"
 
@@ -176,7 +177,7 @@ Sure! Here's the code you requested:
 \`\`\`{{{language}}}
 `;
 
-const codeLlama70bEditPrompt = `<s>Source: system\n\n You are an expert programmer and write code on the first attempt without any errors or fillers. <step> Source: user\n\n Rewrite the code (without changing existing code comments) to satisfy this request: "{{{userInput}}}"
+const codeLlama70bEditPrompt = `<s>Source: system\n\n ${EDIT_ASSISTANT_INSTRUCTIONS} <step> Source: user\n\n Rewrite the code (without changing existing code comments) to satisfy this request: "{{{userInput}}}"
 
 \`\`\`{{{language}}}
 {{{codeToEdit}}}
@@ -193,7 +194,7 @@ const claudeEditPrompt: PromptTemplate = (
 ${otherData.codeToEdit}
 \`\`\`
 
-You are an expert programmer. You will rewrite the above code to do the following:
+${EDIT_ASSISTANT_INSTRUCTIONS} Rewrite the above code to satisfy this request:
 
 ${otherData.userInput}
 
@@ -217,7 +218,7 @@ Sure! Here's the code you requested:
 \`\`\`{{{language}}}`;
 
 const gemmaEditPrompt = `<start_of_turn>user
-You are an expert programmer and write code on the first attempt without any errors or fillers. Rewrite the code to satisfy this request (without changing existing code comments): "{{{userInput}}}"
+${EDIT_ASSISTANT_INSTRUCTIONS} Rewrite the code to satisfy this request (without changing existing code comments): "{{{userInput}}}"
 
 \`\`\`{{{language}}}
 {{{codeToEdit}}}

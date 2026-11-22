@@ -200,7 +200,7 @@ class Asksage extends BaseLLM {
       system_prompt:
         options.systemPrompt ??
         process.env.ASKSAGE_SYSTEM_PROMPT ??
-        "You are an expert software developer. You give helpful and concise responses.",
+        "You are Quantum's AI assistant. Follow the user's request and the system instructions.",
       tools,
       tool_choice: toolChoice,
       reasoning_effort: options.reasoningEffort as

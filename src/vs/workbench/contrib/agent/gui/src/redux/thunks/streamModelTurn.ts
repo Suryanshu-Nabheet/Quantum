@@ -413,10 +413,22 @@ async function runStreamModelTurnLocked({
   );
 
   // Construct messages (excluding system message)
+  const latestUserMessage = state.session.history.findLast(
+    ({ message }) => message.role === "user",
+  )?.message;
+  const latestUserPrompt = latestUserMessage
+    ? typeof latestUserMessage.content === "string"
+      ? latestUserMessage.content
+      : latestUserMessage.content
+          .filter((part) => part.type === "text")
+          .map((part) => part.text)
+          .join("\n")
+    : "";
   const baseSystemMessage = getBaseSystemMessage(
     state.session.mode,
     selectedChatModel,
     activeTools,
+    latestUserPrompt,
   );
 
   const systemMessage = `${

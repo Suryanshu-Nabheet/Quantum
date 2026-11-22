@@ -6,27 +6,29 @@ import {
 } from "./defaultSystemMessages";
 
 describe("buildAssistantIdentityBlock", () => {
-  it("includes model name, mode, and Quantum when title is provided", () => {
-    const block = buildAssistantIdentityBlock("Claude Sonnet 4", "agent");
+  it("keeps model metadata available without volunteering technical details", () => {
+    const block = buildAssistantIdentityBlock(
+      {
+        modelName: "Claude Sonnet 4",
+      },
+      "agent",
+    );
 
     expect(block).toContain("Claude Sonnet 4");
     expect(block).toContain("Agent mode");
     expect(block).toContain(IDE_NAME);
-    expect(block).toContain(
-      `I'm Claude Sonnet 4 in Agent mode, powering the agent inside ${IDE_NAME}`,
-    );
+    expect(block).toContain("Do not volunteer the model name, provider, model identifier");
+    expect(block).not.toContain("I'm Claude Sonnet 4");
     expect(block).toContain("reading and editing files");
-    expect(block).toContain("Do not claim to be a separate website");
+    expect(block).toContain("do not claim to be a separate website");
   });
 
-  it("uses generic wording when model title is missing", () => {
-    const block = buildAssistantIdentityBlock(undefined, "chat");
+  it("identifies Quantum without inventing missing model metadata", () => {
+    const block = buildAssistantIdentityBlock({}, "chat");
 
-    expect(block).toContain("the configured model");
+    expect(block).toContain("You are Quantum's AI assistant in Chat mode");
     expect(block).toContain("Chat mode");
-    expect(block).toContain(
-      `I'm the configured model in Chat mode, powering the agent inside ${IDE_NAME}`,
-    );
+    expect(block).not.toContain("Runtime model metadata");
   });
 
   it("does not alter mode-specific default messages", () => {

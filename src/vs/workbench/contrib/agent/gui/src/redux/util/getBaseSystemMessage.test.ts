@@ -13,7 +13,10 @@ function withIdentity(
   modelTitle?: string,
   mode: "chat" | "agent" | "plan" = "chat",
 ): string {
-  return `${buildAssistantIdentityBlock(modelTitle, mode)}\n\n${base}`;
+  return `${buildAssistantIdentityBlock(
+    modelTitle ? { modelName: modelTitle } : {},
+    mode,
+  )}\n\n${base}`;
 }
 
 test("getBaseSystemMessage should return the correct system message based on mode", () => {
@@ -114,14 +117,41 @@ test("getBaseSystemMessage should append no-tools warning for agent/plan modes w
 });
 
 test("getBaseSystemMessage prepends Quantum identity with the model title", () => {
+  const model = {
+    title: "Personal / @cf/zai-org/glm-5.3",
+    model: "@cf/zai-org/glm-5.3",
+    provider: "custom-openai-personal--abc123",
+    underlyingProviderName: "custom-openai-personal--abc123",
+  } as ModelDescription;
   const message = getBaseSystemMessage(
     "chat",
-    { title: "Qwen2.5 Coder" } as ModelDescription,
+    model,
     [],
   );
 
-  expect(message).toContain("Qwen2.5 Coder");
+  expect(message).toContain('"modelDisplayName":"GLM 5.3"');
+  expect(message).not.toContain("Personal");
+  expect(message).not.toContain("@cf/zai-org/glm-5.3");
   expect(message).toContain("Chat mode");
-  expect(message).toContain("powering the agent inside Quantum");
-  expect(message).toContain("I'm Qwen2.5 Coder in Chat mode");
+  expect(message).toContain("You are Quantum's AI assistant in Chat mode");
+  expect(message).toContain("Do not volunteer the model name, provider");
+
+  const providerQuestion = getBaseSystemMessage(
+    "chat",
+    model,
+    [],
+    "Which provider is configured?",
+  );
+  expect(providerQuestion).toContain('"providerDisplayName":"Personal"');
+  expect(providerQuestion).toContain('"providerType":"custom"');
+  expect(providerQuestion).not.toContain("modelIdentifier");
+
+  const identifierQuestion = getBaseSystemMessage(
+    "chat",
+    model,
+    [],
+    "What is the model id?",
+  );
+  expect(identifierQuestion).toContain('"modelIdentifier":"@cf/zai-org/glm-5.3"');
+  expect(identifierQuestion).not.toContain("providerDisplayName");
 });
