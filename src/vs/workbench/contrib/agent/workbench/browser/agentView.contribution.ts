@@ -120,7 +120,13 @@ const guiActions: Array<{ id: string; title: string; messageType: string; data?:
 
 registerAction2(class OpenAgentSettingsAction extends Action2 {
 	constructor() {
-		super({ id: 'agent.openConfigPage', title: localize2('agent.openConfigPage', 'Open Settings'), category: quantumCategory, f1: true });
+		super({
+			id: 'agent.openConfigPage',
+			title: { ...localize2('agent.openConfigPage', 'Open Settings'), mnemonicTitle: localize({ key: 'agent.settingsMenu', comment: ['&& denotes a mnemonic'] }, '&&Settings') },
+			category: quantumCategory,
+			f1: true,
+			menu: [{ id: MenuId.MenubarPreferencesMenu, group: '2_configuration', order: 1.5 }],
+		});
 	}
 	run(accessor: ServicesAccessor): void {
 		accessor.get(IAgentWorkbenchHost).openSettingsPage('/config');

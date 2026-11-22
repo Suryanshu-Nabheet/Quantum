@@ -96,6 +96,7 @@ export const indentationFilter = Object.freeze<string[]>([
 	'!build/ext.js',
 	'!build/darwin/patch-dmg.py',
 	'!build/npm/gyp/patches/gyp_spectre_mitigation_support.patch',
+	'!build/quantum-release/patches/**/*.patch',
 	'!product.overrides.json',
 
 	// except specific folders

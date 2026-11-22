@@ -25,8 +25,8 @@ export function createNativeAboutDialogDetails(productService: IProductService, 
 	const buildType = productService.quality === 'insider' ? 'Insider' : 'Stable';
 
 	const getDetails = (useAgo: boolean): string => {
-		return localize({ key: 'aboutDetail', comment: ['{0} is the product name; Electron, Chromium, Node.js, V8 and xterm.js are product names that need no translation'] },
-			"{0}: {1}\nVS Code: {2}\nBuild: {3}\nBuild Type: {4}\nCommit: {5}\nDate: {6}\nElectron: {7}\nChromium: {8}\nNode.js: {9}\nV8: {10}\nxterm.js: {11}\nOS: {12}",
+		return localize({ key: 'quantumAboutDetail', comment: ['{0} is the product name; Electron, Chromium and Node.js are product names that need no translation'] },
+			"{0}: {1}\nVS Code: {2}\nBuild: {3}\nBuild Type: {4}\nCommit: {5}\nDate: {6}\nElectron: {7}\nChromium: {8}\nNode.js: {9}",
 			productService.nameShort,
 			quantumVersion,
 			vscodeVersion,
@@ -36,7 +36,9 @@ export function createNativeAboutDialogDetails(productService: IProductService, 
 			productService.date ? `${productService.date}${useAgo ? ' (' + fromNow(new Date(productService.date), true) + ')' : ''}` : 'Unknown',
 			process.versions['electron'],
 			process.versions['chrome'],
-			process.versions['node'],
+			process.versions['node']
+		) + '\n' + localize({ key: 'aboutDetailRuntime', comment: ['V8 and xterm.js are product names that need no translation'] },
+			"V8: {0}\nxterm.js: {1}\nOS: {2}",
 			process.versions['v8'],
 			productService.xtermVersion || 'Unknown',
 			`${osProps.type} ${osProps.arch} ${osProps.release}${isLinuxSnap ? ' snap' : ''}`
