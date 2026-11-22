@@ -38,7 +38,7 @@ import {
   selectPendingToolCalls,
 } from "../selectors/selectToolCalls";
 import { getBaseSystemMessage } from "../util/getBaseSystemMessage";
-import { historyHasResearch, planBriefBlock } from "core/tools/implementations/createPlan";
+import { planBriefBlock } from "core/tools/implementations/createPlan";
 import { todosSystemBlock } from "core/tools/implementations/writeTodos";
 import { evaluateToolPolicies } from "./evaluateToolPolicies";
 import { preprocessToolCalls } from "./preprocessToolCallArgs";
@@ -762,18 +762,7 @@ async function runPostStreamToolPhase({
         .filter((call) => call.toolCall.function?.name !== BuiltInToolNames.CreatePlan)
         .map((call) => toAgentToolCallRef(call));
       const otherIds = otherCalls.map((call) => call.toolCallId);
-      const planBeforeResearch =
-        planCalls.length > 0 &&
-        (otherIds.length > 0 ||
-          !historyHasResearch(
-            getState().session.history.flatMap((item) =>
-              (item.toolCallStates ?? []).map((call) => ({
-                name: call.toolCall.function?.name,
-                status: call.status,
-              })),
-            ),
-          ));
-      if (planBeforeResearch) {
+      if (planCalls.length > 0 && otherIds.length > 0) {
         if (otherIds.length > 0) {
           await runParallelToolCalls(dispatch, otherCalls, {
             depth: depth + 1,
@@ -789,9 +778,9 @@ async function runPostStreamToolPhase({
               output: [
                 {
                   name: "Plan",
-                  description: "Research first",
+                  description: "Plan must be submitted separately",
                   content:
-                    "Do not call create_plan yet. Finish searching and reading the relevant files. Then call create_plan once, by itself, as the last action.",
+                    "The plan was not created because other tools were called in the same turn. After those calls finish, call create_plan by itself.",
                   hidden: true,
                 },
               ],

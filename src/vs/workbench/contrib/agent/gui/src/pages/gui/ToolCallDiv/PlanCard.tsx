@@ -10,7 +10,6 @@ import { BuiltInToolNames } from "core/tools/builtIn";
 import {
   formatPlanBuildMessage,
   formatPlanDocument,
-  historyHasResearch,
   normalizePlan,
   planFileName,
   planToTodos,
@@ -280,16 +279,6 @@ export function PlanCard({
   const planBrief = useAppSelector((state) => state.session.planBrief);
   const todos = useAppSelector((state) => state.session.todos);
   const isStreaming = useAppSelector((state) => state.session.isStreaming);
-  const researched = useAppSelector((state) =>
-    historyHasResearch(
-      state.session.history.flatMap((item) =>
-        (item.toolCallStates ?? []).map((call) => ({
-          name: call.toolCall.function?.name,
-          status: call.status,
-        })),
-      ),
-    ),
-  );
   const isLastReadyPlan = useAppSelector((state) => {
     let lastId = "";
     for (const item of state.session.history) {
@@ -315,8 +304,7 @@ export function PlanCard({
   const isPlanning =
     (toolCallState.status === "generating" ||
       toolCallState.status === "calling") &&
-    !alongsideResearch &&
-    researched;
+    !alongsideResearch;
   const planData = useMemo<AgentPlanViewData | undefined>(() => {
     if (!plan || !isLastReadyPlan) return undefined;
     const isCurrentPlan = planBrief?.sourceToolCallId

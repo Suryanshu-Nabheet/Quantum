@@ -12,7 +12,7 @@ export const createPlanTool: GetTool = async () => ({
   function: {
     name: BuiltInToolNames.CreatePlan,
     description:
-      "Publish the implementation plan. Call this once, only after every search and read is finished, and only as the sole tool in that turn. Never call it alongside read or search tools.",
+      "Publish the implementation plan once, as the sole tool in that turn. Follow the user's instructions about whether to research; identify assumptions when working without research.",
     parameters: {
       type: "object",
       required: ["title", "overview", "approach", "todos"],
@@ -39,7 +39,7 @@ export const createPlanTool: GetTool = async () => ({
     },
   },
   systemMessageDescription: {
-    prefix: `After research, call ${BuiltInToolNames.CreatePlan} once with title, overview, approach (markdown), and todos (an array of strings). Then stop.`,
+    prefix: `When the plan is ready, call ${BuiltInToolNames.CreatePlan} once with title, overview, approach (markdown), and todos (an array of strings). Then stop.`,
     exampleArgs: [
       ["title", "Add session export"],
       ["overview", "Export the open chat to markdown without changing history."],
