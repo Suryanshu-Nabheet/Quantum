@@ -19,26 +19,51 @@ interface TextDialogProps {
 
 const ScreenCover = styled.div`
   position: fixed;
-  width: 100%;
-  height: 100%;
+  inset: 0;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 1rem;
   background-color: rgba(0, 0, 0, 0.35);
   backdrop-filter: blur(0.5px);
   z-index: 100000;
-  flex-direction: column;
+
+  &[hidden] {
+    display: none;
+  }
 `;
 
 const DialogContainer = styled.div`
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  position: relative;
+  flex: 0 1 auto;
+  width: 100%;
+  max-width: 600px;
+  max-height: calc(100dvh - 2rem);
+  min-width: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+  overscroll-behavior: contain;
   color: ${vscForeground};
   background-color: ${vscBackground};
   border-radius: ${defaultBorderRadius};
   display: flex;
   flex-direction: column;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-  word-wrap: break-word;
+
+  &,
+  & *,
+  & *::before,
+  & *::after {
+    box-sizing: border-box;
+  }
+
+  & * {
+    min-width: 0;
+  }
 `;
 
 const TextDialog = (props: TextDialogProps) => {
@@ -60,7 +85,7 @@ const TextDialog = (props: TextDialogProps) => {
       tabIndex={-1}
     >
       <DialogContainer
-        className="xs:w-[90%] no-scrollbar max-h-[95%] w-[92%] max-w-[600px] overflow-x-hidden overflow-y-auto sm:w-[88%] md:w-[80%]"
+        className="no-scrollbar"
         onClick={(e) => {
           e.stopPropagation();
         }}

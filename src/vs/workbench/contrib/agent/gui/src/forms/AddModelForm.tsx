@@ -252,7 +252,7 @@ export function AddModelForm({
   return (
     <FormProvider {...formMethods}>
       <form onSubmit={formMethods.handleSubmit(onSubmit)}>
-        <div className="mx-auto w-full min-w-0 max-w-md p-4 sm:p-6">
+        <div className="box-border mx-auto w-full min-w-0 max-w-md p-4 sm:p-6">
           <h1 className="mb-0 text-center text-2xl">{formTitle}</h1>
           <p className="text-description mt-2 mb-0 text-center text-sm">
             Connect a provider once to use all of its available models in Model

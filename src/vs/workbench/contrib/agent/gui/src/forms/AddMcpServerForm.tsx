@@ -108,7 +108,10 @@ export function AddMcpServerForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mx-auto max-w-md p-6">
+    <form
+      onSubmit={handleSubmit}
+      className="box-border mx-auto w-full min-w-0 max-w-md p-4 sm:p-6"
+    >
       <h1 className="mb-0 text-center text-2xl">
         {isEditing ? "Edit MCP server" : "Add MCP server"}
       </h1>
