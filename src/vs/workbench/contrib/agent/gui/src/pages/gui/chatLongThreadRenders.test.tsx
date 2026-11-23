@@ -5,12 +5,13 @@ import { MockHostBridge } from "../../context/MockHostBridge";
 import { renderWithProviders } from "../../util/test/render";
 import { setupStore } from "../../redux/store";
 import {
+  ChatHistoryItemWithMessageId,
   newSession,
   setActive,
   setInactive,
   streamUpdate,
 } from "../../redux/slices/sessionSlice";
-import { Chat } from "./Chat";
+import { Chat, frozenTurnTodosByIndex } from "./Chat";
 
 // Count real TimelineItem renders. The mock forwards to the real component so
 // behavior is unchanged; only the render invocation is observed.
@@ -52,6 +53,34 @@ function seedHistory(n: number): ChatHistoryItem[] {
 }
 
 describe("Chat long-thread render cost", () => {
+  it("indexes the first todo snapshot once per user turn", () => {
+    const firstTodos = [{ id: "first", text: "First", status: "pending" as const }];
+    const secondTodos = [{ id: "second", text: "Second", status: "done" as const }];
+    const history = [
+      { message: { role: "user", content: "first ask" } },
+      {
+        message: { role: "assistant", content: "first reply" },
+        toolCallStates: [{ todosSnapshot: firstTodos }],
+      },
+      { message: { role: "assistant", content: "continued reply" } },
+      { message: { role: "user", content: "second ask" } },
+      { message: { role: "assistant", content: "second reply" } },
+      {
+        message: { role: "assistant", content: "second continuation" },
+        toolCallStates: [{ todosSnapshot: secondTodos }],
+      },
+    ] as ChatHistoryItemWithMessageId[];
+
+    expect(frozenTurnTodosByIndex(history)).toEqual([
+      undefined,
+      firstTodos,
+      undefined,
+      undefined,
+      undefined,
+      secondTodos,
+    ]);
+  });
+
   it("re-renders only the streaming tail timeline row per chunk", async () => {
     const store = setupStore({ hostBridge: new MockHostBridge() });
     store.dispatch(

@@ -140,33 +140,36 @@ const AssistantMessageRow = memo(function AssistantMessageRow({
   );
 });
 
-/** First todo list of one ask. Later edits stay on the composer list. */
-function frozenTurnTodos(
+/** First todo list of each ask. Later edits stay on the composer list. */
+export function frozenTurnTodosByIndex(
   history: ChatHistoryItemWithMessageId[],
-  index: number,
-): TodoItem[] | undefined {
-  let start = 0;
-  for (let i = index; i >= 0; i--) {
-    if (history[i].message.role === "user") {
-      start = i;
-      break;
+): (TodoItem[] | undefined)[] {
+  const todosByIndex: (TodoItem[] | undefined)[] = new Array(history.length);
+  let turnStart = 0;
+
+  while (turnStart < history.length) {
+    let turnEnd = turnStart + 1;
+    while (
+      turnEnd < history.length &&
+      history[turnEnd].message.role !== "user"
+    ) {
+      turnEnd++;
     }
-  }
-  let end = history.length;
-  for (let i = start + 1; i < history.length; i++) {
-    if (history[i].message.role === "user") {
-      end = i;
-      break;
-    }
-  }
-  for (let i = start; i < end; i++) {
-    for (const state of history[i].toolCallStates ?? []) {
-      if (state.todosSnapshot?.length) {
-        return i === index ? state.todosSnapshot : undefined;
+
+    for (let index = turnStart; index < turnEnd; index++) {
+      const snapshot = history[index].toolCallStates?.find(
+        (state) => state.todosSnapshot?.length,
+      )?.todosSnapshot;
+      if (snapshot?.length) {
+        todosByIndex[index] = snapshot;
+        break;
       }
     }
+
+    turnStart = turnEnd;
   }
-  return undefined;
+
+  return todosByIndex;
 }
 
 function fallbackRender({ error, resetErrorBoundary }: any) {
@@ -202,6 +205,10 @@ export function Chat() {
   const stepsDivRef = useRef<HTMLDivElement>(null);
   const tabsRef = useRef<HTMLDivElement>(null);
   const history = useAppSelector((state) => state.session.history);
+  const turnTodosByIndex = useMemo(
+    () => frozenTurnTodosByIndex(history),
+    [history],
+  );
   const streamingStatus = useAppSelector(selectStreamingStatus);
   const showChatScrollbar = useAppSelector(
     (state) => state.config.config.ui?.showChatScrollbar,
@@ -584,7 +591,7 @@ export function Chat() {
             }
 
             const rendered = renderChatHistoryItem(item, index);
-            const turnTodos = frozenTurnTodos(history, index);
+            const turnTodos = turnTodosByIndex[index];
             if (rendered == null && !turnTodos) {
               return null;
             }

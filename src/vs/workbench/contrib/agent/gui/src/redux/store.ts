@@ -114,6 +114,10 @@ export function setupStore(options: { hostBridge?: IHostBridge }) {
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware({
         serializableCheck: false,
+        // Long chat histories are immutable Immer state and grow throughout a
+        // session. Rewalking every message on every streaming dispatch adds
+        // development-only main-thread work proportional to the whole chat.
+        immutableCheck: { ignoredPaths: ["session.history"] },
         thunk: {
           extraArgument: {
             hostBridge,
