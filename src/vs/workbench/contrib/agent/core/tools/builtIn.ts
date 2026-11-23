@@ -35,7 +35,16 @@ const TOOL_NAME_ALIASES: Record<string, BuiltInToolNames> = {
 
 /** Map names small models invent (`list`) onto the real built-in (`ls`). */
 export function canonicalToolName(name: string): string {
-  return TOOL_NAME_ALIASES[name] ?? name;
+  const markers = [...name.matchAll(/tool_?name\s*:\s*/gi)];
+  let normalizedName = name.trim();
+  const lastMarker = markers.at(-1);
+  if (lastMarker?.index !== undefined) {
+    normalizedName = normalizedName
+      .slice(lastMarker.index + lastMarker[0].length)
+      .trim();
+  }
+  normalizedName = normalizedName.replace(/^tool\s*:\s*/i, "").trim();
+  return TOOL_NAME_ALIASES[normalizedName] ?? normalizedName;
 }
 
 export const CLIENT_TOOLS_IMPLS = [

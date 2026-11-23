@@ -169,4 +169,106 @@ describe("acceptAllPendingToolCalls (batch resume)", () => {
 
     expect(streamCalls).toBeGreaterThan(streamCallsAfterFirstTurn);
   });
+
+  it("settles a rejected host tool call and resumes the agent", async () => {
+    const initialState = rootStateWithClaude();
+    initialState.session.history = [
+      {
+        message: { id: "1", role: "user", content: "Search the codebase" },
+        contextItems: [],
+      },
+    ];
+    initialState.session.id = "session-tool-error";
+    initialState.ui.toolSettings = {
+      [grepName]: "allowedWithPermission",
+    };
+    initialState.config.config.tools = [grepTool];
+
+    const hostBridge = new MockHostBridge();
+    hostBridge.responses["llm/assembleChat"] = {
+      compiledChatMessages: [
+        { role: "user", content: "Search the codebase" },
+      ],
+      didPrune: false,
+      contextPercentage: 0.5,
+    };
+
+    let streamCalls = 0;
+    hostBridge.llmStreamChat = vi.fn().mockImplementation(() => {
+      streamCalls++;
+      if (streamCalls === 1) {
+        return (async function* (): AsyncGenerator<
+          AssistantChatMessage[],
+          PromptLog
+        > {
+          yield [
+            {
+              role: "assistant",
+              content: "I will search the codebase.",
+              toolCalls: [
+                {
+                  id: "rejected-tool-call",
+                  type: "function",
+                  function: {
+                    name: grepName,
+                    arguments: JSON.stringify({ query: "agent tools" }),
+                  },
+                },
+              ],
+            },
+          ];
+          return {
+            prompt: "Search the codebase",
+            completion: "I will search the codebase.",
+            modelProvider: "anthropic",
+            modelTitle: "Claude 3.5 Sonnet",
+          };
+        })();
+      }
+      return (async function* (): AsyncGenerator<
+        AssistantChatMessage[],
+        PromptLog
+      > {
+        yield [
+          {
+            role: "assistant",
+            content: "The search tool could not connect. Try again later.",
+          },
+        ];
+        return {
+          prompt: "continue after tool failure",
+          completion: "The search tool could not connect. Try again later.",
+          modelProvider: "anthropic",
+          modelTitle: "Claude 3.5 Sonnet",
+        };
+      })();
+    });
+    hostBridge.responseHandlers["tools/call"] = async () => {
+      throw new Error("Host bridge disconnected");
+    };
+
+    const store = createMockStore(initialState, hostBridge);
+    await store.dispatch(
+      streamResponseThunk({
+        editorState: { type: "doc", content: [] } as any,
+        modifiers: {} as any,
+      }) as any,
+    );
+    await store.dispatch(acceptAllPendingToolCalls() as any);
+
+    const finalState = store.getState() as RootState;
+    const failedCall = finalState.session.history
+      .flatMap((item) => item.toolCallStates ?? [])
+      .find((toolCall) => toolCall.toolCallId === "rejected-tool-call");
+
+    expect({
+      status: failedCall?.status,
+      output: failedCall?.output?.[0]?.content,
+      streamCalls,
+    }).toEqual({
+      status: "errored",
+      output: expect.stringContaining("Host bridge disconnected"),
+      streamCalls: 2,
+    });
+  });
 });

@@ -1,5 +1,11 @@
 import { ToolCallDelta, ToolCallState } from "core";
+import { canonicalToolName } from "core/tools/builtIn";
 import { addToolCallDeltaToState } from "./toolCallState";
+
+it("repairs duplicated tool-name markers before tool dispatch", () => {
+  expect(canonicalToolName("TOOL_NAME: tool TOOL_NAME: ls")).toBe("ls");
+  expect(canonicalToolName("tool: list_files")).toBe("ls");
+});
 
 describe("addToolCallDeltaToState", () => {
   it("preserves cumulative arguments and replaces empty placeholders", () => {

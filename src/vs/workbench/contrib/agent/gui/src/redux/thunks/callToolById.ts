@@ -53,10 +53,6 @@ export const callToolById = createAsyncThunk<
 
   const selectedChatModel = selectSelectedChatModel(state);
 
-  if (!selectedChatModel) {
-    throw new Error("No model selected");
-  }
-
   dispatch(
     setToolCallCalling({
       toolCallId,
@@ -65,40 +61,44 @@ export const callToolById = createAsyncThunk<
 
   let output: ContextItem[] | undefined = undefined;
   let mcpUiState: McpUiState | undefined = undefined;
-  let error: AgentError | undefined = undefined;
-  let streamResponse: boolean;
+  let error: AgentError | undefined;
+  let streamResponse = !!selectedChatModel;
 
-  // IMPORTANT:
-  // Errors that occur while calling tool call implementations
-  // Are caught and passed in output as context items
-  // Errors that occur outside specifically calling the tool
-  // Should not be caught here - should be handled as normal stream errors
-  if (
-    CLIENT_TOOLS_IMPLS.find(
-      (toolName) => toolName === toolCallState.toolCall.function.name,
-    )
-  ) {
-    // Tool is called on client side
-    const {
-      output: clientToolOutput,
-      respondImmediately,
-      error: clientToolError,
-    } = await callClientTool(toolCallState, {
-      dispatch,
-      hostBridge: extra.hostBridge,
-      getState,
-    });
-    output = clientToolOutput;
-    error = clientToolError;
-    streamResponse = respondImmediately;
-  } else {
-    // Tool is called on core side
-    const result = await extra.hostBridge.request("tools/call", {
-      toolCall: toolCallState.toolCall,
-    });
-    if (result.status === "error") {
-      throw new Error(result.error);
+  // Tool execution and host-bridge failures become tool results so the agent
+  // can explain the failure or choose a safe retry instead of stranding the
+  // call in its in-progress state.
+  try {
+    if (!selectedChatModel) {
+      throw new Error("No model selected");
+    }
+
+    if (
+      CLIENT_TOOLS_IMPLS.includes(
+        toolCallState.toolCall.function.name as
+          (typeof CLIENT_TOOLS_IMPLS)[number],
+      )
+    ) {
+      // Tool is called on client side
+      const {
+        output: clientToolOutput,
+        respondImmediately,
+        error: clientToolError,
+      } = await callClientTool(toolCallState, {
+        dispatch,
+        hostBridge: extra.hostBridge,
+        getState,
+      });
+      output = clientToolOutput;
+      error = clientToolError;
+      streamResponse = respondImmediately;
     } else {
+      // Tool is called on core side
+      const result = await extra.hostBridge.request("tools/call", {
+        toolCall: toolCallState.toolCall,
+      });
+      if (result.status === "error") {
+        throw new Error(result.error);
+      }
       output = result.content.contextItems;
       mcpUiState = result.content.mcpUiState;
       error = result.content.errorMessage
@@ -107,8 +107,30 @@ export const callToolById = createAsyncThunk<
             result.content.errorMessage,
           )
         : undefined;
+      streamResponse = true;
     }
-    streamResponse = true;
+  } catch (caughtError) {
+    error =
+      caughtError instanceof AgentError
+        ? caughtError
+        : new AgentError(
+            caughtError instanceof Error
+              ? AgentErrorReason.Unspecified
+              : AgentErrorReason.Unknown,
+            caughtError instanceof Error
+              ? caughtError.message
+              : String(caughtError),
+          );
+  }
+
+  // A user can cancel a running tool while its host request is pending. Keep
+  // that terminal state and do not resume the agent after cancellation.
+  const currentToolCall = findToolCallById(
+    getState().session.history,
+    toolCallId,
+  );
+  if (!currentToolCall || currentToolCall.status !== "calling") {
+    return;
   }
 
   if (!error && toolCallState.toolCall.function.name === BuiltInToolNames.CreateNewFile) {
@@ -165,23 +187,15 @@ export const callToolById = createAsyncThunk<
     );
   }
 
-  if (streamResponse) {
-    if (error) {
-      logToolUsage(toolCallState, false, false, extra.hostBridge, output);
-      dispatch(
-        errorToolCall({
-          toolCallId,
-        }),
-      );
-    } else {
-      logToolUsage(toolCallState, true, true, extra.hostBridge, output);
-      dispatch(
-        acceptToolCall({
-          toolCallId,
-        }),
-      );
-    }
+  if (error) {
+    logToolUsage(toolCallState, false, false, extra.hostBridge, output);
+    dispatch(errorToolCall({ toolCallId }));
+  } else if (streamResponse) {
+    logToolUsage(toolCallState, true, true, extra.hostBridge, output);
+    dispatch(acceptToolCall({ toolCallId }));
+  }
 
+  if (streamResponse) {
     // Send to the LLM to resume the conversation (once all parallel tools finish).
     if (deferAgentContinuation) {
       appendToolResultMessage(
