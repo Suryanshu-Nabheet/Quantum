@@ -450,15 +450,15 @@
       "chatSessionCustomizationProvider",
       "contribEditorContentMenu"
     ],
-    "jeanp413.open-remote-ssh": [
+    "jeanp413.open-remote-wsl": [
       "resolvers",
-      "tunnels",
-      "terminalDataWriteEvent",
       "contribRemoteHelp",
       "contribViewsRemote"
     ],
-    "jeanp413.open-remote-wsl": [
+    "quantum.quantum-ssh": [
       "resolvers",
+      "tunnels",
+      "terminalDataWriteEvent",
       "contribRemoteHelp",
       "contribViewsRemote"
     ]

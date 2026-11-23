@@ -16,6 +16,7 @@ import { IConfigurationService } from '../../../../platform/configuration/common
 import { ContextKeyExpr, ContextKeyExpression, IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
 import { IKeybindingService } from '../../../../platform/keybinding/common/keybinding.js';
 import { ILabelService } from '../../../../platform/label/common/label.js';
+import { INotificationService } from '../../../../platform/notification/common/notification.js';
 import { IStorageService, StorageScope, StorageTarget, WillSaveStateReason } from '../../../../platform/storage/common/storage.js';
 import { defaultKeybindingLabelStyles } from '../../../../platform/theme/browser/defaultStyles.js';
 import { IWorkspaceContextService, WorkbenchState } from '../../../../platform/workspace/common/workspace.js';
@@ -91,7 +92,7 @@ interface ActionCard {
 const emptyWindowActions: ActionCard[] = [
 	{ label: localize('watermark.openProject', "Open project"), commandId: isMacintosh && !isWeb ? 'workbench.action.files.openFileFolder' : 'workbench.action.files.openFolder', codicon: 'folder-opened' },
 	{ label: localize('watermark.cloneRepo', "Clone repo"), commandId: 'git.clone', codicon: 'repo-clone' },
-	{ label: localize('watermark.connectSSH', "Connect via SSH"), commandId: 'opensshremotes.openEmptyWindow', codicon: 'remote' },
+	{ label: localize('watermark.connectSSH', "Connect via SSH"), commandId: 'quantum.ssh.openEmptyWindow', codicon: 'remote' },
 ];
 
 const MAX_RECENT_PROJECTS = 5;
@@ -122,7 +123,8 @@ export class EditorGroupWatermark extends Disposable {
 		@ICommandService private readonly commandService: ICommandService,
 		@IWorkspacesService private readonly workspacesService: IWorkspacesService,
 		@ILabelService private readonly labelService: ILabelService,
-		@IHostService private readonly hostService: IHostService
+		@IHostService private readonly hostService: IHostService,
+		@INotificationService private readonly notificationService: INotificationService
 	) {
 		super();
 
@@ -209,7 +211,7 @@ export class EditorGroupWatermark extends Disposable {
 			const cardEl = append(cardsRow, $('button.welcome-card'));
 			cardEl.title = card.label;
 			cardEl.addEventListener('click', () => {
-				this.commandService.executeCommand(card.commandId);
+				void this.commandService.executeCommand(card.commandId).catch(error => this.notificationService.error(error));
 			});
 
 			const iconEl = append(cardEl, $(`span.welcome-card-icon.codicon.codicon-${card.codicon}`));

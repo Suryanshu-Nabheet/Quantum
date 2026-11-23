@@ -37,7 +37,7 @@ VERSIONFOLDER="${VERSIONFOLDER#\"}"
 VERSIONFOLDER="${VERSIONFOLDER%\"}"
 
 APIS=$( jq -r '.extensionEnabledApiProposals' "${DIRECTORY}/${VERSIONFOLDER}/resources/app/product.json" )
-APIS=$( echo "${APIS}" | jq '. += {"jeanp413.open-remote-ssh": ["resolvers", "tunnels", "terminalDataWriteEvent", "contribRemoteHelp", "contribViewsRemote"]}' )
+APIS=$( echo "${APIS}" | jq '. += {"quantum.quantum-ssh": ["resolvers", "tunnels", "terminalDataWriteEvent", "contribRemoteHelp", "contribViewsRemote"]}' )
 APIS=$( echo "${APIS}" | jq '. += {"jeanp413.open-remote-wsl": ["resolvers", "contribRemoteHelp", "contribViewsRemote"]}' )
 echo "$( jq --argjson v "${APIS}" 'setpath(["extensionEnabledApiProposals"]; $v)' product.json )" > product.json
 

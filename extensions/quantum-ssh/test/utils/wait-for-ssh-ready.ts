@@ -1,0 +1,37 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+import { timeout } from '../../src/common/async';
+import SSHConnection from '../../src/ssh/sshConnection';
+import { runDocker } from './run-docker';
+
+export async function waitForSSHReady(username: string, password: string, port: number, timeoutMs: number, containerName: string): Promise<void> {
+    const start = Date.now();
+
+    while (Date.now() - start < timeoutMs) {
+        const conn = new SSHConnection({
+            host: '127.0.0.1',
+            port,
+            username,
+            password,
+            reconnect: false,
+            readyTimeout: 10000,
+            strictVendor: false,
+        });
+
+        try {
+            await conn.connect();
+            await conn.close();
+
+            return;
+        } catch {
+            await timeout(1000);
+        }
+    }
+
+    console.error(`Docker logs for ${containerName}:\n${runDocker(['logs', containerName], true)}`);
+
+    throw new Error('Timed out waiting for Docker SSH server to become ready');
+}

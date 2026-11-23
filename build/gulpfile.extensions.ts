@@ -98,6 +98,7 @@ const compilations = [
 	'extensions/quantum-emulator/tsconfig.json',
 	'extensions/quantum-pdfviewer/tsconfig.json',
 	'extensions/quantum-project-tree/tsconfig.json',
+	'extensions/quantum-ssh/tsconfig.json',
 	'extensions/quantum-timeline/tsconfig.json',
 
 	'.vscode/extensions/vscode-selfhost-test-provider/tsconfig.json',

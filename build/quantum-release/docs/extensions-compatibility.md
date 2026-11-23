@@ -40,5 +40,5 @@ The following extensions are functional replacements for incompatible extensions
 
 ### <a id="remote"></a>Remote Development
 
-- [Open Remote - SSH](https://open-vsx.org/extension/jeanp413/open-remote-ssh) (SSH server must be configured with the setting `AllowTcpForwarding yes`.)
+- Quantum SSH is built into Quantum. Configure the SSH server with `AllowTcpForwarding yes`.
 - [Open Remote - WSL](https://open-vsx.org/extension/jeanp413/open-remote-wsl)

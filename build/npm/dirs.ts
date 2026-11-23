@@ -49,6 +49,7 @@ export const dirs = [
 	'extensions/terminal-suggest',
 	'extensions/quantum-error-lens',
 	'extensions/quantum-emulator',
+	'extensions/quantum-ssh',
 	'extensions/quantum-pdfviewer',
 	'extensions/quantum-project-tree',
 	'extensions/quantum-theme',

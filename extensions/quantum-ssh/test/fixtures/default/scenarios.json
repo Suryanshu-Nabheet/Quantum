@@ -1,0 +1,503 @@
+[
+  {
+    "name": "feat-checkcommit-err-linux",
+    "client": {
+      "files": {
+        "/etc/ssh/ssh_config": "Host test\n  HostName 127.0.0.1\n  User quantumssh\n  Password quantumssh\n",
+        "/bin/quantum/app/product.json": "{\n  \"nameShort\": \"Quantum\",\n  \"nameLong\": \"Quantum\",\n  \"applicationName\": \"quantum\",\n  \"quality\": \"stable\",\n  \"commit\": \"4c0b0c6cc561d2d3636d1ec250935431876ce4dc\",\n  \"version\": \"1.126.04524\",\n  \"serverApplicationName\": \"quantum-server\",\n  \"serverDataFolderName\": \".quantum-server\",\n  \"serverDownloadUrlTemplate\": \"https://github.com/Suryanshu-Nabheet/quantum/releases/download/1.121.03429/quantum-reh-${os}-${arch}-1.121.03429.tar.gz\"\n}\n"
+      }
+    },
+    "server": {
+      "image": "local-ubuntu-bash",
+      "username": "quantumssh",
+      "password": "quantumssh"
+    },
+    "test": {
+      "error": "Error: downloaded server commit 824c4c46a288b839f13b24022655329c2aeb9f81 does not match 4c0b0c6cc561d2d3636d1ec250935431876ce4dc\nCheck that remote.SSH.serverDownloadUrlTemplate resolves to the server for this build; a ${commit} keyed URL cannot be ambiguous"
+    }
+  },
+  {
+    "name": "feat-checkcommit-err-windows",
+    "client": {
+      "files": {
+        "C:\\ProgramData\\ssh\\ssh_config": "Host test\n  HostName 127.0.0.1\n  User quantumssh\n  Password Quantum-SSH-1\n",
+        "/bin/quantum/app/product.json": "{\n  \"nameShort\": \"Quantum\",\n  \"nameLong\": \"Quantum\",\n  \"applicationName\": \"quantum\",\n  \"quality\": \"stable\",\n  \"commit\": \"4c0b0c6cc561d2d3636d1ec250935431876ce4dc\",\n  \"version\": \"1.126.04524\",\n  \"serverApplicationName\": \"quantum-server\",\n  \"serverDataFolderName\": \".quantum-server\",\n  \"serverDownloadUrlTemplate\": \"https://github.com/Suryanshu-Nabheet/quantum/releases/download/1.121.03429/quantum-reh-${os}-${arch}-1.121.03429.tar.gz\"\n}\n"
+      }
+    },
+    "server": {
+      "image": "local-windows-en-powershell-cmd",
+      "platform": "windows",
+      "username": "quantumssh",
+      "password": "Quantum-SSH-1"
+    },
+    "test": {
+      "error": "Error: downloaded server commit 824c4c46a288b839f13b24022655329c2aeb9f81 does not match 4c0b0c6cc561d2d3636d1ec250935431876ce4dc\nCheck that remote.SSH.serverDownloadUrlTemplate resolves to the server for this build; a ${commit} keyed URL cannot be ambiguous"
+    }
+  },
+  {
+    "name": "feat-gssapi-notused",
+    "client": {
+      "files": {
+        "/etc/ssh/ssh_config": "Host test\n  HostName 127.0.0.1\n  User quantumssh\n  Password quantumssh\n  GSSAPIAuthentication yes\n",
+        "/bin/quantum/app/product.json": "{\n  \"nameShort\": \"Quantum\",\n  \"nameLong\": \"Quantum\",\n  \"applicationName\": \"quantum\",\n  \"quality\": \"stable\",\n  \"commit\": \"4c0b0c6cc561d2d3636d1ec250935431876ce4dc\",\n  \"version\": \"1.126.04524\",\n  \"serverApplicationName\": \"quantum-server\",\n  \"serverDataFolderName\": \".quantum-server\",\n  \"serverDownloadUrlTemplate\": \"https://github.com/Suryanshu-Nabheet/quantum/releases/download/1.126.04524/quantum-reh-${os}-${arch}-1.126.04524.tar.gz\"\n}\n"
+      }
+    },
+    "server": {
+      "image": "local-ubuntu-bash",
+      "username": "quantumssh",
+      "password": "quantumssh"
+    }
+  },
+  {
+    "name": "feat-hosts-default",
+    "client": {
+      "files": {
+        "/etc/ssh/ssh_config": "Host *\n  StrictHostKeyChecking no\n\nHost test alias\n  HostName 127.0.0.1\n  User quantumssh\n  Password quantumssh\n",
+        "/bin/quantum/app/product.json": "{\n  \"nameShort\": \"Quantum\",\n  \"nameLong\": \"Quantum\",\n  \"applicationName\": \"quantum\",\n  \"quality\": \"stable\",\n  \"commit\": \"4c0b0c6cc561d2d3636d1ec250935431876ce4dc\",\n  \"version\": \"1.126.04524\",\n  \"serverApplicationName\": \"quantum-server\",\n  \"serverDataFolderName\": \".quantum-server\",\n  \"serverDownloadUrlTemplate\": \"https://github.com/Suryanshu-Nabheet/quantum/releases/download/1.126.04524/quantum-reh-${os}-${arch}-1.126.04524.tar.gz\"\n}\n"
+      }
+    },
+    "server": {
+      "image": "local-ubuntu-bash",
+      "username": "quantumssh",
+      "password": "quantumssh"
+    },
+    "test": {
+      "hosts": [
+        "test",
+        "alias"
+      ]
+    }
+  },
+  {
+    "name": "feat-hosts-include",
+    "client": {
+      "files": {
+        "/etc/ssh/ssh_config": "Host *\n  StrictHostKeyChecking no\n\nInclude config.d/*\n",
+        "/etc/ssh/config.d/hosts": "Host test alias\n  HostName 127.0.0.1\n  User quantumssh\n  Password quantumssh\n",
+        "/etc/ssh/config.d/systemd-ssh-proxy": "Host .host machine/.host\n  ProxyCommand /usr/lib/systemd/systemd-ssh-proxy unix/run/ssh-unix-local/socket %p\n  CheckHostIP no\n\nHost unix/* vsock/* machine/*\n  ProxyCommand /usr/lib/systemd/systemd-ssh-proxy %h %p\n  UserKnownHostsFile /dev/null\n",
+        "/bin/quantum/app/product.json": "{\n  \"nameShort\": \"Quantum\",\n  \"nameLong\": \"Quantum\",\n  \"applicationName\": \"quantum\",\n  \"quality\": \"stable\",\n  \"commit\": \"4c0b0c6cc561d2d3636d1ec250935431876ce4dc\",\n  \"version\": \"1.126.04524\",\n  \"serverApplicationName\": \"quantum-server\",\n  \"serverDataFolderName\": \".quantum-server\",\n  \"serverDownloadUrlTemplate\": \"https://github.com/Suryanshu-Nabheet/quantum/releases/download/1.126.04524/quantum-reh-${os}-${arch}-1.126.04524.tar.gz\"\n}\n"
+      }
+    },
+    "server": {
+      "image": "local-ubuntu-bash",
+      "username": "quantumssh",
+      "password": "quantumssh"
+    },
+    "test": {
+      "hosts": [
+        "test",
+        "alias"
+      ]
+    }
+  },
+  {
+    "name": "feat-nolock-linux",
+    "client": {
+      "files": {
+        "/etc/ssh/ssh_config": "Host test\n  HostName 127.0.0.1\n  User quantumssh\n  Password quantumssh\n",
+        "/bin/quantum/app/product.json": "{\n  \"nameShort\": \"Quantum\",\n  \"nameLong\": \"Quantum\",\n  \"applicationName\": \"quantum\",\n  \"quality\": \"stable\",\n  \"commit\": \"4c0b0c6cc561d2d3636d1ec250935431876ce4dc\",\n  \"version\": \"1.126.04524\",\n  \"serverApplicationName\": \"quantum-server\",\n  \"serverDataFolderName\": \".quantum-server\",\n  \"serverDownloadUrlTemplate\": \"https://github.com/Suryanshu-Nabheet/quantum/releases/download/1.126.04524/quantum-reh-${os}-${arch}-1.126.04524.tar.gz\"\n}\n"
+      }
+    },
+    "server": {
+      "image": "local-ubuntu-noflock",
+      "username": "quantumssh",
+      "password": "quantumssh"
+    }
+  },
+  {
+    "name": "feat-proxycmd-linux-nc-nsh",
+    "client": {
+      "files": {
+        "/etc/ssh/ssh_config": "Host test\n  HostName 127.0.0.1\n  User quantumssh\n  Password quantumssh\n  ProxyCommand nc %h %p\n",
+        "/bin/quantum/app/product.json": "{\n  \"nameShort\": \"Quantum\",\n  \"nameLong\": \"Quantum\",\n  \"applicationName\": \"quantum\",\n  \"quality\": \"stable\",\n  \"commit\": \"4c0b0c6cc561d2d3636d1ec250935431876ce4dc\",\n  \"version\": \"1.126.04524\",\n  \"serverApplicationName\": \"quantum-server\",\n  \"serverDataFolderName\": \".quantum-server\",\n  \"serverDownloadUrlTemplate\": \"https://github.com/Suryanshu-Nabheet/quantum/releases/download/1.126.04524/quantum-reh-${os}-${arch}-1.126.04524.tar.gz\"\n}\n"
+      }
+    },
+    "server": {
+      "image": "local-ubuntu-bash",
+      "username": "quantumssh",
+      "password": "quantumssh"
+    },
+    "test": {
+      "output": "Spawning ProxyCommand: nc 127.0.0.1"
+    }
+  },
+  {
+    "name": "feat-proxycmd-linux-nc-p22",
+    "client": {
+      "files": {
+        "/etc/ssh/ssh_config": "Host test\n  HostName 127.0.0.1\n  User quantumssh\n  Password quantumssh\n  ProxyCommand nc %h 22\n",
+        "/bin/quantum/app/product.json": "{\n  \"nameShort\": \"Quantum\",\n  \"nameLong\": \"Quantum\",\n  \"applicationName\": \"quantum\",\n  \"quality\": \"stable\",\n  \"commit\": \"4c0b0c6cc561d2d3636d1ec250935431876ce4dc\",\n  \"version\": \"1.126.04524\",\n  \"serverApplicationName\": \"quantum-server\",\n  \"serverDataFolderName\": \".quantum-server\",\n  \"serverDownloadUrlTemplate\": \"https://github.com/Suryanshu-Nabheet/quantum/releases/download/1.126.04524/quantum-reh-${os}-${arch}-1.126.04524.tar.gz\"\n}\n"
+      }
+    },
+    "server": {
+      "image": "local-ubuntu-bash",
+      "username": "quantumssh",
+      "password": "quantumssh"
+    },
+    "test": {
+      "error": [
+        "Spawning ProxyCommand: nc 127.0.0.1 22",
+        "Error resolving authority"
+      ]
+    }
+  },
+  {
+    "name": "feat-proxycmd-linux-nc-unsafe",
+    "client": {
+      "files": {
+        "/etc/ssh/ssh_config": "Host test\n  HostName 127.0.0.1;id\n  User quantumssh\n  Password quantumssh\n  ProxyCommand nc %h %p\n",
+        "/bin/quantum/app/product.json": "{\n  \"nameShort\": \"Quantum\",\n  \"nameLong\": \"Quantum\",\n  \"applicationName\": \"quantum\",\n  \"quality\": \"stable\",\n  \"commit\": \"4c0b0c6cc561d2d3636d1ec250935431876ce4dc\",\n  \"version\": \"1.126.04524\",\n  \"serverApplicationName\": \"quantum-server\",\n  \"serverDataFolderName\": \".quantum-server\",\n  \"serverDownloadUrlTemplate\": \"https://github.com/Suryanshu-Nabheet/quantum/releases/download/1.126.04524/quantum-reh-${os}-${arch}-1.126.04524.tar.gz\"\n}\n"
+      }
+    },
+    "server": {
+      "image": "local-ubuntu-bash",
+      "username": "quantumssh",
+      "password": "quantumssh"
+    },
+    "test": {
+      "error": [
+        "ProxyCommand: %h expands to '127.0.0.1;id', which contains characters other than letters, digits and '_.@:[]-'",
+        "Error resolving authority"
+      ]
+    }
+  },
+  {
+    "name": "feat-proxycmd-linux-nc-wsh",
+    "client": {
+      "files": {
+        "/etc/ssh/ssh_config": "Host test\n  HostName 127.0.0.1\n  User quantumssh\n  Password quantumssh\n  ProxyCommand sh -c 'nc %h %p'\n",
+        "/bin/quantum/app/product.json": "{\n  \"nameShort\": \"Quantum\",\n  \"nameLong\": \"Quantum\",\n  \"applicationName\": \"quantum\",\n  \"quality\": \"stable\",\n  \"commit\": \"4c0b0c6cc561d2d3636d1ec250935431876ce4dc\",\n  \"version\": \"1.126.04524\",\n  \"serverApplicationName\": \"quantum-server\",\n  \"serverDataFolderName\": \".quantum-server\",\n  \"serverDownloadUrlTemplate\": \"https://github.com/Suryanshu-Nabheet/quantum/releases/download/1.126.04524/quantum-reh-${os}-${arch}-1.126.04524.tar.gz\"\n}\n"
+      }
+    },
+    "server": {
+      "image": "local-ubuntu-bash",
+      "username": "quantumssh",
+      "password": "quantumssh"
+    },
+    "test": {
+      "output": "Spawning ProxyCommand: sh -c 'nc 127.0.0.1"
+    }
+  },
+  {
+    "name": "feat-proxycmd-linux-nc-wspace",
+    "client": {
+      "files": {
+        "/etc/ssh/ssh_config": "Host test\n  HostName 127.0.0.1\n  User quantumssh\n  Password quantumssh\n  ProxyCommand ln -sf \"$(command -v nc)\" \"/tmp/quantum ssh nc\" && \"/tmp/quantum ssh nc\" %h %p\n",
+        "/bin/quantum/app/product.json": "{\n  \"nameShort\": \"Quantum\",\n  \"nameLong\": \"Quantum\",\n  \"applicationName\": \"quantum\",\n  \"quality\": \"stable\",\n  \"commit\": \"4c0b0c6cc561d2d3636d1ec250935431876ce4dc\",\n  \"version\": \"1.126.04524\",\n  \"serverApplicationName\": \"quantum-server\",\n  \"serverDataFolderName\": \".quantum-server\",\n  \"serverDownloadUrlTemplate\": \"https://github.com/Suryanshu-Nabheet/quantum/releases/download/1.126.04524/quantum-reh-${os}-${arch}-1.126.04524.tar.gz\"\n}\n"
+      }
+    },
+    "server": {
+      "image": "local-ubuntu-bash",
+      "username": "quantumssh",
+      "password": "quantumssh"
+    },
+    "test": {
+      "output": "Spawning ProxyCommand: ln -sf \"$(command -v nc)\" \"/tmp/quantum ssh nc\" && \"/tmp/quantum ssh nc\" 127.0.0.1"
+    }
+  },
+  {
+    "name": "feat-proxycmd-windows-connect-nesc",
+    "client": {
+      "files": {
+        "C:\\ProgramData\\ssh\\ssh_config": "Host test\n  HostName 127.0.0.1\n  User quantumssh\n  Password Quantum-SSH-1\n  ProxyCommand connect.exe %h %p\n",
+        "/bin/quantum/app/product.json": "{\n  \"nameShort\": \"Quantum\",\n  \"nameLong\": \"Quantum\",\n  \"applicationName\": \"quantum\",\n  \"quality\": \"stable\",\n  \"commit\": \"4c0b0c6cc561d2d3636d1ec250935431876ce4dc\",\n  \"version\": \"1.126.04524\",\n  \"serverApplicationName\": \"quantum-server\",\n  \"serverDataFolderName\": \".quantum-server\",\n  \"serverDownloadUrlTemplate\": \"https://github.com/Suryanshu-Nabheet/quantum/releases/download/1.126.04524/quantum-reh-${os}-${arch}-1.126.04524.tar.gz\"\n}\n"
+      }
+    },
+    "server": {
+      "image": "local-windows-en-builtin-cmd",
+      "platform": "windows",
+      "username": "quantumssh",
+      "password": "Quantum-SSH-1"
+    },
+    "test": {
+      "output": "Spawning ProxyCommand: connect.exe 127.0.0.1"
+    }
+  },
+  {
+    "name": "feat-proxycmd-windows-connect-unsafe",
+    "client": {
+      "files": {
+        "C:\\ProgramData\\ssh\\ssh_config": "Host test\n  HostName 127.0.0.1&whoami\n  User quantumssh\n  Password Quantum-SSH-1\n  ProxyCommand \"C:\\Program Files\\Git\\mingw64\\bin\\connect.exe\" %h %p\n",
+        "/bin/quantum/app/product.json": "{\n  \"nameShort\": \"Quantum\",\n  \"nameLong\": \"Quantum\",\n  \"applicationName\": \"quantum\",\n  \"quality\": \"stable\",\n  \"commit\": \"4c0b0c6cc561d2d3636d1ec250935431876ce4dc\",\n  \"version\": \"1.126.04524\",\n  \"serverApplicationName\": \"quantum-server\",\n  \"serverDataFolderName\": \".quantum-server\",\n  \"serverDownloadUrlTemplate\": \"https://github.com/Suryanshu-Nabheet/quantum/releases/download/1.126.04524/quantum-reh-${os}-${arch}-1.126.04524.tar.gz\"\n}\n"
+      }
+    },
+    "server": {
+      "image": "local-windows-en-builtin-cmd",
+      "platform": "windows",
+      "username": "quantumssh",
+      "password": "Quantum-SSH-1"
+    },
+    "test": {
+      "error": [
+        "ProxyCommand: %h expands to '127.0.0.1&whoami', which contains characters other than letters, digits and '_.@:[]-'",
+        "Error resolving authority"
+      ]
+    }
+  },
+  {
+    "name": "feat-proxycmd-windows-connect-wesc",
+    "client": {
+      "files": {
+        "C:\\ProgramData\\ssh\\ssh_config": "Host test\n  HostName 127.0.0.1\n  User quantumssh\n  Password Quantum-SSH-1\n  ProxyCommand \"C:\\Program Files\\Git\\mingw64\\bin\\connect.exe\" %h %p\n",
+        "/bin/quantum/app/product.json": "{\n  \"nameShort\": \"Quantum\",\n  \"nameLong\": \"Quantum\",\n  \"applicationName\": \"quantum\",\n  \"quality\": \"stable\",\n  \"commit\": \"4c0b0c6cc561d2d3636d1ec250935431876ce4dc\",\n  \"version\": \"1.126.04524\",\n  \"serverApplicationName\": \"quantum-server\",\n  \"serverDataFolderName\": \".quantum-server\",\n  \"serverDownloadUrlTemplate\": \"https://github.com/Suryanshu-Nabheet/quantum/releases/download/1.126.04524/quantum-reh-${os}-${arch}-1.126.04524.tar.gz\"\n}\n"
+      }
+    },
+    "server": {
+      "image": "local-windows-en-builtin-cmd",
+      "platform": "windows",
+      "username": "quantumssh",
+      "password": "Quantum-SSH-1"
+    },
+    "test": {
+      "either": "Spawning ProxyCommand: \"C:\\Program Files\\Git\\mingw64\\bin\\connect.exe\" 127.0.0.1"
+    }
+  },
+  {
+    "name": "feat-proxycmd-windows-connect-wsh",
+    "client": {
+      "files": {
+        "C:\\ProgramData\\ssh\\ssh_config": "Host test\n  HostName 127.0.0.1\n  User quantumssh\n  Password Quantum-SSH-1\n  ProxyCommand sh.exe -c \"connect.exe %h %p\"\n",
+        "/bin/quantum/app/product.json": "{\n  \"nameShort\": \"Quantum\",\n  \"nameLong\": \"Quantum\",\n  \"applicationName\": \"quantum\",\n  \"quality\": \"stable\",\n  \"commit\": \"4c0b0c6cc561d2d3636d1ec250935431876ce4dc\",\n  \"version\": \"1.126.04524\",\n  \"serverApplicationName\": \"quantum-server\",\n  \"serverDataFolderName\": \".quantum-server\",\n  \"serverDownloadUrlTemplate\": \"https://github.com/Suryanshu-Nabheet/quantum/releases/download/1.126.04524/quantum-reh-${os}-${arch}-1.126.04524.tar.gz\"\n}\n"
+      }
+    },
+    "server": {
+      "image": "local-windows-en-builtin-cmd",
+      "platform": "windows",
+      "username": "quantumssh",
+      "password": "Quantum-SSH-1"
+    },
+    "test": {
+      "output": "Spawning ProxyCommand: sh.exe -c connect.exe 127.0.0.1"
+    }
+  },
+  {
+    "name": "feat-sendenv-linux",
+    "run": {
+      "onlyInCI": true
+    },
+    "client": {
+      "files": {
+        "/etc/ssh/ssh_config": "Host test\n  HostName 127.0.0.1\n  User quantumssh\n  Password quantumssh\n  SendEnv LANG LC_*\n",
+        "/bin/quantum/app/product.json": "{\n  \"nameShort\": \"Quantum\",\n  \"nameLong\": \"Quantum\",\n  \"applicationName\": \"quantum\",\n  \"quality\": \"stable\",\n  \"commit\": \"4c0b0c6cc561d2d3636d1ec250935431876ce4dc\",\n  \"version\": \"1.126.04524\",\n  \"serverApplicationName\": \"quantum-server\",\n  \"serverDataFolderName\": \".quantum-server\",\n  \"serverDownloadUrlTemplate\": \"https://github.com/Suryanshu-Nabheet/quantum/releases/download/1.126.04524/quantum-reh-${os}-${arch}-1.126.04524.tar.gz\"\n}\n"
+      }
+    },
+    "server": {
+      "image": "local-ubuntu-bash",
+      "username": "quantumssh",
+      "password": "quantumssh"
+    },
+    "test": {
+      "output": "export LANG=\"C.UTF-8\""
+    }
+  },
+  {
+    "name": "feat-sendenv-windows",
+    "run": {
+      "onlyInCI": true
+    },
+    "client": {
+      "files": {
+        "C:\\ProgramData\\ssh\\ssh_config": "Host test\n  HostName 127.0.0.1\n  User quantumssh\n  Password Quantum-SSH-1\n  SendEnv COMPUTERNAME USERNAME\n",
+        "/bin/quantum/app/product.json": "{\n  \"nameShort\": \"Quantum\",\n  \"nameLong\": \"Quantum\",\n  \"applicationName\": \"quantum\",\n  \"quality\": \"stable\",\n  \"commit\": \"4c0b0c6cc561d2d3636d1ec250935431876ce4dc\",\n  \"version\": \"1.126.04524\",\n  \"serverApplicationName\": \"quantum-server\",\n  \"serverDataFolderName\": \".quantum-server\",\n  \"serverDownloadUrlTemplate\": \"https://github.com/Suryanshu-Nabheet/quantum/releases/download/1.126.04524/quantum-reh-${os}-${arch}-1.126.04524.tar.gz\"\n}\n"
+      }
+    },
+    "server": {
+      "image": "local-windows-en-builtin-cmd",
+      "platform": "windows",
+      "username": "quantumssh",
+      "password": "Quantum-SSH-1"
+    },
+    "test": {
+      "output": [
+        "$env:COMPUTERNAME=\"runner",
+        "$env:USERNAME=\"runneradmin\""
+      ]
+    }
+  },
+  {
+    "name": "shell-alpine-bash",
+    "client": {
+      "files": {
+        "/etc/ssh/ssh_config": "Host test\n  HostName 127.0.0.1\n  User quantumssh\n  Password quantumssh\n",
+        "/bin/quantum/app/product.json": "{\n  \"nameShort\": \"Quantum\",\n  \"nameLong\": \"Quantum\",\n  \"applicationName\": \"quantum\",\n  \"quality\": \"stable\",\n  \"commit\": \"4c0b0c6cc561d2d3636d1ec250935431876ce4dc\",\n  \"version\": \"1.126.04524\",\n  \"serverApplicationName\": \"quantum-server\",\n  \"serverDataFolderName\": \".quantum-server\",\n  \"serverDownloadUrlTemplate\": \"https://github.com/Suryanshu-Nabheet/quantum/releases/download/1.126.04524/quantum-reh-${os}-${arch}-1.126.04524.tar.gz\"\n}\n"
+      }
+    },
+    "server": {
+      "image": "local-alpine-bash",
+      "username": "quantumssh",
+      "password": "quantumssh"
+    }
+  },
+  {
+    "name": "shell-linux-bash",
+    "client": {
+      "files": {
+        "/etc/ssh/ssh_config": "Host test\n  HostName 127.0.0.1\n  User quantumssh\n  Password quantumssh\n",
+        "/bin/quantum/app/product.json": "{\n  \"nameShort\": \"Quantum\",\n  \"nameLong\": \"Quantum\",\n  \"applicationName\": \"quantum\",\n  \"quality\": \"stable\",\n  \"commit\": \"4c0b0c6cc561d2d3636d1ec250935431876ce4dc\",\n  \"version\": \"1.126.04524\",\n  \"serverApplicationName\": \"quantum-server\",\n  \"serverDataFolderName\": \".quantum-server\",\n  \"serverDownloadUrlTemplate\": \"https://github.com/Suryanshu-Nabheet/quantum/releases/download/1.126.04524/quantum-reh-${os}-${arch}-1.126.04524.tar.gz\"\n}\n"
+      }
+    },
+    "server": {
+      "image": "local-ubuntu-bash",
+      "username": "quantumssh",
+      "password": "quantumssh"
+    }
+  },
+  {
+    "name": "shell-linux-fish",
+    "client": {
+      "files": {
+        "/etc/ssh/ssh_config": "Host test\n  HostName 127.0.0.1\n  User quantumssh\n  Password quantumssh\n",
+        "/bin/quantum/app/product.json": "{\n  \"nameShort\": \"Quantum\",\n  \"nameLong\": \"Quantum\",\n  \"applicationName\": \"quantum\",\n  \"quality\": \"stable\",\n  \"commit\": \"4c0b0c6cc561d2d3636d1ec250935431876ce4dc\",\n  \"version\": \"1.126.04524\",\n  \"serverApplicationName\": \"quantum-server\",\n  \"serverDataFolderName\": \".quantum-server\",\n  \"serverDownloadUrlTemplate\": \"https://github.com/Suryanshu-Nabheet/quantum/releases/download/1.126.04524/quantum-reh-${os}-${arch}-1.126.04524.tar.gz\"\n}\n"
+      }
+    },
+    "server": {
+      "image": "local-ubuntu-fish",
+      "username": "quantumssh",
+      "password": "quantumssh"
+    }
+  },
+  {
+    "name": "shell-windows-en-builtin-bash",
+    "client": {
+      "files": {
+        "C:\\ProgramData\\ssh\\ssh_config": "Host test\n  HostName 127.0.0.1\n  User quantumssh\n  Password Quantum-SSH-1\n",
+        "/bin/quantum/app/product.json": "{\n  \"nameShort\": \"Quantum\",\n  \"nameLong\": \"Quantum\",\n  \"applicationName\": \"quantum\",\n  \"quality\": \"stable\",\n  \"commit\": \"4c0b0c6cc561d2d3636d1ec250935431876ce4dc\",\n  \"version\": \"1.126.04524\",\n  \"serverApplicationName\": \"quantum-server\",\n  \"serverDataFolderName\": \".quantum-server\",\n  \"serverDownloadUrlTemplate\": \"https://github.com/Suryanshu-Nabheet/quantum/releases/download/1.126.04524/quantum-reh-${os}-${arch}-1.126.04524.tar.gz\"\n}\n"
+      }
+    },
+    "server": {
+      "image": "local-windows-en-builtin-bash",
+      "platform": "windows",
+      "username": "quantumssh",
+      "password": "Quantum-SSH-1"
+    },
+    "test": {
+      "output": "Detected platform: windows, bash"
+    }
+  },
+  {
+    "name": "shell-windows-en-builtin-cmd",
+    "client": {
+      "files": {
+        "C:\\ProgramData\\ssh\\ssh_config": "Host test\n  HostName 127.0.0.1\n  User quantumssh\n  Password Quantum-SSH-1\n",
+        "/bin/quantum/app/product.json": "{\n  \"nameShort\": \"Quantum\",\n  \"nameLong\": \"Quantum\",\n  \"applicationName\": \"quantum\",\n  \"quality\": \"stable\",\n  \"commit\": \"4c0b0c6cc561d2d3636d1ec250935431876ce4dc\",\n  \"version\": \"1.126.04524\",\n  \"serverApplicationName\": \"quantum-server\",\n  \"serverDataFolderName\": \".quantum-server\",\n  \"serverDownloadUrlTemplate\": \"https://github.com/Suryanshu-Nabheet/quantum/releases/download/1.126.04524/quantum-reh-${os}-${arch}-1.126.04524.tar.gz\"\n}\n"
+      }
+    },
+    "server": {
+      "image": "local-windows-en-builtin-cmd",
+      "platform": "windows",
+      "username": "quantumssh",
+      "password": "Quantum-SSH-1"
+    },
+    "test": {
+      "output": "Detected platform: windows, cmd"
+    }
+  },
+  {
+    "name": "shell-windows-en-builtin-pwsh",
+    "client": {
+      "files": {
+        "C:\\ProgramData\\ssh\\ssh_config": "Host test\n  HostName 127.0.0.1\n  User quantumssh\n  Password Quantum-SSH-1\n",
+        "/bin/quantum/app/product.json": "{\n  \"nameShort\": \"Quantum\",\n  \"nameLong\": \"Quantum\",\n  \"applicationName\": \"quantum\",\n  \"quality\": \"stable\",\n  \"commit\": \"4c0b0c6cc561d2d3636d1ec250935431876ce4dc\",\n  \"version\": \"1.126.04524\",\n  \"serverApplicationName\": \"quantum-server\",\n  \"serverDataFolderName\": \".quantum-server\",\n  \"serverDownloadUrlTemplate\": \"https://github.com/Suryanshu-Nabheet/quantum/releases/download/1.126.04524/quantum-reh-${os}-${arch}-1.126.04524.tar.gz\"\n}\n"
+      }
+    },
+    "server": {
+      "image": "local-windows-en-builtin-pwsh",
+      "platform": "windows",
+      "username": "quantumssh",
+      "password": "Quantum-SSH-1"
+    },
+    "test": {
+      "output": "Detected platform: windows, powershell"
+    }
+  },
+  {
+    "name": "shell-windows-en-msys2-bash-nalias",
+    "client": {
+      "files": {
+        "C:\\ProgramData\\ssh\\ssh_config": "Host test\n  HostName 127.0.0.1\n  User quantumssh\n  Password Quantum-SSH-1\n",
+        "/bin/quantum/app/product.json": "{\n  \"nameShort\": \"Quantum\",\n  \"nameLong\": \"Quantum\",\n  \"applicationName\": \"quantum\",\n  \"quality\": \"stable\",\n  \"commit\": \"4c0b0c6cc561d2d3636d1ec250935431876ce4dc\",\n  \"version\": \"1.126.04524\",\n  \"serverApplicationName\": \"quantum-server\",\n  \"serverDataFolderName\": \".quantum-server\",\n  \"serverDownloadUrlTemplate\": \"https://github.com/Suryanshu-Nabheet/quantum/releases/download/1.126.04524/quantum-reh-${os}-${arch}-1.126.04524.tar.gz\"\n}\n"
+      }
+    },
+    "server": {
+      "image": "local-windows-en-msys2-bash-nalias",
+      "platform": "windows",
+      "username": "quantumssh",
+      "password": "Quantum-SSH-1"
+    },
+    "test": {
+      "output": "Detected platform: windows, bash"
+    }
+  },
+  {
+    "name": "shell-windows-en-msys2-bash-walias",
+    "client": {
+      "files": {
+        "C:\\ProgramData\\ssh\\ssh_config": "Host test\n  HostName 127.0.0.1\n  User quantumssh\n  Password Quantum-SSH-1\n",
+        "/bin/quantum/app/product.json": "{\n  \"nameShort\": \"Quantum\",\n  \"nameLong\": \"Quantum\",\n  \"applicationName\": \"quantum\",\n  \"quality\": \"stable\",\n  \"commit\": \"4c0b0c6cc561d2d3636d1ec250935431876ce4dc\",\n  \"version\": \"1.126.04524\",\n  \"serverApplicationName\": \"quantum-server\",\n  \"serverDataFolderName\": \".quantum-server\",\n  \"serverDownloadUrlTemplate\": \"https://github.com/Suryanshu-Nabheet/quantum/releases/download/1.126.04524/quantum-reh-${os}-${arch}-1.126.04524.tar.gz\"\n}\n"
+      }
+    },
+    "server": {
+      "image": "local-windows-en-msys2-bash-walias",
+      "platform": "windows",
+      "username": "quantumssh",
+      "password": "Quantum-SSH-1"
+    },
+    "test": {
+      "output": "Detected platform: windows, bash"
+    }
+  },
+  {
+    "name": "shell-windows-en-powershell-cmd",
+    "client": {
+      "files": {
+        "C:\\ProgramData\\ssh\\ssh_config": "Host test\n  HostName 127.0.0.1\n  User quantumssh\n  Password Quantum-SSH-1\n",
+        "/bin/quantum/app/product.json": "{\n  \"nameShort\": \"Quantum\",\n  \"nameLong\": \"Quantum\",\n  \"applicationName\": \"quantum\",\n  \"quality\": \"stable\",\n  \"commit\": \"4c0b0c6cc561d2d3636d1ec250935431876ce4dc\",\n  \"version\": \"1.126.04524\",\n  \"serverApplicationName\": \"quantum-server\",\n  \"serverDataFolderName\": \".quantum-server\",\n  \"serverDownloadUrlTemplate\": \"https://github.com/Suryanshu-Nabheet/quantum/releases/download/1.126.04524/quantum-reh-${os}-${arch}-1.126.04524.tar.gz\"\n}\n"
+      }
+    },
+    "server": {
+      "image": "local-windows-en-powershell-cmd",
+      "platform": "windows",
+      "username": "quantumssh",
+      "password": "Quantum-SSH-1"
+    },
+    "test": {
+      "output": "Detected platform: windows, cmd"
+    }
+  },
+  {
+    "name": "shell-windows-en-powershell-pwsh",
+    "client": {
+      "files": {
+        "C:\\ProgramData\\ssh\\ssh_config": "Host test\n  HostName 127.0.0.1\n  User quantumssh\n  Password Quantum-SSH-1\n",
+        "/bin/quantum/app/product.json": "{\n  \"nameShort\": \"Quantum\",\n  \"nameLong\": \"Quantum\",\n  \"applicationName\": \"quantum\",\n  \"quality\": \"stable\",\n  \"commit\": \"4c0b0c6cc561d2d3636d1ec250935431876ce4dc\",\n  \"version\": \"1.126.04524\",\n  \"serverApplicationName\": \"quantum-server\",\n  \"serverDataFolderName\": \".quantum-server\",\n  \"serverDownloadUrlTemplate\": \"https://github.com/Suryanshu-Nabheet/quantum/releases/download/1.126.04524/quantum-reh-${os}-${arch}-1.126.04524.tar.gz\"\n}\n"
+      }
+    },
+    "server": {
+      "image": "local-windows-en-powershell-pwsh",
+      "platform": "windows",
+      "username": "quantumssh",
+      "password": "Quantum-SSH-1"
+    },
+    "test": {
+      "output": "Detected platform: windows, powershell"
+    }
+  },
+  {
+    "name": "shell-windows-fr-builtin-cmd",
+    "client": {
+      "files": {
+        "C:\\ProgramData\\ssh\\ssh_config": "Host test\n  HostName 127.0.0.1\n  User quantumssh\n  Password Quantum-SSH-1\n",
+        "/bin/quantum/app/product.json": "{\n  \"nameShort\": \"Quantum\",\n  \"nameLong\": \"Quantum\",\n  \"applicationName\": \"quantum\",\n  \"quality\": \"stable\",\n  \"commit\": \"4c0b0c6cc561d2d3636d1ec250935431876ce4dc\",\n  \"version\": \"1.126.04524\",\n  \"serverApplicationName\": \"quantum-server\",\n  \"serverDataFolderName\": \".quantum-server\",\n  \"serverDownloadUrlTemplate\": \"https://github.com/Suryanshu-Nabheet/quantum/releases/download/1.126.04524/quantum-reh-${os}-${arch}-1.126.04524.tar.gz\"\n}\n"
+      }
+    },
+    "server": {
+      "image": "local-windows-fr-builtin-cmd",
+      "platform": "windows",
+      "username": "quantumssh",
+      "password": "Quantum-SSH-1"
+    },
+    "test": {
+      "output": "Detected platform: windows, cmd"
+    }
+  }
+]

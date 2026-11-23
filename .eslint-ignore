@@ -57,3 +57,4 @@
 **/.vscode-test/**
 !.vscode
 src/vs/workbench/contrib/agent/**
+**/extensions/quantum-ssh/**

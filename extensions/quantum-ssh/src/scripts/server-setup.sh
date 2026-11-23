@@ -1,0 +1,380 @@
+#!/usr/bin/env bash
+# Server installation script
+
+%%SEND_ENV_VAR_LINES%%
+
+TMP_DIR="${XDG_RUNTIME_DIR:-"/tmp"}"
+
+DISTRO_VERSION=%%DISTRO_VERSION%%
+DISTRO_COMMIT=%%DISTRO_COMMIT%%
+DISTRO_QUALITY=%%DISTRO_QUALITY%%
+DISTRO_QUANTUM_RELEASE=%%DISTRO_QUANTUM_RELEASE%%
+
+MODIFY_PRODUCT_JSON="%%MODIFY_PRODUCT_JSON%%"
+
+SERVER_APP_NAME=%%SERVER_APP_NAME%%
+SERVER_INITIAL_EXTENSIONS=(%%SERVER_INITIAL_EXTENSIONS%%)
+SERVER_LISTEN_FLAG=(%%SERVER_LISTEN_FLAG%%)
+SERVER_DATA_DIR=%%SERVER_DATA_DIR%%
+SERVER_DATA_DIR_FLAG=%%SERVER_DATA_DIR_FLAG%%
+SERVER_DIR="$SERVER_DATA_DIR/bin/$DISTRO_COMMIT"
+SERVER_SCRIPT="$SERVER_DIR/bin/$SERVER_APP_NAME"
+SERVER_LOGFILE="$SERVER_DATA_DIR/.$DISTRO_COMMIT.log"
+SERVER_PIDFILE="$SERVER_DATA_DIR/.$DISTRO_COMMIT.pid"
+SERVER_TOKENFILE="$SERVER_DATA_DIR/.$DISTRO_COMMIT.token"
+SERVER_PLATFORM="%%SERVER_PLATFORM%%"
+SERVER_ARCH="%%SERVER_ARCH%%"
+SERVER_CONNECTION_TOKEN=
+SERVER_DOWNLOAD_URL=
+SERVER_VALIDATION_FLAG="%%SERVER_VALIDATION_FLAG%%"
+SCRIPT_PREVENT_EXIT=%%SCRIPT_PREVENT_EXIT%%
+LOCAL_SERVER_DOWNLOAD=%%LOCAL_SERVER_DOWNLOAD%%
+
+DOWNLOAD_MARKER="$SERVER_DIR/.server-local-download.done"
+DOWNLOAD_REQUEST_SENT=0
+
+LISTENING_ON=
+OS_RELEASE_ID=
+PLATFORM=$SERVER_PLATFORM
+
+# Get commit from installed server's product.json
+get_installed_commit() {
+  if [[ ! -f "$SERVER_DIR/product.json" ]]; then
+    return 0
+  fi
+
+  sed -n 's/.*"commit"[[:space:]]*:[[:space:]]*"\([0-9a-fA-F]\{7,\}\)".*/\1/p' "$SERVER_DIR/product.json" 2>/dev/null | head -n 1
+}
+
+# Emit the structured install result consumed by the Quantum SSH resolver.
+print_install_results() {
+  echo "%%SCRIPT_ID%%: start"
+  echo "exitCode==$1=="
+  echo "listeningOn==$LISTENING_ON=="
+  echo "connectionToken==$SERVER_CONNECTION_TOKEN=="
+  echo "logFile==$SERVER_LOGFILE=="
+  echo "osReleaseId==$OS_RELEASE_ID=="
+  echo "platform==$PLATFORM=="
+  echo "tmpDir==$TMP_DIR=="
+%%ENV_VAR_LINES%%
+  echo "%%SCRIPT_ID%%: end"
+}
+
+fail_and_exit() {
+  print_install_results "$1"
+  exit 0
+}
+
+print_local_download_request() {
+  echo "%%SCRIPT_ID%%: local-download-request"
+  echo "platform==$SERVER_PLATFORM=="
+  echo "serverArch==$SERVER_ARCH=="
+  echo "serverDir==$SERVER_DIR=="
+  echo "%%SCRIPT_ID%%: local-download-request-end"
+}
+
+await_local_download() {
+  local deadline=$((SECONDS + 300))
+  while (( SECONDS < deadline )); do
+    [[ -f $DOWNLOAD_MARKER ]] && return 0
+    sleep 0.5 || sleep 1
+  done
+  return 1
+}
+
+# Validate the commit of the installed server against the expected one (DISTRO_COMMIT)
+#
+# The install directory is named for the client's commit, but the download URL may still return a different build
+# (for example, when a version-keyed URL is shared by releases with different commits).
+# Reject a present server whose product.json records a different commit,
+# so it can be replaced by a fresh download instead of being reused under the wrong directory name.
+#
+# The validation is bypassed when:
+# - no server installed
+# - empty or unreadable commit
+# - "serverValidation": "force"
+# - "serverValidation": "skip"
+validate_installed_commit() {
+  if [[ ! -f $SERVER_SCRIPT ]] || [[ "$MODIFY_PRODUCT_JSON" == "true" ]] || [[ -n "$SERVER_VALIDATION_FLAG" ]]; then
+    return 0
+  fi
+
+  local installed
+  installed="$(get_installed_commit)"
+
+  [[ -z "$installed" ]] || [[ "$installed" == "$DISTRO_COMMIT" ]]
+}
+
+LOCKFILE="$TMP_DIR/server_install.lock"
+
+if command -v flock >/dev/null 2>&1; then
+  # Automatic file descriptor allocation ({FD}) requires bash >= 4.1,
+  # and macOS still ships bash 3.2, so use a fixed descriptor instead.
+  FD=9
+  exec 9<>"$LOCKFILE"
+
+  if flock --help 2>&1 | grep -q -- '-w'; then
+    # wait 30s to acquire lock, otherwise fail
+    flock -x -w 30 $FD || fail_and_exit 1
+  else
+    ELAPSED=0
+
+    while [[ $ELAPSED -lt 30 ]]; do
+        if flock -n -x $FD; then
+            break
+        fi
+
+        sleep 1
+
+        ELAPSED=$((ELAPSED + 1))
+    done
+
+    if [[ $ELAPSED -ge 30 ]]; then
+      echo "Warning: flock cannot acquire the install lock"
+      fail_and_exit 1
+    fi
+  fi
+
+  trap "flock -u $FD; trap - EXIT INT HUP; exit" EXIT INT HUP
+else
+  echo "Warning: flock not available, skipping install lock"
+fi
+
+# Check if platform is supported
+if ! command -v uname >/dev/null 2>&1; then
+  echo "Error: 'uname' command not found, could not get platform/arch data."
+  fail_and_exit 1
+fi
+
+# https://www.freedesktop.org/software/systemd/man/os-release.html
+OS_RELEASE_ID="$(grep -i '^ID=' /etc/os-release 2>/dev/null | sed 's/^ID=//gi' | sed 's/"//g')"
+if [[ -z $OS_RELEASE_ID ]]; then
+  OS_RELEASE_ID="$(grep -i '^ID=' /usr/lib/os-release 2>/dev/null | sed 's/^ID=//gi' | sed 's/"//g')"
+  if [[ -z $OS_RELEASE_ID ]]; then
+    OS_RELEASE_ID="unknown"
+  fi
+fi
+
+# Create installation folder
+if [[ ! -d $SERVER_DIR ]]; then
+  mkdir -p "$SERVER_DIR" || (
+    echo "Error: creating server install directory"
+    fail_and_exit 1
+  )
+fi
+
+# adjust platform for quantum download, if needed
+if [[ $OS_RELEASE_ID = alpine ]]; then
+  PLATFORM="alpine"
+fi
+
+SERVER_DOWNLOAD_URL_TEMPLATE=%%SERVER_DOWNLOAD_URL_TEMPLATE%%
+SERVER_DOWNLOAD_URL="${SERVER_DOWNLOAD_URL_TEMPLATE//\$\{quality\}/$DISTRO_QUALITY}"
+SERVER_DOWNLOAD_URL="${SERVER_DOWNLOAD_URL//\$\{version\}/$DISTRO_VERSION}"
+SERVER_DOWNLOAD_URL="${SERVER_DOWNLOAD_URL//\$\{commit\}/$DISTRO_COMMIT}"
+SERVER_DOWNLOAD_URL="${SERVER_DOWNLOAD_URL//\$\{os\}/$PLATFORM}"
+SERVER_DOWNLOAD_URL="${SERVER_DOWNLOAD_URL//\$\{arch\}/$SERVER_ARCH}"
+SERVER_DOWNLOAD_URL="${SERVER_DOWNLOAD_URL//\$\{release\}/$DISTRO_QUANTUM_RELEASE}"
+
+# Validate the commit of the installed server against the expected one (DISTRO_COMMIT)
+if ! validate_installed_commit; then
+  echo "Installed server commit $(get_installed_commit) does not match $DISTRO_COMMIT, reinstalling"
+  rm -rf "$SERVER_DIR"/*
+fi
+
+# Check if server script is already installed
+if [[ ! -f $SERVER_SCRIPT ]]; then
+  case "$PLATFORM" in
+    alpine | darwin | freebsd | linux )
+      ;;
+    *)
+      echo "Error: '$PLATFORM' needs manual installation of remote extension host"
+      fail_and_exit 1
+      ;;
+  esac
+
+  pushd "$SERVER_DIR" > /dev/null || exit
+
+  DOWNLOAD_OK=0
+  if [[ "$LOCAL_SERVER_DOWNLOAD" == "always" ]]; then
+    print_local_download_request
+    DOWNLOAD_REQUEST_SENT=1
+    if ! await_local_download; then
+      echo "Error: local download transfer did not complete in time"
+      fail_and_exit 1
+    fi
+    DOWNLOAD_OK=1
+  else
+    if command -v wget >/dev/null 2>&1; then
+      wget --tries=3 --timeout=10 --continue --no-verbose -O quantum-server.tar.gz "$SERVER_DOWNLOAD_URL"
+      DOWNLOAD_OK=$?
+    elif command -v curl >/dev/null 2>&1; then
+      curl --retry 3 --connect-timeout 10 --location --show-error --silent --output quantum-server.tar.gz "$SERVER_DOWNLOAD_URL"
+      DOWNLOAD_OK=$?
+    elif command -v fetch >/dev/null 2>&1; then
+      fetch --retry --timeout=10 --quiet --output=quantum-server.tar.gz "$SERVER_DOWNLOAD_URL"
+      DOWNLOAD_OK=$?
+    else
+      echo "Error: no tool to download server binary"
+      fail_and_exit 1
+    fi
+
+    if [[ $DOWNLOAD_OK -ne 0 && "$LOCAL_SERVER_DOWNLOAD" == "auto" ]]; then
+      echo "Remote download failed; requesting local download"
+      rm -f quantum-server.tar.gz
+      print_local_download_request
+      DOWNLOAD_REQUEST_SENT=1
+      if ! await_local_download; then
+        echo "Error: local download transfer did not complete in time"
+        fail_and_exit 1
+      fi
+      DOWNLOAD_OK=1
+    fi
+
+    if [[ $DOWNLOAD_OK -ne 0 ]]; then
+      echo "Error downloading server from $SERVER_DOWNLOAD_URL"
+      rm -rf quantum-server.tar.gz
+      fail_and_exit 1
+    fi
+  fi
+
+  if (( DOWNLOAD_REQUEST_SENT )); then
+    if [[ ! -f "$SERVER_DIR/quantum-server.tar.gz" ]]; then
+      echo "Error: local download reported complete but no server archive was transferred"
+      rm -f "$DOWNLOAD_MARKER"
+      fail_and_exit 1
+    fi
+    rm -f "$DOWNLOAD_MARKER"
+  fi
+
+  tar -xOf quantum-server.tar.gz > /dev/null 2>&1 || (
+    echo "Error downloaded tarball is corrupt or incomplete"
+    rm -rf quantum-server.tar.gz
+    fail_and_exit 1
+  )
+
+  tar -xf quantum-server.tar.gz --strip-components 1 || (
+    echo "Error while extracting server contents"
+    rm -rf quantum-server.tar.gz
+    fail_and_exit 1
+  )
+
+  rm -f quantum-server.tar.gz
+
+  popd > /dev/null || exit
+
+  if [[ ! -f $SERVER_SCRIPT ]] || [[ ! -s $SERVER_SCRIPT ]]; then
+    echo "Error: server contents are corrupted"
+
+    rm -rf $SERVER_DIR/*
+
+    fail_and_exit 1
+  fi
+
+  if ! validate_installed_commit; then
+    echo "Error: downloaded server commit $(get_installed_commit) does not match $DISTRO_COMMIT"
+    echo "Check that remote.SSH.serverDownloadUrlTemplate resolves to the server for this build; a \${commit} keyed URL cannot be ambiguous"
+
+    rm -rf "$SERVER_DIR"/*
+
+    fail_and_exit 1
+  fi
+else
+  echo "Server script already installed in $SERVER_SCRIPT"
+fi
+
+# Modify the commit in the remote server to match the local value
+if [[ "$MODIFY_PRODUCT_JSON" == "true" ]]; then
+  if command -v sed >/dev/null 2>&1; then
+    echo "Will modify product.json on remote to match the commit value"
+    sed -i -E 's/"commit": "[0-9a-f]+",/"commit": "'"$DISTRO_COMMIT"'",/' "$SERVER_DIR/product.json";
+  else
+    echo "Cannot find the 'sed' command, make sure it is installed to modify product.json with the matching commit."
+  fi
+fi
+
+# Try to find if server is already running
+if [[ -f $SERVER_PIDFILE ]]; then
+  SERVER_PID="$(cat $SERVER_PIDFILE)"
+  SERVER_RUNNING_PROCESS="$( ps -o pid,args | grep $SERVER_PID | grep $SERVER_SCRIPT )"
+else
+  SERVER_RUNNING_PROCESS="$( (ps -o pid,args -A || ps -o pid,args) | grep $SERVER_SCRIPT | grep -v grep )"
+fi
+
+if [[ -z $SERVER_RUNNING_PROCESS ]]; then
+  if [[ -f $SERVER_LOGFILE ]]; then
+    rm $SERVER_LOGFILE
+  fi
+  if [[ -f $SERVER_TOKENFILE ]]; then
+    rm $SERVER_TOKENFILE
+  fi
+
+  touch "$SERVER_TOKENFILE"
+  chmod 600 "$SERVER_TOKENFILE"
+  SERVER_CONNECTION_TOKEN="%%SERVER_CONNECTION_TOKEN%%"
+  echo "$SERVER_CONNECTION_TOKEN" > "$SERVER_TOKENFILE"
+
+  SERVER_ARGS=(--start-server --host=127.0.0.1 "${SERVER_LISTEN_FLAG[@]}")
+  if [[ "$SERVER_DATA_DIR_FLAG" == "true" ]]; then
+    SERVER_ARGS+=(--server-data-dir "$SERVER_DATA_DIR")
+  fi
+  if [[ -n "$SERVER_VALIDATION_FLAG" ]]; then
+    SERVER_ARGS+=("$SERVER_VALIDATION_FLAG")
+  fi
+  SERVER_ARGS+=("${SERVER_INITIAL_EXTENSIONS[@]}" --connection-token-file "$SERVER_TOKENFILE" --telemetry-level off --enable-remote-auto-shutdown --accept-server-license-terms)
+  "$SERVER_SCRIPT" "${SERVER_ARGS[@]}" &> "$SERVER_LOGFILE" &
+  echo $! > $SERVER_PIDFILE
+else
+  echo "Server script is already running $SERVER_SCRIPT"
+fi
+
+if [[ -f $SERVER_TOKENFILE ]]; then
+  SERVER_CONNECTION_TOKEN="$(cat $SERVER_TOKENFILE)"
+else
+  echo "Error: server token file not found $SERVER_TOKENFILE"
+  fail_and_exit 1
+fi
+
+waitUntil=$((SECONDS+20))
+while (( SECONDS < waitUntil )); do
+  if [[ -f $SERVER_LOGFILE ]]; then
+    if [[ -n "$(cat $SERVER_LOGFILE | grep 'Error loading shared library libstdc++.so')" ]]; then
+      echo "Error: missing libstdc++"
+      break;
+    fi
+
+    LISTENING_ON="$(cat $SERVER_LOGFILE | grep -E 'Extension host agent listening on .+' | sed 's/Extension host agent listening on //')"
+    if [[ -n $LISTENING_ON ]]; then
+      break
+    fi
+  fi
+
+  # Some systems may not support fractional time
+  sleep 0.5 || sleep 1
+done
+
+if [[ ! -f $SERVER_LOGFILE ]]; then
+  echo "Error: server log file not found $SERVER_LOGFILE"
+  fail_and_exit 1
+fi
+if [[ -z $LISTENING_ON ]]; then
+  echo "Error: server did not start successfully"
+  fail_and_exit 1
+fi
+
+# Finish server setup
+print_install_results 0
+
+# Release lock
+if [[ -n "$FD" ]]; then
+  flock -u "$FD" 2>/dev/null || true
+  exec 9>&-
+  trap - EXIT INT HUP
+fi
+
+if (( SCRIPT_PREVENT_EXIT )); then
+  while true;
+    do sleep 150;
+    printf ' ';
+  done
+fi

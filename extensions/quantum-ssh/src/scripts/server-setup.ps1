@@ -1,0 +1,328 @@
+# Server installation script
+
+%%SEND_ENV_VAR_LINES%%
+
+$TMP_DIR="$env:TEMP\$([System.IO.Path]::GetRandomFileName())"
+$ProgressPreference = "SilentlyContinue"
+
+$DISTRO_VERSION=%%DISTRO_VERSION%%
+$DISTRO_COMMIT=%%DISTRO_COMMIT%%
+$DISTRO_QUALITY=%%DISTRO_QUALITY%%
+$DISTRO_QUANTUM_RELEASE=%%DISTRO_QUANTUM_RELEASE%%
+
+$MODIFY_PRODUCT_JSON=%%MODIFY_PRODUCT_JSON%%
+
+$SERVER_APP_NAME=%%SERVER_APP_NAME%%
+$SERVER_INITIAL_EXTENSIONS="%%SERVER_INITIAL_EXTENSIONS%%"
+$SERVER_LISTEN_FLAG="%%SERVER_LISTEN_FLAG%%"
+$SERVER_DATA_DIR=%%SERVER_DATA_DIR%%
+$SERVER_DATA_DIR_FLAG="%%SERVER_DATA_DIR_FLAG%%"
+$SERVER_DIR="$SERVER_DATA_DIR\bin\$DISTRO_COMMIT"
+$SERVER_SCRIPT="$SERVER_DIR\bin\$SERVER_APP_NAME.cmd"
+$SERVER_LOGFILE="$SERVER_DATA_DIR\.$DISTRO_COMMIT.log"
+$SERVER_PIDFILE="$SERVER_DATA_DIR\.$DISTRO_COMMIT.pid"
+$SERVER_TOKENFILE="$SERVER_DATA_DIR\.$DISTRO_COMMIT.token"
+$SERVER_ARCH=""
+$SERVER_CONNECTION_TOKEN=""
+$SERVER_DOWNLOAD_URL=%%SERVER_DOWNLOAD_URL%%
+$SERVER_VALIDATION_FLAG="%%SERVER_VALIDATION_FLAG%%"
+$LOCAL_SERVER_DOWNLOAD="%%LOCAL_SERVER_DOWNLOAD%%"
+
+$DOWNLOAD_MARKER="$SERVER_DIR\.server-local-download.done"
+$DOWNLOAD_REQUEST_SENT=$False
+
+$LISTENING_ON=""
+$OS_RELEASE_ID=""
+$ARCH=""
+$PLATFORM="win32"
+
+# Get commit from installed server's product.json
+function Get-InstalledCommit() {
+  $productJson = "$SERVER_DIR\product.json"
+
+  if(!(Test-Path $productJson)) {
+    return $null
+  }
+
+  $match = [regex]::Match((Get-Content -Raw $productJson), '"commit"\s*:\s*"([0-9a-fA-F]{7,})"')
+
+  if($match.Success) {
+    return $match.Groups[1].Value
+  }
+
+  return $null
+}
+
+function Remove-IfExists([string]$Path) {
+  if(Test-Path $Path) {
+    Remove-Item $Path -Force -ErrorAction SilentlyContinue
+  }
+}
+
+function printInstallResults($code) {
+  "%%SCRIPT_ID%%: start"
+  "exitCode==$code=="
+  "listeningOn==$LISTENING_ON=="
+  "connectionToken==$SERVER_CONNECTION_TOKEN=="
+  "logFile==$SERVER_LOGFILE=="
+  "osReleaseId==$OS_RELEASE_ID=="
+  "arch==$ARCH=="
+  "platform==$PLATFORM=="
+  "tmpDir==$TMP_DIR=="
+%%ENV_VAR_LINES%%
+  "%%SCRIPT_ID%%: end"
+}
+
+function FailAndExit([string]$Message) {
+  $Message
+  printInstallResults 1
+  exit 0
+}
+
+function Print-LocalDownloadRequest {
+  "%%SCRIPT_ID%%: local-download-request"
+  "platform==$PLATFORM=="
+  "serverArch==$SERVER_ARCH=="
+  "serverDir==$SERVER_DIR=="
+  "%%SCRIPT_ID%%: local-download-request-end"
+}
+
+function Request-LocalDownload {
+  Print-LocalDownloadRequest
+  $script:DOWNLOAD_REQUEST_SENT = $True
+
+  if(!(Await-LocalDownload)) {
+    FailAndExit "Error: local download transfer did not complete in time"
+  }
+
+  $script:DOWNLOAD_OK = $True
+}
+
+function Await-LocalDownload {
+  $deadline = (Get-Date).AddSeconds(300)
+  while ((Get-Date) -lt $deadline) {
+    if (Test-Path $DOWNLOAD_MARKER) {
+      return $True
+    }
+    sleep 1
+  }
+  return $False
+}
+
+# Test the commit of the installed server against the expected one (DISTRO_COMMIT)
+#
+# The install directory is named for the client's commit, but the download URL may still return a different build
+# (for example, when a version-keyed URL is shared by releases with different commits).
+# Reject a present server whose product.json records a different commit,
+# so it can be replaced by a fresh download instead of being reused under the wrong directory name.
+#
+# The validation is bypassed when:
+# - no server installed
+# - empty or unreadable commit
+# - "serverValidation": "force"
+# - "serverValidation": "skip"
+function Test-InstalledCommit() {
+  if(!(Test-Path $SERVER_SCRIPT) -or $MODIFY_PRODUCT_JSON -or $SERVER_VALIDATION_FLAG) {
+    return $True
+  }
+
+  $installed = Get-InstalledCommit
+
+  return (!$installed -or $installed -eq $DISTRO_COMMIT)
+}
+
+# Check machine architecture
+$ARCH=$env:PROCESSOR_ARCHITECTURE
+# Use x64 version for ARM64, as it's not yet available.
+if(($ARCH -eq "AMD64") -or ($ARCH -eq "IA64") -or ($ARCH -eq "ARM64")) {
+  $SERVER_ARCH="x64"
+}
+else {
+  FailAndExit "Error architecture not supported: $ARCH"
+}
+
+# Validate the commit of the installed server against the expected one (DISTRO_COMMIT)
+if(!(Test-InstalledCommit)) {
+  "Installed server commit $(Get-InstalledCommit) does not match $DISTRO_COMMIT, reinstalling"
+
+  Remove-Item -Recurse -Force "$SERVER_DIR\*"
+}
+
+# Create installation folder
+if(!(Test-Path $SERVER_DIR)) {
+  try {
+    New-Item -it d $SERVER_DIR -f -ea si
+  } catch {
+    FailAndExit "Error creating server install directory - $($_.ToString())"
+  }
+
+  if(!(Test-Path $SERVER_DIR)) {
+    FailAndExit "Error creating server install directory"
+  }
+}
+
+cd $SERVER_DIR
+
+# Check if server script is already installed
+if(!(Test-Path $SERVER_SCRIPT)) {
+  Remove-IfExists "quantum-server.tar.gz"
+
+  $DOWNLOAD_OK=$False
+
+  if($LOCAL_SERVER_DOWNLOAD -eq "always") {
+    Request-LocalDownload
+  }
+  else {
+    try {
+      $REQUEST_ARGUMENTS = @{
+        Uri="$SERVER_DOWNLOAD_URL"
+        TimeoutSec=20
+        OutFile="quantum-server.tar.gz"
+        UseBasicParsing=$True
+        ErrorAction= "Stop"
+      }
+
+      [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+      Invoke-WebRequest @REQUEST_ARGUMENTS
+      $DOWNLOAD_OK=$True
+    }
+    catch {
+      $DOWNLOAD_OK=$False
+    }
+
+    if(!$DOWNLOAD_OK -and $LOCAL_SERVER_DOWNLOAD -eq "auto") {
+      "Remote download failed; requesting local download"
+      Remove-IfExists "quantum-server.tar.gz"
+      Request-LocalDownload
+    }
+
+    if(!$DOWNLOAD_OK) {
+      Remove-IfExists "quantum-server.tar.gz"
+      FailAndExit "Error downloading server from $SERVER_DOWNLOAD_URL"
+    }
+  }
+
+  if($DOWNLOAD_REQUEST_SENT) {
+    if(!(Test-Path "quantum-server.tar.gz")) {
+      Remove-IfExists $DOWNLOAD_MARKER
+      FailAndExit "Error: local download reported complete but no server archive was transferred"
+    }
+    Remove-IfExists $DOWNLOAD_MARKER
+  }
+
+  if(Test-Path "quantum-server.tar.gz") {
+    tar -xOf quantum-server.tar.gz | Out-Null
+
+    if($LastExitCode -ne 0) {
+      Remove-IfExists "quantum-server.tar.gz"
+      FailAndExit "Error downloaded tarball is corrupt or incomplete"
+    }
+
+    tar -xf quantum-server.tar.gz --strip-components 1
+
+    if($LastExitCode -ne 0) {
+      Remove-IfExists "quantum-server.tar.gz"
+      FailAndExit "Error while extracting server contents"
+    }
+
+    Remove-IfExists "quantum-server.tar.gz"
+  }
+
+  if(!(Test-Path $SERVER_SCRIPT)) {
+    FailAndExit "Error while installing the server binary"
+  }
+
+  if(!(Test-InstalledCommit)) {
+    $badCommit = Get-InstalledCommit
+    Remove-Item -Recurse -Force "$SERVER_DIR\*"
+    FailAndExit @"
+Error: downloaded server commit $badCommit does not match $DISTRO_COMMIT
+Check that remote.SSH.serverDownloadUrlTemplate resolves to the server for this build; a `${commit} keyed URL cannot be ambiguous
+"@
+  }
+}
+else {
+  "Server script already installed in $SERVER_SCRIPT"
+}
+
+# Modify the commit in the remote server to match the local value
+if($MODIFY_PRODUCT_JSON) {
+  echo "Will modify product.json on remote to match the commit value"
+  (Get-Content -Raw "$SERVER_DIR\product.json") -replace '"commit": "[0-9a-f]+",', ('"commit": "' + $DISTRO_COMMIT + '",') |
+  Set-Content -NoNewLine "$SERVER_DIR\product.json"
+}
+
+# Try to find if server is already running
+if(Get-Process node -ErrorAction SilentlyContinue | Where-Object Path -Like "$SERVER_DIR\*") {
+  echo "Server script is already running $SERVER_SCRIPT"
+}
+else {
+  Remove-IfExists $SERVER_LOGFILE
+  Remove-IfExists $SERVER_PIDFILE
+  Remove-IfExists $SERVER_TOKENFILE
+
+  $SERVER_CONNECTION_TOKEN="%%SERVER_CONNECTION_TOKEN%%"
+  [System.IO.File]::WriteAllLines($SERVER_TOKENFILE, $SERVER_CONNECTION_TOKEN)
+
+  $SCRIPT_ARGUMENTS="--start-server --host=127.0.0.1 $SERVER_LISTEN_FLAG $SERVER_DATA_DIR_FLAG $SERVER_VALIDATION_FLAG $SERVER_INITIAL_EXTENSIONS --connection-token-file $SERVER_TOKENFILE --telemetry-level off --enable-remote-auto-shutdown --accept-server-license-terms *> '$SERVER_LOGFILE'"
+
+  $START_ARGUMENTS = @{
+    FilePath = "powershell.exe"
+    WindowStyle = "hidden"
+    ArgumentList = @(
+      "-ExecutionPolicy", "Unrestricted", "-NoLogo", "-NoProfile", "-NonInteractive", "-c", "$SERVER_SCRIPT $SCRIPT_ARGUMENTS"
+    )
+    PassThru = $True
+  }
+
+  $SERVER_ID = (start @START_ARGUMENTS).ID
+
+  if($SERVER_ID) {
+    [System.IO.File]::WriteAllLines($SERVER_PIDFILE, $SERVER_ID)
+  }
+}
+
+if(Test-Path $SERVER_TOKENFILE) {
+  $SERVER_CONNECTION_TOKEN="$(cat $SERVER_TOKENFILE)"
+}
+else {
+  FailAndExit "Error server token file not found $SERVER_TOKENFILE"
+}
+
+sleep -Milliseconds 500
+
+$SELECT_ARGUMENTS = @{
+  Path = $SERVER_LOGFILE
+  Pattern = "Extension host agent listening on (\d+)"
+}
+
+for($I = 1; $I -le 5; $I++) {
+  if(Test-Path $SERVER_LOGFILE) {
+    $GROUPS = (Select-String @SELECT_ARGUMENTS).Matches.Groups
+
+    if($GROUPS) {
+      $LISTENING_ON = $GROUPS[1].Value
+      break
+    }
+  }
+
+  sleep -Milliseconds 500
+}
+
+if(!(Test-Path $SERVER_LOGFILE)) {
+  FailAndExit "Error server log file not found $SERVER_LOGFILE"
+}
+
+# Finish server setup
+printInstallResults 0
+
+if($SERVER_ID) {
+  while($True) {
+    if(!(gps -Id $SERVER_ID)) {
+      "server died, exit"
+      exit 0
+    }
+
+    sleep 30
+  }
+}

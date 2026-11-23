@@ -70,7 +70,7 @@ Credits: [Gerson](https://github.com/Suryanshu-Nabheet/Quantum/issues)
 
 ### <a id="linux-remote-ssh"></a>_Remote SSH doesn't work_
 
-Use the Quantum's compatible extension [Open Remote - SSH](https://open-vsx.org/extension/jeanp413/open-remote-ssh).
+Use the built-in Quantum SSH extension. Confirm the SSH server allows TCP forwarding and that the Quantum remote server can be downloaded from the configured server URL.
 
 On the server, in the `sshd` config, `AllowTcpForwarding` need to be set to `yes`.
 

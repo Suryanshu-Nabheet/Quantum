@@ -94,6 +94,7 @@ export const indentationFilter = Object.freeze<string[]>([
 	'!test/unit/assert.js',
 	'!resources/linux/snap/electron-launch',
 	'!build/ext.js',
+	'!build/quantum-release/product.json',
 	'!build/darwin/patch-dmg.py',
 	'!build/npm/gyp/patches/gyp_spectre_mitigation_support.patch',
 	'!build/quantum-release/patches/**/*.patch',
@@ -219,6 +220,8 @@ export const copyrightFilter = Object.freeze<string[]>([
 	// extensions/copilot has its own code style
 	'!extensions/copilot/**',
 	'!extensions/quantum-*/**',
+	'extensions/quantum-ssh/**/*.ts',
+	'extensions/quantum-ssh/**/*.mts',
 	'!src/vs/workbench/contrib/agent/**',
 ]);
 
