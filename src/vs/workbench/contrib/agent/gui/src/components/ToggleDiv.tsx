@@ -8,6 +8,7 @@ interface ToggleProps {
   icon?: ComponentType<React.SVGProps<SVGSVGElement>>;
   testId?: string;
   defaultOpen?: boolean;
+  contentClassName?: string;
 }
 
 function ToggleDiv({
@@ -16,6 +17,7 @@ function ToggleDiv({
   icon: Icon,
   testId = "context-items-peek",
   defaultOpen = false,
+  contentClassName,
 }: ToggleProps) {
   const [open, setOpen] = useState(defaultOpen);
   const [isHovered, setIsHovered] = useState(false);
@@ -60,7 +62,8 @@ function ToggleDiv({
       <div
         className={
           open
-            ? "thin-scrollbar mt-2 max-h-40 min-w-0 overflow-y-auto overscroll-contain opacity-100"
+            ? contentClassName ??
+              "thin-scrollbar mt-2 max-h-40 min-w-0 overflow-y-auto overscroll-contain opacity-100"
             : "max-h-0 min-w-0 overflow-hidden opacity-0"
         }
       >

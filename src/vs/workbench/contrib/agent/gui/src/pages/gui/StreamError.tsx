@@ -247,13 +247,14 @@ const StreamErrorDialog = ({ error }: StreamErrorProps) => {
             title="View error output"
             testId="error-output-toggle"
             defaultOpen
+            contentClassName="mt-2 min-w-0 opacity-100"
           >
             <div className="flex flex-col gap-0 rounded-sm">
               <code className="text-editor-foreground block max-h-48 overflow-y-auto p-3 font-mono text-xs">
                 {parsedError}
               </code>
 
-              <div className="flex flex-row items-center justify-end gap-2 p-2">
+              <div className="flex flex-row flex-wrap items-center justify-end gap-2 p-2">
                 <GhostButton
                   onClick={copyErrorToClipboard}
                   className="flex items-center"
