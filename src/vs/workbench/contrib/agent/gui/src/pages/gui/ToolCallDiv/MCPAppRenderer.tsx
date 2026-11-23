@@ -23,6 +23,7 @@ import {
 import { HostBridgeContext } from "../../../context/HostBridge";
 import { useAppDispatch } from "../../../redux/hooks";
 import { streamResponseThunk } from "../../../redux/thunks/streamResponse";
+import { CHAT_UI_TEXT_CLASS } from "../../../styles/chatLayout";
 
 /**
  * Build a CSP meta tag content string from McpUiResourceCsp configuration.
@@ -342,13 +343,13 @@ export function McpAppRenderer({
   if (error) {
     return (
       <div
-        className={`bg-input text-description w-full p-4 text-sm ${
+        className={`bg-input text-description w-full p-4 ${CHAT_UI_TEXT_CLASS} ${
           prefersBorder ? "border-input rounded border" : ""
         }`}
         role="alert"
       >
         <p className="text-foreground mb-1 font-medium">MCP App failed to load</p>
-        <p className="text-xs leading-relaxed">{error.message}</p>
+        <p className="leading-relaxed">{error.message}</p>
       </div>
     );
   }
@@ -421,7 +422,7 @@ ${html}
             <p className="text-foreground mb-2 text-sm font-medium">
               Limited Functionality
             </p>
-            <p className="text-description mb-4 text-xs leading-relaxed">
+            <p className={`text-description mb-4 ${CHAT_UI_TEXT_CLASS} leading-relaxed`}>
               This app requires{" "}
               <strong className="text-foreground">
                 {restrictedPermissions.join(", ")}
@@ -431,7 +432,7 @@ ${html}
             </p>
             <button
               onClick={() => setPermissionWarningDismissed(true)}
-              className="bg-primary text-primary-foreground hover:bg-primary-hover cursor-pointer rounded border-none px-4 py-2 text-xs font-medium"
+              className={`bg-primary text-primary-foreground hover:bg-primary-hover cursor-pointer rounded border-none px-4 py-2 ${CHAT_UI_TEXT_CLASS} font-medium`}
             >
               Proceed Anyway
             </button>

@@ -7,7 +7,7 @@ import { selectUIConfig } from "../../redux/slices/configSlice";
 import { deleteMessage } from "../../redux/slices/sessionSlice";
 import ThinkingBlockPeek from "../mainInput/belowMainInput/ThinkingBlockPeek";
 import StyledMarkdownPreview from "../StyledMarkdownPreview";
-import { CHAT_ASSISTANT_BODY_CLASS } from "../../styles/chatLayout";
+import { CHAT_ASSISTANT_BODY_CLASS, CHAT_UI_TEXT_CLASS } from "../../styles/chatLayout";
 import ConversationSummary from "./ConversationSummary";
 import ResponseActions from "./ResponseActions";
 import ThinkingIndicator from "./ThinkingIndicator";
@@ -154,7 +154,7 @@ function StepContainer(props: StepContainerProps) {
         <div className="mx-1.5 my-3">
           <div className="flex items-center">
             <div className="border-border flex-1 border-t border-solid"></div>
-            <span className="text-description mx-3 text-xs">
+            <span className={`text-description mx-3 ${CHAT_UI_TEXT_CLASS}`}>
               Previous Conversation Compacted
             </span>
             <div className="border-border flex-1 border-t border-solid"></div>

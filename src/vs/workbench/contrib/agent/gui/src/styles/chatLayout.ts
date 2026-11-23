@@ -6,9 +6,12 @@
 
 /** Outer chat column (messages + composer). */
 export const CHAT_SURFACE_CLASS = [
-  "box-border w-full min-w-0",
+  "agent-chat-surface box-border w-full min-w-0",
   "px-3 pb-3 sm:px-4",
 ].join(" ");
+
+/** Agent UI labels share the same base size as prompts, replies, and loading text. */
+export const CHAT_UI_TEXT_CLASS = "agent-chat-ui-text";
 
 /** Shared content inset. Matches the composer text (`px-2`). */
 const CHAT_MESSAGE_INSET_CLASS = "px-2";

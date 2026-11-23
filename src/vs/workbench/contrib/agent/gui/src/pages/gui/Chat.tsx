@@ -60,6 +60,7 @@ import {
   CHAT_SURFACE_CLASS,
   CHAT_TURN_GAP_CLASS,
 } from "../../styles/chatLayout";
+import { getFontSize } from "../../util";
 import { EmptyChatBody } from "./EmptyChatBody";
 import { useAutoScroll } from "./useAutoScroll";
 import { editorPreview } from "../../redux/util/messageQueue";
@@ -572,7 +573,10 @@ export function Chat() {
   }, [history, isStreaming]);
 
   return (
-    <div className={`${CHAT_SURFACE_CLASS} flex min-h-0 flex-1 flex-col`}>
+    <div
+      className={`${CHAT_SURFACE_CLASS} flex min-h-0 flex-1 flex-col`}
+      style={{ fontSize: getFontSize() }}
+    >
       {!!showSessionTabs && !isInEdit && <TabBar ref={tabsRef} />}
       {widget}
 

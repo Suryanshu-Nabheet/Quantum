@@ -4,6 +4,7 @@ import { ChatHistoryItem } from "core";
 import { useState } from "react";
 import { useAppSelector } from "../../redux/hooks";
 import { useDeleteCompaction } from "../../util/compactConversation";
+import { CHAT_UI_TEXT_CLASS } from "../../styles/chatLayout";
 import { AnimatedEllipsis } from "../AnimatedEllipsis";
 import HeaderButtonWithToolTip from "../gui/HeaderButtonWithToolTip";
 import StyledMarkdownPreview from "../StyledMarkdownPreview";
@@ -29,7 +30,7 @@ export default function ConversationSummary(props: ConversationSummaryProps) {
     return (
       <div className="mx-1.5 mb-4 mt-2">
         <div className="bg-vsc-input-background rounded-md shadow-sm">
-          <div className="text-description flex items-center justify-start px-3 py-2 text-xs">
+          <div className={`text-description flex items-center justify-start px-3 py-2 ${CHAT_UI_TEXT_CLASS}`}>
             <span>Generating conversation summary</span>
             <AnimatedEllipsis />
           </div>
@@ -43,7 +44,7 @@ export default function ConversationSummary(props: ConversationSummaryProps) {
     <div className="mx-1.5 mb-4 mt-2">
       <div className="bg-vsc-input-background rounded-md shadow-sm">
         <div
-          className="text-description flex cursor-pointer items-center gap-2 px-3 py-2 text-xs transition-colors duration-200 hover:brightness-105"
+          className={`text-description flex cursor-pointer items-center gap-2 px-3 py-2 ${CHAT_UI_TEXT_CLASS} transition-colors duration-200 hover:brightness-105`}
           onClick={() => setOpen(!open)}
         >
           {open ? (

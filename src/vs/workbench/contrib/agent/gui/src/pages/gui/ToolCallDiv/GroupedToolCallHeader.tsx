@@ -1,5 +1,6 @@
 import { FolderIcon } from "@heroicons/react/24/outline";
 import { ToolCallState } from "core";
+import { CHAT_UI_TEXT_CLASS } from "../../../styles/chatLayout";
 import { ToggleWithIcon } from "./ToggleWithIcon";
 import { getGroupActionVerb } from "./utils";
 
@@ -19,7 +20,7 @@ export function GroupedToolCallHeader({
   return (
     <div className={open ? "mb-0.5" : "mb-0"}>
       <div
-        className="text-description flex cursor-pointer items-center gap-1.5 text-xs transition-colors duration-200 ease-in-out hover:brightness-125"
+        className={`text-description flex cursor-pointer items-center gap-1.5 ${CHAT_UI_TEXT_CLASS} transition-colors duration-200 ease-in-out hover:brightness-125`}
         data-testid="performing-actions"
         onClick={onToggle}
       >

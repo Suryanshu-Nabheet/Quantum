@@ -28,7 +28,7 @@ function ToggleDiv({
       }}
     >
       <div
-        className="text-description flex cursor-pointer items-center justify-start text-xs hover:brightness-125"
+        className="text-description flex cursor-pointer items-center justify-start hover:brightness-125"
         onClick={() => setOpen((prev) => !prev)}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -52,7 +52,7 @@ function ToggleDiv({
             </>
           )}
         </div>
-        <span className="ml-1 text-xs transition-colors duration-200">
+        <span className="ml-1 transition-colors duration-200">
           {title}
         </span>
       </div>

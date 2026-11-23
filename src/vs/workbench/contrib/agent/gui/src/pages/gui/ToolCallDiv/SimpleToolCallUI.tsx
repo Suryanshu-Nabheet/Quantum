@@ -11,6 +11,7 @@ import { ToggleWithIcon } from "./ToggleWithIcon";
 import { ToolCallStatusMessage } from "./ToolCallStatusMessage";
 import { ToolTruncateHistoryIcon } from "./ToolTruncateHistoryIcon";
 import { toolCallStateToContextItems } from "./utils";
+import { CHAT_UI_TEXT_CLASS } from "../../../styles/chatLayout";
 
 const FILE_TOOLS = new Set<string>([
   BuiltInToolNames.ReadFile,
@@ -103,7 +104,7 @@ export function SimpleToolCallUI({
     <div className="flex flex-col">
       <div className="flex min-w-0 flex-row items-center justify-between gap-2">
         <div
-          className={`text-description flex min-w-0 flex-row items-center justify-between gap-1.5 text-xs transition-colors duration-200 ease-in-out ${
+          className={`text-description flex min-w-0 flex-row items-center justify-between gap-1.5 ${CHAT_UI_TEXT_CLASS} transition-colors duration-200 ease-in-out ${
             isClickable ? "cursor-pointer hover:brightness-125" : ""
           }`}
           onClick={isClickable ? handleClick : undefined}
@@ -146,7 +147,7 @@ export function SimpleToolCallUI({
               <ContextItemsPeekItem key={idx} contextItem={contextItem} />
             ))
           ) : (
-            <div className="text-description pl-5 text-xs italic">
+            <div className={`text-description pl-5 ${CHAT_UI_TEXT_CLASS} italic`}>
               No tool call output
             </div>
           )}

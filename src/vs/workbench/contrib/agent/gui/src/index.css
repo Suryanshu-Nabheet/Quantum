@@ -217,6 +217,16 @@ body {
   animation: tr-block-in 180ms cubic-bezier(0.23, 1, 0.32, 1) both;
 }
 
+.agent-chat-ui-text {
+  font-size: inherit;
+}
+
+.agent-chat-surface .tdl-head,
+.agent-chat-surface .tdl-item,
+.agent-chat-surface .trr-header {
+  font-size: inherit;
+}
+
 .trr-settled,
 .trr-settled .trr-sentence {
   animation: none;

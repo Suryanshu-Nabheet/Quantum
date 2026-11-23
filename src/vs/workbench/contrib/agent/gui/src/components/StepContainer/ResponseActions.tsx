@@ -16,6 +16,7 @@ import { FeedbackButtons } from "../FeedbackButtons";
 import { GenerateRuleDialog } from "../GenerateRuleDialog";
 import { CopyIconButton } from "../gui/CopyIconButton";
 import HeaderButtonWithToolTip from "../gui/HeaderButtonWithToolTip";
+import { CHAT_UI_TEXT_CLASS } from "../../styles/chatLayout";
 
 export interface ResponseActionsProps {
   isTruncated: boolean;
@@ -60,7 +61,7 @@ export default function ResponseActions({
   };
 
   return (
-    <div className="text-description-muted mx-2 flex cursor-default items-center justify-end space-x-1 bg-transparent pb-0 text-xs">
+    <div className={`text-description-muted mx-2 flex cursor-default items-center justify-end space-x-1 bg-transparent pb-0 ${CHAT_UI_TEXT_CLASS}`}>
       <HeaderButtonWithToolTip
         testId={`compact-button-${index}`}
         text={
@@ -77,7 +78,7 @@ export default function ResponseActions({
           />
           {showLabel && (
             <span
-              className={`text-xs ${buttonColorClass || "text-description-muted"}`}
+              className={`${CHAT_UI_TEXT_CLASS} ${buttonColorClass || "text-description-muted"}`}
             >
               Compact conversation
             </span>

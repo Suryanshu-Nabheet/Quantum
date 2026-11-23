@@ -4,6 +4,7 @@ import {
 } from "@heroicons/react/24/outline";
 import ReactMarkdown from "react-markdown";
 import { SecureImageComponent } from "../../../components/StyledMarkdownPreview/SecureImageComponent";
+import { CHAT_UI_TEXT_CLASS } from "../../../styles/chatLayout";
 import remarkGfm from "remark-gfm";
 import type { AgentPlanViewData, ToolCallState } from "core";
 import { BuiltInToolNames } from "core/tools/builtIn";
@@ -56,10 +57,10 @@ function BuildButton({
           onClick();
         }
       }}
-      className="my-0 inline-flex h-7 items-center gap-2 px-3 py-1 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
+      className={`my-0 inline-flex h-7 items-center gap-2 px-3 py-1 ${CHAT_UI_TEXT_CLASS} font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus`}
     >
       <span>Build</span>
-      <span className="whitespace-nowrap text-[10px] font-normal opacity-80">
+      <span className={`whitespace-nowrap ${CHAT_UI_TEXT_CLASS} font-normal opacity-80`}>
         {getMetaKeyLabel()}↵
       </span>
     </Button>
@@ -75,7 +76,7 @@ function PlanMarkdown({
 }) {
   return (
     <div
-      className={`${compact ? "text-[13px] leading-5" : "text-foreground text-sm leading-relaxed"} min-w-0`}
+      className={`${compact ? "leading-5" : "text-foreground leading-relaxed"} ${CHAT_UI_TEXT_CLASS} min-w-0`}
     >
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
@@ -220,7 +221,7 @@ export function PlanTodoList({
     >
       <button
         type="button"
-        className="m-0 flex w-full items-center justify-between gap-3 border-0 bg-transparent p-0 text-left text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
+        className={`m-0 flex w-full items-center justify-between gap-3 border-0 bg-transparent p-0 text-left ${CHAT_UI_TEXT_CLASS} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus`}
         aria-expanded={!collapsed}
         aria-label={`${collapsed ? "Expand" : "Collapse"} plan to-dos (${doneCount} of ${total} complete)`}
         onClick={() => setCollapsed((value) => !value)}
@@ -440,7 +441,7 @@ export function PlanCard({
       }}
     >
       <div className="flex min-w-0 items-start justify-between gap-2">
-        <div className="text-foreground min-w-0 break-words text-base font-semibold leading-6">
+        <div className={`text-foreground min-w-0 break-words ${CHAT_UI_TEXT_CLASS} font-semibold leading-6`}>
           {plan.title}
         </div>
         <button
@@ -460,7 +461,7 @@ export function PlanCard({
       <button
         type="button"
         onClick={view}
-        className="m-0 w-fit border-0 bg-transparent p-0 text-left text-xs focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-border-focus"
+        className={`m-0 w-fit border-0 bg-transparent p-0 text-left ${CHAT_UI_TEXT_CLASS} focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-border-focus`}
         style={{
           color: "var(--vscode-textLink-foreground, #3794ff)",
           cursor: "pointer",
