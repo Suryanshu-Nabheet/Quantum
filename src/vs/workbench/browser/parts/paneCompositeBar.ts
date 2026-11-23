@@ -85,6 +85,7 @@ export interface IPaneCompositeBarOptions {
 	readonly fillExtraContextMenuActions: (actions: IAction[], e?: MouseEvent | GestureEvent) => void;
 	readonly colors: (theme: IColorTheme) => ICompositeBarColors;
 	readonly horizontalActivityBarMode?: boolean;
+	readonly defaultPinnedViewContainerIds?: readonly string[];
 }
 
 export class PaneCompositeBar extends Disposable {
@@ -600,7 +601,9 @@ export class PaneCompositeBar extends Disposable {
 						id: viewContainer.id,
 						name: typeof viewContainer.title === 'string' ? viewContainer.title : viewContainer.title.value,
 						order: viewContainer.order,
-						pinned: true,
+						pinned: this.useHorizontalActivityBarDefaults()
+							? this.options.defaultPinnedViewContainerIds!.includes(viewContainer.id)
+							: true,
 						visible: !this.shouldBeHidden(viewContainer),
 					});
 				}
@@ -727,7 +730,44 @@ export class PaneCompositeBar extends Disposable {
 	}
 
 	private getStoredPinnedViewContainersValue(): string {
-		return this.storageService.get(this.options.pinnedViewContainersKey, StorageScope.PROFILE, '[]');
+		const storedValue = this.storageService.get(this.options.pinnedViewContainersKey, StorageScope.PROFILE, '[]');
+		if (!this.useHorizontalActivityBarDefaults()) {
+			return storedValue;
+		}
+
+		const defaultIds = this.options.defaultPinnedViewContainerIds!;
+		const viewContainers = [...this.getViewContainers()].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+		let applyDefaults = storedValue === '[]';
+		if (!applyDefaults) {
+			try {
+				const storedItems = JSON.parse(storedValue) as IPinnedViewContainer[];
+				applyDefaults = storedItems.length === viewContainers.length
+					&& storedItems.every((item, index) => item.id === viewContainers[index].id && item.pinned);
+			} catch {
+				return storedValue;
+			}
+		}
+		if (!applyDefaults) {
+			return storedValue;
+		}
+
+		const orderedViewContainers = [
+			...defaultIds.map(id => viewContainers.find(viewContainer => viewContainer.id === id)).filter((viewContainer): viewContainer is ViewContainer => !!viewContainer),
+			...viewContainers.filter(viewContainer => !defaultIds.includes(viewContainer.id)),
+		];
+		const defaults = JSON.stringify(orderedViewContainers.map((viewContainer, order) => ({
+			id: viewContainer.id,
+			pinned: defaultIds.includes(viewContainer.id),
+			visible: true,
+			order,
+		} satisfies IPinnedViewContainer)));
+		this.storageService.store(this.options.pinnedViewContainersKey, defaults, StorageScope.PROFILE, StorageTarget.USER);
+		return defaults;
+	}
+
+	private useHorizontalActivityBarDefaults(): boolean {
+		return !!this.options.defaultPinnedViewContainerIds?.length
+			&& this.configurationService.getValue<string>('workbench.activityBar.orientation') === 'horizontal';
 	}
 
 	private setStoredPinnedViewContainersValue(value: string): void {

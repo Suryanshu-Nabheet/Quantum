@@ -13,7 +13,7 @@ import sessionReducer, {
 import ContextStatus from "./ContextStatus";
 
 describe("ContextStatus", () => {
-  it("stays visible between turns and avoids reusing another model's count", () => {
+  it("shows usage only after it is calculated for the current turn and model", () => {
     const store = configureStore({
       reducer: { config: configReducer, session: sessionReducer },
       middleware: (getDefaultMiddleware) =>
@@ -42,18 +42,22 @@ describe("ContextStatus", () => {
         <ContextStatus />
       </Provider>,
     );
-    expect(
-      screen.getByLabelText(/not yet calculated.*1,000,000/),
-    ).toBeInTheDocument();
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
 
-    act(() => {
+    act(() =>
       store.dispatch(
         setContextUsage({
           inputTokens: 8000,
           contextLength: 1_000_000,
           modelKey: JSON.stringify(["custom", "first", "First"]),
         }),
-      );
+      ),
+    );
+    expect(
+      screen.getByLabelText(/8,000 of 1,000,000 tokens loaded/),
+    ).toBeInTheDocument();
+
+    act(() => {
       store.dispatch(
         submitEditorAndInitAtIndex({
           index: 0,
@@ -61,8 +65,19 @@ describe("ContextStatus", () => {
         }),
       );
     });
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+
+    act(() =>
+      store.dispatch(
+        setContextUsage({
+          inputTokens: 9000,
+          contextLength: 1_000_000,
+          modelKey: JSON.stringify(["custom", "first", "First"]),
+        }),
+      ),
+    );
     expect(
-      screen.getByLabelText(/8,000 of 1,000,000 tokens loaded/),
+      screen.getByLabelText(/9,000 of 1,000,000 tokens loaded/),
     ).toBeInTheDocument();
 
     act(() =>
@@ -73,8 +88,6 @@ describe("ContextStatus", () => {
         contextLength: 2_000_000,
       }),
     );
-    expect(
-      screen.getByLabelText(/not yet calculated.*2,000,000/),
-    ).toBeInTheDocument();
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
   });
 });

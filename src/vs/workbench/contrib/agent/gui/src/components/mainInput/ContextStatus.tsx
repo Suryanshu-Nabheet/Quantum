@@ -144,34 +144,8 @@ function ContextUsageTooltip({ status }: { status: ContextStatusInfo }) {
 /** Compact context usage and model-window details for the composer toolbar. */
 const ContextStatus = () => {
   const status = useContextStatus();
-  const selectedModel = useAppSelector(
-    (state) => state.config.config.selectedModelByRole.chat,
-  );
   if (!status) {
-    const length = selectedModel?.contextLength;
-    const knownLength =
-      typeof length === "number" && Number.isFinite(length) && length > 0;
-    return (
-      <ToolTip
-        place="top"
-        content="Context usage will appear after the prompt is assembled."
-      >
-        <div
-          className="border-command-border text-description inline-flex shrink-0 items-center gap-1 rounded border border-solid px-1.5 py-0.5 text-[10px] leading-none tabular-nums"
-          role="img"
-          aria-label={
-            knownLength
-              ? `Context usage not yet calculated. Model window ${length.toLocaleString()} tokens.`
-              : "Context usage not yet calculated. Model window unknown."
-          }
-        >
-          <span>—</span>
-          <span className="text-description-muted">
-            {knownLength ? `—/${formatCompactTokenCount(length)}` : "Context"}
-          </span>
-        </div>
-      </ToolTip>
-    );
+    return null;
   }
 
   const progress = Math.min(100, Math.max(0, status.percent));

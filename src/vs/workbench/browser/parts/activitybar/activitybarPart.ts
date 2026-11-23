@@ -151,6 +151,12 @@ export class ActivitybarPart extends Part {
 			},
 			preventLoopNavigation: true,
 			recomputeSizes: false,
+			defaultPinnedViewContainerIds: [
+				'workbench.view.explorer',
+				'workbench.view.search',
+				'workbench.view.scm',
+				'workbench.view.extensions',
+			],
 			fillExtraContextMenuActions: (actions, e?: MouseEvent | GestureEvent) => { },
 			compositeSize: 52,
 			colors: (theme: IColorTheme) => ({
