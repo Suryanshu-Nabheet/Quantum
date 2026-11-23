@@ -8,6 +8,7 @@ import {
   MagnifyingGlassPlusIcon,
 } from "@heroicons/react/24/outline";
 import DOMPurify from "dompurify";
+import type { PanzoomObject } from "@panzoom/panzoom";
 import { useContext, useEffect, useId, useRef, useState } from "react";
 import { HostBridgeContext } from "../../context/HostBridge";
 import { useDebouncedEffect } from "../find/useDebounce";
@@ -102,13 +103,7 @@ export default function MermaidDiagram({
   const reactId = useId().replace(/:/g, "");
   const mermaidRenderContainerRef = useRef<HTMLDivElement>(null);
   const renderGenerationRef = useRef(0);
-  const panzoomRef = useRef<{
-    destroy?: () => void;
-    zoomIn: (o?: object) => void;
-    zoomOut: (o?: object) => void;
-    reset: () => void;
-    zoomWithWheel: (e: WheelEvent) => void;
-  } | null>(null);
+  const panzoomRef = useRef<PanzoomObject | null>(null);
   const wheelHandlerRef = useRef<((event: WheelEvent) => void) | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
@@ -212,10 +207,32 @@ export default function MermaidDiagram({
           panzoomRef.current = panzoom;
 
           const onWheel = (event: WheelEvent) => {
-            if (!event.shiftKey) {
+            if (
+              event.target instanceof Element &&
+              event.target.closest(".agent-mermaid-toolbar")
+            )
               return;
+            if (event.ctrlKey || event.metaKey) {
+              event.preventDefault();
+              const delta = Math.max(-100, Math.min(100, event.deltaY));
+              panzoom.zoomToPoint(
+                panzoom.getScale() * Math.exp(-delta * 0.01),
+                event,
+                { animate: false },
+              );
+            } else if (event.shiftKey) {
+              panzoom.zoomWithWheel(event);
+            } else if (standalone) {
+              event.preventDefault();
+              const scale = panzoom.getScale();
+              const multiplier =
+                event.deltaMode === WheelEvent.DOM_DELTA_LINE ? 16 : 1;
+              panzoom.pan(
+                (-event.deltaX * multiplier) / scale,
+                (-event.deltaY * multiplier) / scale,
+                { relative: true, animate: false },
+              );
             }
-            panzoom.zoomWithWheel(event);
           };
           wheelHandlerRef.current = onWheel;
           container.parentElement?.addEventListener("wheel", onWheel, {
@@ -239,7 +256,7 @@ export default function MermaidDiagram({
       })();
     },
     500,
-    [code, reactId],
+    [code, reactId, standalone],
   );
 
   useEffect(() => {
@@ -258,6 +275,7 @@ export default function MermaidDiagram({
 
   useEffect(() => {
     if (!standalone) return;
+    hostBridge.post("agentDiagramReady", undefined);
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape")
         hostBridge.post("closeAgentDiagram", undefined);
@@ -396,6 +414,11 @@ export default function MermaidDiagram({
           className="agent-mermaid-canvas flex min-h-12 justify-center p-3"
           ref={mermaidRenderContainerRef}
         />
+        {standalone && !error && !isLoading && (
+          <div className="agent-mermaid-gesture-hint">
+            Pinch to zoom · two-finger scroll to pan
+          </div>
+        )}
         {copyError && (
           <div role="alert" className="text-error px-3 pb-2 text-xs">
             Could not copy the diagram source.

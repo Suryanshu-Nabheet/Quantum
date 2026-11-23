@@ -140,13 +140,14 @@
 
 .agent-diagram-viewer {
   height: 100vh;
-  padding: 12px;
   box-sizing: border-box;
 }
 
 .agent-markdown .agent-mermaid-standalone {
   height: 100%;
   margin: 0;
+  border: 0;
+  border-radius: 0;
 }
 
 .agent-markdown .agent-mermaid-standalone .mermaid {
@@ -201,6 +202,15 @@
 .agent-markdown .agent-mermaid-canvas svg {
   max-width: 100%;
   height: auto;
+}
+
+.agent-markdown .agent-mermaid-gesture-hint {
+  position: absolute;
+  bottom: 12px;
+  left: 16px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+  pointer-events: none;
 }
 
 .agent-markdown .agent-mermaid-error-details {

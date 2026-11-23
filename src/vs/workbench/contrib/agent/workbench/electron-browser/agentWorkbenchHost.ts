@@ -4,7 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { encodeBase64, VSBuffer } from '../../../../../base/common/buffer.js';
-import { Disposable, DisposableStore, MutableDisposable } from '../../../../../base/common/lifecycle.js';
+import { Disposable, DisposableStore, MutableDisposable, toDisposable } from '../../../../../base/common/lifecycle.js';
+import { addDisposableListener, getWindow } from '../../../../../base/browser/dom.js';
 import { URI } from '../../../../../base/common/uri.js';
 import { isMacintosh } from '../../../../../base/common/platform.js';
 import { ITextResourceEditorInput } from '../../../../../platform/editor/common/editor.js';
@@ -16,6 +17,8 @@ import { IOpenerService } from '../../../../../platform/opener/common/opener.js'
 import { IProductService } from '../../../../../platform/product/common/productService.js';
 import { ISecretStorageService } from '../../../../../platform/secrets/common/secrets.js';
 import { IStorageService, StorageScope, StorageTarget } from '../../../../../platform/storage/common/storage.js';
+import { IWorkbenchLayoutService } from '../../../../services/layout/browser/layoutService.js';
+import { IWebviewService } from '../../../webview/browser/webview.js';
 import { IWorkspaceContextService } from '../../../../../platform/workspace/common/workspace.js';
 import { IAgentNativeService } from '../common/agentNativeService.js';
 import { IAgentWorkbenchHost } from '../common/agentWorkbenchHost.js';
@@ -116,6 +119,8 @@ export class AgentWorkbenchHost extends Disposable {
 		@IWebviewWorkbenchService private readonly webviewWorkbenchService: IWebviewWorkbenchService,
 		@IAgentPlanEditorService private readonly agentPlanEditorService: IAgentPlanEditorService,
 		@IStorageService private readonly storageService: IStorageService,
+		@IWorkbenchLayoutService private readonly layoutService: IWorkbenchLayoutService,
+		@IWebviewService private readonly webviewService: IWebviewService,
 	) {
 		super();
 		this.queryBuilder = instantiationService.createInstance(QueryBuilder);
@@ -136,6 +141,7 @@ export class AgentWorkbenchHost extends Disposable {
 	}
 
 	private readonly queryBuilder: QueryBuilder;
+	private readonly diagramViewer = this._register(new MutableDisposable<DisposableStore>());
 	private settingsEditor: WebviewInput | undefined;
 	private readonly settingsInvocationTypes = new Map<string, string>();
 	private readonly settingsCoreMessageAcks = new Set<string>();
@@ -340,36 +346,59 @@ export class AgentWorkbenchHost extends Disposable {
 	}
 
 	private openAgentDiagram(source: string): void {
+		this.diagramViewer.clear();
+		const disposables = new DisposableStore();
+		this.diagramViewer.value = disposables;
+		const container = this.layoutService.activeContainer;
+		const document = container.ownerDocument;
+		const previousFocus = document.activeElement as HTMLElement | null;
+		const backdrop = document.createElement('div');
+		backdrop.setAttribute('role', 'dialog');
+		backdrop.setAttribute('aria-label', 'Diagram');
+		backdrop.setAttribute('aria-modal', 'true');
+		backdrop.tabIndex = -1;
+		backdrop.style.cssText = 'position:fixed;inset:0;z-index:2540;display:flex;align-items:center;justify-content:center;padding:32px;background:rgba(0,0,0,.65);box-sizing:border-box';
+		const panel = document.createElement('div');
+		panel.style.cssText = 'width:100%;height:100%;min-width:0;min-height:0;background:var(--vscode-editor-background);border:1px solid var(--vscode-panel-border);border-radius:8px;overflow:hidden';
+		backdrop.appendChild(panel);
+		container.appendChild(backdrop);
+		backdrop.focus();
+		disposables.add(toDisposable(() => { backdrop.remove(); previousFocus?.focus(); }));
+		disposables.add(addDisposableListener(backdrop, 'mousedown', event => {
+			if (event.target === backdrop) { this.diagramViewer.clear(); }
+		}));
+		disposables.add(addDisposableListener(document, 'keydown', event => {
+			if (event.key === 'Escape') { event.preventDefault(); this.diagramViewer.clear(); }
+		}));
 		const guiRoot = URI.file(`${this.nativeEnvironmentService.agentRuntimePath}/webview`);
-		const input = this.webviewWorkbenchService.openWebview({
+		const webview = disposables.add(this.webviewService.createWebviewElement({
 			providedViewType: 'quantum.agent.diagram',
 			title: 'Diagram',
-			options: { retainContextWhenHidden: true },
+			options: {},
 			contentOptions: { allowScripts: true, localResourceRoots: [guiRoot] },
 			extension: undefined,
-		}, 'quantum.agent.diagram', 'Diagram', Codicon.graph, { group: ACTIVE_GROUP, preserveFocus: false });
-		const listener = input.webview.onMessage(event => {
+		}));
+		disposables.add(webview.onMessage(event => {
 			const message = event.message as { messageType?: string; messageId?: string; data?: { text?: string } };
 			if (!message?.messageId) {
 				return;
 			}
-			if (message.messageType === 'closeAgentDiagram') {
-				for (const group of this.editorGroupsService.groups) {
-					if (group.getEditors(EditorsOrder.SEQUENTIAL).includes(input)) {
-						void group.closeEditor(input);
-					}
-				}
+			if (message.messageType === 'agentDiagramReady') {
+				webview.focus();
+			} else if (message.messageType === 'closeAgentDiagram') {
+				this.diagramViewer.clear();
 			} else if (message.messageType === 'copyText') {
 				void this.clipboardService.writeText(message.data?.text ?? '').then(
-					() => input.webview.postMessage({ messageId: message.messageId, data: { done: true, status: 'success' } }),
-					error => input.webview.postMessage({ messageId: message.messageId, data: { done: true, status: 'error', error: String(error) } }),
+					() => webview.postMessage({ messageId: message.messageId, data: { done: true, status: 'success' } }),
+					error => webview.postMessage({ messageId: message.messageId, data: { done: true, status: 'error', error: String(error) } }),
 				);
 			}
-		});
-		const disposeListener = input.onWillDispose(() => { listener.dispose(); disposeListener.dispose(); });
-		input.webview.setHtml(createAgentWebviewContent({
+		}));
+		webview.setHtml(createAgentWebviewContent({
 			guiRoot, nonce: generateUuid(), title: 'Diagram', workspacePaths: [], page: 'diagram', diagramSource: source,
 		}));
+		webview.mountTo(panel, getWindow(container));
+		webview.focus();
 	}
 
 	private async revertAgentEdit(data: Record<string, unknown> | undefined): Promise<void> {

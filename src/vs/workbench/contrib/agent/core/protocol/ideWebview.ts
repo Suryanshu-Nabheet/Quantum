@@ -58,6 +58,7 @@ export type ToIdeFromWebviewProtocol = ToIdeFromWebviewOrCoreProtocol & {
   copyText: [{ text: string }, void];
   openAgentDiagram: [{ source: string }, void];
   closeAgentDiagram: [undefined, void];
+  agentDiagramReady: [undefined, void];
   acceptDiff: [AcceptOrRejectDiffPayload, void];
   rejectDiff: [AcceptOrRejectDiffPayload, void];
   "edit/sendPrompt": [

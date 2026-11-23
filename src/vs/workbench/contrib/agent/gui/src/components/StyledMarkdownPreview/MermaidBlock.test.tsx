@@ -4,6 +4,17 @@ import { HostBridgeContext, type IHostBridge } from "../../context/HostBridge";
 import MermaidBlock from "./MermaidBlock";
 import mermaid from "mermaid";
 
+const panzoom = vi.hoisted(() => ({
+  destroy: vi.fn(),
+  zoomIn: vi.fn(),
+  zoomOut: vi.fn(),
+  reset: vi.fn(),
+  zoomWithWheel: vi.fn(),
+  zoomToPoint: vi.fn(),
+  pan: vi.fn(),
+  getScale: vi.fn(() => 1),
+}));
+
 vi.mock("mermaid", () => ({
   default: {
     initialize: vi.fn(),
@@ -17,13 +28,7 @@ vi.mock("mermaid", () => ({
 }));
 
 vi.mock("@panzoom/panzoom", () => ({
-  default: () => ({
-    destroy: vi.fn(),
-    zoomIn: vi.fn(),
-    zoomOut: vi.fn(),
-    reset: vi.fn(),
-    zoomWithWheel: vi.fn(),
-  }),
+  default: () => panzoom,
 }));
 
 describe("MermaidBlock", () => {
@@ -81,8 +86,45 @@ describe("MermaidBlock", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "Close diagram" }));
     fireEvent.keyDown(document, { key: "Escape" });
-    expect(post).toHaveBeenCalledTimes(2);
+    expect(post.mock.calls.filter(([name]) => name === "closeAgentDiagram")).toHaveLength(2);
     expect(post).toHaveBeenCalledWith("closeAgentDiagram", undefined);
+  });
+
+  it("zooms with pinch gestures and pans with two-finger scrolling in the viewer", async () => {
+    panzoom.zoomToPoint.mockClear();
+    panzoom.pan.mockClear();
+    const { container } = render(
+      <MermaidBlock code="graph TD; A --> B" standalone />,
+    );
+    await waitFor(() =>
+      expect(screen.getByText("Rendered diagram")).toBeInTheDocument(),
+    );
+    const canvas = container.querySelector(".agent-mermaid-canvas")!;
+    fireEvent.wheel(canvas, { ctrlKey: true, deltaY: -20 });
+    expect(panzoom.zoomToPoint).toHaveBeenCalledWith(
+      expect.any(Number),
+      expect.any(WheelEvent),
+      { animate: false },
+    );
+    fireEvent.wheel(canvas, { deltaX: 10, deltaY: 20 });
+    expect(panzoom.pan).toHaveBeenCalledWith(-10, -20, {
+      relative: true,
+      animate: false,
+    });
+  });
+
+  it("leaves ordinary sidebar scrolling alone", async () => {
+    panzoom.pan.mockClear();
+    const { container } = render(<MermaidBlock code="graph TD; A --> B" />);
+    await waitFor(() =>
+      expect(screen.getByText("Rendered diagram")).toBeInTheDocument(),
+    );
+    expect(
+      fireEvent.wheel(container.querySelector(".agent-mermaid-canvas")!, {
+        deltaY: 20,
+      }),
+    ).toBe(true);
+    expect(panzoom.pan).not.toHaveBeenCalled();
   });
 
   it("copies the diagram source through the host", async () => {
