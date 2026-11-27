@@ -230,21 +230,14 @@ describe("handleToolCallBuffer", () => {
     expect(state.done).toBe(true);
   });
 
-  it("finalizes on newline after all args processed", () => {
+  it("keeps parsing after a blank line between arguments", () => {
     state.currentLineIndex = 5;
     state.processedArgNames.add("test_arg");
 
     const result = handleToolCallBuffer("\n", state);
 
-    expect(result).toEqual({
-      type: "function",
-      function: {
-        name: "",
-        arguments: "}",
-      },
-      id: expect.any(String),
-    });
-    expect(state.done).toBe(true);
+    expect(result).toBeUndefined();
+    expect(state.done).toBe(false);
   });
 
   it("handles JSON array args", () => {

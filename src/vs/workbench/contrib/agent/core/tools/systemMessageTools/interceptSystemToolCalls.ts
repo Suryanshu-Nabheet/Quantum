@@ -33,7 +33,7 @@ export async function* interceptSystemToolCalls(
     const result = await messageGenerator.next();
     if (result.done) {
       // Case: non-standard tool termination causes hanging args
-      if (parseState && !parseState.done && parseState.processedArgNames.size) {
+      if (parseState && !parseState.done && parseState.processedArgNames.size && !parseState.currentArgName && !parseState.isWithinArgStart) {
         yield [
           {
             role: "assistant",

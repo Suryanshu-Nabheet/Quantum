@@ -63,7 +63,7 @@ export function handleToolCallBuffer(
         }
       } else if (state.currentArgName) {
         if (isNewLine) {
-          const isEndArgTag = line.match(/end_?arg/i);
+          const isEndArgTag = /^\s*end_?arg\s*$/i.test(line);
           if (isEndArgTag) {
             let trimmedValue = state.currentArgChunks.join("").trim();
             state.currentArgChunks.length = 0;
@@ -109,7 +109,7 @@ export function handleToolCallBuffer(
         }
 
         // Check for exit
-        if (line === "```" || isNewLine) {
+        if (line.trim() === "```") {
           state.done = true;
           // finish args JSON if applicable
           if (state.processedArgNames.size > 0) {
