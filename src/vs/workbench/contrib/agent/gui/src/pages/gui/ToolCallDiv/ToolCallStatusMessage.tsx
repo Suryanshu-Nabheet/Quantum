@@ -1,5 +1,5 @@
 import { Tool, ToolCallState } from "core";
-import { BUILT_IN_GROUP_NAME } from "core/tools/builtIn";
+import { BUILT_IN_GROUP_NAME, BuiltInToolNames } from "core/tools/builtIn";
 import Mustache from "mustache";
 import { getStatusIntro } from "./utils";
 
@@ -18,6 +18,14 @@ export function ToolCallStatusMessage({
   const defaultToolDescription = `${toolName} tool`;
   const originalArgs = toolCallState.parsedArgs ?? {};
   const displayArgs = { ...originalArgs };
+  const isRead = tool.function.name === BuiltInToolNames.ReadFile || tool.function.name === BuiltInToolNames.ReadFileRange;
+  if (isRead && typeof displayArgs.filepath === "string") {
+    const path = displayArgs.filepath;
+    const name = path.replace(/\\/g, "/").split("/").filter(Boolean).pop() || path;
+    const status = toolCallState.status;
+    const action = status === "done" ? "Read" : status === "calling" ? "Reading" : status === "errored" || status === "canceled" ? "Tried to read" : "Read";
+    return <div className="text-description min-w-0 truncate" data-testid="tool-call-title" title={path}><span>{action} </span><span className="text-foreground font-medium">{name}</span></div>;
+  }
   if (tool.group === BUILT_IN_GROUP_NAME) {
     for (const key of ["filepath", "dirPath", "directory_path"]) {
       const path = displayArgs[key];

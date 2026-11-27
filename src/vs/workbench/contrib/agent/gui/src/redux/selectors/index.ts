@@ -1,9 +1,34 @@
 import { createSelector } from "@reduxjs/toolkit";
+import { BuiltInToolNames } from "core/tools/builtIn";
 import {
   ComboBoxItem,
   ComboBoxItemType,
 } from "../../components/mainInput/types";
 import { RootState } from "../store";
+
+function toolActivity(name: string): string {
+  switch (name) {
+    case BuiltInToolNames.RunTerminalCommand: return "Running command...";
+    case BuiltInToolNames.ReadFile:
+    case BuiltInToolNames.ReadFileRange:
+    case BuiltInToolNames.ReadCurrentlyOpenFile: return "Reading file...";
+    case BuiltInToolNames.GrepSearch:
+    case BuiltInToolNames.FileGlobSearch: return "Searching files...";
+    case BuiltInToolNames.LSTool:
+    case BuiltInToolNames.ViewSubdirectory: return "Exploring files...";
+    case BuiltInToolNames.WebSearch: return "Searching the web...";
+    case BuiltInToolNames.EditExistingFile:
+    case BuiltInToolNames.SingleFindAndReplace:
+    case BuiltInToolNames.MultiEdit: return "Editing files...";
+    case BuiltInToolNames.CreateNewFile: return "Creating file...";
+    case BuiltInToolNames.ViewDiff: return "Reviewing changes...";
+    case BuiltInToolNames.WriteTodos: return "Updating tasks...";
+    case BuiltInToolNames.ReadSkill: return "Reading instructions...";
+    case BuiltInToolNames.CreateRuleBlock:
+    case BuiltInToolNames.RequestRule: return "Working with rules...";
+    default: return "Working...";
+  }
+}
 
 export const selectSlashCommandComboBoxInputs = createSelector(
   [(state: RootState) => state.config.config.slashCommands],
@@ -59,7 +84,7 @@ export const selectStreamingStatus = createSelector(
       (t) => t.toolCall.function?.name !== "create_plan",
     );
     if (researchTool) {
-      return `Executing ${researchTool.toolCall.function?.name || "action"}...`;
+      return toolActivity(researchTool.toolCall.function?.name ?? "");
     }
     if (activeTools.length > 0) {
       return "Creating plan...";
@@ -69,11 +94,11 @@ export const selectStreamingStatus = createSelector(
       lastItem.message.role === "thinking" ||
       lastItem.reasoning?.active
     ) {
-      return "Thinking through implementation...";
+      return "Thinking...";
     }
 
     if (lastItem.message.content) {
-      return "Streaming response...";
+      return "Responding...";
     }
 
     return "Preparing your response...";
