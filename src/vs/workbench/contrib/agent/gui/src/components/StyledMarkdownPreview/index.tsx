@@ -179,7 +179,9 @@ const StyledMarkdown = styled.div<{
   padding-left: ${(props) => (props.isRenderingInStepContainer ? "0" : "8px")};
   padding-right: ${(props) => (props.isRenderingInStepContainer ? "0" : "8px")};
   color: ${(props) =>
-    props.isThinking ? "var(--vscode-descriptionForeground)" : vscForeground};
+    props.isThinking
+      ? "var(--vscode-descriptionForeground)"
+      : `var(--vscode-editor-foreground, ${vscForeground})`};
 
   p,
   li,
