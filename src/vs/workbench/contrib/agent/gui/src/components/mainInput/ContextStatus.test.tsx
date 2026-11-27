@@ -12,6 +12,12 @@ import sessionReducer, {
 } from "../../redux/slices/sessionSlice";
 import ContextStatus from "./ContextStatus";
 
+// Match the component's `toLocaleString()` grouping instead of hard-coding
+// separators, so the label is asserted identically under any machine locale
+// (e.g. en-IN renders 1,000,000 as "10,00,000").
+const tokensLoadedPattern = (loaded: number, contextLength: number) =>
+  new RegExp(`${loaded.toLocaleString()} of ${contextLength.toLocaleString()} tokens loaded`);
+
 describe("ContextStatus", () => {
   it("shows usage only after it is calculated for the current turn and model", () => {
     const store = configureStore({
@@ -54,7 +60,7 @@ describe("ContextStatus", () => {
       ),
     );
     expect(
-      screen.getByLabelText(/8,000 of 1,000,000 tokens loaded/),
+      screen.getByLabelText(tokensLoadedPattern(8_000, 1_000_000)),
     ).toBeInTheDocument();
 
     act(() => {
@@ -77,7 +83,7 @@ describe("ContextStatus", () => {
       ),
     );
     expect(
-      screen.getByLabelText(/9,000 of 1,000,000 tokens loaded/),
+      screen.getByLabelText(tokensLoadedPattern(9_000, 1_000_000)),
     ).toBeInTheDocument();
 
     act(() =>
