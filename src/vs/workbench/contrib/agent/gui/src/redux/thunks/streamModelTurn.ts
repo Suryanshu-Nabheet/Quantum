@@ -284,10 +284,6 @@ export async function runAgentDriver({
 
       if (next === "continue") {
         resumeAfterIdle = false;
-        idleResumes = 0;
-        unfinishedResumes = 0;
-        failureResumes = 0;
-        unstartedResumes = 0;
         if ((getState().session.streamEpoch ?? 0) === streamEpoch) {
           await injectQueuedMessageIfReady("break", dispatch, extra, getState);
         }

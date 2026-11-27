@@ -11,6 +11,8 @@ import { runAgentDriver } from "./streamModelTurn";
 import { streamThunkWrapper } from "./streamThunkWrapper";
 import { appendToolResultMessage } from "../util/toolResultMessages";
 
+const resumingToolCalls = new Set<string>();
+
 /**
  * Determines if we should resume streaming based on tool call completion status.
  */
@@ -49,13 +51,17 @@ export function canResumeAfterToolCall(
   if (!findAllCurToolCalls(history).some((tc) => tc.toolCallId === toolCallId)) {
     return false;
   }
-  const assistantMessage = history.findLast(
+  const assistantIndex = history.findLastIndex(
     (item) =>
       item.message.role === "assistant" &&
       item.toolCallStates?.some((tc) => tc.toolCallId === toolCallId),
   );
+  const assistantMessage = history[assistantIndex];
   return (
     !!assistantMessage &&
+    !history.slice(assistantIndex + 1).some((item) =>
+      item.message.role === "assistant" || item.message.role === "user",
+    ) &&
     areAllToolsDoneStreaming(assistantMessage, resumeAfterToolRejection)
   );
 }
@@ -70,7 +76,12 @@ export const streamResponseAfterToolCall = createAsyncThunk<
     { toolCallId, depth = 0, skipToolMessage = false },
     { dispatch, extra, getState },
   ) => {
-    await dispatch(
+    if (resumingToolCalls.has(toolCallId)) {
+      return;
+    }
+    resumingToolCalls.add(toolCallId);
+    try {
+      await dispatch(
       streamThunkWrapper(async () => {
         const state = getState();
         const currentToolCalls = selectCurrentToolCalls(state);
@@ -116,6 +127,9 @@ export const streamResponseAfterToolCall = createAsyncThunk<
           getState,
         });
       }),
-    );
+      );
+    } finally {
+      resumingToolCalls.delete(toolCallId);
+    }
   },
 );
