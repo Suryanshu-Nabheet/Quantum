@@ -4,7 +4,6 @@ import { getRuleSourceDisplayName } from "core/llm/rules/rules-utils";
 import { ComponentType, useMemo } from "react";
 import ToggleDiv from "../../ToggleDiv";
 import { useOpenRule } from "../Lump/useEditBlock";
-import { CHAT_UI_TEXT_CLASS } from "../../../styles/chatLayout";
 
 interface RulesPeekProps {
   appliedRules?: RuleMetadata[];
@@ -21,15 +20,15 @@ function RulesPeekItem({ rule }: RulesPeekItemProps) {
 
   return (
     <div
-      className={`group mr-2 flex flex-col overflow-hidden rounded px-1.5 py-1 ${CHAT_UI_TEXT_CLASS} hover:bg-white/10`}
+      className="group mr-2 flex flex-col overflow-hidden rounded px-1.5 py-1 text-[0.875em] leading-normal hover:bg-white/10"
       data-testid="rules-peek-item"
       onClick={() => openRule(rule)}
     >
       <div className="flex w-full items-center">
         {isGlobal ? (
-          <GlobeAltIcon className="text-description-muted mr-2 h-4 w-4 flex-shrink-0" />
+          <GlobeAltIcon className="text-description-muted mr-2 h-3.5 w-3.5 flex-shrink-0" strokeWidth={2} />
         ) : (
-          <DocumentTextIcon className="text-description-muted mr-2 h-4 w-4 flex-shrink-0" />
+          <DocumentTextIcon className="text-description-muted mr-2 h-3.5 w-3.5 flex-shrink-0" strokeWidth={2} />
         )}
 
         <div className="flex min-w-0 flex-1 gap-2">
@@ -44,7 +43,7 @@ function RulesPeekItem({ rule }: RulesPeekItemProps) {
           </div>
         </div>
       </div>
-      <div className="mt-1 pl-6 pr-2 text-gray-500">
+      <div className="pl-[1.375rem] pr-2 text-gray-500">
         Source: {getRuleSourceDisplayName(rule)}
       </div>
     </div>
