@@ -1,15 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { ActivityLabel } from "./ActivityLabel";
+import { ActivityChevron } from "./ActivityChevron";
 import StyledMarkdownPreview from "../StyledMarkdownPreview";
 
 const styles = {
   tr: "trr-root",
   trHeader: "trr-header",
   isClickable: "trr-clickable",
-  trLabel: "trr-label",
-  trVerb: "trr-verb",
-  trChevron: "trr-chevron",
-  isOpen: "trr-open",
-  trShimmer: "trr-shimmer",
   trCollapsible: "trr-collapsible",
   isCollapsed: "trr-collapsed",
   trInner: "trr-inner",
@@ -40,10 +37,8 @@ export function ThinkingReasoning({
 }: ThinkingReasoningProps) {
   const [settled, setSettled] = useState(!inProgress);
   const [open, setOpen] = useState(false);
-  const [elapsedLabel, setElapsedLabel] = useState("");
   const [contentH, setContentH] = useState(0);
   const [fade, setFade] = useState({ top: false, bottom: true });
-  const startedAt = useRef<number | null>(inProgress ? Date.now() : null);
   const mountedFinished = useRef(!inProgress);
   const viewportRef = useRef<HTMLDivElement>(null);
   const streamRef = useRef<HTMLDivElement>(null);
@@ -63,17 +58,9 @@ export function ThinkingReasoning({
 
   useEffect(() => {
     if (inProgress) {
-      if (startedAt.current == null) {
-        startedAt.current = Date.now();
-      }
       setSettled(false);
       setOpen(false);
-      setElapsedLabel("");
       return;
-    }
-    if (startedAt.current != null) {
-      const seconds = (Date.now() - startedAt.current) / 1000;
-      setElapsedLabel(`${Math.max(0.1, seconds).toFixed(1)}s`);
     }
     const reduce = window.matchMedia?.(
       "(prefers-reduced-motion: reduce)",
@@ -122,16 +109,11 @@ export function ThinkingReasoning({
   };
 
   const header = redacted ? (
-    <span className={styles.trLabel}>
-      <span className={styles.trVerb}>Redacted</span> thinking
-    </span>
+    <ActivityLabel text="Redacted thinking" />
   ) : done ? (
-    <span className={styles.trLabel}>
-      <span className={styles.trVerb}>Thought</span>
-      {elapsedLabel ? ` for ${elapsedLabel}` : ""}
-    </span>
+    <ActivityLabel text="Thought Briefly" />
   ) : (
-    <span className={`${styles.trLabel} ${styles.trShimmer}`}>Thinking…</span>
+    <ActivityLabel text="Thinking…" />
   );
 
   return (
@@ -147,22 +129,7 @@ export function ThinkingReasoning({
       >
         {header}
         {done && (
-          <svg
-            className={`${styles.trChevron}${expanded ? ` ${styles.isOpen}` : ""}`}
-            viewBox="0 0 24 24"
-            width="12"
-            height="12"
-            aria-hidden="true"
-          >
-            <path
-              d="m4.5 15.75 7.5-7.5 7.5 7.5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <ActivityChevron open={expanded} />
         )}
       </button>
 

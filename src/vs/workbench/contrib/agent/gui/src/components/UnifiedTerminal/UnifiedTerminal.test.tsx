@@ -57,8 +57,8 @@ describe("UnifiedTerminalCommand", () => {
     await renderWithProviders(
       <UnifiedTerminalCommand command={MOCK_COMMAND} toolCallState={toolCallState} />,
     );
-    expect(screen.getByRole("button", { name: "Command awaiting approval" })).toBeInTheDocument();
-    expect(screen.queryByText("Run")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Run command · Awaiting approval" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Ran command" })).not.toBeInTheDocument();
   });
 
   test("renders basic terminal command without output", async () => {
@@ -119,7 +119,8 @@ describe("UnifiedTerminalCommand", () => {
     );
 
     // Should show running status
-    expect(screen.getByText("Running")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Running command" })).toBeInTheDocument();
+    expect(screen.getByTestId("terminal-container")).toHaveTextContent("Running");
 
     // Should show move to background link
     expect(screen.getByText("Move to background")).toBeInTheDocument();

@@ -37,20 +37,22 @@ export function ToolCallDisplay({
   return (
     <div className="flex flex-col justify-center">
       <div className="mb-1 flex flex-col">
-        <div className="flex flex-row items-start justify-between gap-1.5">
+        <div className="agent-activity-row justify-between">
           <div
-            className={`flex min-w-0 flex-row items-center gap-2 transition-colors duration-200 ease-in-out ${
+            className={`agent-activity-row min-w-0 transition-colors duration-200 ease-in-out ${
               isClickable ? "cursor-pointer hover:brightness-125" : ""
             }`}
             onClick={isClickable ? handleClick : undefined}
           >
-            <div className="mt-[1px] h-4 w-4 flex-shrink-0 font-semibold">
-              {icon}
-            </div>
+            {icon && (
+              <div className="agent-activity-action-icon flex-shrink-0 font-semibold">
+                {icon}
+              </div>
+            )}
             {tool?.faviconUrl && (
               <img
                 src={tool.faviconUrl}
-                className="h-4 w-4 rounded-sm"
+                className="agent-activity-action-icon rounded-sm"
                 alt=""
               />
             )}

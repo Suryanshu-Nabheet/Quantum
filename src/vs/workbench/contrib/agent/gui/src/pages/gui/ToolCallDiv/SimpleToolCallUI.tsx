@@ -1,27 +1,19 @@
 import { Tool, ToolCallState } from "core";
 import { BuiltInToolNames } from "core/tools/builtIn";
 import { ComponentType, useContext, useMemo, useState } from "react";
-import FileIcon from "../../../components/FileIcon";
 import {
   ContextItemsPeekItem,
   openContextItem,
 } from "../../../components/mainInput/belowMainInput/ContextItemsPeek";
+import { ActivityChevron } from "../../../components/ui/ActivityChevron";
 import { HostBridgeContext } from "../../../context/HostBridge";
-import { ToggleWithIcon } from "./ToggleWithIcon";
 import { ToolCallStatusMessage } from "./ToolCallStatusMessage";
 import { ToolTruncateHistoryIcon } from "./ToolTruncateHistoryIcon";
-import { toolCallStateToContextItems } from "./utils";
+import { isFileOrDirectoryTool, toolCallStateToContextItems } from "./utils";
 import { CHAT_UI_TEXT_CLASS } from "../../../styles/chatLayout";
 
-const FILE_TOOLS = new Set<string>([
-  BuiltInToolNames.ReadFile,
-  BuiltInToolNames.ReadFileRange,
-  BuiltInToolNames.ReadCurrentlyOpenFile,
-  BuiltInToolNames.CreateNewFile,
-]);
-
 function toolOpenTarget(toolCallState: ToolCallState):
-  | { path: string; kind: "file" | "dir"; iconName: string }
+  | { path: string; kind: "file" | "dir" }
   | undefined {
   const name = toolCallState.toolCall.function?.name;
   const args = toolCallState.parsedArgs ?? {};
@@ -32,30 +24,24 @@ function toolOpenTarget(toolCallState: ToolCallState):
   const fromOutput = toolCallState.output?.find((item) => item.uri?.type === "file")
     ?.uri?.value;
 
-  if (name && FILE_TOOLS.has(name)) {
-    const display =
-      resolved?.displayPath ||
-      (typeof args.filepath === "string" ? args.filepath : "");
-    const path = fromOutput || resolved?.uri || display;
-    if (!path) {
-      return undefined;
-    }
-    return { path, kind: "file", iconName: display || path };
+  if (!name || !isFileOrDirectoryTool(name)) {
+    return undefined;
   }
 
-  if (name === BuiltInToolNames.LSTool) {
-    const display =
-      resolved?.displayPath ||
-      (typeof args.dirPath === "string" ? args.dirPath : "");
-    const folderName = display.split(/[/\\]/).filter(Boolean).pop() || ".";
-    return {
-      path: fromOutput || resolved?.uri || display,
-      kind: "dir",
-      iconName: folderName,
-    };
-  }
+  const isDirectory =
+    name === BuiltInToolNames.LSTool ||
+    name === BuiltInToolNames.ViewSubdirectory;
+  const sourcePath = isDirectory
+    ? name === BuiltInToolNames.LSTool
+      ? args.dirPath
+      : args.directory_path
+    : args.filepath;
+  const display =
+    resolved?.displayPath ||
+    (typeof sourcePath === "string" ? sourcePath : "");
+  const path = fromOutput || resolved?.uri || display;
 
-  return undefined;
+  return path ? { path, kind: isDirectory ? "dir" : "file" } : undefined;
 }
 
 interface SimpleToolCallUIProps {
@@ -104,29 +90,23 @@ export function SimpleToolCallUI({
     <div className="flex flex-col">
       <div className="flex min-w-0 flex-row items-center justify-between gap-2">
         <div
-          className={`text-description flex min-w-0 flex-row items-center justify-between gap-1.5 ${CHAT_UI_TEXT_CLASS} transition-colors duration-200 ease-in-out ${
+          className={`agent-activity-row text-description flex min-w-0 ${CHAT_UI_TEXT_CLASS} transition-colors duration-200 ease-in-out ${
             isClickable ? "cursor-pointer hover:brightness-125" : ""
           }`}
           onClick={isClickable ? handleClick : undefined}
+          role={isClickable ? "button" : undefined}
+          tabIndex={isClickable ? 0 : undefined}
+          onKeyDown={isClickable ? (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              handleClick();
+            }
+          } : undefined}
           data-testid="context-items-peek"
         >
-          <ToggleWithIcon
-            icon={target ? undefined : Icon}
-            iconNode={
-              target ? (
-                <FileIcon
-                  filename={target.iconName}
-                  kind={target.kind === "dir" ? "folder" : "file"}
-                  height="16px"
-                  width="16px"
-                />
-              ) : undefined
-            }
-            isToggleable={isToggleable}
-            open={shouldShowContent}
-            isClickable={isClickable}
-          />
+          {!target && Icon && <Icon aria-hidden="true" focusable="false" className="agent-activity-action-icon text-description" />}
           <ToolCallStatusMessage tool={tool} toolCallState={toolCallState} />
+          {isToggleable && <ActivityChevron open={shouldShowContent} />}
         </div>
 
         {!!toolCallState.output?.length && (
@@ -136,21 +116,22 @@ export function SimpleToolCallUI({
 
       {isToggleable && (
         <div
-          className={
-            shouldShowContent
-              ? "mt-2 min-w-0 opacity-100"
-              : "max-h-0 overflow-hidden opacity-0"
-          }
+          className={`agent-activity-collapsible${shouldShowContent ? "" : " agent-activity-collapsed"}`}
+          aria-hidden={!shouldShowContent}
         >
-          {shownContextItems.length > 0 ? (
-            shownContextItems.map((contextItem, idx) => (
-              <ContextItemsPeekItem key={idx} contextItem={contextItem} />
-            ))
-          ) : (
-            <div className={`text-description pl-5 ${CHAT_UI_TEXT_CLASS} italic`}>
-              No tool call output
+          <div className="agent-activity-disclosure-inner">
+            <div className="mt-2 min-w-0">
+              {shownContextItems.length > 0 ? (
+                shownContextItems.map((contextItem, idx) => (
+                  <ContextItemsPeekItem key={idx} contextItem={contextItem} />
+                ))
+              ) : (
+                <div className={`text-description pl-5 ${CHAT_UI_TEXT_CLASS} italic`}>
+                  No tool call output
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       )}
     </div>

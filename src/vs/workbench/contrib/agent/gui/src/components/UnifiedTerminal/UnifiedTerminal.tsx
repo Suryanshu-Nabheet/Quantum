@@ -1,12 +1,13 @@
-import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import Anser, { AnserJsonEntry } from "anser";
 import { ToolCallState } from "core";
 import { escapeCarriageReturn } from "escape-carriage";
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { useAppDispatch } from "../../redux/hooks";
 import { moveTerminalProcessToBackground } from "../../redux/thunks/moveTerminalProcessToBackground";
 import { getFontSize } from "../../util";
+import { ActivityLabel } from "../ui/ActivityLabel";
+import { ActivityChevron } from "../ui/ActivityChevron";
 import { CopyButton } from "../StyledMarkdownPreview/StepContainerPreToolbar/CopyButton";
 import { RunInTerminalButton } from "../StyledMarkdownPreview/StepContainerPreToolbar/RunInTerminalButton";
 
@@ -257,7 +258,7 @@ export function UnifiedTerminalCommand({
   displayLines = 8,
 }: UnifiedTerminalCommandProps) {
   const dispatch = useAppDispatch();
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(toolCallState?.status !== "errored");
   const [outputExpanded, setOutputExpanded] = useState(false);
   const commandPanelRef = useRef<HTMLDivElement>(null);
 
@@ -266,12 +267,23 @@ export function UnifiedTerminalCommand({
   const hasOutput = output.length > 0;
   const callStatus = toolCallState?.status;
   const hasNotRun = callStatus === "generating" || callStatus === "generated" || callStatus === "canceled";
-  const commandLabel = isRunning ? "Running command"
-    : callStatus === "canceled" ? "Command canceled"
-    : callStatus === "generating" ? "Preparing command"
-    : callStatus === "generated" ? "Command awaiting approval"
-    : callStatus === "errored" ? "Command failed"
-    : "Ran command";
+  const commandLabel = isRunning
+    ? "Running command"
+    : callStatus === "canceled"
+      ? "Run command"
+      : callStatus === "generating"
+        ? "Run command"
+        : callStatus === "generated"
+          ? "Run command · Awaiting approval"
+          : callStatus === "errored"
+        ? "Run command"
+            : "Ran command";
+
+  useEffect(() => {
+    if (callStatus === "errored") {
+      setIsExpanded(false);
+    }
+  }, [callStatus]);
 
   // Process terminal content for line limiting
   const processedTerminalContent = useMemo(() => {
@@ -348,19 +360,18 @@ export function UnifiedTerminalCommand({
       fontSize={getFontSize()}
       data-testid="terminal-container"
     >
-      <div className="mb-1.5 flex items-center gap-2">
+      <div className={`${isExpanded ? "mb-1" : "mb-0"} flex items-center gap-2`}>
         <button
           type="button"
           aria-expanded={isExpanded}
           onClick={() => setIsExpanded((expanded) => !expanded)}
-          className="text-description flex items-center gap-1.5 border-0 bg-transparent p-0 text-left hover:brightness-125"
+          className="agent-activity-row text-description border-0 bg-transparent p-0 text-left hover:brightness-125"
         >
-          <span>{commandLabel}</span>
-          <ChevronDownIcon
-            className={`terminal-command-chevron h-3.5 w-3.5${
-              isExpanded ? "" : " terminal-command-chevron-collapsed"
-            }`}
+          <ActivityLabel
+            text={commandLabel}
+            status={callStatus === "errored" ? "Failed" : callStatus === "canceled" ? "Canceled" : undefined}
           />
+          <ActivityChevron open={isExpanded} />
         </button>
       </div>
 

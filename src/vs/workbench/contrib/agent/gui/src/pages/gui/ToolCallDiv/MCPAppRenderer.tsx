@@ -348,8 +348,7 @@ export function McpAppRenderer({
         }`}
         role="alert"
       >
-        <p className="text-foreground mb-1 font-medium">MCP App failed to load</p>
-        <p className="leading-relaxed">{error.message}</p>
+        <p className="text-foreground font-medium">Tool view unavailable</p>
       </div>
     );
   }

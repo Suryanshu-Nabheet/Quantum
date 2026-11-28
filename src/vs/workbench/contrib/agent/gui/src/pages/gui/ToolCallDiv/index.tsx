@@ -1,7 +1,6 @@
 import { ArrowRightIcon } from "@heroicons/react/24/outline";
 import { ToolCallState } from "core";
 import { BuiltInToolNames } from "core/tools/builtIn";
-import { useState } from "react";
 import { useAppSelector } from "../../../redux/hooks";
 import { RootState } from "../../../redux/store";
 import {
@@ -9,12 +8,12 @@ import {
   CHAT_TOOL_STACK_CLASS,
 } from "../../../styles/chatLayout";
 import FunctionSpecificToolCallDiv from "./FunctionSpecificToolCallDiv";
-import { GroupedToolCallHeader } from "./GroupedToolCallHeader";
 import { McpAppRenderer } from "./MCPAppRenderer";
 import { SimpleToolCallUI } from "./SimpleToolCallUI";
 import { ToolCallDisplay } from "./ToolCallDisplay";
+import { ToolCallStatusMessage } from "./ToolCallStatusMessage";
 import { PlanCard } from "./PlanCard";
-import { getToolCallIcon } from "./utils";
+import { getToolCallIcon, isFileOrDirectoryTool } from "./utils";
 
 interface ToolCallDivProps {
   toolCallStates: ToolCallState[];
@@ -25,7 +24,6 @@ export function ToolCallDiv({
   toolCallStates,
   historyIndex,
 }: ToolCallDivProps) {
-  const [open, setOpen] = useState(true);
   const availableTools = useAppSelector(
     (state: RootState) => state.config.config.tools,
   );
@@ -39,31 +37,21 @@ export function ToolCallDiv({
     (call) => call.toolCall.function?.name !== BuiltInToolNames.CreatePlan,
   );
 
-  const isStreamingComplete = otherCalls.every(
-    (toolCall) => toolCall.status !== "generating",
-  );
-
-  const shouldShowGroupedUI = otherCalls.length > 1 && isStreamingComplete;
-  const activeCalls = otherCalls.filter((call) => call.status !== "canceled");
-  const pendingCalls = otherCalls.filter((call) => call.status !== "done");
-
   const renderToolCall = (toolCallState: ToolCallState) => {
     const tool =
       availableTools.find(
         (tool) => toolCallState.toolCall.function?.name === tool.function.name,
       ) ?? toolCallState.tool;
     const functionName = toolCallState.toolCall.function?.name;
-    const icon = getToolCallIcon(functionName, tool?.group, tool?.toolCallIcon);
+    const icon = isFileOrDirectoryTool(functionName)
+      ? undefined
+      : getToolCallIcon(functionName, tool?.group, tool?.toolCallIcon);
     const ActionIcon = icon;
     const iconNode = ActionIcon ? (
       <ActionIcon
         aria-hidden="true"
         focusable="false"
-        className={`h-4 w-4 ${
-          toolCallState.status === "errored" || toolCallState.status === "canceled"
-            ? "text-error"
-            : "text-description"
-        }`}
+        className="h-4 w-4 text-description"
       />
     ) : null;
 
@@ -90,16 +78,16 @@ export function ToolCallDiv({
         <SimpleToolCallUI
           tool={tool}
           toolCallState={toolCallState}
-          icon={toolCallState.status === "generated" ? ArrowRightIcon : icon}
+          icon={isFileOrDirectoryTool(functionName)
+            ? undefined
+            : toolCallState.status === "generated"
+              ? ArrowRightIcon
+              : icon}
           historyIndex={historyIndex}
         />
       );
     }
 
-    // Trying this out while it's an experimental feature
-    // Obviously missing the truncate and args buttons
-    // All the info from args is displayed here
-    // But we'd need a nicer place to put the truncate button and the X icon when tool call fails
     if (
       functionName === BuiltInToolNames.SingleFindAndReplace ||
       functionName === BuiltInToolNames.MultiEdit ||
@@ -107,6 +95,12 @@ export function ToolCallDiv({
     ) {
       return (
         <div className="flex flex-col px-0">
+          {functionName !== BuiltInToolNames.RunTerminalCommand && (
+            <div className="agent-activity-row text-description">
+              {iconNode && <span className="agent-activity-action-icon flex-shrink-0">{iconNode}</span>}
+              <ToolCallStatusMessage tool={tool} toolCallState={toolCallState} />
+            </div>
+          )}
           <FunctionSpecificToolCallDiv
             toolCallState={toolCallState}
             historyIndex={historyIndex}
@@ -146,38 +140,11 @@ export function ToolCallDiv({
     );
   }
 
-  if (shouldShowGroupedUI) {
-    return (
-      <div className={`${CHAT_TOOL_STACK_CLASS} ${CHAT_TOOL_ROW_CLASS}`}>
-        {planCards}
-        <GroupedToolCallHeader
-          toolCallStates={otherCalls}
-          activeCalls={pendingCalls.length > 0 ? pendingCalls : activeCalls}
-          open={open}
-          onToggle={() => setOpen(!open)}
-        />
-        <div
-          className={
-            open
-              ? "min-w-0 opacity-100"
-              : "max-h-0 overflow-hidden opacity-0"
-          }
-        >
-          {open
-            ? otherCalls.map((toolCallState) => (
-                <div className="py-0.5" key={toolCallState.toolCallId}>
-                  {renderToolCall(toolCallState)}
-                </div>
-              ))
-            : null}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className={CHAT_TOOL_STACK_CLASS}>
-      <div className={CHAT_TOOL_ROW_CLASS}>{planCards}</div>
+      {planCards.length > 0 && (
+        <div className={CHAT_TOOL_ROW_CLASS}>{planCards}</div>
+      )}
       {otherCalls.map((toolCallState) => (
         <div className={CHAT_TOOL_ROW_CLASS} key={toolCallState.toolCallId}>
           {renderToolCall(toolCallState)}

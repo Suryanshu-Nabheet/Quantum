@@ -1,57 +1,22 @@
 import * as Icons from "@heroicons/react/24/outline";
-import {
-  ContextItem,
-  ContextItemWithId,
-  ToolCallState,
-} from "core";
+import { ContextItem, ContextItemWithId, ToolCallState } from "core";
 import { ComponentType, SVGProps } from "react";
 import { BuiltInToolNames } from "core/tools/builtIn";
 
-// Helper function to determine the intro verb based on tool call status
-export function getStatusIntro(
-  status: ToolCallState["status"],
-  isInstant?: boolean,
-): string {
-  if (status === "done" || (isInstant && status === "calling")) {
-    return "";
-  }
+const FILE_AND_DIRECTORY_TOOLS = new Set<string>([
+  BuiltInToolNames.ReadFile,
+  BuiltInToolNames.ReadFileRange,
+  BuiltInToolNames.ReadCurrentlyOpenFile,
+  BuiltInToolNames.CreateNewFile,
+  BuiltInToolNames.EditExistingFile,
+  BuiltInToolNames.SingleFindAndReplace,
+  BuiltInToolNames.MultiEdit,
+  BuiltInToolNames.LSTool,
+  BuiltInToolNames.ViewSubdirectory,
+]);
 
-  switch (status) {
-    case "generating":
-      return "will";
-    case "generated":
-      return "wants to";
-    case "calling":
-      return "is";
-    case "canceled":
-    case "errored":
-      return "tried to";
-    default:
-      return "";
-  }
-}
-
-// Helper function to get the appropriate verb for group actions
-export function getGroupActionVerb(toolCallStates: ToolCallState[]): string {
-  if (toolCallStates.length === 0) return "Performing";
-
-  // Get the most "active" status from all tool calls
-  const statuses = toolCallStates.map((state) => state.status);
-
-  // Priority order: calling > generating > generated > done > errored/canceled
-  if (statuses.includes("calling")) {
-    return "Performing";
-  } else if (statuses.includes("generating")) {
-    return "Generating";
-  } else if (statuses.includes("generated")) {
-    return "Pending";
-  } else if (statuses.some((s) => s === "done")) {
-    return "Performed";
-  } else if (statuses.some((s) => s === "errored" || s === "canceled")) {
-    return "Attempted";
-  }
-
-  return "Performing";
+export function isFileOrDirectoryTool(toolName?: string): boolean {
+  return !!toolName && FILE_AND_DIRECTORY_TOOLS.has(toolName);
 }
 
 type IconName = keyof typeof Icons;
@@ -70,28 +35,21 @@ export function getToolCallIcon(
   group?: string,
   configuredIcon?: string,
 ): Icon {
+  if (
+    toolName === BuiltInToolNames.ViewDiff ||
+    toolName === BuiltInToolNames.RunTerminalCommand ||
+    isFileOrDirectoryTool(toolName)
+  ) {
+    return undefined;
+  }
+
   if (configuredIcon) {
     const configured = getIconByName(configuredIcon);
     if (configured) return configured;
   }
 
   const iconByTool: Record<string, IconName> = {
-    [BuiltInToolNames.ReadFile]: "DocumentIcon",
-    [BuiltInToolNames.ReadFileRange]: "DocumentTextIcon",
-    [BuiltInToolNames.ReadCurrentlyOpenFile]: "DocumentTextIcon",
-    [BuiltInToolNames.CreateNewFile]: "DocumentPlusIcon",
-    [BuiltInToolNames.EditExistingFile]: "PencilSquareIcon",
-    [BuiltInToolNames.SingleFindAndReplace]: "MagnifyingGlassIcon",
-    [BuiltInToolNames.MultiEdit]: "PencilSquareIcon",
-    [BuiltInToolNames.RunTerminalCommand]: "CommandLineIcon",
-    [BuiltInToolNames.GrepSearch]: "MagnifyingGlassIcon",
     [BuiltInToolNames.WebSearch]: "MagnifyingGlassIcon",
-    [BuiltInToolNames.FileGlobSearch]: "MagnifyingGlassIcon",
-    [BuiltInToolNames.ViewDiff]: "CodeBracketIcon",
-    [BuiltInToolNames.LSTool]: "FolderIcon",
-    [BuiltInToolNames.CreateRuleBlock]: "PencilIcon",
-    [BuiltInToolNames.RequestRule]: "DocumentMagnifyingGlassIcon",
-    [BuiltInToolNames.ReadSkill]: "BookOpenIcon",
     [BuiltInToolNames.WriteTodos]: "ListBulletIcon",
     [BuiltInToolNames.CreatePlan]: "ClipboardDocumentListIcon",
     open_browser_page: "GlobeAltIcon",
@@ -115,10 +73,7 @@ export function getToolCallIcon(
   if (normalizedGroup.includes("browser")) {
     return getIconByName("GlobeAltIcon") ?? undefined;
   }
-  if (normalizedGroup.includes("mcp")) {
-    return getIconByName("PuzzlePieceIcon") ?? undefined;
-  }
-  return getIconByName("WrenchScrewdriverIcon") ?? undefined;
+  return undefined;
 }
 
 export function toolCallStateToContextItems(
