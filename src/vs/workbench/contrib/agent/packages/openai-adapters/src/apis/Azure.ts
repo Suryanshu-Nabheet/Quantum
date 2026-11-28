@@ -10,7 +10,7 @@ import { customFetch } from "../util.js";
 import { OpenAIApi } from "./OpenAI.js";
 
 export class AzureApi extends OpenAIApi {
-  constructor(private azureConfig: z.infer<typeof AzureConfigSchema>) {
+  constructor(azureConfig: z.infer<typeof AzureConfigSchema>) {
     super({
       ...azureConfig,
       provider: "openai",

@@ -16,7 +16,6 @@ import {
   AskSageConfig,
   AskSageTool,
   AskSageToolChoice,
-  AskSageToolCall,
   AskSageResponse,
   AskSageTokenResponse,
 } from "../types.js";
@@ -58,7 +57,7 @@ export class AskSageApi implements BaseLlmApi {
   private tokenTimestamp: number = 0;
   private fetchFn: typeof fetch;
 
-  constructor(private config: AskSageConfig) {
+  constructor(config: AskSageConfig) {
     this.apiBase = config.apiBase ?? DEFAULT_API_URL;
     this.userApiUrl = config.env?.userApiUrl ?? DEFAULT_USER_API_URL;
     this.apiKey = config.apiKey;
