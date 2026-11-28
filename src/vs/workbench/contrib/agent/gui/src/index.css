@@ -607,6 +607,30 @@ body {
   }
 }
 
+.terminal-command-collapsible {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 220ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.terminal-command-collapsed {
+  grid-template-rows: 0fr;
+}
+
+.terminal-command-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.terminal-command-chevron {
+  transform: rotate(0deg);
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.terminal-command-chevron-collapsed {
+  transform: rotate(-90deg);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .trr-root,
   .trr-sentence,
@@ -614,6 +638,11 @@ body {
   .trr-chevron,
   .trr-collapsible {
     animation: none;
+    transition: none;
+  }
+
+  .terminal-command-collapsible,
+  .terminal-command-chevron {
     transition: none;
   }
 

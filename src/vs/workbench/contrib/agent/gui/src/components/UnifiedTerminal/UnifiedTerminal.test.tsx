@@ -143,9 +143,13 @@ describe("UnifiedTerminalCommand", () => {
     {
       await user.click(toggle);
 
-      // After collapsing, output should not be visible
+      // Keep the panel mounted so its height can animate, but hide it accessibly.
       await waitFor(() => {
-        expect(container.textContent).not.toMatch(/Test 1 passed/);
+        const panel = container.querySelector(".terminal-command-collapsible");
+        expect(panel).toHaveClass("terminal-command-collapsed");
+        expect(panel).toHaveAttribute("aria-hidden", "true");
+        expect(panel).toHaveProperty("inert", true);
+        expect(container.textContent).toMatch(/Test 1 passed/);
       });
     }
   });

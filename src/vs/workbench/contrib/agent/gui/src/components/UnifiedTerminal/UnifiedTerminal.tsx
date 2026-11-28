@@ -2,7 +2,7 @@ import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import Anser, { AnserJsonEntry } from "anser";
 import { ToolCallState } from "core";
 import { escapeCarriageReturn } from "escape-carriage";
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { useAppDispatch } from "../../redux/hooks";
 import { moveTerminalProcessToBackground } from "../../redux/thunks/moveTerminalProcessToBackground";
@@ -259,6 +259,7 @@ export function UnifiedTerminalCommand({
   const dispatch = useAppDispatch();
   const [isExpanded, setIsExpanded] = useState(true);
   const [outputExpanded, setOutputExpanded] = useState(false);
+  const commandPanelRef = useRef<HTMLDivElement>(null);
 
   // Determine running state
   const isRunning = toolCallState?.status === "calling" || status === "running";
@@ -336,6 +337,12 @@ export function UnifiedTerminalCommand({
     return content;
   }, [command, output, hasOutput]);
 
+  useLayoutEffect(() => {
+    if (commandPanelRef.current) {
+      commandPanelRef.current.inert = !isExpanded;
+    }
+  }, [isExpanded]);
+
   return (
     <StyledTerminalContainer
       fontSize={getFontSize()}
@@ -349,71 +356,87 @@ export function UnifiedTerminalCommand({
           className="text-description flex items-center gap-1.5 border-0 bg-transparent p-0 text-left hover:brightness-125"
         >
           <span>{commandLabel}</span>
-          <ChevronDownIcon className={`h-3.5 w-3.5 ${isExpanded ? "" : "-rotate-90"}`} />
+          <ChevronDownIcon
+            className={`terminal-command-chevron h-3.5 w-3.5${
+              isExpanded ? "" : " terminal-command-chevron-collapsed"
+            }`}
+          />
         </button>
       </div>
 
-      {isExpanded && (
-        <div className="outline-command-border bg-editor min-w-0 overflow-hidden rounded-default outline outline-1">
-          <TerminalContent>
-            <div className="flex min-w-0 items-start gap-2 px-2 py-2">
-              <span className="text-description select-none" aria-hidden="true">$</span>
-              <pre className="text-terminal min-w-0 flex-1">{command}</pre>
-              {!isRunning && (
-                <div className="flex shrink-0 items-center gap-2">
-                  <CopyButton text={copyContent} />
-                  {!hasNotRun && <RunInTerminalButton command={command} />}
+      <div
+        ref={commandPanelRef}
+        className={`terminal-command-collapsible${
+          isExpanded ? "" : " terminal-command-collapsed"
+        }`}
+        aria-hidden={!isExpanded}
+      >
+        <div className="terminal-command-inner">
+          <div className="outline-command-border bg-editor min-w-0 overflow-hidden rounded-default outline outline-1">
+            <TerminalContent>
+              <div className="flex min-w-0 items-start gap-2 px-2 py-2">
+                <span className="text-description select-none" aria-hidden="true">
+                  $
+                </span>
+                <pre className="text-terminal min-w-0 flex-1">{command}</pre>
+                {!isRunning && (
+                  <div className="flex shrink-0 items-center gap-2">
+                    <CopyButton text={copyContent} />
+                    {!hasNotRun && <RunInTerminalButton command={command} />}
+                  </div>
+                )}
+              </div>
+
+              {hasOutput && (
+                <div className="border-command-border border-t">
+                  {processedTerminalContent.isLimited && (
+                    <button
+                      type="button"
+                      aria-expanded={outputExpanded}
+                      onClick={() => setOutputExpanded((expanded) => !expanded)}
+                      className="text-description w-full border-0 bg-transparent px-2 pt-1.5 text-left text-xs hover:brightness-125"
+                    >
+                      {outputExpanded
+                        ? "Show less output"
+                        : `Show ${processedTerminalContent.hiddenLinesCount} earlier lines`}
+                    </button>
+                  )}
+                  <div
+                    role="region"
+                    aria-label="Command output"
+                    tabIndex={0}
+                    className="text-description max-h-64 overflow-auto px-2 py-2"
+                  >
+                    <pre>
+                      <AnsiRenderer linkify>
+                        {outputExpanded
+                          ? processedTerminalContent.fullContent
+                          : processedTerminalContent.limitedContent}
+                      </AnsiRenderer>
+                    </pre>
+                  </div>
                 </div>
               )}
-            </div>
+            </TerminalContent>
 
-            {hasOutput && (
-              <div className="border-command-border border-t">
-                {processedTerminalContent.isLimited && (
+            {(statusMessage || isRunning || statusType === "failed") && (
+              <div className="text-description border-command-border flex flex-wrap items-center border-t px-2 py-1.5 text-xs">
+                <StatusIcon status={statusType} />
+                {isRunning ? "Running" : statusMessage || "Command failed"}
+                {isRunning && toolCallId && (
                   <button
                     type="button"
-                    aria-expanded={outputExpanded}
-                    onClick={() => setOutputExpanded((expanded) => !expanded)}
-                    className="text-description w-full border-0 bg-transparent px-2 pt-1.5 text-left text-xs hover:brightness-125"
+                    onClick={handleMoveToBackground}
+                    className="text-link ml-3 border-0 bg-transparent p-0 text-xs hover:underline"
                   >
-                    {outputExpanded
-                      ? "Show less output"
-                      : `Show ${processedTerminalContent.hiddenLinesCount} earlier lines`}
+                    Move to background
                   </button>
                 )}
-                <div
-                  role="region"
-                  aria-label="Command output"
-                  tabIndex={0}
-                  className="text-description max-h-64 overflow-auto px-2 py-2"
-                >
-                  <pre><AnsiRenderer linkify>{
-                    outputExpanded
-                      ? processedTerminalContent.fullContent
-                      : processedTerminalContent.limitedContent
-                  }</AnsiRenderer></pre>
-                </div>
               </div>
             )}
-          </TerminalContent>
-
-          {(statusMessage || isRunning || statusType === "failed") && (
-            <div className="text-description border-command-border flex flex-wrap items-center border-t px-2 py-1.5 text-xs">
-              <StatusIcon status={statusType} />
-              {isRunning ? "Running" : statusMessage || "Command failed"}
-              {isRunning && toolCallId && (
-                <button
-                  type="button"
-                  onClick={handleMoveToBackground}
-                  className="text-link ml-3 border-0 bg-transparent p-0 text-xs hover:underline"
-                >
-                  Move to background
-                </button>
-              )}
-            </div>
-          )}
+          </div>
         </div>
-      )}
+      </div>
     </StyledTerminalContainer>
   );
 }
