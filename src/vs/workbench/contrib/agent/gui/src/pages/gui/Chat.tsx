@@ -6,6 +6,7 @@ import { Editor, JSONContent } from "@tiptap/react";
 import { ChatHistoryItem, InputModifiers, TodoItem } from "core";
 import { renderChatMessage } from "core/util/messageContent";
 import {
+  type CSSProperties,
   memo,
   useCallback,
   useContext,
@@ -194,6 +195,7 @@ function fallbackRender({ error, resetErrorBoundary }: any) {
 }
 
 export function Chat() {
+  const chatFontSize = getFontSize();
   const dispatch = useAppDispatch();
   const hostBridge = useContext(HostBridgeContext);
   const reduxStore = useStore<RootState>();
@@ -575,7 +577,12 @@ export function Chat() {
   return (
     <div
       className={`${CHAT_SURFACE_CLASS} flex min-h-0 flex-1 flex-col`}
-      style={{ fontSize: getFontSize() }}
+      style={
+        {
+          fontSize: chatFontSize,
+          "--agent-chat-ui-font-size": `${chatFontSize}px`,
+        } as CSSProperties
+      }
     >
       {!!showSessionTabs && !isInEdit && <TabBar ref={tabsRef} />}
       {widget}
