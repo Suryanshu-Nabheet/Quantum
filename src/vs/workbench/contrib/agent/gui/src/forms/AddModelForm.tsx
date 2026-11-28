@@ -9,9 +9,8 @@ import { Button, Input, StyledActionButton } from "../components";
 import ModelSelectionListbox from "../components/modelSelection/ModelSelectionListbox";
 import { HostBridgeContext } from "../context/HostBridge";
 import { completionParamsInputs } from "../pages/AddNewModel/configs/completionParamsInputs";
-import { DisplayInfo, models } from "../pages/AddNewModel/configs/models";
+import { DisplayInfo } from "../pages/AddNewModel/configs/models";
 import {
-  initializeOpenRouterModels,
   ProviderInfo,
   providers,
 } from "../pages/AddNewModel/configs/providers";
@@ -29,7 +28,6 @@ const customProvider: ProviderInfo = {
   title: CUSTOM_PROVIDER_TITLE,
   provider: `${CUSTOM_OPENAI_PROVIDER_ID_PREFIX}pending`,
   description: "Connect an OpenAI-compatible API endpoint",
-  packages: [],
   collectInputFor: [
     {
       inputType: "text",
@@ -132,10 +130,6 @@ export function AddModelForm({
   const navigate = useNavigate();
 
   useEffect(() => {
-    void initializeOpenRouterModels();
-  }, []);
-
-  useEffect(() => {
     if (!existingModel) {
       return;
     }
@@ -153,7 +147,8 @@ export function AddModelForm({
       providerName: existingIsCustomProvider
         ? existingModel.title.split(" / ")[0]
         : "",
-      model: existingIsCustomProvider ? existingModel.model : "",
+      model: existingIsCustomProvider || selectedProvider.provider === "vertexai"
+        ? existingModel.model : "",
       contextLength: existingModel.contextLength
         ? String(existingModel.contextLength)
         : "",
@@ -211,6 +206,7 @@ export function AddModelForm({
       region: existingModel.region,
       profile: existingModel.profile,
       accountId: existingModel.accountId,
+      model: existingModel.model,
     };
     const value = fromModel[key];
     if (value && value.length > 0) {
@@ -319,9 +315,15 @@ export function AddModelForm({
     const apiKey = reqInputFields.apiKey;
     const hasValidApiKey = apiKey !== undefined && apiKey !== "";
 
+    const modelId =
+      selectedProvider.provider === "azure"
+        ? reqInputFields.deployment ?? existingModel?.deployment ?? ""
+        : selectedProvider.provider === "vertexai"
+          ? reqInputFields.model ?? existingModel?.model ?? ""
+          : existingModel?.model ?? "AUTODETECT";
     const model = {
       ...selectedProvider.params,
-      ...models.AUTODETECT.params,
+      model: modelId,
       ...reqInputFields,
       provider: selectedProvider.provider,
       title: selectedProvider.title,
@@ -337,7 +339,7 @@ export function AddModelForm({
               ...model,
               // Prefer updating the provider credential row by provider id.
               title: selectedProvider.title,
-              model: "AUTODETECT",
+              model: modelId,
             },
           })
         : await hostBridge.request("config/addModel", { model, roles });
@@ -364,6 +366,7 @@ export function AddModelForm({
   const extraFields = (selectedProvider.collectInputFor ?? []).filter(
     (field) =>
       (selectedProvider === customProvider ||
+        (selectedProvider.provider === "vertexai" && field.key === "model") ||
         !Object.values(completionParamsInputs).some(
         (input) => input.key === field.key,
       )) &&

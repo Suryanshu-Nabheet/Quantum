@@ -21,12 +21,11 @@ class Inception extends OpenAI {
   static providerName = "inception";
   static defaultOptions: Partial<LLMOptions> = {
     apiBase: "https://api.inceptionlabs.ai/v1/",
-    model: "mercury-coder-small",
     completionOptions: {
+      model: "AUTODETECT",
       temperature: 0.0,
       presencePenalty: 1.5,
       stop: ["<|endoftext|>"],
-      model: "mercury-editor-small-experimental", // Added model to fix TypeScript error
     },
   };
 

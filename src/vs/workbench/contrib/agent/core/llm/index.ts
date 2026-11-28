@@ -231,7 +231,7 @@ export abstract class BaseLLM implements ILLM {
     this.maxStopWords = options.maxStopWords ?? this.maxStopWords;
     this.completionOptions = {
       ...options.completionOptions,
-      model: options.model || "gpt-4",
+      model: options.model,
       maxTokens:
         options.completionOptions?.maxTokens ??
         (llmInfo?.maxCompletionTokens

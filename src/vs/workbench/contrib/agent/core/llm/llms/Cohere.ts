@@ -17,6 +17,51 @@ class Cohere extends BaseLLM {
   };
   static maxStopSequences = 5;
 
+  async listModels(): Promise<string[]> {
+    if (!this.apiBase) {
+      throw new Error("Cohere API base URL is required to list models.");
+    }
+    const apiBase = new URL(this.apiBase);
+    apiBase.pathname = `${apiBase.pathname.replace(/\/(v1|v2)\/?$/, "")}/v1/models`;
+    const models: string[] = [];
+    let pageToken: string | undefined;
+    const seenTokens = new Set<string>();
+
+    do {
+      const url = new URL(apiBase);
+      url.searchParams.set("endpoint", "chat");
+      url.searchParams.set("page_size", "1000");
+      if (pageToken) {
+        url.searchParams.set("page_token", pageToken);
+      }
+      const response = await this.fetch(url, {
+        headers: {
+          Authorization: `Bearer ${this.apiKey ?? ""}`,
+          Accept: "application/json",
+        },
+      });
+      const page = (await response.json()) as {
+        models?: Array<{ name?: string; endpoints?: string[] }>;
+        next_page_token?: string;
+      };
+      models.push(
+        ...(page.models ?? []).flatMap((model) =>
+          model.name && model.endpoints?.includes("chat") ? [model.name] : [],
+        ),
+      );
+      const nextToken = page.next_page_token;
+      if (nextToken && seenTokens.has(nextToken)) {
+        break;
+      }
+      if (nextToken) {
+        seenTokens.add(nextToken);
+      }
+      pageToken = nextToken;
+    } while (pageToken);
+
+    return models;
+  }
+
   private _convertMessages(msgs: ChatMessage[]): any[] {
     const messages = [];
     for (const m of msgs) {

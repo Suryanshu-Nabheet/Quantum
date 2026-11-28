@@ -225,6 +225,18 @@ describe("llmsFromModelConfig requestOptions merging", () => {
       },
     };
 
+    let refreshDiscoveredModels: (() => void) | undefined;
+    const modelsDiscovered = new Promise<void>((resolve) => {
+      refreshDiscoveredModels = resolve;
+    });
+    await llmsFromModelConfig({
+      model,
+      uniqueId: "test-id",
+      llmLogger: mockLLMLogger,
+      config: mockConfig,
+      onModelsChanged: () => refreshDiscoveredModels?.(),
+    });
+    await modelsDiscovered;
     const result = await llmsFromModelConfig({
       model,
       uniqueId: "test-id",
@@ -254,7 +266,7 @@ describe("llmsFromModelConfig requestOptions merging", () => {
     });
   });
 
-  it("falls back to catalog when listModels returns empty", async () => {
+  it("does not invent model IDs when live discovery returns empty", async () => {
     const { LLMClasses } = await import("../../llm/llms");
     const OpenAI = LLMClasses.find((c) => c.providerName === "openai")!;
     const original = OpenAI.prototype.listModels;
@@ -275,10 +287,7 @@ describe("llmsFromModelConfig requestOptions merging", () => {
         config: mockConfig,
       });
 
-      expect(result.length).toBeGreaterThan(0);
-      expect(
-        result.every((llm) => llm.title && llm.title !== "AUTODETECT"),
-      ).toBe(true);
+      expect(result).toEqual([]);
     } finally {
       OpenAI.prototype.listModels = original;
     }

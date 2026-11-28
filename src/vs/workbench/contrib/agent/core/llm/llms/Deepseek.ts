@@ -11,7 +11,6 @@ class Deepseek extends OpenAI {
   protected supportsReasoningContentField = true;
   static defaultOptions: Partial<LLMOptions> = {
     apiBase: "https://api.deepseek.com/",
-    model: "deepseek-coder",
     promptTemplates: {
       edit: osModelsEditPrompt,
     },

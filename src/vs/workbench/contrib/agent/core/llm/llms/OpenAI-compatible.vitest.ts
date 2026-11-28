@@ -241,11 +241,6 @@ describe("OpenAI", () => {
 createOpenAISubclassTests(Groq, {
   providerName: "groq",
   defaultApiBase: "https://api.groq.com/openai/v1/",
-  modelConversions: {
-    "mistral-8x7b": "mixtral-8x7b-32768",
-    "llama3-8b": "llama3-8b-8192",
-    "llama3-70b": "llama3-70b-8192",
-  },
   modelConversionContent: "[INST] hello [/INST]",
   modelConversionMaxTokens: 4096,
 });
@@ -253,9 +248,6 @@ createOpenAISubclassTests(Groq, {
 createOpenAISubclassTests(Fireworks, {
   providerName: "fireworks",
   defaultApiBase: "https://api.fireworks.ai/inference/v1/",
-  modelConversions: {
-    "starcoder-7b": "accounts/fireworks/models/starcoder-7b",
-  },
   modelConversionContent:
     "<|im_start|>user\nhello<|im_end|>\n<|im_start|>assistant\n",
 });
@@ -263,11 +255,6 @@ createOpenAISubclassTests(Fireworks, {
 createOpenAISubclassTests(Together, {
   providerName: "together",
   defaultApiBase: "https://api.together.xyz/v1/",
-  modelConversions: {
-    "codellama-7b": "codellama-7b",
-    "llama3-8b": "meta-llama/Llama-3-8b-chat-hf",
-    "mistral-8x7b": "mistralai/Mixtral-8x7B-Instruct-v0.1",
-  },
   modelConversionContent: "hello",
   customStreamCompleteEndpoint: "completions",
 });
@@ -285,19 +272,12 @@ createOpenAISubclassTests(OpenRouter, {
 createOpenAISubclassTests(xAI, {
   providerName: "xAI",
   defaultApiBase: "https://api.x.ai/v1/",
-  modelConversions: {
-    "grok-beta": "grok-beta",
-  },
   modelConversionContent: "hello",
 });
 
 createOpenAISubclassTests(Mistral, {
   providerName: "mistral",
   defaultApiBase: "https://api.mistral.ai/v1/",
-  modelConversions: {
-    "mistral-7b": "mistral-7b",
-    "mistral-8x7b": "open-mixtral-8x7b",
-  },
   modelConversionContent: "hello",
 });
 
@@ -314,10 +294,6 @@ createOpenAISubclassTests(LMStudio, {
 createOpenAISubclassTests(Cerebras, {
   providerName: "cerebras",
   defaultApiBase: "https://api.cerebras.ai/v1/",
-  modelConversions: {
-    "llama3.1-8b": "llama3.1-8b",
-    "llama3.1-70b": "llama3.1-70b",
-  },
   modelConversionContent:
     "<|start_header_id|>user<|end_header_id|>\nhello<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n",
 });

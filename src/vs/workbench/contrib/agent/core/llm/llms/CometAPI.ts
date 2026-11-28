@@ -1,4 +1,3 @@
-import { allModelProviders } from "llm-info";
 import { LLMOptions } from "../../index.js";
 import OpenAI from "./OpenAI.js";
 
@@ -41,7 +40,6 @@ class CometAPI extends OpenAI {
 
   static defaultOptions: Partial<LLMOptions> = {
     apiBase: "https://api.cometapi.com/v1/",
-    model: "gpt-4o-mini", // Default to a commonly available model
   };
 
   constructor(options: LLMOptions) {
@@ -49,21 +47,6 @@ class CometAPI extends OpenAI {
     CometAPI.validateConfig(options);
     super(options);
 
-    // Align contextLength with llm-info for cometapi specifically (non-breaking for others)
-    try {
-      const cometProvider = allModelProviders.find((p) => p.id === "cometapi");
-      const info = cometProvider?.models.find((m) =>
-        m.regex ? m.regex.test(this.model) : m.model === this.model,
-      );
-      if (info?.contextLength) {
-        // Always prefer cometapi-specific llm-info over generic provider matches
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore - accessing protected for targeted fix
-        this._contextLength = info.contextLength;
-      }
-    } catch {
-      // no-op: do not fail construction on metadata issues
-    }
   }
 
   /**
@@ -87,16 +70,6 @@ class CometAPI extends OpenAI {
       );
     }
 
-    if (
-      options.model &&
-      !CometAPI.isValidModelFormat(options.model) &&
-      typeof process !== "undefined" &&
-      process.env?.NODE_ENV !== "test"
-    ) {
-      console.warn(
-        `CometAPI: Model "${options.model}" may not be supported. Check CometAPI documentation for available models.`,
-      );
-    }
   }
 
   /**
@@ -114,25 +87,6 @@ class CometAPI extends OpenAI {
     } catch {
       return false;
     }
-  }
-
-  /**
-   * Basic model format validation
-   */
-  private static isValidModelFormat(model: string): boolean {
-    // Allow common model patterns
-    const validPatterns = [
-      /^gpt-/i,
-      /^claude-/i,
-      /^gemini-/i,
-      /^grok/i,
-      /^deepseek/i,
-      /^qwen/i,
-      /^text-/i,
-      /^chat/i,
-    ];
-
-    return validPatterns.some((pattern) => pattern.test(model));
   }
 
   /**
@@ -179,59 +133,6 @@ class CometAPI extends OpenAI {
   ];
 
   /**
-   * Recommended chat models from CometAPI documentation
-   */
-  private static RECOMMENDED_MODELS = [
-    // GPT series
-    "gpt-5.1",
-    "gpt-5-chat-latest",
-    "chatgpt-4o-latest",
-    "gpt-5-mini",
-    "gpt-5-nano",
-    "gpt-5",
-    "gpt-4.1-mini",
-    "gpt-4.1-nano",
-    "gpt-4.1",
-    "gpt-4o-mini",
-    "o4-mini-2025-04-16",
-    "o3-pro-2025-06-10",
-
-    // Claude series
-    "claude-sonnet-4-6",
-    "claude-opus-4-6",
-    "claude-opus-4-1-20250805",
-    "claude-opus-4-1-20250805-thinking",
-    "claude-sonnet-4-20250514",
-    "claude-sonnet-4-20250514-thinking",
-    "claude-3-7-sonnet-latest",
-    "claude-3-5-haiku-latest",
-
-    // Gemini series
-    "gemini-3-pro-preview",
-    "gemini-2.5-pro",
-    "gemini-2.5-flash",
-    "gemini-2.5-flash-lite",
-    "gemini-2.0-flash",
-
-    // Grok series
-    "grok-4-0709",
-    "grok-3",
-    "grok-3-mini",
-    "grok-2-image-1212",
-
-    // DeepSeek series
-    "deepseek-v3.1",
-    "deepseek-v3",
-    "deepseek-r1-0528",
-    "deepseek-chat",
-    "deepseek-reasoner",
-
-    // Qwen series
-    "qwen3-30b-a3b",
-    "qwen3-coder-plus-2025-07-22",
-  ];
-
-  /**
    * Filter model list to exclude non-chat models
    * Uses pattern matching against model names
    */
@@ -254,14 +155,6 @@ class CometAPI extends OpenAI {
   }
 
   /**
-   * Get recommended models for CometAPI
-   * Returns predefined list since CometAPI model info is limited
-   */
-  protected getRecommendedModels(): string[] {
-    return [...CometAPI.RECOMMENDED_MODELS];
-  }
-
-  /**
    * Override listModels method to apply model filtering with enhanced error handling
    */
   async listModels(): Promise<string[]> {
@@ -270,14 +163,6 @@ class CometAPI extends OpenAI {
       const filteredModels = this.filterChatModels(
         allModels.map((id) => ({ id })),
       );
-
-      // If filtered list is empty or very limited, return recommended models
-      if (filteredModels.length < 5) {
-        console.info(
-          "CometAPI: Limited models available, using recommended set",
-        );
-        return this.getRecommendedModels();
-      }
 
       return filteredModels.map((model) => model.id);
     } catch (error: any) {
@@ -299,19 +184,12 @@ class CometAPI extends OpenAI {
           "CLIENT_ERROR",
           statusCode,
         );
-      } else if (statusCode >= 500) {
-        console.warn(
-          "CometAPI server error, falling back to recommended models:",
-          errorMessage,
-        );
-        return this.getRecommendedModels();
       } else {
-        // Network or other errors - fallback gracefully
-        console.warn(
-          "CometAPI: Failed to fetch model list, using recommended models",
-          errorMessage,
+        throw new CometAPIError(
+          `CometAPI model discovery failed: ${errorMessage}`,
+          "MODEL_DISCOVERY_ERROR",
+          statusCode,
         );
-        return this.getRecommendedModels();
       }
     }
   }

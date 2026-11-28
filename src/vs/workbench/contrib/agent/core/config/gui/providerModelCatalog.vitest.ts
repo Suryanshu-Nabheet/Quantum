@@ -1,13 +1,10 @@
 import { describe, expect, it } from "vitest";
-import {
-  catalogModelNamesForProvider,
-  filterListedModelNames,
-} from "./providerModelCatalog";
+import { filterListedModelNames } from "./providerModelCatalog";
 
 describe("filterListedModelNames", () => {
   it("dedupes and drops AUTODETECT", () => {
     expect(
-      filterListedModelNames("ollama", [
+      filterListedModelNames([
         "llama3",
         "llama3",
         "AUTODETECT",
@@ -17,7 +14,7 @@ describe("filterListedModelNames", () => {
   });
 
   it("filters noisy OpenAI-family listings", () => {
-    const filtered = filterListedModelNames("openai", [
+    const filtered = filterListedModelNames([
       "gpt-4o",
       "text-embedding-3-small",
       "whisper-1",
@@ -30,25 +27,12 @@ describe("filterListedModelNames", () => {
     expect(filtered).toContain("openrouter/auto");
     expect(filtered).not.toContain("text-embedding-3-small");
     expect(filtered).not.toContain("whisper-1");
+    expect(filtered).toContain("davinci-instruct");
   });
 
-  it("does not apply OpenAI filter to ollama", () => {
-    expect(
-      filterListedModelNames("ollama", ["nomic-embed-text", "llama3.2"]),
-    ).toEqual(["nomic-embed-text", "llama3.2"]);
-  });
-});
-
-describe("catalogModelNamesForProvider", () => {
-  it("returns curated models for anthropic", () => {
-    const names = catalogModelNamesForProvider("anthropic");
-    expect(names.length).toBeGreaterThan(0);
-    expect(names.every((n) => n !== "AUTODETECT")).toBe(true);
-  });
-
-  it("returns empty for unknown provider", () => {
-    expect(catalogModelNamesForProvider("not-a-real-provider")).toEqual([]);
-    expect(catalogModelNamesForProvider("ollama")).toEqual([]);
-    expect(catalogModelNamesForProvider("vllm")).toEqual([]);
+  it("drops embedding IDs from provider listings", () => {
+    expect(filterListedModelNames(["nomic-embed-text", "llama3.2"])).toEqual([
+      "llama3.2",
+    ]);
   });
 });

@@ -60,7 +60,6 @@ class Asksage extends BaseLLM {
   static providerName = "askSage";
   static defaultOptions: Partial<LLMOptions> = {
     apiBase: DEFAULT_API_URL,
-    model: "gpt-4o",
   };
 
   private sessionTokenPromise: Promise<string> | null = null;
@@ -420,7 +419,28 @@ class Asksage extends BaseLLM {
   }
 
   async listModels(): Promise<string[]> {
-    return [];
+    if (!this.apiBase) {
+      throw new Error("AskSage API URL is required to list models.");
+    }
+    const response = await this.fetch(
+      new URL(`${this.apiBase.replace(/\/$/, "")}/openai/v1/models`),
+      {
+        method: "GET",
+        headers: await this._getHeaders(),
+      },
+    );
+    const result = (await response.json()) as {
+      data?: Array<{ id?: string }>;
+      response?: Array<string | { id?: string; model?: string }>;
+    };
+    const models = result.data ?? result.response ?? [];
+    return models.flatMap((model) => {
+      if (typeof model === "string") {
+        return [model];
+      }
+      const modelId = model.id ?? ("model" in model ? model.model : undefined);
+      return modelId ? [modelId] : [];
+    });
   }
 }
 

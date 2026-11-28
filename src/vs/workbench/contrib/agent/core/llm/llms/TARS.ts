@@ -7,7 +7,6 @@ class TARS extends OpenAI {
   static providerName = "tars";
   static defaultOptions: Partial<LLMOptions> = {
     apiBase: "https://api.router.tetrate.ai/v1",
-    model: "gpt-5-mini",
     promptTemplates: {
       edit: osModelsEditPrompt,
     },

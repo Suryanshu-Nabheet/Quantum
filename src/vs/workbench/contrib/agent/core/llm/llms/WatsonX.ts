@@ -26,6 +26,49 @@ class WatsonX extends BaseLLM {
     super(options);
   }
 
+  async listModels(): Promise<string[]> {
+    if (!this.apiBase || !this.apiVersion) {
+      throw new Error("watsonx API URL and version are required to list models.");
+    }
+
+    await this.updateWatsonxToken();
+    const models: string[] = [];
+    let start: string | undefined;
+    const seen = new Set<string>();
+    do {
+      const url = new URL(`${this.apiBase}/ml/v1/foundation_model_specs`);
+      url.searchParams.set("version", this.apiVersion);
+      url.searchParams.set("limit", "200");
+      if (start) {
+        url.searchParams.set("start", start);
+      }
+      const response = await this.fetch(url, {
+        headers: this._getHeaders(),
+      });
+      const page = (await response.json()) as {
+        resources?: Array<{ model_id?: string }>;
+        next?: { href?: string };
+      };
+      models.push(
+        ...(page.resources ?? []).flatMap((model) =>
+          model.model_id ? [model.model_id] : [],
+        ),
+      );
+      const nextHref = page.next?.href;
+      if (!nextHref) {
+        break;
+      }
+      const nextUrl = new URL(nextHref, url);
+      start = nextUrl.searchParams.get("start") ?? undefined;
+      if (!start || seen.has(start)) {
+        break;
+      }
+      seen.add(start);
+    } while (start);
+
+    return models;
+  }
+
   async getBearerToken(): Promise<{ token: string; expiration: number }> {
     if (this.apiBase?.includes("cloud.ibm.com")) {
       // watsonx SaaS

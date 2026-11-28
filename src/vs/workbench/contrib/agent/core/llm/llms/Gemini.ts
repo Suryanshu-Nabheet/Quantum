@@ -36,11 +36,54 @@ class Gemini extends BaseLLM {
   static providerName = "gemini";
 
   static defaultOptions: Partial<LLMOptions> = {
-    model: "gemini-pro",
     apiBase: "https://generativelanguage.googleapis.com/v1beta/",
     maxStopWords: 5,
     maxEmbeddingBatchSize: 100,
   };
+
+  async listModels(): Promise<string[]> {
+    const models: string[] = [];
+    let pageToken: string | undefined;
+    const seenTokens = new Set<string>();
+
+    do {
+      const url = new URL("models", this.apiBase);
+      if (pageToken) {
+        url.searchParams.set("pageToken", pageToken);
+      }
+      const response = await this.fetch(url, {
+        headers: {
+          Accept: "application/json",
+          "x-goog-api-key": this.apiKey ?? "",
+        },
+      });
+      const page = (await response.json()) as {
+        models?: Array<{
+          name?: string;
+          supportedGenerationMethods?: string[];
+        }>;
+        nextPageToken?: string;
+      };
+      models.push(
+        ...(page.models ?? []).flatMap((model) =>
+          model.name &&
+          model.supportedGenerationMethods?.includes("generateContent")
+            ? [model.name.replace(/^models\//, "")]
+            : [],
+        ),
+      );
+      const nextToken = page.nextPageToken;
+      if (nextToken && seenTokens.has(nextToken)) {
+        break;
+      }
+      if (nextToken) {
+        seenTokens.add(nextToken);
+      }
+      pageToken = nextToken;
+    } while (pageToken);
+
+    return models;
+  }
 
   protected useOpenAIAdapterFor: (LlmApiRequestType | "*")[] = [
     "chat",

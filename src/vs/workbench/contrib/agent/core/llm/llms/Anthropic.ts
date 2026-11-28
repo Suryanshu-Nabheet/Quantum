@@ -35,13 +35,46 @@ import { BaseLLM } from "../index.js";
 class Anthropic extends BaseLLM {
   static providerName = "anthropic";
   static defaultOptions: Partial<LLMOptions> = {
-    model: "claude-sonnet-4-6",
-    completionOptions: {
-      model: "claude-sonnet-4-6",
-      maxTokens: 8192,
-    },
     apiBase: "https://api.anthropic.com/v1/",
+    completionOptions: { model: "AUTODETECT", maxTokens: 8192 },
   };
+
+  async listModels(): Promise<string[]> {
+    const models: string[] = [];
+    let afterId: string | undefined;
+    const seenCursors = new Set<string>();
+
+    do {
+      const url = new URL("models", this.apiBase);
+      url.searchParams.set("limit", "1000");
+      if (afterId) {
+        url.searchParams.set("after_id", afterId);
+      }
+      const response = await this.fetch(url, {
+        headers: {
+          "x-api-key": this.apiKey ?? "",
+          "anthropic-version": "2023-06-01",
+          Accept: "application/json",
+        },
+      });
+      const page = (await response.json()) as {
+        data?: Array<{ id?: string }>;
+        has_more?: boolean;
+        last_id?: string;
+      };
+      models.push(...(page.data ?? []).flatMap((model) => model.id ?? []));
+      const nextCursor = page.has_more ? page.last_id : undefined;
+      if (nextCursor && seenCursors.has(nextCursor)) {
+        break;
+      }
+      if (nextCursor) {
+        seenCursors.add(nextCursor);
+      }
+      afterId = nextCursor;
+    } while (afterId);
+
+    return models;
+  }
 
   private convertToolToAnthropicTool(tool: Tool): AnthropicTool {
     return {
@@ -62,7 +95,7 @@ class Anthropic extends BaseLLM {
       top_p: options.topP,
       temperature: options.temperature,
       max_tokens: options.maxTokens ?? 2048,
-      model: options.model === "claude-2" ? "claude-2.1" : options.model,
+      model: options.model,
       stop_sequences: options.stop?.filter((x) => x.trim() !== ""),
       stream: options.stream ?? true,
       tools: options.tools?.map(this.convertToolToAnthropicTool),

@@ -9,6 +9,15 @@ class HuggingFaceTGI extends BaseLLM {
     apiBase: "http://localhost:8080/",
   };
 
+  async listModels(): Promise<string[]> {
+    const response = await this.fetch(new URL("info", this.apiBase), {
+      method: "GET",
+      headers: { Accept: "application/json" },
+    });
+    const info = (await response.json()) as { model_id?: string };
+    return info.model_id ? [info.model_id] : [];
+  }
+
   constructor(options: LLMOptions) {
     super(options);
 

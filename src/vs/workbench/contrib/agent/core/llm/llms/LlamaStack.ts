@@ -8,7 +8,6 @@ class LlamaStack extends OpenAI {
   static providerName = "llamastack";
   static defaultOptions: Partial<LLMOptions> = {
     apiBase: "http://localhost:8321/v1/openai/v1/",
-    model: "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
     promptTemplates: {
       edit: osModelsEditPrompt,
     },

@@ -9,7 +9,6 @@ class Mistral extends OpenAI {
   static providerName = "mistral";
   static defaultOptions: Partial<LLMOptions> = {
     apiBase: "https://api.mistral.ai/v1/",
-    model: "codestral-latest",
     promptTemplates: {
       edit: codestralEditPrompt,
     },
@@ -57,14 +56,6 @@ class Mistral extends OpenAI {
         })
         .catch((err: any) => {});
     }
-  }
-
-  private static modelConversion: { [key: string]: string } = {
-    "mistral-7b": "open-mistral-7b",
-    "mistral-8x7b": "open-mixtral-8x7b",
-  };
-  protected _convertModelName(model: string): string {
-    return Mistral.modelConversion[model] ?? model;
   }
 
   _convertArgs(options: any, messages: ChatMessage[]) {

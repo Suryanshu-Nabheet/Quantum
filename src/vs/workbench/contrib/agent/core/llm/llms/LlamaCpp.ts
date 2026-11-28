@@ -8,6 +8,20 @@ class LlamaCpp extends BaseLLM {
     apiBase: "http://127.0.0.1:8080/",
   };
 
+  async listModels(): Promise<string[]> {
+    const response = await this.fetch(new URL("v1/models", this.apiBase), {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${this.apiKey ?? ""}`,
+        ...this.requestOptions?.headers,
+      },
+    });
+    const result = (await response.json()) as {
+      data?: Array<{ id?: string }>;
+    };
+    return (result.data ?? []).flatMap((model) => model.id ?? []);
+  }
+
   private _convertArgs(options: CompletionOptions, prompt: string) {
     const finalOptions = {
       n_predict: options.maxTokens,

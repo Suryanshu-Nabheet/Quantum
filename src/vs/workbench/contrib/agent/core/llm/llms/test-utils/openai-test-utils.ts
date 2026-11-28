@@ -132,7 +132,6 @@ async function runLlmTest(testCase: LlmTestCase) {
 export interface OpenAISubclassConfig {
   providerName: string;
   defaultApiBase?: string;
-  modelConversions?: { [key: string]: string };
   customOptions?: any;
   modelConversionContent?: string;
   modelConversionMaxTokens?: number;

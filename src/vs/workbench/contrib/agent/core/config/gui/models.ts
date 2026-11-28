@@ -10,13 +10,12 @@ import { BaseLLM } from "../../llm";
 import { getLLMClass } from "../../llm/llms";
 import {
   AUTODETECT,
-  catalogModelNamesForProvider,
   filterListedModelNames,
 } from "./providerModelCatalog";
 
 // Model discovery is optional enrichment. It must never hold the whole agent
 // startup hostage when a local server is down or a remote endpoint is slow.
-const MODEL_DISCOVERY_TIMEOUT_MS = 1_500;
+const MODEL_DISCOVERY_TIMEOUT_MS = 10_000;
 const LOCAL_MODEL_PROVIDERS = new Set(["ollama", "vllm"]);
 const MAX_CONCURRENT_MODEL_DISCOVERIES = 4;
 const discoveredModelNames = new Map<string, string[]>();
@@ -67,13 +66,11 @@ function refreshModelNamesInBackground({
   key,
   llm,
   model,
-  fallbackNames,
   onModelsChanged,
 }: {
   key: string;
   llm: BaseLLM;
   model: ModelConfig;
-  fallbackNames: string[];
   onModelsChanged?: () => void;
 }): void {
   if (modelDiscoveryInFlight.has(key)) {
@@ -97,7 +94,6 @@ function refreshModelNamesInBackground({
       let modelNames: string[];
       try {
         modelNames = filterListedModelNames(
-          model.provider,
           await Promise.race([llm.listModels(), timeout]),
         );
       } catch (error) {
@@ -113,13 +109,13 @@ function refreshModelNamesInBackground({
       }
 
       if (modelNames.length === 0) {
-        if (isLocalProvider && discoveredModelNames.delete(key)) {
+        if (discoveredModelNames.delete(key)) {
           onModelsChanged?.();
         }
         return;
       }
 
-      const previousNames = discoveredModelNames.get(key) ?? fallbackNames;
+      const previousNames = discoveredModelNames.get(key) ?? [];
       discoveredModelNames.set(key, modelNames);
       if (!sameModelNames(previousNames, modelNames)) {
         onModelsChanged?.();
@@ -323,16 +319,14 @@ async function autodetectModels({
   onModelsChanged?: () => void;
 }): Promise<BaseLLM[]> {
   const key = modelDiscoveryKey(model, config);
-  const fallbackNames = catalogModelNamesForProvider(model.provider);
-  const modelNames = discoveredModelNames.get(key) ?? fallbackNames;
+  const modelNames = discoveredModelNames.get(key) ?? [];
 
-  // Live provider discovery is optional enrichment. Return saved/catalog data
-  // immediately, then reload config only if the live list changes.
+  // Return configured model data immediately, then reload only when the live
+  // provider list changes.
   refreshModelNamesInBackground({
     key,
     llm,
     model,
-    fallbackNames,
     onModelsChanged,
   });
 

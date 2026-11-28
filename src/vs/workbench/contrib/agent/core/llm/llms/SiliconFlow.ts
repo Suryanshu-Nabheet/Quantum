@@ -8,7 +8,6 @@ class SiliconFlow extends OpenAI {
   static providerName = "siliconflow";
   static defaultOptions: Partial<LLMOptions> = {
     apiBase: "https://api.siliconflow.cn/v1/",
-    model: "Qwen/Qwen2.5-Coder-32B-Instruct",
     promptTemplates: {
       edit: osModelsEditPrompt,
     },

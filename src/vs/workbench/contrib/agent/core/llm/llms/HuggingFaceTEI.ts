@@ -6,7 +6,6 @@ class HuggingFaceTEIEmbeddingsProvider extends BaseLLM {
 
   static defaultOptions: Partial<LLMOptions> | undefined = {
     apiBase: "http://localhost:8080",
-    model: "tei",
   };
 
   constructor(options: LLMOptions) {
