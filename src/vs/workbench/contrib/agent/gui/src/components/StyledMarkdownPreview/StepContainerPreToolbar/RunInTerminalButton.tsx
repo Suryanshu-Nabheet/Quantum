@@ -1,6 +1,6 @@
 import { CommandLineIcon } from "@heroicons/react/24/outline";
 import { useContext } from "react";
-import { lightGray, vscForeground } from "../..";
+import { lightGray } from "../..";
 import { HostBridgeContext } from "../../../context/HostBridge";
 import { extractCommand } from "../utils/commandExtractor";
 
@@ -18,8 +18,10 @@ export function RunInTerminalButton({ command }: RunInTerminalButtonProps) {
   }
 
   return (
-    <div
-      className={`text-lightgray flex items-center border-none bg-transparent text-xs text-[${vscForeground}] cursor-pointer outline-none hover:brightness-125`}
+    <button
+      type="button"
+      aria-label="Run in terminal"
+      className="text-lightgray flex cursor-pointer items-center border-none bg-transparent p-0 text-xs hover:brightness-125 focus-visible:outline focus-visible:outline-1"
       onClick={runInTerminal}
     >
       <div
@@ -31,6 +33,6 @@ export function RunInTerminalButton({ command }: RunInTerminalButtonProps) {
           <span className="text-lightgray max-sm:hidden">Run</span>
         </>
       </div>
-    </div>
+    </button>
   );
 }

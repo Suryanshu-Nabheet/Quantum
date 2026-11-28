@@ -7,7 +7,9 @@ import {
 	WrenchScrewdriverIcon,
 } from "@heroicons/react/24/outline";
 import { BuiltInToolNames } from "core/tools/builtIn";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { GroupedToolCallHeader } from "./GroupedToolCallHeader";
 import { getToolCallIcon } from "./utils";
 
 describe("getToolCallIcon", () => {
@@ -28,5 +30,17 @@ describe("getToolCallIcon", () => {
 			PuzzlePieceIcon,
 		);
 		expect(getToolCallIcon("custom_tool")).toBe(WrenchScrewdriverIcon);
+	});
+});
+
+describe("GroupedToolCallHeader", () => {
+	it("toggles once when its icon is clicked and exposes its expanded state", () => {
+		const onToggle = vi.fn();
+		const { container } = render(
+			<GroupedToolCallHeader toolCallStates={[]} activeCalls={[]} open={true} onToggle={onToggle} />,
+		);
+		expect(screen.getByRole("button")).toHaveAttribute("aria-expanded", "true");
+		fireEvent.click(container.querySelector("svg")!);
+		expect(onToggle).toHaveBeenCalledTimes(1);
 	});
 });

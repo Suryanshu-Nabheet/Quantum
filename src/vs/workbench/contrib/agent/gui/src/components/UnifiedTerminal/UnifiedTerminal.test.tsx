@@ -43,6 +43,24 @@ beforeEach(() => {
 });
 
 describe("UnifiedTerminalCommand", () => {
+  test("does not describe a pending command as already run", async () => {
+    const toolCallState: ToolCallState = {
+      status: "generated",
+      toolCallId: MOCK_TOOL_CALL_ID,
+      toolCall: {
+        id: MOCK_TOOL_CALL_ID,
+        type: "function",
+        function: { name: "run_terminal_command", arguments: "{}" },
+      },
+      parsedArgs: {},
+    };
+    await renderWithProviders(
+      <UnifiedTerminalCommand command={MOCK_COMMAND} toolCallState={toolCallState} />,
+    );
+    expect(screen.getByRole("button", { name: "Command awaiting approval" })).toBeInTheDocument();
+    expect(screen.queryByText("Run")).not.toBeInTheDocument();
+  });
+
   test("renders basic terminal command without output", async () => {
     const { user } = await renderWithProviders(
       <UnifiedTerminalCommand command={MOCK_COMMAND} status="completed" />,
@@ -52,7 +70,7 @@ describe("UnifiedTerminalCommand", () => {
     expect(screen.getByText(MOCK_COMMAND)).toBeInTheDocument();
 
     // Should show terminal header
-    expect(screen.getByText("Terminal")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ran command" })).toBeInTheDocument();
 
     // Should show completed status icon (green dot)
     const terminalContainer = screen.getByTestId("terminal-container");
@@ -120,13 +138,10 @@ describe("UnifiedTerminalCommand", () => {
     expect(container.textContent).toMatch(/Test 1 passed/);
 
     // Find and click the collapse chevron (SVG icon)
-    const chevron = container.querySelector(
-      'svg[class*="cursor-pointer"], .cursor-pointer svg',
-    );
-    expect(chevron).toBeInTheDocument();
-
-    if (chevron) {
-      await user.click(chevron);
+    const toggle = screen.getByRole("button", { name: "Ran command" });
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    {
+      await user.click(toggle);
 
       // After collapsing, output should not be visible
       await waitFor(() => {
@@ -145,15 +160,15 @@ describe("UnifiedTerminalCommand", () => {
       />,
     );
 
-    expect(screen.getByText(/Collapse/)).toBeInTheDocument();
-    expect(container.textContent).toMatch(/Line 1/);
+    expect(screen.getByRole("button", { name: "Show 10 earlier lines" })).toBeInTheDocument();
+    expect(container.textContent).not.toMatch(/Line 1\n/);
     expect(container.textContent).toMatch(/Line 25/);
 
-    const collapseButton = screen.getByText(/Collapse/);
-    await user.click(collapseButton);
+    await user.click(screen.getByRole("button", { name: "Show 10 earlier lines" }));
 
     await waitFor(() => {
-      expect(screen.getByText(/\+\d+ more lines/)).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Show less output" })).toBeInTheDocument();
+      expect(container.textContent).toMatch(/Line 1\n/);
     });
   });
 
@@ -172,13 +187,10 @@ describe("UnifiedTerminalCommand", () => {
     expect(container.textContent).toMatch(/Bold text/);
     expect(container.textContent).toMatch(/Underlined text/);
 
-    // Verify ANSI processing created span elements within the code block
-    // The AnsiRenderer creates spans for each ANSI segment
-    const codeElement = container.querySelector("code");
-    expect(codeElement).toBeInTheDocument();
-
-    // Count all spans inside the code element (ANSI creates multiple spans)
-    const spans = codeElement?.querySelectorAll("span");
+    // Output uses terminal formatting rather than the chat's inline-code style.
+    const output = screen.getByRole("region", { name: "Command output" });
+    expect(output.querySelector("code")).not.toBeInTheDocument();
+    const spans = output.querySelectorAll("span");
     expect(spans?.length).toBeGreaterThan(0);
   });
 
@@ -213,15 +225,15 @@ describe("UnifiedTerminalCommand", () => {
     );
 
     // Look for toolbar elements - they may be hidden by responsive classes but exist in DOM
-    const toolbarArea = container.querySelector('[class*="gap-2.5"]');
+    const toolbarArea = container.querySelector('[class*="gap-2"]');
     expect(toolbarArea).toBeInTheDocument();
 
     // Should contain SVG icons for copy/run operations
     const svgIcons = container.querySelectorAll("svg");
     expect(svgIcons.length).toBeGreaterThan(0);
 
-    // Should show "Run" text (may be hidden on small screens)
-    expect(container.textContent).toMatch(/Run/);
+    expect(screen.getByRole("button", { name: "Copy" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Run in terminal" })).toBeInTheDocument();
   });
 
   test("handles move to background action", async () => {
@@ -304,10 +316,7 @@ describe("UnifiedTerminalCommand", () => {
     expect(screen.getByText(MOCK_COMMAND)).toBeInTheDocument();
 
     // Should not show any output content
-    const outputElements = container.querySelectorAll(
-      "pre code > div:not(:first-child)",
-    );
-    expect(outputElements.length).toBe(0);
+    expect(screen.queryByRole("region", { name: "Command output" })).not.toBeInTheDocument();
   });
 
   test("processes terminal content correctly for line limiting", async () => {
@@ -320,8 +329,8 @@ describe("UnifiedTerminalCommand", () => {
       />,
     );
 
-    expect(screen.getByText(/Collapse/)).toBeInTheDocument();
-    expect(container.textContent).toMatch(/Line 1/);
+    expect(screen.getByText("Show 15 earlier lines")).toBeInTheDocument();
+    expect(container.textContent).not.toMatch(/Line 1\n/);
     expect(container.textContent).toMatch(/Line 25/);
   });
 
@@ -335,22 +344,22 @@ describe("UnifiedTerminalCommand", () => {
       />,
     );
 
-    expect(container.textContent).toMatch(/Line 1/);
+    expect(container.textContent).not.toMatch(/Line 1\n/);
 
-    const collapseButton = screen.getByText(/Collapse/);
-    await user.click(collapseButton);
+    await user.click(screen.getByText("Show 15 earlier lines"));
 
     await waitFor(() => {
-      expect(screen.getByText(/\+15 more lines/)).toBeInTheDocument();
+      expect(screen.getByText("Show less output")).toBeInTheDocument();
     });
 
-    await user.click(screen.getByText(/\+15 more lines/));
+    expect(screen.getByRole("region", { name: "Command output" })).toHaveClass("max-h-64", "overflow-auto");
+    await user.click(screen.getByText("Show less output"));
 
     await waitFor(() => {
-      expect(container.textContent).toMatch(/Line 1/);
+      expect(container.textContent).not.toMatch(/Line 1\n/);
     });
 
     // Should show collapse option after expansion
-    expect(screen.getByText(/Collapse/)).toBeInTheDocument();
+    expect(screen.getByText("Show 15 earlier lines")).toBeInTheDocument();
   });
 });

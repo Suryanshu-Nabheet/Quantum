@@ -13,8 +13,10 @@ export function CopyButton({ text }: CopyButtonProps) {
   return (
     <ToolTip place="top" content={copied ? "Copied" : "Copy Code"}>
       <HoverItem className="!p-0">
-        <div
-          className="text-lightgray flex cursor-pointer items-center border-none bg-transparent text-xs outline-none hover:brightness-125"
+        <button
+          type="button"
+          aria-label={copied ? "Copied" : "Copy"}
+          className="text-lightgray flex cursor-pointer items-center border-none bg-transparent p-0 text-xs hover:brightness-125 focus-visible:outline focus-visible:outline-1"
           onClick={copyText}
         >
           <div className="flex items-center gap-1 transition-colors duration-200 hover:brightness-125">
@@ -24,7 +26,7 @@ export function CopyButton({ text }: CopyButtonProps) {
               <ClipboardIcon className="h-3.5 w-3.5 hover:brightness-125" />
             )}
           </div>
-        </div>
+        </button>
       </HoverItem>
     </ToolTip>
   );

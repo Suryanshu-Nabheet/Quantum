@@ -19,8 +19,10 @@ export function GroupedToolCallHeader({
 }: GroupedToolCallHeaderProps) {
   return (
     <div className={open ? "mb-0.5" : "mb-0"}>
-      <div
-        className={`text-description flex cursor-pointer items-center gap-1.5 ${CHAT_UI_TEXT_CLASS} transition-colors duration-200 ease-in-out hover:brightness-125`}
+      <button
+        type="button"
+        aria-expanded={open}
+        className={`text-description flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-left ${CHAT_UI_TEXT_CLASS} transition-colors duration-200 ease-in-out hover:brightness-125 focus-visible:outline focus-visible:outline-1`}
         data-testid="performing-actions"
         onClick={onToggle}
       >
@@ -28,11 +30,10 @@ export function GroupedToolCallHeader({
           isToggleable
           icon={FolderIcon}
           open={open}
-          onClick={onToggle}
         />
         {getGroupActionVerb(toolCallStates)} {activeCalls.length}{" "}
         {activeCalls.length === 1 ? "action" : "actions"}
-      </div>
+      </button>
     </div>
   );
 }
